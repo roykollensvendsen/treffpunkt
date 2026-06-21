@@ -32,21 +32,26 @@ fi
 # Subject = first non-empty, non-comment line.
 subject="$(printf '%s\n' "$msg" | grep -vE '^[[:space:]]*#' | grep -vE '^[[:space:]]*$' | head -n1)"
 
-# Rule 1: Conventional Commits format (merge/revert auto-messages are allowed).
+# Auto-generated commits (merges, reverts, fixup/squash) skip format & length.
+if printf '%s' "$subject" | grep -qE '^(Merge |Revert |fixup!|squash!)'; then
+  special=1
+else
+  special=0
+fi
+
+# Rule 1: Conventional Commits format.
 conv='^(feat|fix|docs|test|refactor|chore|ci|build|perf|style|revert)(\([a-z0-9._/-]+\))?!?: .+'
-if ! printf '%s' "$subject" | grep -qE "$conv"; then
-  if ! printf '%s' "$subject" | grep -qE '^(Merge|Revert) '; then
-    die "subject is not a Conventional Commit" \
+if [ "$special" -eq 0 ] && ! printf '%s' "$subject" | grep -qE "$conv"; then
+  die "subject is not a Conventional Commit" \
 "  got:      $subject
   expected: <type>(<scope>): <description>
   types:    feat fix docs test refactor chore ci build perf style revert
   example:  feat(scoring): add decimal scoring for 10m air rifle
   see https://www.conventionalcommits.org/"
-  fi
 fi
 
-# Keep the subject readable in `git log`.
-if [ "${#subject}" -gt 72 ]; then
+# Keep the subject readable in `git log` (auto-generated commits exempt).
+if [ "$special" -eq 0 ] && [ "${#subject}" -gt 72 ]; then
   die "subject line is ${#subject} characters (max 72)" "  $subject"
 fi
 
