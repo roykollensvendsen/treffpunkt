@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+# SPDX-FileCopyrightText: 2026 Roy Kollen Svendsen
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Treffpunkt commit-msg hook.
+# Enforces Conventional Commits and the no-AI-references rule locally.
+# Enable once per clone with: sh tool/setup.sh
+exec "$(git rev-parse --show-toplevel)/tool/commit_lint.sh" "$1"
