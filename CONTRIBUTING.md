@@ -44,8 +44,8 @@ Example:
 ```
 feat(scoring): add decimal scoring for 10m air rifle
 
-In plain terms: the app can now give a precise decimal score (like 10.4) for
-each shot, the way an electronic target does, instead of only whole rings.
+The app can now give a precise decimal score (like 10.4) for each shot, the
+way an electronic target does, instead of only whole rings.
 
 Computes the decimal value from the shot's distance to centre per spec 0001's
 verification table. Pure Dart, fully unit-tested.
