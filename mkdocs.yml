@@ -1,0 +1,51 @@
+site_name: Treffpunkt
+site_description: Record and score shots on NSF/ISSF targets across competitions.
+repo_url: https://github.com/roykollensvendsen/treffpunkt
+docs_dir: docs
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: teal
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - User Guide:
+      - Overview: user/index.md
+      - Getting started: user/getting-started.md
+      - Score a 10 m air-rifle target: user/score-a-10m-air-rifle-target.md
+  - Developer Guide:
+      - Overview: dev/index.md
+      - Architecture: dev/architecture.md
+      - Testing: dev/testing.md
+      - Local setup: dev/local-setup.md
+  - Specifications:
+      - "0001 — 10 m air-rifle scoring": specs/0001-10m-air-rifle-target-and-scoring.md
+  - Decisions:
+      - ADR-0001 Flutter: adr/0001-frontend-flutter.md
+      - ADR-0002 Supabase: adr/0002-backend-supabase.md
+      - ADR-0003 Riverpod: adr/0003-state-management-riverpod.md
+      - ADR-0004 Spec-driven + TDD: adr/0004-spec-driven-tdd.md
+      - ADR-0005 Commit policy: adr/0005-commit-message-policy.md
+      - ADR-0006 GPLv3 + REUSE: adr/0006-licensing-gplv3-reuse.md
+      - ADR-0007 Code standard: adr/0007-code-standard-very-good-analysis.md
+      - ADR-0008 Readable & modular: adr/0008-readable-modular-plain-language.md
+      - ADR-0009 Documentation: adr/0009-documentation-strategy.md
+  - Roadmap: ROADMAP.md
+  - Changelog: CHANGELOG.md
+
+not_in_nav: |
+  /specs/TEMPLATE.md
+  /adr/TEMPLATE.md

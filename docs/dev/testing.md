@@ -1,0 +1,22 @@
+# Testing
+
+Treffpunkt follows the testing pyramid.
+
+| Level  | Where                    | Runs with                                         |
+| ------ | ------------------------ | ------------------------------------------------- |
+| Unit   | `test/**/domain`         | `flutter test`                                    |
+| Widget | `test/**/presentation`   | `flutter test`                                    |
+| System | `integration_test/`      | `flutter test integration_test -d flutter-tester` |
+
+## Principles
+- Domain logic is pure Dart, tested without a Flutter runtime.
+- Each spec's Verification section lists the exact cases; tests implement them
+  verbatim (see `test/features/scoring/domain/scoring_service_test.dart`).
+- Write the failing test first (red), then the smallest code to pass it (green).
+
+## Commands
+
+```sh
+flutter test                                     # unit + widget
+flutter test integration_test -d flutter-tester  # system tests (headless)
+```
