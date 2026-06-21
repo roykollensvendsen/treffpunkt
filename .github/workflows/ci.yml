@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  FLUTTER_VERSION: "3.44.2"
+
+jobs:
+  commitlint:
+    name: Commit messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate commit messages (format + no AI references)
+        run: |
+          base='${{ github.event.pull_request.base.sha }}'
+          fail=0
+          for sha in $(git rev-list "$base"..HEAD); do
+            git log -1 --format=%B "$sha" > /tmp/commit-msg.txt
+            sh tool/commit_lint.sh /tmp/commit-msg.txt || { echo "  ^ in commit $sha"; fail=1; }
+          done
+          exit $fail
+
+  license:
+    name: REUSE compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fsfe/reuse-action@v5
+
+  static:
+    name: Format & analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: flutter analyze --fatal-infos --fatal-warnings
+
+  test:
+    name: Tests & web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter test
+      - run: flutter test integration_test -d flutter-tester
+      - run: flutter build web
+
+  docs:
+    name: Docs build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: pip install mkdocs-material
+      - run: mkdocs build --strict
+      - run: flutter pub get
+      - run: dart doc --output build/doc
