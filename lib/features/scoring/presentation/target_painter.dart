@@ -12,13 +12,22 @@ import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 /// shortest side of the paint area, centred.
 class TargetPainter extends CustomPainter {
   /// Creates a painter for [geometry], marking [shot] if non-null.
-  const TargetPainter({required this.geometry, required this.shot});
+  ///
+  /// While [isDragging] is true the marker is drawn in a distinct colour.
+  const TargetPainter({
+    required this.geometry,
+    required this.shot,
+    required this.isDragging,
+  });
 
   /// The target whose rings are drawn.
   final TargetGeometry geometry;
 
   /// The placed shot to mark, or `null`.
   final Shot? shot;
+
+  /// Whether the marker is currently picked up for dragging.
+  final bool isDragging;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -52,8 +61,9 @@ class TargetPainter extends CustomPainter {
       final markerCentre =
           centre + Offset(placedShot.dxMm * scale, placedShot.dyMm * scale);
       final radius = geometry.pelletRadiusMm * scale;
+      final fillColour = isDragging ? Colors.lightBlueAccent : Colors.amber;
       canvas
-        ..drawCircle(markerCentre, radius, Paint()..color = Colors.amber)
+        ..drawCircle(markerCentre, radius, Paint()..color = fillColour)
         ..drawCircle(
           markerCentre,
           radius,
@@ -67,5 +77,7 @@ class TargetPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(TargetPainter oldDelegate) =>
-      oldDelegate.shot != shot || oldDelegate.geometry != geometry;
+      oldDelegate.shot != shot ||
+      oldDelegate.isDragging != isDragging ||
+      oldDelegate.geometry != geometry;
 }
