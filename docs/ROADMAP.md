@@ -10,13 +10,14 @@ Treffpunkt is built spec-by-spec. Each item below becomes a spec in
 - [x] CI, licensing and documentation scaffolding
 
 ## Next
-- [ ] 0002 — Authentication: Google sign-in (Supabase); register / login / logout
-- [ ] 0003 — Data & RLS: competitions (public/private), invitations, results
-- [ ] 0004 — Competitions: create / invite / join; target sets per competition
-- [ ] 0005 — Shooting session: long-press to move a shot, swipe between targets,
-      completion & persistence (timestamp, discipline, shooter)
-- [ ] 0006 — Per-competition scoreboard (Supabase Realtime)
-- [ ] 0007 — Fair cross-competition ranking (public top-score list)
-- [ ] 0008 — Browse own & public results
-- [ ] 0009 — Responsive/adaptive polish; PWA install; store builds
-- [ ] 0010+ — More disciplines (25 m pistol, 50 m, …)
+- [x] 0002 — Move a placed shot: long-press to pick it up (colour change) and drag
+- [ ] 0003 — Authentication: Google sign-in (Supabase); register / login / logout
+- [ ] 0004 — Data & RLS: competitions (public/private), invitations, results
+- [ ] 0005 — Competitions: create / invite / join; target sets per competition
+- [ ] 0006 — Shooting session: swipe between targets, completion & persistence
+      (timestamp, discipline, shooter)
+- [ ] 0007 — Per-competition scoreboard (Supabase Realtime)
+- [ ] 0008 — Fair cross-competition ranking (public top-score list)
+- [ ] 0009 — Browse own & public results
+- [ ] 0010 — Responsive/adaptive polish; PWA install; store builds
+- [ ] 0011+ — More disciplines (25 m pistol, 50 m, …)

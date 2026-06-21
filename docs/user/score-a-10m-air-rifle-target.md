@@ -11,6 +11,11 @@ middle of the target.
 Tap where your shot landed. Treffpunkt places a marker the size of a 4.5 mm
 air-rifle pellet and shows the score.
 
+## Adjusting a shot
+Need to nudge a shot? **Press and hold** on the marker — it turns blue to show
+it is picked up — then **drag** it to the right spot and let go. The score
+updates as you move. A quick tap somewhere else simply places the shot there.
+
 ## How the score is decided
 - **Whole-ring score (1–10):** like reading a paper target with a gauge — a shot
   counts for a ring if the pellet touches it.
