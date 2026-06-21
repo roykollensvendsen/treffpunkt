@@ -44,7 +44,7 @@ C4Component
   Container(ui, "Presentation")
   Component(canvas, "TargetCanvas", "ConsumerWidget", "Tap to place a shot")
   Component(painter, "TargetPainter", "CustomPainter", "Draws rings + marker")
-  Component(provider, "placedShotProvider", "Riverpod", "Holds the placed shot")
+  Component(provider, "shotPlacementProvider", "Riverpod", "Placed shot + drag state")
   Component(scoring, "ScoringService", "Pure Dart", "Integer & decimal score")
   Component(geometry, "TargetGeometry", "Pure Dart", "Ring radii, caliber")
   Rel(canvas, provider, "Reads / writes")
