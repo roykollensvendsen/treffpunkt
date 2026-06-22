@@ -64,6 +64,9 @@ class FakeAuthRepository implements AuthRepository {
     _controller.add(status);
   }
 
+  /// Emits [error] on the auth stream (e.g. to simulate a failed sign-in).
+  void emitError(Object error) => _controller.addError(error);
+
   /// Closes the underlying stream controller.
   void dispose() => _controller.close();
 }

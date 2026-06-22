@@ -16,10 +16,33 @@ final authRepositoryProvider = Provider<AuthRepository>(
       throw UnimplementedError('authRepositoryProvider must be overridden'),
 );
 
-/// Streams the current [AuthStatus] (the authoritative signed-in/out truth).
-final authStateChangesProvider = StreamProvider<AuthStatus>(
-  (ref) => ref.watch(authRepositoryProvider).authStateChanges(),
-);
+/// Holds the current [AuthStatus] (the authoritative signed-in/out truth).
+///
+/// Seeds with the repository's current status so the UI always has a value
+/// immediately (no loading flash), then updates as the auth stream emits. Using
+/// a [Notifier] with a single subscription avoids a StreamProvider re-subscribe
+/// loop when the auth stream stays pending.
+class AuthStatusNotifier extends Notifier<AsyncValue<AuthStatus>> {
+  @override
+  AsyncValue<AuthStatus> build() {
+    final repository = ref.watch(authRepositoryProvider);
+    final subscription = repository.authStateChanges().listen(
+      (status) => state = AsyncData(status),
+      // An auth-stream error (e.g. a stale OAuth code) just means "not signed
+      // in"; fall back to the sign-in screen so the user can retry.
+      onError: (Object _, StackTrace _) =>
+          state = const AsyncData<AuthStatus>(SignedOut()),
+    );
+    ref.onDispose(subscription.cancel);
+    return AsyncData(repository.currentStatus);
+  }
+}
+
+/// The current authentication status as an [AsyncValue].
+final authStateChangesProvider =
+    NotifierProvider<AuthStatusNotifier, AsyncValue<AuthStatus>>(
+      AuthStatusNotifier.new,
+    );
 
 /// Holds the loading/error state of the current sign-in or sign-out action.
 ///

@@ -13,6 +13,11 @@ Future<void> main() async {
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
     publishableKey: AppConfig.supabasePublishableKey,
+    // Implicit flow returns the session in the redirect URL fragment, which is
+    // reliable for web OAuth; PKCE's code+verifier exchange is brittle on web.
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.implicit,
+    ),
   );
   runTreffpunkt(SupabaseAuthRepository(Supabase.instance.client.auth));
 }

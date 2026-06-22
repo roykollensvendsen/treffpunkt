@@ -22,6 +22,11 @@ All notable changes to this project are documented here. The format is based on
   'init')`) because `supabase_flutter` pulls in the Passkeys plugin whose Web
   SDK was missing. Vendored the SDK (`web/bundle.js`) and load it in
   `web/index.html`.
+- Google sign-in on web never reached the app: PKCE's code+verifier exchange is
+  unreliable on web. Switched to the implicit OAuth flow (session via the URL
+  fragment) and rebuilt the auth state as a single-subscription `Notifier`, so a
+  pending exchange no longer loops on a spinner and auth errors fall back to the
+  sign-in screen.
 - Development process: spec-driven workflow, TDD, Conventional Commits enforced
   by a commit-msg hook, strict lints (very_good_analysis), GPLv3 + REUSE
   licensing, and a MkDocs documentation site.
