@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/material.dart';
-import 'package:treffpunkt/features/scoring/domain/program.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
@@ -37,8 +36,7 @@ class ProgramPickerScreen extends StatelessWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) =>
-                          SeriesScreen(program: _firstStageProgram(definition)),
+                      builder: (_) => SeriesScreen(program: definition),
                     ),
                   ),
                 ),
@@ -55,13 +53,4 @@ String _subtitle(ProgramDefinition definition) {
       ? 'Rifle'
       : 'Pistol';
   return '$discipline · ${definition.totalShots} shots';
-}
-
-Program _firstStageProgram(ProgramDefinition definition) {
-  final stage = definition.stages.first;
-  return Program(
-    name: definition.name,
-    geometry: stage.geometry,
-    shotsPerSeries: stage.shotsPerSeries,
-  );
 }

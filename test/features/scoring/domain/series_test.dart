@@ -4,7 +4,6 @@
 
 // Unit tests for the Series value type (spec 0004).
 import 'package:flutter_test/flutter_test.dart';
-import 'package:treffpunkt/features/scoring/domain/program.dart';
 import 'package:treffpunkt/features/scoring/domain/series.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
@@ -55,13 +54,6 @@ void main() {
   test('moveShot with an invalid index throws a RangeError', () {
     final series = emptySeries().placeShot(shot);
     expect(() => series.moveShot(3, shot), throwsRangeError);
-  });
-
-  test('Program.newSeries makes an empty series of the right capacity', () {
-    final series = Program.airRifle10m.newSeries();
-    expect(series.capacity, 10);
-    expect(series.placedCount, 0);
-    expect(series.geometry.name, '10 m Air Rifle');
   });
 
   test('the shots list is unmodifiable and defensively copied', () {

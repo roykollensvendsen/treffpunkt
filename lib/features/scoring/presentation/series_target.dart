@@ -7,13 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_painter.dart';
-import 'package:treffpunkt/features/scoring/presentation/series_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
 /// Key for the tappable target area, used by widget and system tests.
 const Key seriesTargetKey = ValueKey<String>('seriesTarget');
 
-/// Interactive target for a series: tap to place the next shot, long-press a
-/// placed shot to pick it up and drag it, and zoom in for precise placement.
+/// Interactive target for the session's current series: tap to place a shot,
+/// long-press a placed shot to pick it up and drag it, and zoom in for
+/// precise placement.
 ///
 /// Zoom works with the on-target ＋ / − buttons (mouse / any device), a pinch on
 /// a touch screen, or a two-finger scroll on a trackpad. Pointer coordinates
@@ -43,9 +44,11 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
 
   @override
   Widget build(BuildContext context) {
-    final recording = ref.watch(seriesProvider);
-    final geometry = recording.series.geometry;
-    final shots = recording.series.shots;
+    final recording = ref.watch(sessionProvider);
+    final current = recording.current;
+    if (current == null) return const SizedBox.shrink();
+    final geometry = current.geometry;
+    final shots = current.shots;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -74,7 +77,7 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
                     onLongPressMoveUpdate: (details) =>
                         _drag(geometry, details.localPosition, side),
                     onLongPressEnd: (_) =>
-                        ref.read(seriesProvider.notifier).drop(),
+                        ref.read(sessionProvider.notifier).drop(),
                     child: CustomPaint(
                       size: Size.square(side),
                       painter: SeriesPainter(
@@ -130,7 +133,7 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
   }
 
   void _place(TargetGeometry geometry, Offset px, double side) =>
-      ref.read(seriesProvider.notifier).placeShot(_toShot(geometry, px, side));
+      ref.read(sessionProvider.notifier).placeShot(_toShot(geometry, px, side));
 
   void _tryPickUp(
     TargetGeometry geometry,
@@ -155,13 +158,13 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
     if (nearest >= 0 && nearestPx <= _pickUpRadiusMm * scale) {
       // Only pick the shot up; it stays put until the first drag update, so a
       // long-press near (not on) a marker does not teleport it to the press.
-      ref.read(seriesProvider.notifier).pickUp(nearest);
+      ref.read(sessionProvider.notifier).pickUp(nearest);
     }
   }
 
   void _drag(TargetGeometry geometry, Offset px, double side) {
-    if (!ref.read(seriesProvider).isDragging) return;
-    ref.read(seriesProvider.notifier).dragTo(_toShot(geometry, px, side));
+    if (!ref.read(sessionProvider).isDragging) return;
+    ref.read(sessionProvider.notifier).dragTo(_toShot(geometry, px, side));
   }
 }
 
