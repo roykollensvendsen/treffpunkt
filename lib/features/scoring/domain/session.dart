@@ -5,6 +5,7 @@
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/series.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 /// A recording of one shooting session: the chosen [program] and the sealed
 /// series so far, grouped by stage.
@@ -16,17 +17,20 @@ class Session {
     required this.program,
     required this.sealedSeriesByStage,
     this.metadata,
+    this.weapon,
   });
 
   /// Starts an empty session for [program], optionally tagged with [metadata]
-  /// (when and where it was shot — spec 0008).
+  /// (when and where it was shot — spec 0008) and the [weapon] it is shot with.
   factory Session.start(
     ProgramDefinition program, {
     SessionMetadata? metadata,
+    Weapon? weapon,
   }) {
     return Session._(
       program: program,
       metadata: metadata,
+      weapon: weapon,
       sealedSeriesByStage: List<List<Series>>.unmodifiable(
         List<List<Series>>.filled(program.stages.length, const <Series>[]),
       ),
@@ -38,6 +42,9 @@ class Session {
 
   /// When and where the session was shot, or `null` when not recorded.
   final SessionMetadata? metadata;
+
+  /// The weapon the session was shot with, or `null` if not recorded.
+  final Weapon? weapon;
 
   /// Sealed series grouped by stage index (outer length is
   /// `program.stages.length`); both levels are unmodifiable.
@@ -95,6 +102,7 @@ class Session {
     return Session._(
       program: program,
       metadata: metadata,
+      weapon: weapon,
       sealedSeriesByStage: List<List<Series>>.unmodifiable(next),
     );
   }
