@@ -61,7 +61,7 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter test
-      - run: flutter test integration_test -d flutter-tester
+      - run: sh tool/integration_test.sh
       - run: flutter build web
 
   docs:
