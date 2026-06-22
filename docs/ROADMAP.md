@@ -24,9 +24,10 @@ The shooter records a complete session on-device, with no network needed
       see each shot's score and the running total, then seal it when complete.
       Discipline-agnostic; shipped with 10 m air rifle. (Multiple series per
       stage / advancing to a fresh face follows when the `Session` root lands.)
-- [ ] 0007 — Weapons: a seeded reference catalogue (NSF classes + calibres) plus
+- [x] 0007 — Weapons: a seeded reference catalogue (NSF classes + calibres) plus
       the shooter's own weapons referencing it; pick a weapon per session; a
-      program accepts only its permitted weapon classes.
+      program accepts only its permitted weapon classes. (Model, in-memory store
+      and the reusable picker done; persistence and session wiring follow.)
 - [x] 0008 — Session metadata: date & time, and place captured before shooting —
       a human label plus optional coordinates, from device location or typed by
       hand (manual entry is a full alternative); real GPS deferred behind a

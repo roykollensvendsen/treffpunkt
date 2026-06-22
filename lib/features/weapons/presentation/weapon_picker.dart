@@ -1,0 +1,186 @@
+// SPDX-FileCopyrightText: 2026 Roy Kollen Svendsen
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
+import 'package:treffpunkt/features/weapons/data/weapons_store.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon_catalogue.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon_class.dart';
+
+/// Key for the "add weapon" control.
+const Key addWeaponKey = ValueKey<String>('addWeapon');
+
+/// Key for the new-weapon name field in the add dialog.
+const Key weaponNameFieldKey = ValueKey<String>('weaponNameField');
+
+/// Key for the save button in the add dialog.
+const Key saveWeaponKey = ValueKey<String>('saveWeapon');
+
+/// Lets the shooter pick the weapon for a session.
+///
+/// Lists the shooter's personal weapons permitted for [program] (see
+/// `Weapon.isPermittedFor`), highlights the chosen one, and offers an "add"
+/// control that creates a new weapon from a permitted catalogue class. The
+/// selection is written to `selectedWeaponProvider` and reported via
+/// [onSelected].
+class WeaponPicker extends ConsumerWidget {
+  /// Creates a picker for [program].
+  const WeaponPicker({required this.program, this.onSelected, super.key});
+
+  /// The program whose permitted weapons are offered.
+  final ProgramDefinition program;
+
+  /// Called with the weapon when the shooter selects one.
+  final ValueChanged<Weapon>? onSelected;
+
+  /// The catalogue classes permitted for [program], by discipline and label.
+  ///
+  /// Filters by **both** discipline and label: a label such as `'Air 4.5 mm'`
+  /// is shared by the air-rifle and air-pistol classes, so matching on label
+  /// alone would wrongly offer the air-pistol class to an air-rifle program.
+  List<WeaponClass> get _permittedClasses => WeaponCatalogue.all
+      .where(
+        (weaponClass) =>
+            weaponClass.discipline == program.discipline &&
+            (program.weaponClasses.isEmpty ||
+                program.weaponClasses.contains(weaponClass.label)),
+      )
+      .toList();
+
+  void _select(WidgetRef ref, Weapon weapon) {
+    ref.read(selectedWeaponProvider.notifier).select(weapon);
+    onSelected?.call(weapon);
+  }
+
+  Future<void> _addWeapon(BuildContext context, WidgetRef ref) async {
+    final classes = _permittedClasses;
+    if (classes.isEmpty) return;
+    final weapon = await showDialog<Weapon>(
+      context: context,
+      builder: (_) => _AddWeaponDialog(classes: classes),
+    );
+    if (weapon == null) return;
+    ref.read(weaponsProvider.notifier).add(weapon);
+    _select(ref, weapon);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(selectedWeaponProvider);
+    final permitted = ref
+        .watch(weaponsProvider)
+        .where((weapon) => weapon.isPermittedFor(program))
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (permitted.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('No weapon yet for this program.'),
+          )
+        else
+          for (final weapon in permitted)
+            ListTile(
+              key: ValueKey<String>('weapon-${weapon.id}'),
+              title: Text(weapon.name),
+              subtitle: Text(weapon.classLabel),
+              trailing: weapon == selected
+                  ? const Icon(Icons.check_circle)
+                  : null,
+              selected: weapon == selected,
+              onTap: () => _select(ref, weapon),
+            ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            key: addWeaponKey,
+            icon: const Icon(Icons.add),
+            label: const Text('Add weapon'),
+            onPressed: () => _addWeapon(context, ref),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Dialog that creates a new weapon from a permitted catalogue class.
+class _AddWeaponDialog extends StatefulWidget {
+  const _AddWeaponDialog({required this.classes});
+
+  final List<WeaponClass> classes;
+
+  @override
+  State<_AddWeaponDialog> createState() => _AddWeaponDialogState();
+}
+
+class _AddWeaponDialogState extends State<_AddWeaponDialog> {
+  late final TextEditingController _name = TextEditingController();
+  late WeaponClass _selectedClass = widget.classes.first;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final name = _name.text.trim();
+    if (name.isEmpty) return;
+    final weapon = Weapon.fromClass(
+      _selectedClass,
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      name: name,
+    );
+    Navigator.of(context).pop(weapon);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add weapon'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            key: weaponNameFieldKey,
+            controller: _name,
+            decoration: const InputDecoration(labelText: 'Name'),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<WeaponClass>(
+            initialValue: _selectedClass,
+            decoration: const InputDecoration(labelText: 'Class'),
+            items: <DropdownMenuItem<WeaponClass>>[
+              for (final weaponClass in widget.classes)
+                DropdownMenuItem<WeaponClass>(
+                  value: weaponClass,
+                  child: Text(weaponClass.label),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) setState(() => _selectedClass = value);
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          key: saveWeaponKey,
+          onPressed: _save,
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
