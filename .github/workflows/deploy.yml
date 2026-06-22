@@ -1,0 +1,49 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.44.2"
+
+jobs:
+  deploy:
+    name: Build & deploy
+    runs-on: ubuntu-latest
+    # Only deploy once the Supabase config variables are set (see
+    # docs/dev/deploy.md); otherwise skip to avoid publishing a broken build.
+    if: ${{ vars.SUPABASE_URL != '' }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Build web
+        run: |
+          flutter build web --release \
+            --base-href /treffpunkt/ \
+            --dart-define=SUPABASE_URL='${{ vars.SUPABASE_URL }}' \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY='${{ vars.SUPABASE_PUBLISHABLE_KEY }}'
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+      - id: deployment
+        uses: actions/deploy-pages@v4
