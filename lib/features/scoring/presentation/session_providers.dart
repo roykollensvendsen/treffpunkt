@@ -9,6 +9,7 @@ import 'package:treffpunkt/features/scoring/domain/series.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 /// The program being recorded on the current screen.
 ///
@@ -26,6 +27,12 @@ final currentProgramDefinitionProvider = Provider<ProgramDefinition>(
 final currentSessionMetadataProvider = Provider<SessionMetadata?>(
   (ref) => null,
 );
+
+/// The weapon chosen for the current session, or `null` when none was picked.
+///
+/// Overridden by the screen that mounts the session with the weapon chosen in
+/// the setup step (spec 0008 wiring); defaults to `null` (no weapon).
+final currentWeaponProvider = Provider<Weapon?>((ref) => null);
 
 /// The app's [LocationService].
 ///
@@ -69,7 +76,12 @@ class SessionNotifier extends Notifier<SessionRecording> {
   SessionRecording build() {
     final program = ref.watch(currentProgramDefinitionProvider);
     final metadata = ref.watch(currentSessionMetadataProvider);
-    final session = Session.start(program, metadata: metadata);
+    final weapon = ref.watch(currentWeaponProvider);
+    final session = Session.start(
+      program,
+      metadata: metadata,
+      weapon: weapon,
+    );
     return SessionRecording(session: session, current: session.newSeries());
   }
 

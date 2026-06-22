@@ -13,6 +13,8 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon_class.dart';
 
 // A small two-stage program on two faces, for the advance test.
 const ProgramDefinition _twoStage = ProgramDefinition(
@@ -159,13 +161,52 @@ void main() {
       expect(find.byKey(sessionCompleteKey), findsOneWidget);
       expect(find.byKey(sessionMetadataKey), findsNothing);
     });
+
+    testWidgets('appends the chosen weapon name to the caption', (
+      tester,
+    ) async {
+      final rifle = Weapon.fromClass(
+        const WeaponClass(
+          discipline: Discipline.rifle,
+          caliberLabel: '4.5 mm',
+          label: 'Air 4.5 mm',
+        ),
+        id: 'r1',
+        name: 'My air rifle',
+      );
+      await tester.pumpWidget(
+        _app(
+          ProgramCatalogue.airRifle10m,
+          metadata: SessionMetadata(
+            capturedAt: DateTime(2026, 6, 21, 14, 30),
+            place: const Place(label: 'Løvenskiold skytebane'),
+          ),
+          weapon: rifle,
+        ),
+      );
+      await completeAirRifle(tester);
+
+      final caption = tester.widget<Text>(find.byKey(sessionMetadataKey));
+      expect(
+        caption.data,
+        '2026-06-21 14:30 · Løvenskiold skytebane · My air rifle',
+      );
+    });
   });
 }
 
-Widget _app(ProgramDefinition program, {SessionMetadata? metadata}) {
+Widget _app(
+  ProgramDefinition program, {
+  SessionMetadata? metadata,
+  Weapon? weapon,
+}) {
   return ProviderScope(
     child: MaterialApp(
-      home: SeriesScreen(program: program, metadata: metadata),
+      home: SeriesScreen(
+        program: program,
+        metadata: metadata,
+        weapon: weapon,
+      ),
     ),
   );
 }

@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Choose the weapon in the session-setup step: the setup screen now lists the
+  weapons permitted for the chosen program, the picked gun travels with the
+  session, and its name shows on the scorecard caption.
 - A guided multi-stage flow: choosing a program runs the whole thing — you shoot
   each series, the app advances to a fresh face (and switches the target between
   stages, e.g. finpistol presisjon → duell), shows a stage/series counter and the

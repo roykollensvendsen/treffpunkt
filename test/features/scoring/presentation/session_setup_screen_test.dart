@@ -14,6 +14,9 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
+import 'package:treffpunkt/features/weapons/data/weapons_store.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon_class.dart';
 
 import '../fake_location_service.dart';
 
@@ -130,5 +133,53 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(seriesTargetKey), findsOneWidget);
+  });
+
+  // Reads the weapon threaded into the pushed SeriesScreen scope, so the gun
+  // carried into the session can be asserted exactly.
+  Weapon? pushedWeapon(WidgetTester tester) {
+    final context = tester.element(find.byKey(seriesTargetKey));
+    return ProviderScope.containerOf(context).read(currentWeaponProvider);
+  }
+
+  testWidgets('picking a weapon threads it into the recorded session', (
+    tester,
+  ) async {
+    final rifle = Weapon.fromClass(
+      const WeaponClass(
+        discipline: Discipline.rifle,
+        caliberLabel: '4.5 mm',
+        label: 'Air 4.5 mm',
+      ),
+      id: 'r1',
+      name: 'My air rifle',
+    );
+    final container = ProviderContainer(
+      overrides: [
+        locationServiceProvider.overrideWithValue(FakeLocationService()),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.read(weaponsProvider.notifier).add(rifle);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: SessionSetupScreen(
+            program: ProgramCatalogue.airRifle10m,
+            now: clock,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('My air rifle'));
+    await tester.pump();
+    await tester.tap(find.byKey(sessionConfirmKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(seriesTargetKey), findsOneWidget);
+    expect(pushedWeapon(tester), rifle);
   });
 }
