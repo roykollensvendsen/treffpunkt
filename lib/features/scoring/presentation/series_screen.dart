@@ -29,6 +29,39 @@ const Key sessionCompleteKey = ValueKey<String>('sessionComplete');
 /// Key for the captured date / place caption on the scorecard, used by tests.
 const Key sessionMetadataKey = ValueKey<String>('sessionMetadata');
 
+/// Width (logical px) above which the shooting screen lays the target and the
+/// shot/score column out side by side instead of stacked.
+const double _sideBySideBreakpoint = 900;
+
+/// Comfortable maximum content width (logical px) so nothing stretches
+/// edge-to-edge on a wide desktop, tablet or browser window. The stacked
+/// layouts cap to this; the side-by-side layout is allowed a little more room.
+const double _maxContentWidth = 700;
+
+/// Maximum content width for the wide, side-by-side shooting layout.
+const double _maxWideContentWidth = 960;
+
+/// Centres [child] and caps it to [maxWidth] so it never stretches full-width.
+class _CenteredContent extends StatelessWidget {
+  const _CenteredContent({
+    required this.child,
+    this.maxWidth = _maxContentWidth,
+  });
+
+  final Widget child;
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: child,
+      ),
+    );
+  }
+}
+
 /// A one-line "date · place · weapon" caption, or `null` when there is nothing
 /// to show.
 ///
@@ -149,34 +182,24 @@ class SessionView extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _MetaRow(
-                discipline: program.discipline,
-                caliberMm: current.geometry.caliberMm,
-              ),
-              const SizedBox(height: 8),
-              _StageHeader(program: program, session: session),
-              const SizedBox(height: 12),
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 360),
-                  child: const AspectRatio(
-                    aspectRatio: 1,
-                    child: SeriesTarget(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _ShotsList(
-                placed: current.placedCount,
-                capacity: current.capacity,
-                score: seriesScore,
-              ),
-              const SizedBox(height: 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= _sideBySideBreakpoint;
+            final header = _MetaRow(
+              discipline: program.discipline,
+              caliberMm: current.geometry.caliberMm,
+            );
+            final stageHeader = _StageHeader(
+              program: program,
+              session: session,
+            );
+            const target = AspectRatio(aspectRatio: 1, child: SeriesTarget());
+            final shots = _ShotsList(
+              placed: current.placedCount,
+              capacity: current.capacity,
+              score: seriesScore,
+            );
+            final totals = <Widget>[
               _SeriesTotalCard(score: seriesScore),
               if (multiSeries) ...[
                 const SizedBox(height: 8),
@@ -186,12 +209,112 @@ class SessionView extends ConsumerWidget {
                   innerTens: runningInnerTens,
                 ),
               ],
-              const SizedBox(height: 12),
-              _Legend(hasInnerTen: current.geometry.hasInnerTen),
-            ],
-          ),
+            ];
+            final legend = _Legend(hasInnerTen: current.geometry.hasInnerTen);
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: _CenteredContent(
+                maxWidth: wide ? _maxWideContentWidth : _maxContentWidth,
+                child: wide
+                    ? _wideLayout(
+                        header: header,
+                        stageHeader: stageHeader,
+                        target: target,
+                        shots: shots,
+                        totals: totals,
+                        legend: legend,
+                      )
+                    : _stackedLayout(
+                        header: header,
+                        stageHeader: stageHeader,
+                        target: target,
+                        shots: shots,
+                        totals: totals,
+                        legend: legend,
+                      ),
+              ),
+            );
+          },
         ),
       ),
+    );
+  }
+
+  /// The narrow, single-column layout (the phone/tablet portrait view).
+  Widget _stackedLayout({
+    required Widget header,
+    required Widget stageHeader,
+    required Widget target,
+    required Widget shots,
+    required List<Widget> totals,
+    required Widget legend,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        header,
+        const SizedBox(height: 8),
+        stageHeader,
+        const SizedBox(height: 12),
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: target,
+          ),
+        ),
+        const SizedBox(height: 16),
+        shots,
+        const SizedBox(height: 16),
+        ...totals,
+        const SizedBox(height: 12),
+        legend,
+      ],
+    );
+  }
+
+  /// The wide layout: target on the left, shots + totals on the right, with the
+  /// meta/stage header above and the legend below spanning the full width.
+  Widget _wideLayout({
+    required Widget header,
+    required Widget stageHeader,
+    required Widget target,
+    required Widget shots,
+    required List<Widget> totals,
+    required Widget legend,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        header,
+        const SizedBox(height: 8),
+        stageHeader,
+        const SizedBox(height: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: target,
+              ),
+            ),
+            const SizedBox(width: 24),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  shots,
+                  const SizedBox(height: 16),
+                  ...totals,
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        legend,
+      ],
     );
   }
 }
@@ -496,35 +619,37 @@ class _SessionScorecard extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Session complete',
-                key: sessionCompleteKey,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (caption != null) ...[
-                const SizedBox(height: 4),
+          child: _CenteredContent(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 Text(
-                  caption,
-                  key: sessionMetadataKey,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  'Session complete',
+                  key: sessionCompleteKey,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+                if (caption != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    caption,
+                    key: sessionMetadataKey,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                for (var i = 0; i < program.stages.length; i++)
+                  _StageScoreRow(
+                    name: program.stages[i].name,
+                    score: score.stages[i],
+                  ),
+                const SizedBox(height: 16),
+                _GrandTotalCard(score: score),
               ],
-              const SizedBox(height: 12),
-              for (var i = 0; i < program.stages.length; i++)
-                _StageScoreRow(
-                  name: program.stages[i].name,
-                  score: score.stages[i],
-                ),
-              const SizedBox(height: 16),
-              _GrandTotalCard(score: score),
-            ],
+            ),
           ),
         ),
       ),

@@ -175,62 +175,67 @@ class _SessionSetupScreenState extends ConsumerState<SessionSetupScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.program.name)),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Når og hvor',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 700),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Når og hvor',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _DateTimeField(
+                    value: _formattedDateTime,
+                    onTap: _editDateTime,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    key: placeFieldKey,
+                    controller: _placeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Sted',
+                      hintText: 'Skytebane, bane eller lag',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: useMyLocationKey,
+                      onPressed: _locating ? null : _useMyLocation,
+                      icon: const Icon(Icons.my_location),
+                      label: const Text('Bruk min posisjon'),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Våpen',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  WeaponPicker(
+                    program: widget.program,
+                    onSelected: (weapon) => setState(() => _weapon = weapon),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    key: sessionConfirmKey,
+                    onPressed: _confirm,
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Start skyting'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              _DateTimeField(
-                value: _formattedDateTime,
-                onTap: _editDateTime,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                key: placeFieldKey,
-                controller: _placeController,
-                decoration: const InputDecoration(
-                  labelText: 'Sted',
-                  hintText: 'Skytebane, bane eller lag',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  key: useMyLocationKey,
-                  onPressed: _locating ? null : _useMyLocation,
-                  icon: const Icon(Icons.my_location),
-                  label: const Text('Bruk min posisjon'),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Våpen',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              WeaponPicker(
-                program: widget.program,
-                onSelected: (weapon) => setState(() => _weapon = weapon),
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                key: sessionConfirmKey,
-                onPressed: _confirm,
-                icon: const Icon(Icons.play_arrow),
-                label: const Text('Start skyting'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

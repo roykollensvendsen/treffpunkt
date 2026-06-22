@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- The app now makes proper use of a wide screen. On a desktop, tablet or
+  browser window the content no longer stretches edge-to-edge: it is held to a
+  comfortable reading width and centred. On a wide shooting screen the target
+  and the shot list / score now sit side by side, so you can see your shots
+  next to the face without scrolling. On a phone everything looks exactly as
+  before — one tidy column.
 - Spec 0018 and the 300 m rifle target: Treffpunkt now knows the official ISSF
   300 m rifle face (the long-range full-bore target) — its ten rings, the inner
   ten ("X"), the black and the centre-fire gauge edge, sourced to the ISSF rules.

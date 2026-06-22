@@ -82,6 +82,15 @@ offset in mm; the presentation layer converts screen taps to millimetres and
 back. Keeping the domain in real-world units makes it independent of screen size
 and trivial to test.
 
+## Responsive layout
+
+Every screen caps its content to a comfortable width and centres it, so nothing
+stretches edge-to-edge on a wide desktop, tablet or browser window. The shooting
+screen (`SessionView`) goes a step further: a `LayoutBuilder` switches between a
+single stacked column on narrow screens and, above a ~900 px breakpoint, a
+side-by-side layout with the target on the left and the shot list / totals on
+the right. The narrow layout is the phone view and is left unchanged.
+
 ## Authentication (spec 0003)
 
 Sign-in sits behind an `AuthRepository` seam in `lib/features/auth`:

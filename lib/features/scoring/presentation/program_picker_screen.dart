@@ -84,38 +84,43 @@ class ProgramPickerScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Choose a program'), actions: actions),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (saved != null)
-              Card(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                child: ListTile(
-                  key: resumeSessionKey,
-                  leading: const Icon(Icons.play_circle_outline),
-                  title: const Text('Fortsett økt'),
-                  subtitle: Text(_resumeSubtitle(saved)),
-                  trailing: IconButton(
-                    key: discardSessionKey,
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Forkast',
-                    onPressed: () => unawaited(_discard(ref)),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 700),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                if (saved != null)
+                  Card(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    child: ListTile(
+                      key: resumeSessionKey,
+                      leading: const Icon(Icons.play_circle_outline),
+                      title: const Text('Fortsett økt'),
+                      subtitle: Text(_resumeSubtitle(saved)),
+                      trailing: IconButton(
+                        key: discardSessionKey,
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: 'Forkast',
+                        onPressed: () => unawaited(_discard(ref)),
+                      ),
+                      onTap: () => unawaited(_resume(context, ref, saved)),
+                    ),
                   ),
-                  onTap: () => unawaited(_resume(context, ref, saved)),
-                ),
-              ),
-            for (final definition in ProgramCatalogue.all)
-              Card(
-                child: ListTile(
-                  key: ValueKey<String>('program-${definition.name}'),
-                  title: Text(definition.name),
-                  subtitle: Text(_subtitle(definition)),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () =>
-                      unawaited(_startProgram(context, ref, definition)),
-                ),
-              ),
-          ],
+                for (final definition in ProgramCatalogue.all)
+                  Card(
+                    child: ListTile(
+                      key: ValueKey<String>('program-${definition.name}'),
+                      title: Text(definition.name),
+                      subtitle: Text(_subtitle(definition)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () =>
+                          unawaited(_startProgram(context, ref, definition)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
