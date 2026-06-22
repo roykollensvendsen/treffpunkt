@@ -14,6 +14,7 @@ class TargetGeometry {
     required this.caliberMm,
     required this.ringOuterDiametersMm,
     required this.blackBullDiameterMm,
+    this.innerTenDiameterMm,
   });
 
   /// The ISSF / NSF 10 m air-rifle target (see spec 0001).
@@ -21,7 +22,8 @@ class TargetGeometry {
     : name = '10 m Air Rifle',
       caliberMm = 4.5,
       ringOuterDiametersMm = _airRifle10mRingDiametersMm,
-      blackBullDiameterMm = 30.5;
+      blackBullDiameterMm = 30.5,
+      innerTenDiameterMm = null;
 
   /// Human-readable discipline name, e.g. `'10 m Air Rifle'`.
   final String name;
@@ -36,11 +38,40 @@ class TargetGeometry {
   /// Diameter (mm) of the central aiming black ("blink").
   final double blackBullDiameterMm;
 
+  /// Diameter (mm) of the inner-ten ("X") ring used as a leaderboard tie-break,
+  /// or `null` when the discipline does not record an inner ten. The 10 m air
+  /// rifle target here does not (its tie-break is the decimal score); pistol
+  /// targets do (spec 0005).
+  final double? innerTenDiameterMm;
+
   /// Radius of the pellet/bullet in millimetres.
   double get pelletRadiusMm => caliberMm / 2;
 
+  /// Whether this target records an inner ten ("X").
+  bool get hasInnerTen => innerTenDiameterMm != null;
+
+  /// Centre-distance (mm) within which a shot's centre counts as an inner ten,
+  /// or `null` when [hasInnerTen] is false. Uses the same gauge "next ring
+  /// outward" rule as [scoringRadiusMm].
+  double? get innerTenScoringRadiusMm {
+    final diameter = innerTenDiameterMm;
+    return diameter == null ? null : diameter / 2 + pelletRadiusMm;
+  }
+
   /// The innermost (highest-value) ring number, e.g. 10 for air rifle.
   int get highestRing => ringOuterDiametersMm.length;
+
+  /// Whether the rings are evenly spaced (a constant diameter step), which the
+  /// decimal scoring model assumes (spec 0001). True for 10 m air rifle.
+  bool get hasUniformRings {
+    if (ringOuterDiametersMm.length < 2) return true;
+    final step = ringOuterDiametersMm[0] - ringOuterDiametersMm[1];
+    for (var i = 1; i < ringOuterDiametersMm.length - 1; i++) {
+      final gap = ringOuterDiametersMm[i] - ringOuterDiametersMm[i + 1];
+      if ((gap - step).abs() > 1e-9) return false;
+    }
+    return true;
+  }
 
   /// Outer diameter (mm) of [ring], where ring 1 is the outermost.
   double outerDiameterMm(int ring) {

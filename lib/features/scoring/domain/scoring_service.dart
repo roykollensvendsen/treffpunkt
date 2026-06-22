@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:treffpunkt/features/scoring/domain/series.dart';
+import 'package:treffpunkt/features/scoring/domain/series_score.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 
@@ -28,8 +30,13 @@ class ScoringService {
 
   /// Decimal score (e.g. 10.4) for [shot], capped at 10.9, or 0.0 for a miss.
   ///
-  /// Assumes evenly spaced rings, which holds for 10 m air rifle (spec 0001).
+  /// Assumes evenly spaced rings, which holds for 10 m air rifle (spec 0001);
+  /// the assert guards against misuse on a non-uniform target (e.g. pistol).
   double decimalScore(TargetGeometry geometry, Shot shot) {
+    assert(
+      geometry.hasUniformRings,
+      'decimalScore assumes evenly spaced rings (spec 0001)',
+    );
     final d = shot.distanceMm;
     if (d > geometry.maxScoringRadiusMm) {
       return 0;
@@ -44,5 +51,38 @@ class ScoringService {
     final maxTenths = highest * 10 + 9; // 109 -> 10.9 for air rifle
     final tenths = (referenceTenths - step).clamp(0, maxTenths);
     return tenths / 10;
+  }
+
+  /// Whether [shot] counts as an inner ten ("X") on [geometry].
+  ///
+  /// Always false when the geometry records no inner ten
+  /// ([TargetGeometry.hasInnerTen] is false).
+  bool isInnerTen(TargetGeometry geometry, Shot shot) {
+    final radius = geometry.innerTenScoringRadiusMm;
+    return radius != null && shot.distanceMm <= radius;
+  }
+
+  /// Scores every placed shot in [series], plus the running total and maximum.
+  SeriesScore scoreSeries(Series series) {
+    final geometry = series.geometry;
+    final shotScores = <ShotScore>[
+      for (final shot in series.shots)
+        ShotScore(
+          ring: integerScore(geometry, shot),
+          isInnerTen: isInnerTen(geometry, shot),
+        ),
+    ];
+    var total = 0;
+    var innerTens = 0;
+    for (final shotScore in shotScores) {
+      total += shotScore.ring;
+      if (shotScore.isInnerTen) innerTens++;
+    }
+    return SeriesScore(
+      shots: List<ShotScore>.unmodifiable(shotScores),
+      total: total,
+      innerTens: innerTens,
+      maxTotal: series.capacity * geometry.highestRing,
+    );
   }
 }
