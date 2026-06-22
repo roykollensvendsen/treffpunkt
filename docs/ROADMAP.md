@@ -31,8 +31,9 @@ The shooter records a complete session on-device, with no network needed
       now travels with the session; persistence follows in 0009.)
 - [x] 0008 — Session metadata: date & time, and place captured before shooting —
       a human label plus optional coordinates, from device location or typed by
-      hand (manual entry is a full alternative); real GPS deferred behind a
-      `LocationService` interface (ADR-0015).
+      hand (manual entry is a full alternative). Real GPS now reads through a
+      `geolocator`-backed `LocationService` (web + Android + iOS) behind the
+      ADR-0015 interface, degrading to manual entry on any denial or error.
 - [x] 0009 — Offline-first persistence: create, complete and store a whole
       session locally with no network; it survives an app restart — the
       in-progress series included — and a "Fortsett økt" card resumes it. Stored

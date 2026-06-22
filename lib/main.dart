@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/bootstrap.dart';
 import 'package:treffpunkt/config/app_config.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
+import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 
 Future<void> main() async {
@@ -25,5 +26,6 @@ Future<void> main() async {
   runTreffpunkt(
     SupabaseAuthRepository(Supabase.instance.client.auth),
     sessionStore: SharedPreferencesSessionStore(prefs),
+    locationService: const GeolocatorLocationService(),
   );
 }

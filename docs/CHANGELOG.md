@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Use your device's location to fill the place in the session-setup step:
+  "Bruk min posisjon" now reads a real GPS fix (browser, Android and iOS) via the
+  `geolocator` plugin, asking for permission the first time. Typing the place by
+  hand stays a full alternative — if location is off, the permission is denied or
+  anything goes wrong, the app quietly falls back to manual entry. Browser
+  geolocation needs a secure (HTTPS) page, which the deployed app and `localhost`
+  both provide.
 - Offline session persistence: a whole session — program, weapon, place and time,
   every sealed series and the shots already placed on the series in progress — is
   saved on-device with no network and survives closing the app. Reopening shows a

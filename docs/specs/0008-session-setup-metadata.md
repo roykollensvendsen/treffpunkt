@@ -125,6 +125,14 @@ implementation is the follow-up in ADR-0015.
   and a picked time onto a base moment — a new date and time replace both;
   changing only the time keeps the date; changing only the date keeps the time;
   passing neither returns the base unchanged; the base's UTC/local mode is kept.
+- `geolocator_location_service_test`: the `geolocator`-backed
+  `GeolocatorLocationService`, driven through a fake `GeolocatorGateway` (no real
+  GPS), maps each outcome correctly — services disabled → `null`; permission
+  `denied` → `null`; `deniedForever` → `null`; initially `denied` then granted on
+  request → it requests once and returns the fix; granted (`whileInUse` /
+  `always`) with a position → a `DeviceLocation` carrying that lat/lng; the
+  gateway throwing → `null` (graceful, never rethrows). The trivial
+  `RealGeolocatorGateway` plugin binding is not unit-tested.
 
 ### Widget tests
 
@@ -153,11 +161,14 @@ implementation is the follow-up in ADR-0015.
 
 ## Open questions
 
-- Real GPS is deferred: this ships the `LocationService` abstraction, the manual
-  path in full, and a default "unavailable" implementation. Dropping in
-  `geolocator` (web + mobile) with its native permission setup is the follow-up
-  recorded in ADR-0015; until then "Bruk min posisjon" reports no fix and the
-  shooter types the place.
+- Real GPS is now wired (no longer deferred): the follow-up from ADR-0015
+  landed a `geolocator`-backed `GeolocatorLocationService` (web + Android + iOS)
+  behind the same `LocationService` interface, with its native permission setup
+  (Android manifest, iOS `Info.plist`; web uses the browser API over HTTPS).
+  "Bruk min posisjon" now reads a real fix where granted and still degrades to
+  manual entry on any denial, timeout or error. The original
+  `LocationService` abstraction, the full manual path and the default
+  "unavailable" implementation (used by tests) are unchanged.
 - Persisting the metadata with the session and surfacing it on upload is spec
   0009 (offline-first persistence); this spec only attaches it in memory.
 - A place picker / map and saved favourite ranges are later polish.
