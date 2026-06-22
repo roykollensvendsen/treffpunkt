@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Offline session persistence: a whole session — program, weapon, place and time,
+  every sealed series and the shots already placed on the series in progress — is
+  saved on-device with no network and survives closing the app. Reopening shows a
+  "Fortsett økt" card that restores the session to exactly where you left it.
+  Storage sits behind a `SessionStore` interface (`shared_preferences`); target
+  geometry is rebuilt from the program catalogue, not stored.
 - Choose the weapon in the session-setup step: the setup screen now lists the
   weapons permitted for the chosen program, the picked gun travels with the
   session, and its name shows on the scorecard caption.

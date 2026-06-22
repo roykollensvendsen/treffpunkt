@@ -138,4 +138,16 @@ abstract final class ProgramCatalogue {
     grovpistol25m,
     freePistol50m,
   ];
+
+  /// The program whose unique [name] matches, or `null` when none does.
+  ///
+  /// Used to resolve a stored session back to its definition (spec 0009): a
+  /// recording keeps the program name, not the geometry, so the canonical
+  /// stage geometries are always rebuilt from here.
+  static ProgramDefinition? byName(String name) {
+    for (final definition in all) {
+      if (definition.name == name) return definition;
+    }
+    return null;
+  }
 }

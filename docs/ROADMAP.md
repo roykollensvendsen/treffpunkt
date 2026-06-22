@@ -33,8 +33,11 @@ The shooter records a complete session on-device, with no network needed
       a human label plus optional coordinates, from device location or typed by
       hand (manual entry is a full alternative); real GPS deferred behind a
       `LocationService` interface (ADR-0015).
-- [ ] 0009 — Offline-first persistence: create, complete and store a whole
-      session locally with no network; it survives an app restart.
+- [x] 0009 — Offline-first persistence: create, complete and store a whole
+      session locally with no network; it survives an app restart — the
+      in-progress series included — and a "Fortsett økt" card resumes it. Stored
+      behind a `SessionStore` interface (`shared_preferences`, ADR-0016); geometry
+      is rebuilt from the catalogue, not serialized.
 
 ## Increment 2 — competitions, sync and scoreboards
 - [ ] 0010 — Data & RLS: Supabase schema for profiles, competitions

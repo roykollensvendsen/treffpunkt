@@ -56,10 +56,15 @@ String? _metadataCaption(SessionMetadata? metadata, Weapon? weapon) {
 class SeriesScreen extends StatelessWidget {
   /// Creates the screen for [program], optionally tagged with the [metadata]
   /// captured at setup, the [weapon] it is shot with, and app-bar [actions].
+  ///
+  /// Pass [restored] to resume a saved recording (spec 0009): the session then
+  /// starts from it instead of a fresh `Session.start`, with the program /
+  /// metadata / weapon taken from the restored session.
   const SeriesScreen({
     required this.program,
     this.metadata,
     this.weapon,
+    this.restored,
     this.actions,
     super.key,
   });
@@ -73,6 +78,9 @@ class SeriesScreen extends StatelessWidget {
   /// The weapon this session is shot with, or `null` when none was chosen.
   final Weapon? weapon;
 
+  /// A saved recording to resume into, or `null` to start fresh (spec 0009).
+  final SessionRecording? restored;
+
   /// Extra actions shown in the app bar (e.g. a sign-out button).
   final List<Widget>? actions;
 
@@ -83,6 +91,7 @@ class SeriesScreen extends StatelessWidget {
         currentProgramDefinitionProvider.overrideWithValue(program),
         currentSessionMetadataProvider.overrideWithValue(metadata),
         currentWeaponProvider.overrideWithValue(weapon),
+        restoredRecordingProvider.overrideWithValue(restored),
         sessionProvider.overrideWith(SessionNotifier.new),
       ],
       child: SessionView(actions: actions),
