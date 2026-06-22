@@ -2,31 +2,108 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
+import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
+
+/// Key for the "resume saved session" card, used by tests.
+const Key resumeSessionKey = ValueKey<String>('resumeSession');
+
+/// Key for the "discard saved session" action on the resume card (for tests).
+const Key discardSessionKey = ValueKey<String>('discardSession');
 
 /// Lets the shooter choose which official program to shoot, then opens the
 /// session setup step (date, time and place) before shooting (spec 0008).
 ///
-/// For now a program opens its first stage as a single series; the full guided
-/// multi-stage flow follows.
-class ProgramPickerScreen extends StatelessWidget {
+/// When a saved session is stored locally (spec 0009), a "Fortsett økt" card at
+/// the top reopens the shooting screen restored to the exact saved state — the
+/// in-progress series included.
+class ProgramPickerScreen extends ConsumerWidget {
   /// Creates the picker with optional app-bar [actions].
   const ProgramPickerScreen({this.actions, super.key});
 
   /// Extra actions shown in the app bar (e.g. a sign-out button).
   final List<Widget>? actions;
 
+  /// Reopens the saved session, then refreshes the resume card on return.
+  ///
+  /// The card is fed by [savedRecordingProvider], a one-shot read of the store.
+  /// A resumed session keeps persisting (and clears the store when complete),
+  /// so on return we re-read the store to drop a finished session's card or
+  /// pick up a still-in-progress one — the store is the single source of truth.
+  Future<void> _resume(
+    BuildContext context,
+    WidgetRef ref,
+    SessionRecording recording,
+  ) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SeriesScreen(
+          program: recording.session.program,
+          metadata: recording.session.metadata,
+          weapon: recording.session.weapon,
+          restored: recording,
+        ),
+      ),
+    );
+    ref.invalidate(savedRecordingProvider);
+  }
+
+  /// Opens [definition]'s setup step, then refreshes the resume card on return.
+  ///
+  /// The setup flow may save a new in-progress recording (the shooter places a
+  /// shot and leaves), so re-read the store to surface it as a resume card.
+  Future<void> _startProgram(
+    BuildContext context,
+    WidgetRef ref,
+    ProgramDefinition definition,
+  ) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SessionSetupScreen(program: definition),
+      ),
+    );
+    ref.invalidate(savedRecordingProvider);
+  }
+
+  /// Discards the saved session (spec 0009 req 4) and refreshes the card away.
+  Future<void> _discard(WidgetRef ref) async {
+    await ref.read(sessionStoreProvider).clear();
+    ref.invalidate(savedRecordingProvider);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final saved = ref.watch(savedRecordingProvider).value;
     return Scaffold(
       appBar: AppBar(title: const Text('Choose a program'), actions: actions),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (saved != null)
+              Card(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                child: ListTile(
+                  key: resumeSessionKey,
+                  leading: const Icon(Icons.play_circle_outline),
+                  title: const Text('Fortsett økt'),
+                  subtitle: Text(_resumeSubtitle(saved)),
+                  trailing: IconButton(
+                    key: discardSessionKey,
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Forkast',
+                    onPressed: () => unawaited(_discard(ref)),
+                  ),
+                  onTap: () => unawaited(_resume(context, ref, saved)),
+                ),
+              ),
             for (final definition in ProgramCatalogue.all)
               Card(
                 child: ListTile(
@@ -34,11 +111,8 @@ class ProgramPickerScreen extends StatelessWidget {
                   title: Text(definition.name),
                   subtitle: Text(_subtitle(definition)),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => SessionSetupScreen(program: definition),
-                    ),
-                  ),
+                  onTap: () =>
+                      unawaited(_startProgram(context, ref, definition)),
                 ),
               ),
           ],
@@ -46,6 +120,11 @@ class ProgramPickerScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+String _resumeSubtitle(SessionRecording recording) {
+  final placed = recording.current?.placedCount ?? 0;
+  return '${recording.session.program.name} · $placed skudd plassert';
 }
 
 String _subtitle(ProgramDefinition definition) {

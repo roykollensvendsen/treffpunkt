@@ -41,6 +41,7 @@ nav:
       - "0006 — Series scoring screen": specs/0006-series-scoring-screen.md
       - "0007 — Weapon catalogue & picker": specs/0007-weapon-catalogue-and-picker.md
       - "0008 — Session setup metadata": specs/0008-session-setup-metadata.md
+      - "0009 — Offline session persistence": specs/0009-offline-session-persistence.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
@@ -57,6 +58,7 @@ nav:
       - ADR-0013 Offline-first & sync: adr/0013-offline-first-recording-and-sync.md
       - ADR-0014 Weapon domain model: adr/0014-weapon-domain-model.md
       - ADR-0015 Location capture: adr/0015-location-capture-via-service-interface.md
+      - ADR-0016 Local session store: adr/0016-local-session-store-shared-preferences.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md

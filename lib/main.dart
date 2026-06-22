@@ -3,10 +3,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/bootstrap.dart';
 import 'package:treffpunkt/config/app_config.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
+import 'package:treffpunkt/features/scoring/data/session_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,5 +21,9 @@ Future<void> main() async {
       authFlowType: AuthFlowType.implicit,
     ),
   );
-  runTreffpunkt(SupabaseAuthRepository(Supabase.instance.client.auth));
+  final prefs = await SharedPreferences.getInstance();
+  runTreffpunkt(
+    SupabaseAuthRepository(Supabase.instance.client.auth),
+    sessionStore: SharedPreferencesSessionStore(prefs),
+  );
 }

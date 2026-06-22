@@ -49,4 +49,17 @@ void main() {
     // Grovpistol uses a centre-fire calibre.
     expect(ProgramCatalogue.grovpistol25m.stages[0].geometry.caliberMm, 9.65);
   });
+
+  test('byName resolves a known program and returns null otherwise', () {
+    expect(
+      ProgramCatalogue.byName('10 m Air Rifle'),
+      same(ProgramCatalogue.airRifle10m),
+    );
+    expect(ProgramCatalogue.byName('Nope'), isNull);
+
+    // Every seeded program is found by its own unique name.
+    for (final definition in ProgramCatalogue.all) {
+      expect(ProgramCatalogue.byName(definition.name), same(definition));
+    }
+  });
 }

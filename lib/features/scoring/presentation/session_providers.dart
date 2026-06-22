@@ -2,12 +2,17 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
+import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/series.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
+import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
@@ -34,6 +39,29 @@ final currentSessionMetadataProvider = Provider<SessionMetadata?>(
 /// the setup step (spec 0008 wiring); defaults to `null` (no weapon).
 final currentWeaponProvider = Provider<Weapon?>((ref) => null);
 
+/// The app's [SessionStore] for offline persistence (spec 0009).
+///
+/// Defaults to an in-memory store so tests and a fresh app never touch real
+/// storage; `main()` overrides it with the `shared_preferences`-backed store.
+final sessionStoreProvider = Provider<SessionStore>(
+  (ref) => InMemorySessionStore(),
+);
+
+/// A recording to resume into, or `null` to start fresh (spec 0009).
+///
+/// Overridden by the screen that resumes a saved session; the notifier reads it
+/// in `build` and seeds its state from it instead of starting a new session.
+final restoredRecordingProvider = Provider<SessionRecording?>((ref) => null);
+
+/// The saved active recording read back from the [sessionStoreProvider], or
+/// `null` when none is stored (spec 0009).
+///
+/// The program picker watches this to offer a "resume" affordance.
+final savedRecordingProvider = FutureProvider<SessionRecording?>((ref) async {
+  final snapshot = await ref.watch(sessionStoreProvider).load();
+  return snapshot == null ? null : SessionRecording.fromSnapshot(snapshot);
+});
+
 /// The app's [LocationService].
 ///
 /// Defaults to one that never has a fix, so "use my location" degrades to
@@ -53,6 +81,12 @@ class SessionRecording {
     this.draggingIndex,
   });
 
+  /// Rebuilds a recording from a stored [snapshot] (spec 0009).
+  SessionRecording.fromSnapshot(SessionSnapshot snapshot)
+    : session = snapshot.session,
+      current = snapshot.current,
+      draggingIndex = null;
+
   /// The session so far (sealed series, grouped by stage).
   final Session session;
 
@@ -67,6 +101,10 @@ class SessionRecording {
 
   /// Whether a placed shot is currently picked up.
   bool get isDragging => draggingIndex != null;
+
+  /// A persistable snapshot of this recording (drops the transient drag state).
+  SessionSnapshot toSnapshot() =>
+      SessionSnapshot(session: session, current: current);
 }
 
 /// Records a guided session: placing shots in the current series, then sealing
@@ -74,6 +112,8 @@ class SessionRecording {
 class SessionNotifier extends Notifier<SessionRecording> {
   @override
   SessionRecording build() {
+    final restored = ref.watch(restoredRecordingProvider);
+    if (restored != null) return restored;
     final program = ref.watch(currentProgramDefinitionProvider);
     final metadata = ref.watch(currentSessionMetadataProvider);
     final weapon = ref.watch(currentWeaponProvider);
@@ -85,6 +125,25 @@ class SessionNotifier extends Notifier<SessionRecording> {
     return SessionRecording(session: session, current: session.newSeries());
   }
 
+  /// Saves the recording locally so it survives a restart (spec 0009), or
+  /// clears the store once the session is complete so it never resurfaces.
+  void _persist() {
+    final store = ref.read(sessionStoreProvider);
+    final write = state.isComplete
+        ? store.clear()
+        : store.save(state.toSnapshot());
+    // Persistence is best-effort and off the happy path (losing one autosave is
+    // not fatal — the in-memory recording is the source of truth this run), but
+    // a silent failure would be undiagnosable, so surface it in debug builds.
+    unawaited(
+      write.catchError((Object error, StackTrace stackTrace) {
+        if (!kReleaseMode) {
+          debugPrint('Failed to persist the session recording: $error');
+        }
+      }),
+    );
+  }
+
   /// Places the next shot in the current series, unless it is full.
   void placeShot(Shot shot) {
     final current = state.current;
@@ -94,6 +153,7 @@ class SessionNotifier extends Notifier<SessionRecording> {
       current: current.placeShot(shot),
       draggingIndex: state.draggingIndex,
     );
+    _persist();
   }
 
   /// Picks up the placed shot at [index] in the current series.
@@ -116,6 +176,7 @@ class SessionNotifier extends Notifier<SessionRecording> {
       current: current.moveShot(index, shot),
       draggingIndex: index,
     );
+    _persist();
   }
 
   /// Drops the picked-up shot, ending the drag.
@@ -131,6 +192,7 @@ class SessionNotifier extends Notifier<SessionRecording> {
     if (current == null || !current.isComplete) return;
     final next = state.session.sealSeries(current);
     state = SessionRecording(session: next, current: next.newSeries());
+    _persist();
   }
 }
 

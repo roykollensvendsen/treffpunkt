@@ -12,5 +12,13 @@ the 10 m air-rifle target.
 2. Tap where your shot hit. A marker appears and the score shows at the top.
 3. The score updates the moment you place the marker.
 
-That is the whole loop for now. Signing in, competitions and scoreboards are on
-the way — see the [Roadmap](../ROADMAP.md).
+## Pick up where you left off
+Your session is saved on the device as you shoot — no network needed — so you can
+record a whole session on the firing line with no signal. If you close the app
+mid-session, reopening it shows a **Fortsett økt** ("resume session") card at the
+top of the program list: tap it to return to the exact target you were on, with
+every shot you had already placed still there. A finished session clears itself,
+so the card only appears while a session is in progress.
+
+Signing in, competitions and scoreboards are on the way — see the
+[Roadmap](../ROADMAP.md).

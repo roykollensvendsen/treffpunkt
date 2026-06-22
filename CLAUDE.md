@@ -59,8 +59,15 @@ mkdocs serve                    # preview docs (needs mkdocs-material)
 ```
 
 ## Current milestone
-Increment 1: record a real session offline. The 10 m air-rifle scoring (spec
-0001), authentication (0003) and the series scorecard screen (specs 0004/0006)
-are done. Now building the official-program catalogue with a guided shooting
-flow — starting with the program-definition model and the 25 m pistol target.
-See `docs/ROADMAP.md` and `docs/reference/program-catalogue.md`.
+Increment 1 core is complete: a shooter can record a full official-program
+session offline — picking the program, the weapon and the place/time, shooting it
+through its stages and series to a scorecard — and the recording survives an app
+restart (the in-progress series included), resumable from a "Fortsett økt" card.
+This covers specs 0001 (air-rifle scoring), 0003 (auth), 0004/0006 (series
+domain + scorecard), 0007 (weapons), 0008 (session metadata) and 0009 (offline
+persistence, `SessionStore` over `shared_preferences`). Still open in Increment 1:
+the dedicated 25 m pistol target/scoring spec (0005).
+
+Next is Increment 2: competitions, deferred sync of completed sessions, and
+shared scoreboards (specs 0010–0015). See `docs/ROADMAP.md` and
+`docs/reference/program-catalogue.md`.
