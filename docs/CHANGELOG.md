@@ -37,8 +37,10 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 - New web deploys are no longer served stale: the Flutter service worker is
-  disabled for the GitHub Pages build (`--pwa-strategy=none`), so a normal reload
-  picks up the latest version instead of a cached old one.
+  disabled for the GitHub Pages build (`--pwa-strategy=none`), and a small
+  killswitch in `web/index.html` unregisters any worker left from an earlier build
+  and clears its caches, so a reload picks up the latest version instead of a
+  cached old one.
 - The web app crashed on launch (`Cannot read properties of undefined (reading
   'init')`) because `supabase_flutter` pulls in the Passkeys plugin whose Web
   SDK was missing. Vendored the SDK (`web/bundle.js`) and load it in

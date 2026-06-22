@@ -16,6 +16,28 @@
   -->
   <base href="$FLUTTER_BASE_HREF">
 
+  <!--
+    No service worker is used (the web build passes --pwa-strategy=none).
+    Proactively unregister any worker left from an earlier build and clear its
+    caches, so a stale cached build cannot keep serving the app after a deploy.
+  -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        for (var i = 0; i < registrations.length; i++) {
+          registrations[i].unregister();
+        }
+      });
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+          for (var i = 0; i < keys.length; i++) {
+            caches.delete(keys[i]);
+          }
+        });
+      }
+    }
+  </script>
+
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="Record and score shots on NSF/ISSF targets across competitions.">
