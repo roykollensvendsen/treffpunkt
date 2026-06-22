@@ -22,6 +22,9 @@ is dev-only). Pages is free for public repositories, so the repository is public
 - Requires a hosted Supabase project and the Google OAuth redirect URLs to
   include the Pages URL (see `docs/dev/deploy.md`).
 - Native Android/iOS distribution is a separate concern (a later spec).
+- The web build uses `--pwa-strategy=none` (no service worker), so a new deploy
+  is not served from a stale cache; revisit if PWA install is wanted
+  (ROADMAP 0016).
 
 ## Alternatives considered
 - **Firebase Hosting / Netlify / Vercel:** capable, but add another account and
