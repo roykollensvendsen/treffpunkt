@@ -59,6 +59,8 @@ mkdocs serve                    # preview docs (needs mkdocs-material)
 ```
 
 ## Current milestone
-Increment 0: a walking skeleton — the 10 m air-rifle target with tap-to-place
-scoring, a pure-Dart scoring domain, CI, and docs. Backend (auth, Supabase)
-starts at spec 0002. See `docs/ROADMAP.md`.
+Increment 1: record a real session offline. The 10 m air-rifle scoring (spec
+0001), authentication (0003) and the series scorecard screen (specs 0004/0006)
+are done. Now building the official-program catalogue with a guided shooting
+flow — starting with the program-definition model and the 25 m pistol target.
+See `docs/ROADMAP.md` and `docs/reference/program-catalogue.md`.

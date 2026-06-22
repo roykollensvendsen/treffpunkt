@@ -25,6 +25,15 @@ class TargetGeometry {
       blackBullDiameterMm = 30.5,
       innerTenDiameterMm = null;
 
+  /// The ISSF 25 m pistol precision target (rings 1–10, inner ten 25 mm); see
+  /// `docs/reference/program-catalogue.md`. Calibre defaults to .22 (5.6 mm).
+  const TargetGeometry.pistol25mPrecision({double caliber = 5.6})
+    : name = '25 m Pistol — Precision',
+      caliberMm = caliber,
+      ringOuterDiametersMm = _pistol25mPrecisionRingDiametersMm,
+      blackBullDiameterMm = 200,
+      innerTenDiameterMm = 25;
+
   /// Human-readable discipline name, e.g. `'10 m Air Rifle'`.
   final String name;
 
@@ -103,4 +112,17 @@ const List<double> _airRifle10mRingDiametersMm = <double>[
   10.5, // ring 8
   5.5, // ring 9
   0.5, // ring 10 (innermost)
+];
+
+const List<double> _pistol25mPrecisionRingDiametersMm = <double>[
+  500, // ring 1 (outermost)
+  450, // ring 2
+  400, // ring 3
+  350, // ring 4
+  300, // ring 5
+  250, // ring 6
+  200, // ring 7
+  150, // ring 8
+  100, // ring 9
+  50, // ring 10 (innermost)
 ];

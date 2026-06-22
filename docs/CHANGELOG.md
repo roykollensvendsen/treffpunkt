@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- The program-definition model (`ProgramDefinition` / `StageDefinition`) and a
+  seeded catalogue, plus the 25 m pistol precision target geometry and its
+  scoring vectors (ADR-0012).
 - A program catalogue (`docs/reference/program-catalogue.md`): the authoritative,
   ISSF-sourced list of the in-scope concentric-ring shooting programs and their
   target faces, with confirm-with-the-father flags for NSF-specific values.
