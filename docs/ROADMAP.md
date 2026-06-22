@@ -41,6 +41,10 @@ The shooter records a complete session on-device, with no network needed
       in-progress series included — and a "Fortsett økt" card resumes it. Stored
       behind a `SessionStore` interface (`shared_preferences`, ADR-0016); geometry
       is rebuilt from the catalogue, not serialized.
+- [x] 0019 — Personal weapon persistence: the shooter's own weapons (spec 0007)
+      are saved on-device and survive a restart, behind a `WeaponStore` interface
+      mirroring 0009 (`shared_preferences`, ADR-0016). The list is loaded once at
+      launch to seed the notifier and rewritten on every add/remove.
 
 ## Increment 2 — competitions, sync and scoreboards
 - [ ] 0010 — Data & RLS: Supabase schema for profiles, competitions

@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Your personal weapons now stick around: the guns you add are saved on-device
+  and are still there after you close and reopen the app, with no network needed.
+  Storage sits behind a `WeaponStore` interface (`shared_preferences`), mirroring
+  the session store — the list is loaded once at launch and rewritten whenever you
+  add or remove a weapon.
 - Spec 0005: the 25 m pistol target and scoring is now written down. It
   documents both faces — the precision face (rings 1–10) and the rapid / duel
   face (rings 5–10) — with their ring sizes, the inner ten ("X"), the black, and

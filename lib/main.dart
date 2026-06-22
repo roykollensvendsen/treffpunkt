@@ -10,6 +10,7 @@ import 'package:treffpunkt/config/app_config.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
 import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
+import 'package:treffpunkt/features/weapons/data/weapon_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,9 +24,15 @@ Future<void> main() async {
     ),
   );
   final prefs = await SharedPreferences.getInstance();
+  final weaponStore = SharedPreferencesWeaponStore(prefs);
+  // Load the saved weapons once here (prefs is already awaited) so the notifier
+  // can start populated without an async build (spec 0019).
+  final savedWeapons = await weaponStore.load();
   runTreffpunkt(
     SupabaseAuthRepository(Supabase.instance.client.auth),
     sessionStore: SharedPreferencesSessionStore(prefs),
+    weaponStore: weaponStore,
+    initialWeapons: savedWeapons,
     locationService: const GeolocatorLocationService(),
   );
 }
