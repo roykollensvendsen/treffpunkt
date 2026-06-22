@@ -22,7 +22,8 @@ class ScoringService {
   /// miss. Applies the gauge "next ring outward" rule.
   int integerScore(TargetGeometry geometry, Shot shot) {
     final d = shot.distanceMm;
-    for (var ring = geometry.highestRing; ring >= 1; ring--) {
+    final lowest = geometry.lowestRingValue;
+    for (var ring = geometry.highestRing; ring >= lowest; ring--) {
       if (d <= geometry.scoringRadiusMm(ring)) {
         return ring;
       }
@@ -36,8 +37,8 @@ class ScoringService {
   /// the assert guards against misuse on a non-uniform target (e.g. pistol).
   double decimalScore(TargetGeometry geometry, Shot shot) {
     assert(
-      geometry.hasUniformRings,
-      'decimalScore assumes evenly spaced rings (spec 0001)',
+      geometry.hasUniformRings && geometry.lowestRingValue == 1,
+      'decimalScore assumes a full, evenly spaced 1..N ring face (spec 0001)',
     );
     final d = shot.distanceMm;
     if (d > geometry.maxScoringRadiusMm) {
