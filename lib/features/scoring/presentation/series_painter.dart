@@ -43,7 +43,11 @@ class SeriesPainter extends CustomPainter {
         Paint()..color = Colors.black,
       );
 
-    for (var ring = 1; ring <= geometry.highestRing; ring++) {
+    for (
+      var ring = geometry.lowestRingValue;
+      ring <= geometry.highestRing;
+      ring++
+    ) {
       final radiusMm = geometry.outerDiameterMm(ring) / 2;
       final onBlack = radiusMm * 2 <= geometry.blackBullDiameterMm;
       canvas.drawCircle(
