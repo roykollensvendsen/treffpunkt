@@ -62,6 +62,23 @@ class _CenteredContent extends StatelessWidget {
   }
 }
 
+/// The inner-ten count spoken in Norwegian (e.g. "3 indre tiere"), or an empty
+/// string when there are none, so a screen reader reads the X count in words.
+String _innerTensPhrase(int innerTens) {
+  if (innerTens <= 0) return '';
+  final noun = innerTens == 1 ? 'indre tier' : 'indre tiere';
+  return ', $innerTens $noun';
+}
+
+/// A spoken score label like "Serie-sum: 87 av 100, 3 indre tiere", so a screen
+/// reader announces the score in words rather than loose digits.
+String _scoreSemanticsLabel({
+  required String prefix,
+  required int total,
+  required int maxTotal,
+  required int innerTens,
+}) => '$prefix: $total av $maxTotal${_innerTensPhrase(innerTens)}';
+
 /// A one-line "date · place · weapon" caption, or `null` when there is nothing
 /// to show.
 ///
@@ -173,7 +190,7 @@ class SessionView extends ConsumerWidget {
           IconButton(
             key: sealSeriesKey,
             icon: const Icon(Icons.check),
-            tooltip: 'Complete series',
+            tooltip: 'Fullfør serie',
             onPressed: current.isComplete
                 ? () => ref.read(sessionProvider.notifier).advance()
                 : null,
@@ -353,23 +370,29 @@ class _StageHeader extends StatelessWidget {
       if (program.stages.length > 1)
         'stadium ${session.currentStageIndex + 1}/${program.stages.length}',
     ];
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          stage.name,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+    return Semantics(
+      header: true,
+      label: '${stage.name}. ${parts.join(', ')}',
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              stage.name,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              parts.join(' · '),
+              key: stageProgressKey,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
-        Text(
-          parts.join(' · '),
-          key: stageProgressKey,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -392,22 +415,27 @@ class _ShotsList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Shots',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+        Semantics(
+          label: 'Skudd: $placed av $capacity plassert',
+          child: ExcludeSemantics(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Shots',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '$placed / $capacity',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              '$placed / $capacity',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+          ),
         ),
         const SizedBox(height: 8),
         Row(
@@ -443,38 +471,47 @@ class _ShotRow extends StatelessWidget {
     final theme = Theme.of(context);
     final shotScore = score;
     final pending = shotScore == null;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 13,
-            backgroundColor: pending
-                ? theme.colorScheme.surfaceContainerHighest
-                : theme.colorScheme.primaryContainer,
-            child: Text(
-              '$index',
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: pending
-                    ? theme.colorScheme.onSurfaceVariant
-                    : theme.colorScheme.onPrimaryContainer,
+    final innerTen = shotScore?.isInnerTen ?? false;
+    final label = pending
+        ? 'Skudd $index: ikke plassert'
+        : 'Skudd $index: ${shotScore.ring}${innerTen ? ', indre tier' : ''}';
+    return Semantics(
+      label: label,
+      child: ExcludeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 13,
+                backgroundColor: pending
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : theme.colorScheme.primaryContainer,
+                child: Text(
+                  '$index',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: pending
+                        ? theme.colorScheme.onSurfaceVariant
+                        : theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Text(
+                pending ? '–' : '${shotScore.ring}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: pending ? theme.colorScheme.onSurfaceVariant : null,
+                ),
+              ),
+              if (innerTen) ...[
+                const SizedBox(width: 6),
+                const _InnerTenDot(),
+              ],
+            ],
           ),
-          const SizedBox(width: 12),
-          Text(
-            pending ? '–' : '${shotScore.ring}',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: pending ? theme.colorScheme.onSurfaceVariant : null,
-            ),
-          ),
-          if (shotScore?.isInnerTen ?? false) ...[
-            const SizedBox(width: 6),
-            const _InnerTenDot(),
-          ],
-        ],
+        ),
       ),
     );
   }
@@ -489,57 +526,67 @@ class _SeriesTotalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final onColor = scheme.onPrimary;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: scheme.primary,
-        borderRadius: BorderRadius.circular(16),
+    return Semantics(
+      label: _scoreSemanticsLabel(
+        prefix: 'Serie-sum',
+        total: score.total,
+        maxTotal: score.maxTotal,
+        innerTens: score.innerTens,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'SERIES TOTAL',
-                style: TextStyle(
-                  color: onColor,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                score.innerTens > 0 ? 'Sum · ${score.innerTens}×X' : 'Sum',
-                style: TextStyle(color: onColor, fontSize: 18),
-              ),
-            ],
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: scheme.primary,
+            borderRadius: BorderRadius.circular(16),
           ),
-          Row(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '${score.total}',
-                key: seriesTotalKey,
-                style: TextStyle(
-                  color: onColor,
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'SERIES TOTAL',
+                    style: TextStyle(
+                      color: onColor,
+                      fontSize: 12,
+                      letterSpacing: 1,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    score.innerTens > 0 ? 'Sum · ${score.innerTens}×X' : 'Sum',
+                    style: TextStyle(color: onColor, fontSize: 18),
+                  ),
+                ],
               ),
-              Text(
-                ' / ${score.maxTotal}',
-                style: TextStyle(
-                  color: onColor.withValues(alpha: 0.8),
-                  fontSize: 16,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${score.total}',
+                    key: seriesTotalKey,
+                    style: TextStyle(
+                      color: onColor,
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    ' / ${score.maxTotal}',
+                    style: TextStyle(
+                      color: onColor.withValues(alpha: 0.8),
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -560,10 +607,20 @@ class _SessionProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final suffix = innerTens > 0 ? ' · $innerTens×X' : '';
-    return Text(
-      'Session so far: $total / $maxTotal$suffix',
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
+    return Semantics(
+      label: _scoreSemanticsLabel(
+        prefix: 'Økt så langt',
+        total: total,
+        maxTotal: maxTotal,
+        innerTens: innerTens,
+      ),
+      child: ExcludeSemantics(
+        child: Text(
+          'Session so far: $total / $maxTotal$suffix',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }
@@ -667,19 +724,29 @@ class _StageScoreRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final suffix = score.innerTens > 0 ? '  ·  ${score.innerTens}×X' : '';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(name, style: theme.textTheme.titleMedium),
-          Text(
-            '${score.total} / ${score.maxTotal}$suffix',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+    return Semantics(
+      label: _scoreSemanticsLabel(
+        prefix: name,
+        total: score.total,
+        maxTotal: score.maxTotal,
+        innerTens: score.innerTens,
+      ),
+      child: ExcludeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(name, style: theme.textTheme.titleMedium),
+              Text(
+                '${score.total} / ${score.maxTotal}$suffix',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -694,56 +761,66 @@ class _GrandTotalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final onColor = scheme.onPrimary;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: scheme.primary,
-        borderRadius: BorderRadius.circular(16),
+    return Semantics(
+      label: _scoreSemanticsLabel(
+        prefix: 'Økt-sum',
+        total: score.total,
+        maxTotal: score.maxTotal,
+        innerTens: score.innerTens,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'SESSION TOTAL',
-                style: TextStyle(
-                  color: onColor,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                score.innerTens > 0 ? 'Sum · ${score.innerTens}×X' : 'Sum',
-                style: TextStyle(color: onColor, fontSize: 18),
-              ),
-            ],
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: scheme.primary,
+            borderRadius: BorderRadius.circular(16),
           ),
-          Row(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '${score.total}',
-                style: TextStyle(
-                  color: onColor,
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'SESSION TOTAL',
+                    style: TextStyle(
+                      color: onColor,
+                      fontSize: 12,
+                      letterSpacing: 1,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    score.innerTens > 0 ? 'Sum · ${score.innerTens}×X' : 'Sum',
+                    style: TextStyle(color: onColor, fontSize: 18),
+                  ),
+                ],
               ),
-              Text(
-                ' / ${score.maxTotal}',
-                style: TextStyle(
-                  color: onColor.withValues(alpha: 0.8),
-                  fontSize: 16,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${score.total}',
+                    style: TextStyle(
+                      color: onColor,
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    ' / ${score.maxTotal}',
+                    style: TextStyle(
+                      color: onColor.withValues(alpha: 0.8),
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

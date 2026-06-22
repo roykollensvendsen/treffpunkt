@@ -78,12 +78,23 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
                         _drag(geometry, details.localPosition, side),
                     onLongPressEnd: (_) =>
                         ref.read(sessionProvider.notifier).drop(),
-                    child: CustomPaint(
-                      size: Size.square(side),
-                      painter: SeriesPainter(
-                        geometry: geometry,
-                        shots: shots,
-                        draggingIndex: recording.draggingIndex,
+                    child: Semantics(
+                      label: 'Skyteskive — trykk for å plassere skudd',
+                      button: true,
+                      // The outer GestureDetector's `onTapUp` is a pointer
+                      // gesture and adds no `SemanticsAction.tap`, so the node
+                      // would advertise a button with nothing to activate.
+                      // Carry the action here so assistive tech can place a
+                      // shot (at the target centre).
+                      onTap: () =>
+                          _place(geometry, Offset(side / 2, side / 2), side),
+                      child: CustomPaint(
+                        size: Size.square(side),
+                        painter: SeriesPainter(
+                          geometry: geometry,
+                          shots: shots,
+                          draggingIndex: recording.draggingIndex,
+                        ),
                       ),
                     ),
                   ),
@@ -191,19 +202,19 @@ class _ZoomControls extends StatelessWidget {
           IconButton(
             key: const ValueKey<String>('zoomIn'),
             icon: const Icon(Icons.add),
-            tooltip: 'Zoom in',
+            tooltip: 'Zoom inn',
             onPressed: onZoomIn,
           ),
           IconButton(
             key: const ValueKey<String>('zoomReset'),
             icon: const Icon(Icons.center_focus_strong),
-            tooltip: 'Reset zoom',
+            tooltip: 'Nullstill zoom',
             onPressed: onReset,
           ),
           IconButton(
             key: const ValueKey<String>('zoomOut'),
             icon: const Icon(Icons.remove),
-            tooltip: 'Zoom out',
+            tooltip: 'Zoom ut',
             onPressed: onZoomOut,
           ),
         ],

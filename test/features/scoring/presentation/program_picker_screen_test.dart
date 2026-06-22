@@ -45,6 +45,47 @@ void main() {
     expect(find.text('25 m Finpistol'), findsWidgets);
   });
 
+  testWidgets('labels each program tile as a button for screen readers', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    final tile = find.bySemanticsLabel(RegExp('^Velg program: 10 m Air Rifle'));
+    expect(tile, findsOneWidget);
+
+    // A labelled "button" is useless to a screen reader if it carries no tap
+    // action: it can be announced but not activated. Assert both the role and
+    // the action are present on the very same node.
+    expect(
+      tester.getSemantics(tile),
+      isSemantics(isButton: true, hasTapAction: true),
+    );
+
+    handle.dispose();
+  });
+
+  testWidgets('activating a program tile via semantics opens setup', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    // A screen-reader double-tap maps to a semantic tap; it must navigate.
+    // `semantics.tap` throws if the node carries no tap action, so this also
+    // guards against the "announced but inert" defect.
+    tester.semantics.tap(
+      find.semantics.byLabel(RegExp('^Velg program: 10 m Air Rifle')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(sessionConfirmKey), findsOneWidget);
+
+    handle.dispose();
+  });
+
   testWidgets('shows no resume card when the store is empty', (tester) async {
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
@@ -67,6 +108,8 @@ void main() {
     // The resume card appears and names the saved program.
     expect(find.byKey(resumeSessionKey), findsOneWidget);
     expect(find.textContaining('10 m Air Rifle'), findsWidgets);
+    // The discard action carries a Norwegian tooltip (its accessible label).
+    expect(find.byTooltip('Forkast lagret økt'), findsOneWidget);
 
     await tester.tap(find.byKey(resumeSessionKey));
     await tester.pumpAndSettle();

@@ -135,6 +135,54 @@ void main() {
     expect(controller.value.getMaxScaleOnAxis(), closeTo(1.0, 1e-6));
   });
 
+  testWidgets('exposes a screen-reader label and Norwegian zoom controls', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(_app());
+
+    // The target announces what it is and how to use it.
+    expect(
+      find.bySemanticsLabel('Skyteskive — trykk for å plassere skudd'),
+      findsOneWidget,
+    );
+    // The zoom buttons carry Norwegian tooltips, which a screen reader reads.
+    expect(find.byTooltip('Zoom inn'), findsOneWidget);
+    expect(find.byTooltip('Zoom ut'), findsOneWidget);
+    expect(find.byTooltip('Nullstill zoom'), findsOneWidget);
+
+    handle.dispose();
+  });
+
+  testWidgets('the target button is activatable by assistive tech', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(_app());
+    final container = containerOf(tester);
+
+    // The labelled "button" must carry an actual tap action, or a screen reader
+    // can announce it but never place a shot with it.
+    const label = 'Skyteskive — trykk for å plassere skudd';
+    expect(
+      tester.getSemantics(find.bySemanticsLabel(label)),
+      isSemantics(isButton: true, hasTapAction: true),
+    );
+
+    // Activating it (a screen-reader double-tap) places a shot at the centre;
+    // `semantics.tap` throws if the node carries no tap action.
+    expect(placedCount(container), 0);
+    tester.semantics.tap(find.semantics.byLabel(label));
+    await tester.pump();
+    expect(placedCount(container), 1);
+    expect(
+      container.read(sessionProvider).current!.shots.single.distanceMm,
+      closeTo(0, 0.01),
+    );
+
+    handle.dispose();
+  });
+
   testWidgets('renders a reduced-ring (rapid) face without error', (
     tester,
   ) async {
