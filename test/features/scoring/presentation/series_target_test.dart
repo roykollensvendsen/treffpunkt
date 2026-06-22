@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/scoring/domain/program.dart';
+import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 
@@ -131,6 +132,35 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('zoomReset')));
     await tester.pump();
     expect(controller.value.getMaxScaleOnAxis(), closeTo(1.0, 1e-6));
+  });
+
+  testWidgets('renders a reduced-ring (rapid) face without error', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentProgramProvider.overrideWithValue(
+            const Program(
+              name: 'Rapid',
+              geometry: TargetGeometry.pistol25mRapid(),
+              shotsPerSeries: 5,
+            ),
+          ),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(width: 400, height: 400, child: SeriesTarget()),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(seriesTargetKey), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 
