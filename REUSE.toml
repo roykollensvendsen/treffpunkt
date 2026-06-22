@@ -12,6 +12,7 @@ path = [
   ".gitignore",
   "pubspec.lock",
   ".fvmrc",
+  "config/env.example.json",
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Roy Kollen Svendsen"
