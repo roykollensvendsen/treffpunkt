@@ -116,6 +116,22 @@ void main() {
 
     expect(controller.value.getMaxScaleOnAxis(), greaterThan(1.0));
   });
+
+  testWidgets('the zoom buttons zoom in and reset', (tester) async {
+    await tester.pumpWidget(_app());
+    final controller = tester
+        .widget<InteractiveViewer>(find.byType(InteractiveViewer))
+        .transformationController!;
+    expect(controller.value.getMaxScaleOnAxis(), 1.0);
+
+    await tester.tap(find.byKey(const ValueKey<String>('zoomIn')));
+    await tester.pump();
+    expect(controller.value.getMaxScaleOnAxis(), greaterThan(1.0));
+
+    await tester.tap(find.byKey(const ValueKey<String>('zoomReset')));
+    await tester.pump();
+    expect(controller.value.getMaxScaleOnAxis(), closeTo(1.0, 1e-6));
+  });
 }
 
 Widget _app() {
