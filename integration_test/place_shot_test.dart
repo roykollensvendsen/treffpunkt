@@ -27,6 +27,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Pick the air-rifle program from the catalogue, then score on its target.
+    await tester.tap(
+      find.byKey(const ValueKey<String>('program-10 m Air Rifle')),
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('0 / 10'), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(seriesTotalKey)).data, '0');
 

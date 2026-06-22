@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- A program picker: the signed-in app opens a list of the official programs, and
+  choosing one opens its target (the new pistol faces show their inner-ten
+  markers). Each program opens its first stage as a series for now.
 - The real program catalogue in code: 10 m air pistol, 25 m standard pistol,
   fin- and grovpistol (precision + duell on two faces) and 50 m fripistol, plus
   the air-pistol and 25 m rapid/silhouette (rings 5–10) target geometries.
