@@ -39,6 +39,18 @@ class TargetGeometry {
       innerTenDiameterMm = 5,
       lowestRingValue = 1;
 
+  /// The ISSF 300 m rifle target (rings 1–10, inner ten 50 mm); see spec 0018
+  /// and `docs/reference/program-catalogue.md`. Calibre is centre-fire; the
+  /// gauge edge defaults to 8 mm. The rings step a uniform 100 mm in diameter,
+  /// from the 10-ring (100 mm) out to ring 1 (1000 mm).
+  const TargetGeometry.rifle300m({double caliber = 8.0})
+    : name = '300 m Rifle',
+      caliberMm = caliber,
+      ringOuterDiametersMm = _rifle300mRingDiametersMm,
+      blackBullDiameterMm = 600,
+      innerTenDiameterMm = 50,
+      lowestRingValue = 1;
+
   /// The ISSF 25 m pistol precision target (rings 1–10, inner ten 25 mm); see
   /// `docs/reference/program-catalogue.md`. Calibre defaults to .22 (5.6 mm).
   const TargetGeometry.pistol25mPrecision({double caliber = 5.6})
@@ -165,6 +177,19 @@ const List<double> _smallbore50mRingDiametersMm = <double>[
   42.4, // ring 8
   26.4, // ring 9
   10.4, // ring 10 (innermost)
+];
+
+const List<double> _rifle300mRingDiametersMm = <double>[
+  1000, // ring 1 (outermost)
+  900, // ring 2
+  800, // ring 3
+  700, // ring 4
+  600, // ring 5
+  500, // ring 6
+  400, // ring 7
+  300, // ring 8
+  200, // ring 9
+  100, // ring 10 (innermost)
 ];
 
 const List<double> _pistol25mPrecisionRingDiametersMm = <double>[

@@ -132,6 +132,25 @@ abstract final class ProgramCatalogue {
     ],
   );
 
+  /// 300 m rifle: 60 shots in six 10-shot series on the 300 m rifle face,
+  /// scored integer + inner ten (see spec 0018). Calibre is centre-fire (gauge
+  /// edge defaulting to 8 mm — flagged in the spec). The exact NSF course of
+  /// fire (60 prone vs 3×20 / 3×40) and decimal-vs-integer scoring are
+  /// confirm-with-the-father flags in the spec, not seeded here.
+  static const ProgramDefinition rifle300m = ProgramDefinition(
+    name: '300 m Rifle',
+    discipline: Discipline.rifle,
+    weaponClasses: <String>['Centre-fire ≤ 8 mm'],
+    stages: <StageDefinition>[
+      StageDefinition(
+        name: 'Match',
+        geometry: TargetGeometry.rifle300m(),
+        shotsPerSeries: 10,
+        seriesCount: 6,
+      ),
+    ],
+  );
+
   /// 50 m free pistol (fripistol): six 10-shot series on the precision face.
   static const ProgramDefinition freePistol50m = ProgramDefinition(
     name: '50 m Fripistol',
@@ -156,6 +175,7 @@ abstract final class ProgramCatalogue {
     grovpistol25m,
     freePistol50m,
     rifle50mProne,
+    rifle300m,
   ];
 
   /// The program whose unique [name] matches, or `null` when none does.

@@ -7,6 +7,14 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Spec 0018 and the 300 m rifle target: Treffpunkt now knows the official ISSF
+  300 m rifle face (the long-range full-bore target) — its ten rings, the inner
+  ten ("X"), the black and the centre-fire gauge edge, sourced to the ISSF rules.
+  A "300 m Rifle" program (60 shots in six 10-shot series, scored to whole rings
+  plus inner tens) joins the catalogue. The geometry is locked behind a vector
+  table of shot positions to expected ring, so it can never silently drift. The
+  exact NSF course of fire, whether NSF scores it to a decimal, and the black and
+  the centre-fire gauge edge are written down as confirm-with-the-father flags.
 - Spec 0017 and the 50 m rifle target: Treffpunkt now knows the official ISSF
   50 m rifle face (the .22 smallbore target) — its ten rings, the inner ten
   ("X"), the black and the .22 gauge edge, sourced to the ISSF rules. A "50 m

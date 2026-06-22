@@ -127,18 +127,23 @@ spec 0005's pistol vectors remain green.
 ### Unit tests — scoring vectors (.22; shot at distance `d` from centre)
 
 `rifle_50m_target_geometry_test.dart`, *integer score across every ring, both
-sides of the boundary* (offsets nudged ±0.01 mm off the exact radius):
+sides of the boundary* (offsets nudged ±0.01 mm off the exact radius). Every
+interior ring boundary is pinned on **both** faces: the outer side (just past the
+edge, the lower ring) and the inner side (just inside the edge, the higher ring):
 
 | `d` (mm) | ring | | `d` (mm) | ring |
 | -------- | ---- |-| -------- | ---- |
-| 0.00     | 10   | | 48.01    | 4    |
-| 7.99     | 10   | | 56.01    | 3    |
-| 8.01     | 9    | | 64.01    | 2    |
-| 15.99    | 9    | | 72.01    | 1    |
-| 16.01    | 8    | | 79.99    | 1    |
-| 24.01    | 7    | | 80.01    | 0    |
-| 32.01    | 6    | | 100.00   | 0    |
-| 40.01    | 5    | |          |      |
+| 0.00     | 10   | | 47.99    | 5    |
+| 7.99     | 10   | | 48.01    | 4    |
+| 8.01     | 9    | | 55.99    | 4    |
+| 15.99    | 9    | | 56.01    | 3    |
+| 16.01    | 8    | | 63.99    | 3    |
+| 23.99    | 8    | | 64.01    | 2    |
+| 24.01    | 7    | | 71.99    | 2    |
+| 31.99    | 7    | | 72.01    | 1    |
+| 32.01    | 6    | | 79.99    | 1    |
+| 39.99    | 6    | | 80.01    | 0    |
+| 40.01    | 5    | | 100.00   | 0    |
 
 Plus:
 - *inner ten on either side of the 5 mm ring* — `d = 5.29 mm` is an inner ten,

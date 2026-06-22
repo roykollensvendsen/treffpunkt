@@ -52,12 +52,19 @@ void main() {
         (8.01, 9),
         (15.99, 9),
         (16.01, 8),
+        (23.99, 8), // inner side of the 8/9 edge
         (24.01, 7),
+        (31.99, 7), // inner side of the 7/8 edge
         (32.01, 6),
+        (39.99, 6), // inner side of the 6/7 edge
         (40.01, 5),
+        (47.99, 5), // inner side of the 5/6 edge
         (48.01, 4),
+        (55.99, 4), // inner side of the 4/5 edge
         (56.01, 3),
+        (63.99, 3), // inner side of the 3/4 edge
         (64.01, 2),
+        (71.99, 2), // inner side of the 2/3 edge
         (72.01, 1),
         (79.99, 1),
         (80.01, 0), // just past the 1-ring is a miss
