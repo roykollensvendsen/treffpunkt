@@ -12,6 +12,7 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/session_score.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 /// Key for the "complete series" / advance action in the app bar.
 const Key sealSeriesKey = ValueKey<String>('sealSeries');
@@ -28,27 +29,37 @@ const Key sessionCompleteKey = ValueKey<String>('sessionComplete');
 /// Key for the captured date / place caption on the scorecard, used by tests.
 const Key sessionMetadataKey = ValueKey<String>('sessionMetadata');
 
-/// A one-line "date · place" caption for [metadata], or `null` when there is
-/// nothing to show.
-String? _metadataCaption(SessionMetadata? metadata) {
-  if (metadata == null) return null;
-  String two(int v) => v.toString().padLeft(2, '0');
-  final date = metadata.capturedAt;
-  final stamp =
+/// A one-line "date · place · weapon" caption, or `null` when there is nothing
+/// to show.
+///
+/// The date / place come from [metadata]; the chosen [weapon]'s name is
+/// appended when present. A weapon alone (no metadata) still produces a
+/// caption.
+String? _metadataCaption(SessionMetadata? metadata, Weapon? weapon) {
+  final parts = <String>[];
+  if (metadata != null) {
+    String two(int v) => v.toString().padLeft(2, '0');
+    final date = metadata.capturedAt;
+    parts.add(
       '${date.year}-${two(date.month)}-${two(date.day)} '
-      '${two(date.hour)}:${two(date.minute)}';
-  final place = metadata.place?.label;
-  return place == null || place.isEmpty ? stamp : '$stamp · $place';
+      '${two(date.hour)}:${two(date.minute)}',
+    );
+    final place = metadata.place?.label;
+    if (place != null && place.isNotEmpty) parts.add(place);
+  }
+  if (weapon != null) parts.add(weapon.name);
+  return parts.isEmpty ? null : parts.join(' · ');
 }
 
 /// The guided session screen: shoot a program through its stages and series,
 /// watching the running total, then finishing to a session scorecard.
 class SeriesScreen extends StatelessWidget {
   /// Creates the screen for [program], optionally tagged with the [metadata]
-  /// captured at setup and with optional app-bar [actions].
+  /// captured at setup, the [weapon] it is shot with, and app-bar [actions].
   const SeriesScreen({
     required this.program,
     this.metadata,
+    this.weapon,
     this.actions,
     super.key,
   });
@@ -59,6 +70,9 @@ class SeriesScreen extends StatelessWidget {
   /// When and where this session was shot (spec 0008), or `null`.
   final SessionMetadata? metadata;
 
+  /// The weapon this session is shot with, or `null` when none was chosen.
+  final Weapon? weapon;
+
   /// Extra actions shown in the app bar (e.g. a sign-out button).
   final List<Widget>? actions;
 
@@ -68,6 +82,7 @@ class SeriesScreen extends StatelessWidget {
       overrides: [
         currentProgramDefinitionProvider.overrideWithValue(program),
         currentSessionMetadataProvider.overrideWithValue(metadata),
+        currentWeaponProvider.overrideWithValue(weapon),
         sessionProvider.overrideWith(SessionNotifier.new),
       ],
       child: SessionView(actions: actions),
@@ -96,6 +111,7 @@ class SessionView extends ConsumerWidget {
         program: program,
         score: _scoring.scoreSession(recording.session),
         metadata: recording.session.metadata,
+        weapon: recording.session.weapon,
         actions: actions,
       );
     }
@@ -452,18 +468,20 @@ class _SessionScorecard extends StatelessWidget {
     required this.program,
     required this.score,
     this.metadata,
+    this.weapon,
     this.actions,
   });
 
   final ProgramDefinition program;
   final SessionScore score;
   final SessionMetadata? metadata;
+  final Weapon? weapon;
   final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final caption = _metadataCaption(metadata);
+    final caption = _metadataCaption(metadata, weapon);
     return Scaffold(
       appBar: AppBar(title: Text(program.name), actions: [...?actions]),
       body: SafeArea(

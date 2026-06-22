@@ -12,6 +12,8 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/presentation/date_time_merge.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon.dart';
+import 'package:treffpunkt/features/weapons/presentation/weapon_picker.dart';
 
 /// Key for the confirm ("start shooting") action, used by tests.
 const Key sessionConfirmKey = ValueKey<String>('sessionConfirm');
@@ -55,6 +57,7 @@ class _SessionSetupScreenState extends ConsumerState<SessionSetupScreen> {
   double? _latitude;
   double? _longitude;
   bool _locating = false;
+  Weapon? _weapon;
 
   @override
   void dispose() {
@@ -130,6 +133,7 @@ class _SessionSetupScreenState extends ConsumerState<SessionSetupScreen> {
           builder: (_) => SeriesScreen(
             program: widget.program,
             metadata: metadata,
+            weapon: _weapon,
           ),
         ),
       ),
@@ -177,6 +181,18 @@ class _SessionSetupScreenState extends ConsumerState<SessionSetupScreen> {
                   icon: const Icon(Icons.my_location),
                   label: const Text('Bruk min posisjon'),
                 ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Våpen',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              WeaponPicker(
+                program: widget.program,
+                onSelected: (weapon) => setState(() => _weapon = weapon),
               ),
               const SizedBox(height: 24),
               FilledButton.icon(
