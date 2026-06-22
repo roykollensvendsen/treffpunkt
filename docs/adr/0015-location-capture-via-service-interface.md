@@ -1,6 +1,6 @@
 # ADR-0015: Capture place behind a LocationService interface
 
-- **Status:** Accepted
+- **Status:** Accepted — concrete `geolocator` implementation now wired
 - **Date:** 2026-06-22
 
 ## Context
@@ -29,27 +29,48 @@ that must stay green, especially with a second feature merging in parallel.
 - **Graceful degradation is the contract:** a `null` location is normal, and the
   setup screen always offers manual entry, so the manual path is complete on its
   own.
-- For now bind the default to an **`UnavailableLocationService`** that always
-  returns `null`. The real `geolocator`-backed implementation, with its native
-  permission setup, is a **follow-up** (spec 0008, Open questions) so this slice
-  ships fully green without native churn or a new runtime dependency.
+- Provide a real **`GeolocatorLocationService`** backed by the cross-platform
+  `geolocator` plugin (web + Android + iOS). It checks that location services
+  are enabled, checks/requests permission, and only on a usable grant
+  (`whileInUse` / `always`) fetches the current position with a high accuracy
+  and a finite timeout; **every other outcome returns `null`** — services off,
+  permission `denied` or `deniedForever`, an unsupported platform, a timeout or
+  any thrown error — so graceful degradation to manual entry holds. The static
+  `Geolocator.*` API sits behind a tiny **`GeolocatorGateway`** seam (the real
+  binding by default) so the permission/fallback logic is unit-tested with a
+  fake gateway; the wrapper itself is plugin glue and is not unit-tested.
+- Wire it as the real default through `runTreffpunkt(..., locationService:)`,
+  which overrides `locationServiceProvider`; `main()` passes the
+  `GeolocatorLocationService`. When the parameter is omitted (widget tests, the
+  integration harness) the `UnavailableLocationService` default stays, so no
+  test reaches real GPS.
 
 ## Consequences
 - The whole setup-and-capture flow is unit- and widget-testable with a fake
   service and a fixed clock — no real GPS, no platform channels in tests.
-- The manual place path works on every platform today; "Bruk min posisjon"
-  reports no fix until the plugin is wired, which the UI already handles.
-- Adding `geolocator` later is a localised change: one new `LocationService`
-  implementation plus its manifest / Info.plist permission strings, swapped in at
-  the provider override — no domain or screen changes.
-- No new dependency enters `pubspec.yaml` in this slice, so the gates and the
-  parallel merge stay simple.
+- The manual place path works on every platform today; "Bruk min posisjon" now
+  reads a real fix where granted and still reports no fix (degrading to manual)
+  for every denial or error, which the UI already handles.
+- `geolocator` is the one new runtime dependency, confined to the data layer;
+  the domain stays pure Dart and the presentation layer keeps depending only on
+  the `LocationService` interface.
+- **Platform permission setup** lands with the implementation:
+  - Android (`android/app/src/main/AndroidManifest.xml`): `ACCESS_FINE_LOCATION`
+    and `ACCESS_COARSE_LOCATION`.
+  - iOS (`ios/Runner/Info.plist`): `NSLocationWhenInUseUsageDescription` with a
+    short Norwegian rationale.
+  - Web: no manifest entry — `geolocator_web` uses the browser Geolocation API,
+    which only works in a **secure context (HTTPS)**; GitHub Pages and
+    `localhost` qualify, so the deployed app and local dev both get a prompt.
+- Permanently-denied permission (`deniedForever`) currently just degrades to
+  manual entry; an "open app settings" affordance (`Geolocator.openAppSettings`)
+  is possible later but is out of scope here.
 
 ## Alternatives considered
-- **Add `geolocator` now and wire native permissions:** deferred — it pulls
-  manifest / Info.plist / web setup into this slice, risks the quality gates, and
-  touches files outside this feature's ownership; the interface lets it land
-  cleanly later.
+- **Add `geolocator` in spec 0008's first slice:** deferred at the time — it
+  pulls manifest / Info.plist / web setup in and risked the quality gates while
+  a second feature merged in parallel; the interface let it land cleanly here as
+  a localised follow-up, exactly as planned.
 - **Call platform geolocation APIs directly from the widget:** rejected — it
   makes the screen untestable without real GPS and couples presentation to the
   platform, against the clean-layering and TDD process.
