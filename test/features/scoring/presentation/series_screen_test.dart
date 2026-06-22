@@ -36,6 +36,22 @@ const ProgramDefinition _twoStage = ProgramDefinition(
   ],
 );
 
+// A single 5-shot precision series (inner-ten geometry), so a centre shot
+// scores ring 10 and counts as an inner ten — used to pin the spoken inner-ten
+// phrasing and the per-shot row labels.
+const ProgramDefinition _precision5 = ProgramDefinition(
+  name: 'Precision-5',
+  discipline: Discipline.pistol,
+  stages: <StageDefinition>[
+    StageDefinition(
+      name: 'P',
+      geometry: TargetGeometry.pistol25mPrecision(),
+      shotsPerSeries: 5,
+      seriesCount: 1,
+    ),
+  ],
+);
+
 void main() {
   String totalText(WidgetTester tester) =>
       tester.widget<Text>(find.byKey(seriesTotalKey)).data!;
@@ -149,6 +165,179 @@ void main() {
       // a side-by-side arrangement, not a stacked column.
       expect(total.left, greaterThan(target.right));
       expect(total.top, lessThan(target.bottom));
+    });
+  });
+
+  group('accessibility semantics', () {
+    testWidgets('labels the target and the series total for screen readers', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+
+      // The target announces what it is and how to use it.
+      expect(
+        find.bySemanticsLabel('Skyteskive — trykk for å plassere skudd'),
+        findsOneWidget,
+      );
+      // The series total reads its value in words, not loose digits.
+      expect(
+        find.bySemanticsLabel('Serie-sum: 0 av 100'),
+        findsOneWidget,
+      );
+      // The seal / advance action carries a Norwegian tooltip.
+      expect(find.byTooltip('Fullfør serie'), findsOneWidget);
+
+      handle.dispose();
+    });
+
+    testWidgets('the series-total label updates with the spoken value', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+
+      // Placing a centre shot (ring 10) updates the spoken total in words.
+      await tapTarget(tester);
+      expect(
+        find.bySemanticsLabel('Serie-sum: 10 av 100'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('Serie-sum: 0 av 100'), findsNothing);
+
+      handle.dispose();
+    });
+
+    testWidgets('labels the session total on the scorecard', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+      await completeAirRifle(tester);
+
+      expect(find.byKey(sessionCompleteKey), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp(r'^Økt-sum: \d+ av 100')),
+        findsOneWidget,
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('speaks the inner-ten count, singular then plural', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_app(_precision5));
+
+      // One centre shot: ring 10, one inner ten -> singular "indre tier".
+      await tapTarget(tester);
+      expect(
+        find.bySemanticsLabel('Serie-sum: 10 av 50, 1 indre tier'),
+        findsOneWidget,
+      );
+
+      // A second centre shot pluralises to "indre tiere".
+      await tapTarget(tester);
+      expect(
+        find.bySemanticsLabel('Serie-sum: 20 av 50, 2 indre tiere'),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel('Serie-sum: 10 av 50, 1 indre tier'),
+        findsNothing,
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('marks the stage header as a header with a composed label', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_app(_twoStage));
+
+      final header = find.bySemanticsLabel('A. serie 1/1, stadium 1/2');
+      expect(header, findsOneWidget);
+      expect(tester.getSemantics(header), isSemantics(isHeader: true));
+
+      handle.dispose();
+    });
+
+    testWidgets('labels each shot row, placed and unplaced', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_app(_precision5));
+
+      // Before placing: every row reads as not yet placed.
+      expect(
+        find.bySemanticsLabel('Skudd 1: ikke plassert'),
+        findsOneWidget,
+      );
+
+      // A centre shot scores ring 10 as an inner ten, with the suffix spoken.
+      await tapTarget(tester);
+      expect(find.bySemanticsLabel('Skudd 1: 10, indre tier'), findsOneWidget);
+      expect(find.bySemanticsLabel('Skudd 2: ikke plassert'), findsOneWidget);
+
+      handle.dispose();
+    });
+
+    testWidgets('labels the shots list with the placed count', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+
+      expect(
+        find.bySemanticsLabel('Skudd: 0 av 10 plassert'),
+        findsOneWidget,
+      );
+
+      await tapTarget(tester);
+      expect(
+        find.bySemanticsLabel('Skudd: 1 av 10 plassert'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('Skudd: 0 av 10 plassert'), findsNothing);
+
+      handle.dispose();
+    });
+
+    testWidgets('labels the session-so-far total on a multi-series program', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_app(ProgramCatalogue.standardPistol25m));
+
+      // 12 series of 5 on the precision face -> 600 max; a centre shot adds 10
+      // with one inner ten.
+      await tapTarget(tester);
+      expect(
+        find.bySemanticsLabel('Økt så langt: 10 av 600, 1 indre tier'),
+        findsOneWidget,
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('labels a stage row on the scorecard', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_app(_twoStage));
+
+      // Shoot both stages with centre shots, then seal to the scorecard.
+      await tapTarget(tester);
+      await tapTarget(tester);
+      await tester.tap(find.byKey(sealSeriesKey)); // advance to stage B
+      await tester.pumpAndSettle();
+      await tapTarget(tester);
+      await tapTarget(tester);
+      await tester.tap(find.byKey(sealSeriesKey)); // finish
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(sessionCompleteKey), findsOneWidget);
+      // Stage A: two ring-10 inner tens out of two shots -> 20 of 20.
+      expect(
+        find.bySemanticsLabel('A: 20 av 20, 2 indre tiere'),
+        findsOneWidget,
+      );
+
+      handle.dispose();
     });
   });
 

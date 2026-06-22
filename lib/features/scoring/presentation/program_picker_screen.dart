@@ -101,7 +101,7 @@ class ProgramPickerScreen extends ConsumerWidget {
                       trailing: IconButton(
                         key: discardSessionKey,
                         icon: const Icon(Icons.delete_outline),
-                        tooltip: 'Forkast',
+                        tooltip: 'Forkast lagret økt',
                         onPressed: () => unawaited(_discard(ref)),
                       ),
                       onTap: () => unawaited(_resume(context, ref, saved)),
@@ -109,13 +109,27 @@ class ProgramPickerScreen extends ConsumerWidget {
                   ),
                 for (final definition in ProgramCatalogue.all)
                   Card(
-                    child: ListTile(
-                      key: ValueKey<String>('program-${definition.name}'),
-                      title: Text(definition.name),
-                      subtitle: Text(_subtitle(definition)),
-                      trailing: const Icon(Icons.chevron_right),
+                    child: Semantics(
+                      button: true,
+                      label:
+                          'Velg program: ${definition.name}, '
+                          '${_subtitle(definition)}',
+                      // Carry the tap action on the SAME node as the label so a
+                      // screen reader can activate the tile; `ExcludeSemantics`
+                      // would otherwise drop the ListTile's own tap action.
                       onTap: () =>
                           unawaited(_startProgram(context, ref, definition)),
+                      child: ExcludeSemantics(
+                        child: ListTile(
+                          key: ValueKey<String>('program-${definition.name}'),
+                          title: Text(definition.name),
+                          subtitle: Text(_subtitle(definition)),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => unawaited(
+                            _startProgram(context, ref, definition),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
               ],

@@ -91,6 +91,16 @@ single stacked column on narrow screens and, above a ~900 px breakpoint, a
 side-by-side layout with the target on the left and the shot list / totals on
 the right. The narrow layout is the phone view and is left unchanged.
 
+## Accessibility
+
+The presentation layer adds screen-reader semantics so the app is usable with
+TalkBack / VoiceOver. The target is wrapped in `Semantics` with a spoken label;
+the score cards, shot rows, stage header and stage-score rows wrap their visual
+content in `Semantics(label: …)` + `ExcludeSemantics`, so a screen reader reads
+one clear phrase (the value spoken in words) instead of the loose on-screen
+digits. Buttons carry tooltips that double as their accessible labels. Labels
+are written in Norwegian to match the spoken UI.
+
 ## Authentication (spec 0003)
 
 Sign-in sits behind an `AuthRepository` seam in `lib/features/auth`:

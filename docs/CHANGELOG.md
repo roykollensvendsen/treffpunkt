@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- The app now works with a screen reader (TalkBack / VoiceOver). The target
+  announces itself and how to use it, the series and session totals are read
+  aloud in words ("Serie-sum: 87 av 100, 3 indre tiere") instead of loose
+  digits, each shot row says its number and ring, and the stage header, the
+  seal-series button, the program tiles and the resume / discard actions all
+  carry clear spoken labels in Norwegian.
 - The app now makes proper use of a wide screen. On a desktop, tablet or
   browser window the content no longer stretches edge-to-edge: it is held to a
   comfortable reading width and centred. On a wide shooting screen the target
