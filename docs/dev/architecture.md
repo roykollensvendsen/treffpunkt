@@ -11,8 +11,8 @@ C4Context
   title System context — Treffpunkt
   Person(shooter, "Shooter", "Records shots and views results")
   System(treffpunkt, "Treffpunkt", "Flutter app: score targets, compete")
-  System_Ext(google, "Google", "Sign-in (planned, spec 0002)")
-  System_Ext(supabase, "Supabase", "Auth, Postgres, Realtime (planned)")
+  System_Ext(google, "Google", "Sign-in (via Supabase OAuth)")
+  System_Ext(supabase, "Supabase", "Auth (done); Postgres/Realtime (planned)")
   Rel(shooter, treffpunkt, "Places shots, views scoreboards")
   Rel(treffpunkt, google, "Authenticates with")
   Rel(treffpunkt, supabase, "Stores competitions & results")
@@ -74,3 +74,20 @@ Scoring works in millimetres with the target centre at the origin. A
 offset in mm; the presentation layer converts screen taps to millimetres and
 back. Keeping the domain in real-world units makes it independent of screen size
 and trivial to test.
+
+## Authentication (spec 0003)
+
+Sign-in sits behind an `AuthRepository` seam in `lib/features/auth`:
+
+- `domain/` — `AppUser`, a sealed `AuthStatus` (`SignedOut` / `SignedIn`), and
+  the `AuthRepository` interface (no Supabase types).
+- `data/supabase_auth_repository.dart` — the only file importing
+  `supabase_flutter`; maps Supabase sessions to `AuthStatus` and runs Google
+  OAuth. Excluded from automated tests, verified manually.
+- `presentation/` — `authStateChangesProvider` (the authoritative signed-in
+  truth), an `AuthController` for per-action loading/error, an `AuthGate` that
+  shows the sign-in screen or the app, and a sign-out action.
+
+`main()` is the only place the real repository and `Supabase.initialize` exist;
+tests and the integration harness boot through `runTreffpunkt(fakeRepository)`,
+so the whole feature runs headlessly.

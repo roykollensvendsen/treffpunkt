@@ -6,7 +6,7 @@ Treffpunkt follows the testing pyramid.
 | ------ | ------------------------ | ------------------------------------------------- |
 | Unit   | `test/**/domain`         | `flutter test`                                    |
 | Widget | `test/**/presentation`   | `flutter test`                                    |
-| System | `integration_test/`      | `flutter test integration_test -d flutter-tester` |
+| System | `integration_test/`      | `sh tool/integration_test.sh` (per file, headless) |
 
 ## Principles
 - Domain logic is pure Dart, tested without a Flutter runtime.
@@ -17,6 +17,6 @@ Treffpunkt follows the testing pyramid.
 ## Commands
 
 ```sh
-flutter test                                     # unit + widget
-flutter test integration_test -d flutter-tester  # system tests (headless)
+flutter test                  # unit + widget
+sh tool/integration_test.sh   # system tests (headless, one file at a time)
 ```

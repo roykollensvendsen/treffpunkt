@@ -13,6 +13,9 @@ All notable changes to this project are documented here. The format is based on
 - A tap-to-place target canvas showing the live decimal score.
 - Moving a placed shot by long-pressing it and dragging; the marker turns blue
   while being dragged (spec 0002).
+- Google sign-in via Supabase: a sign-in gate with sign-out, behind a fakeable
+  `AuthRepository` so the feature is testable without real credentials
+  (spec 0003, ADR-0010).
 - Development process: spec-driven workflow, TDD, Conventional Commits enforced
   by a commit-msg hook, strict lints (very_good_analysis), GPLv3 + REUSE
   licensing, and a MkDocs documentation site.
