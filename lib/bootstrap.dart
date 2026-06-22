@@ -10,20 +10,29 @@ import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/weapons/data/weapon_store.dart';
+import 'package:treffpunkt/features/weapons/data/weapons_store.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 /// Runs the app with [authRepository] and optional [sessionStore] /
-/// [locationService] wired in.
+/// [weaponStore] / [locationService] wired in.
 ///
 /// `main()` passes the real Supabase repository, the
-/// `shared_preferences`-backed store and the `geolocator`-backed location
+/// `shared_preferences`-backed stores and the `geolocator`-backed location
 /// service; tests and the integration harness pass fakes (or omit them), so the
 /// app boots without touching real credentials, storage or GPS. When no
-/// [sessionStore] is given the in-memory default is used; when no
-/// [locationService] is given the always-unavailable default stays, so no test
-/// reaches real GPS (ADR-0015).
+/// [sessionStore] or [weaponStore] is given the in-memory default is used; when
+/// no [locationService] is given the always-unavailable default stays, so no
+/// test reaches real GPS (ADR-0015).
+///
+/// [initialWeapons] seeds the personal-weapons list at launch — `main()` loads
+/// it from the [weaponStore] before this call so the notifier starts populated
+/// without an async `build` (spec 0019). Omitting it starts with no weapons.
 void runTreffpunkt(
   AuthRepository authRepository, {
   SessionStore? sessionStore,
+  WeaponStore? weaponStore,
+  List<Weapon>? initialWeapons,
   LocationService? locationService,
 }) {
   runApp(
@@ -32,6 +41,10 @@ void runTreffpunkt(
         authRepositoryProvider.overrideWithValue(authRepository),
         if (sessionStore != null)
           sessionStoreProvider.overrideWithValue(sessionStore),
+        if (weaponStore != null)
+          weaponStoreProvider.overrideWithValue(weaponStore),
+        if (initialWeapons != null)
+          initialWeaponsProvider.overrideWithValue(initialWeapons),
         if (locationService != null)
           locationServiceProvider.overrideWithValue(locationService),
       ],
