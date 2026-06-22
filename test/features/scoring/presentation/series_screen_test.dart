@@ -116,6 +116,42 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  group('responsive layout', () {
+    Future<void> pumpAt(WidgetTester tester, Size logicalSize) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = logicalSize;
+      // Restore the default test surface after driving a custom size.
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('stacks the target above the totals on a narrow surface', (
+      tester,
+    ) async {
+      await pumpAt(tester, const Size(420, 900));
+
+      final target = tester.getRect(find.byKey(seriesTargetKey));
+      final total = tester.getRect(find.byKey(seriesTotalKey));
+      // The totals sit strictly below the target — a single stacked column.
+      expect(total.top, greaterThan(target.bottom));
+    });
+
+    testWidgets('lays the target beside the totals on a wide surface', (
+      tester,
+    ) async {
+      await pumpAt(tester, const Size(1200, 900));
+
+      final target = tester.getRect(find.byKey(seriesTargetKey));
+      final total = tester.getRect(find.byKey(seriesTotalKey));
+      // The totals sit to the right of the target and overlap it vertically —
+      // a side-by-side arrangement, not a stacked column.
+      expect(total.left, greaterThan(target.right));
+      expect(total.top, lessThan(target.bottom));
+    });
+  });
+
   group('scorecard metadata caption', () {
     testWidgets('stamps the date and place when both are present', (
       tester,
