@@ -43,18 +43,20 @@ C4Container
 C4Component
   title Components — scoring feature
   Container(ui, "Presentation")
-  Component(screen, "SeriesScreen / SeriesView", "ConsumerWidget", "Target, shots list, total")
-  Component(target, "SeriesTarget", "ConsumerWidget", "Tap to place, long-press to move")
+  Component(picker, "ProgramPickerScreen", "Widget", "Choose a program")
+  Component(screen, "SeriesScreen / SessionView", "ConsumerWidget", "Header, target, totals, scorecard")
+  Component(target, "SeriesTarget", "ConsumerWidget", "Tap to place, long-press to move, zoom")
   Component(painter, "SeriesPainter", "CustomPainter", "Draws rings + all shots")
-  Component(provider, "seriesProvider", "Riverpod", "Series + drag / sealed state")
-  Component(program, "Program / Series", "Pure Dart", "Discipline + shots per face")
-  Component(scoring, "ScoringService", "Pure Dart", "Ring, inner-ten, series total")
+  Component(provider, "sessionProvider", "Riverpod", "Session + current series + drag")
+  Component(model, "ProgramCatalogue / Session", "Pure Dart", "Programs, stages, series progression")
+  Component(scoring, "ScoringService", "Pure Dart", "Ring, inner-ten, series & session totals")
   Component(geometry, "TargetGeometry", "Pure Dart", "Ring radii, caliber, inner ten")
+  Rel(picker, screen, "Opens")
   Rel(screen, target, "Contains")
   Rel(target, provider, "Reads / writes")
   Rel(target, painter, "Renders with")
-  Rel(screen, scoring, "Scores the series")
-  Rel(provider, program, "Builds from")
+  Rel(screen, scoring, "Scores series & session")
+  Rel(provider, model, "Advances")
   Rel(scoring, geometry, "Uses")
 ```
 

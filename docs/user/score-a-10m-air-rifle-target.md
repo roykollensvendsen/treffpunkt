@@ -3,6 +3,14 @@
 This page explains how Treffpunkt records a series of shots and adds up the
 score.
 
+## Choosing a program
+When you sign in you first **choose a program** (e.g. *10 m Air Rifle*, *25 m
+Finpistol*). The app then guides you through it: you shoot one series at a time,
+tap the tick to finish each series, and it moves on to a fresh target — switching
+the target between stages where a program needs it (for example finpistol's
+*presisjon* and *duell*). A stage/series counter and a running total keep track,
+and a session scorecard sums everything up at the end.
+
 ## The target
 A 10 m air-rifle target has ten scoring rings. The bullseye (ring 10) is a tiny
 0.5 mm dot; each ring outward is 5 mm wider. A black aiming area covers the

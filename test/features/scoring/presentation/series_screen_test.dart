@@ -2,28 +2,54 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Widget tests for the series scoring screen (spec 0006).
+// Widget tests for the guided session screen.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:treffpunkt/features/scoring/domain/program.dart';
+import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
+import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
+import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
+
+// A small two-stage program on two faces, for the advance test.
+const ProgramDefinition _twoStage = ProgramDefinition(
+  name: 'Two-stage',
+  discipline: Discipline.pistol,
+  stages: <StageDefinition>[
+    StageDefinition(
+      name: 'A',
+      geometry: TargetGeometry.pistol25mPrecision(),
+      shotsPerSeries: 2,
+      seriesCount: 1,
+    ),
+    StageDefinition(
+      name: 'B',
+      geometry: TargetGeometry.pistol25mRapid(),
+      shotsPerSeries: 2,
+      seriesCount: 1,
+    ),
+  ],
+);
 
 void main() {
   String totalText(WidgetTester tester) =>
       tester.widget<Text>(find.byKey(seriesTotalKey)).data!;
-
   IconButton sealButton(WidgetTester tester) =>
       tester.widget<IconButton>(find.byKey(sealSeriesKey));
 
-  testWidgets('starts with the program name, an empty list and zero total', (
+  Future<void> tapTarget(WidgetTester tester) async {
+    await tester.tap(find.byKey(seriesTargetKey));
+    await tester.pump();
+  }
+
+  testWidgets('starts with the program name, a header and a zero total', (
     tester,
   ) async {
-    await tester.pumpWidget(_app());
+    await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
 
-    // Once in the app bar title and once in the meta row.
-    expect(find.text('10 m Air Rifle'), findsNWidgets(2));
+    expect(find.text('10 m Air Rifle'), findsOneWidget); // app bar only
+    expect(find.byKey(stageProgressKey), findsOneWidget);
     expect(find.text('0 / 10'), findsOneWidget);
     expect(totalText(tester), '0');
     expect(sealButton(tester).onPressed, isNull);
@@ -32,35 +58,53 @@ void main() {
   testWidgets('placing a shot updates the shots list and the total', (
     tester,
   ) async {
-    await tester.pumpWidget(_app());
-
-    await tester.tap(find.byKey(seriesTargetKey));
-    await tester.pump();
+    await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+    await tapTarget(tester);
 
     expect(find.text('1 / 10'), findsOneWidget);
     expect(totalText(tester), '10');
   });
 
-  testWidgets('completing the series enables sealing it', (tester) async {
-    await tester.pumpWidget(_app());
-
+  testWidgets('completing the only series finishes the session', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
     for (var i = 0; i < 10; i++) {
-      await tester.tap(find.byKey(seriesTargetKey));
-      await tester.pump();
+      await tapTarget(tester);
     }
-
     expect(find.text('10 / 10'), findsOneWidget);
-    expect(totalText(tester), '100');
     expect(sealButton(tester).onPressed, isNotNull);
 
     await tester.tap(find.byKey(sealSeriesKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(sessionCompleteKey), findsOneWidget);
+  });
+
+  testWidgets('advances through stages, switching the face, then finishes', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(_twoStage));
+
+    expect(find.text('A'), findsOneWidget); // stage A name in the header
+    await tapTarget(tester);
+    await tapTarget(tester);
+    expect(find.text('2 / 2'), findsOneWidget);
+
+    await tester.tap(find.byKey(sealSeriesKey)); // advance to stage B
     await tester.pump();
-    expect(find.text('SERIES TOTAL · COMPLETE'), findsOneWidget);
+    expect(find.text('B'), findsOneWidget);
+    expect(find.text('0 / 2'), findsOneWidget);
+
+    await tapTarget(tester);
+    await tapTarget(tester);
+    await tester.tap(find.byKey(sealSeriesKey)); // finish
+    await tester.pumpAndSettle();
+    expect(find.byKey(sessionCompleteKey), findsOneWidget);
   });
 }
 
-Widget _app() {
-  return const ProviderScope(
-    child: MaterialApp(home: SeriesScreen(program: Program.airRifle10m)),
+Widget _app(ProgramDefinition program) {
+  return ProviderScope(
+    child: MaterialApp(home: SeriesScreen(program: program)),
   );
 }

@@ -7,6 +7,10 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- A guided multi-stage flow: choosing a program runs the whole thing — you shoot
+  each series, the app advances to a fresh face (and switches the target between
+  stages, e.g. finpistol presisjon → duell), shows a stage/series counter and the
+  running total, and finishes to a session scorecard.
 - Zoom in on the target for precise shot placement — with the on-target ＋ / −
   buttons (any device, incl. mouse), a pinch on a touch screen, or a two-finger
   trackpad scroll; pan with two fingers when zoomed. Tapping to place and

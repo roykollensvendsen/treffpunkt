@@ -4,29 +4,34 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:treffpunkt/features/scoring/domain/program.dart';
+import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/series_score.dart';
-import 'package:treffpunkt/features/scoring/presentation/series_providers.dart';
+import 'package:treffpunkt/features/scoring/domain/session.dart';
+import 'package:treffpunkt/features/scoring/domain/session_score.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
-/// Key for the "complete series" action in the app bar.
+/// Key for the "complete series" / advance action in the app bar.
 const Key sealSeriesKey = ValueKey<String>('sealSeries');
 
 /// Key for the series total value, used by tests.
 const Key seriesTotalKey = ValueKey<String>('seriesTotal');
 
-/// The series scoring screen: shoot a series on the target, watch each shot's
-/// score and the running total, then seal the series once it is complete.
-///
-/// The discipline is supplied as a [program]; the screen is otherwise
-/// discipline-agnostic.
+/// Key for the stage / series progress text, used by tests.
+const Key stageProgressKey = ValueKey<String>('stageProgress');
+
+/// Key for the session-complete scorecard heading, used by tests.
+const Key sessionCompleteKey = ValueKey<String>('sessionComplete');
+
+/// The guided session screen: shoot a program through its stages and series,
+/// watching the running total, then finishing to a session scorecard.
 class SeriesScreen extends StatelessWidget {
   /// Creates the screen for [program] with optional app-bar [actions].
   const SeriesScreen({required this.program, this.actions, super.key});
 
   /// The program (discipline) being shot.
-  final Program program;
+  final ProgramDefinition program;
 
   /// Extra actions shown in the app bar (e.g. a sign-out button).
   final List<Widget>? actions;
@@ -34,23 +39,20 @@ class SeriesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
-      // Re-host seriesProvider in this scope so it reads the program override
-      // here rather than from an enclosing scope.
       overrides: [
-        currentProgramProvider.overrideWithValue(program),
-        seriesProvider.overrideWith(SeriesNotifier.new),
+        currentProgramDefinitionProvider.overrideWithValue(program),
+        sessionProvider.overrideWith(SessionNotifier.new),
       ],
-      child: SeriesView(actions: actions),
+      child: SessionView(actions: actions),
     );
   }
 }
 
-/// The body of the series scoring screen: app bar, target, shots list and the
-/// series total. It reads the current program and series from the providers in
-/// scope (supplied by [SeriesScreen]).
-class SeriesView extends ConsumerWidget {
-  /// Creates the series view with optional app-bar [actions].
-  const SeriesView({this.actions, super.key});
+/// The body of the guided session screen. Reads the session from the providers
+/// in scope (supplied by [SeriesScreen]).
+class SessionView extends ConsumerWidget {
+  /// Creates the session view with optional app-bar [actions].
+  const SessionView({this.actions, super.key});
 
   /// Extra actions shown in the app bar (e.g. a sign-out button).
   final List<Widget>? actions;
@@ -59,11 +61,24 @@ class SeriesView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recording = ref.watch(seriesProvider);
-    final program = ref.watch(currentProgramProvider);
-    final series = recording.series;
-    final score = _scoring.scoreSeries(series);
-    final canSeal = series.isComplete && !recording.sealed;
+    final recording = ref.watch(sessionProvider);
+    final program = ref.watch(currentProgramDefinitionProvider);
+
+    if (recording.isComplete) {
+      return _SessionScorecard(
+        program: program,
+        score: _scoring.scoreSession(recording.session),
+        actions: actions,
+      );
+    }
+
+    final session = recording.session;
+    final current = recording.current!;
+    final seriesScore = _scoring.scoreSeries(current);
+    final sealedScore = _scoring.scoreSession(session);
+    final runningTotal = sealedScore.total + seriesScore.total;
+    final runningInnerTens = sealedScore.innerTens + seriesScore.innerTens;
+    final multiSeries = program.totalShots > current.capacity;
 
     return Scaffold(
       appBar: AppBar(
@@ -73,8 +88,8 @@ class SeriesView extends ConsumerWidget {
             key: sealSeriesKey,
             icon: const Icon(Icons.check),
             tooltip: 'Complete series',
-            onPressed: canSeal
-                ? () => ref.read(seriesProvider.notifier).seal()
+            onPressed: current.isComplete
+                ? () => ref.read(sessionProvider.notifier).advance()
                 : null,
           ),
           ...?actions,
@@ -86,7 +101,12 @@ class SeriesView extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _MetaRow(program: program),
+              _MetaRow(
+                discipline: program.discipline,
+                caliberMm: current.geometry.caliberMm,
+              ),
+              const SizedBox(height: 8),
+              _StageHeader(program: program, session: session),
               const SizedBox(height: 12),
               Center(
                 child: ConstrainedBox(
@@ -99,14 +119,22 @@ class SeriesView extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               _ShotsList(
-                placed: series.placedCount,
-                capacity: series.capacity,
-                score: score,
+                placed: current.placedCount,
+                capacity: current.capacity,
+                score: seriesScore,
               ),
               const SizedBox(height: 16),
-              _SeriesTotalCard(score: score, sealed: recording.sealed),
+              _SeriesTotalCard(score: seriesScore),
+              if (multiSeries) ...[
+                const SizedBox(height: 8),
+                _SessionProgress(
+                  total: runningTotal,
+                  maxTotal: sealedScore.maxTotal,
+                  innerTens: runningInnerTens,
+                ),
+              ],
               const SizedBox(height: 12),
-              _Legend(hasInnerTen: program.geometry.hasInnerTen),
+              _Legend(hasInnerTen: current.geometry.hasInnerTen),
             ],
           ),
         ),
@@ -116,21 +144,55 @@ class SeriesView extends ConsumerWidget {
 }
 
 class _MetaRow extends StatelessWidget {
-  const _MetaRow({required this.program});
+  const _MetaRow({required this.discipline, required this.caliberMm});
 
-  final Program program;
+  final Discipline discipline;
+  final double caliberMm;
 
   @override
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.bodyMedium;
-    final caliber = program.geometry.caliberMm;
+    final label = discipline == Discipline.rifle ? 'Rifle' : 'Pistol';
     return Row(
       children: [
+        Text(label, style: style?.copyWith(fontWeight: FontWeight.w600)),
+        Text('  ·  $caliberMm mm', style: style),
+      ],
+    );
+  }
+}
+
+class _StageHeader extends StatelessWidget {
+  const _StageHeader({required this.program, required this.session});
+
+  final ProgramDefinition program;
+  final Session session;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final stage = session.currentStage!;
+    final parts = <String>[
+      'serie ${session.currentSeriesNumber}/${stage.seriesCount}',
+      if (program.stages.length > 1)
+        'stadium ${session.currentStageIndex + 1}/${program.stages.length}',
+    ];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
         Text(
-          program.name,
-          style: style?.copyWith(fontWeight: FontWeight.w600),
+          stage.name,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        Text('  ·  $caliber mm', style: style),
+        Text(
+          parts.join(' · '),
+          key: stageProgressKey,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }
@@ -243,10 +305,9 @@ class _ShotRow extends StatelessWidget {
 }
 
 class _SeriesTotalCard extends StatelessWidget {
-  const _SeriesTotalCard({required this.score, required this.sealed});
+  const _SeriesTotalCard({required this.score});
 
   final SeriesScore score;
-  final bool sealed;
 
   @override
   Widget build(BuildContext context) {
@@ -266,7 +327,7 @@ class _SeriesTotalCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                sealed ? 'SERIES TOTAL · COMPLETE' : 'SERIES TOTAL',
+                'SERIES TOTAL',
                 style: TextStyle(
                   color: onColor,
                   fontSize: 12,
@@ -308,6 +369,30 @@ class _SeriesTotalCard extends StatelessWidget {
   }
 }
 
+class _SessionProgress extends StatelessWidget {
+  const _SessionProgress({
+    required this.total,
+    required this.maxTotal,
+    required this.innerTens,
+  });
+
+  final int total;
+  final int maxTotal;
+  final int innerTens;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final suffix = innerTens > 0 ? ' · $innerTens×X' : '';
+    return Text(
+      'Session so far: $total / $maxTotal$suffix',
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+}
+
 class _Legend extends StatelessWidget {
   const _Legend({required this.hasInnerTen});
 
@@ -330,6 +415,143 @@ class _Legend extends StatelessWidget {
           child: Text('one target face · tap to place each shot', style: style),
         ),
       ],
+    );
+  }
+}
+
+class _SessionScorecard extends StatelessWidget {
+  const _SessionScorecard({
+    required this.program,
+    required this.score,
+    this.actions,
+  });
+
+  final ProgramDefinition program;
+  final SessionScore score;
+  final List<Widget>? actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(title: Text(program.name), actions: [...?actions]),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Session complete',
+                key: sessionCompleteKey,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              for (var i = 0; i < program.stages.length; i++)
+                _StageScoreRow(
+                  name: program.stages[i].name,
+                  score: score.stages[i],
+                ),
+              const SizedBox(height: 16),
+              _GrandTotalCard(score: score),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StageScoreRow extends StatelessWidget {
+  const _StageScoreRow({required this.name, required this.score});
+
+  final String name;
+  final StageScore score;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final suffix = score.innerTens > 0 ? '  ·  ${score.innerTens}×X' : '';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(name, style: theme.textTheme.titleMedium),
+          Text(
+            '${score.total} / ${score.maxTotal}$suffix',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GrandTotalCard extends StatelessWidget {
+  const _GrandTotalCard({required this.score});
+
+  final SessionScore score;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final onColor = scheme.onPrimary;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: scheme.primary,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'SESSION TOTAL',
+                style: TextStyle(
+                  color: onColor,
+                  fontSize: 12,
+                  letterSpacing: 1,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                score.innerTens > 0 ? 'Sum · ${score.innerTens}×X' : 'Sum',
+                style: TextStyle(color: onColor, fontSize: 18),
+              ),
+            ],
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${score.total}',
+                style: TextStyle(
+                  color: onColor,
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                ' / ${score.maxTotal}',
+                style: TextStyle(
+                  color: onColor.withValues(alpha: 0.8),
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
