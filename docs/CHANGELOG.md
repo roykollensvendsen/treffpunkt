@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- A guided-flow session domain: a pure-Dart `Session` aggregate that walks a
+  program's stages and series — advancing to a fresh face, then the next stage —
+  and rolls up per-stage and total scores (ADR-0012).
 - The program-definition model (`ProgramDefinition` / `StageDefinition`) and a
   seeded catalogue, plus the 25 m pistol precision target geometry and its
   scoring vectors (ADR-0012).

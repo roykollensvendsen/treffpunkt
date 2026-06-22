@@ -4,6 +4,8 @@
 
 import 'package:treffpunkt/features/scoring/domain/series.dart';
 import 'package:treffpunkt/features/scoring/domain/series_score.dart';
+import 'package:treffpunkt/features/scoring/domain/session.dart';
+import 'package:treffpunkt/features/scoring/domain/session_score.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 
@@ -83,6 +85,37 @@ class ScoringService {
       total: total,
       innerTens: innerTens,
       maxTotal: series.capacity * geometry.highestRing,
+    );
+  }
+
+  /// Rolls up [session] into a per-stage and grand total score.
+  SessionScore scoreSession(Session session) {
+    final stageScores = <StageScore>[];
+    var grandTotal = 0;
+    var grandInnerTens = 0;
+    var grandMaxTotal = 0;
+    for (var i = 0; i < session.program.stages.length; i++) {
+      final stage = session.program.stages[i];
+      var total = 0;
+      var innerTens = 0;
+      for (final series in session.sealedSeriesByStage[i]) {
+        final score = scoreSeries(series);
+        total += score.total;
+        innerTens += score.innerTens;
+      }
+      final maxTotal = stage.totalShots * stage.geometry.highestRing;
+      stageScores.add(
+        StageScore(total: total, innerTens: innerTens, maxTotal: maxTotal),
+      );
+      grandTotal += total;
+      grandInnerTens += innerTens;
+      grandMaxTotal += maxTotal;
+    }
+    return SessionScore(
+      stages: List<StageScore>.unmodifiable(stageScores),
+      total: grandTotal,
+      innerTens: grandInnerTens,
+      maxTotal: grandMaxTotal,
     );
   }
 }
