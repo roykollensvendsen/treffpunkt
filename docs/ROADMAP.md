@@ -11,7 +11,7 @@ Treffpunkt is built spec-by-spec. Each item below becomes a spec in
 
 ## Next
 - [x] 0002 — Move a placed shot: long-press to pick it up (colour change) and drag
-- [ ] 0003 — Authentication: Google sign-in (Supabase); register / login / logout
+- [x] 0003 — Authentication: Google sign-in (Supabase); login / logout
 - [ ] 0004 — Data & RLS: competitions (public/private), invitations, results
 - [ ] 0005 — Competitions: create / invite / join; target sets per competition
 - [ ] 0006 — Shooting session: swipe between targets, completion & persistence
