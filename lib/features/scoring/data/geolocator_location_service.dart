@@ -23,6 +23,9 @@ abstract interface class GeolocatorGateway {
 
   /// Fetches the current position using [locationSettings].
   Future<Position> getCurrentPosition({LocationSettings? locationSettings});
+
+  /// Opens the OS application settings page for this app.
+  Future<bool> openAppSettings();
 }
 
 /// The default [GeolocatorGateway], forwarding to the real `Geolocator` plugin.
@@ -47,15 +50,20 @@ class RealGeolocatorGateway implements GeolocatorGateway {
   @override
   Future<Position> getCurrentPosition({LocationSettings? locationSettings}) =>
       Geolocator.getCurrentPosition(locationSettings: locationSettings);
+
+  @override
+  Future<bool> openAppSettings() => Geolocator.openAppSettings();
 }
 
 /// A [LocationService] backed by the `geolocator` plugin (web, Android, iOS).
 ///
 /// Reads a real device fix when location services are on and permission is
-/// granted; for every other outcome — services off, permission denied or
-/// permanently denied, an unsupported platform, a timeout or any thrown
-/// error — it returns `null` (never throws), so "Bruk min posisjon" degrades
-/// cleanly to manual entry (ADR-0015).
+/// granted; for every other outcome it returns the matching [LocationResult]
+/// (never throws), so "Bruk min posisjon" degrades cleanly to manual entry
+/// (ADR-0015): services off, an unsupported platform, a timeout or any thrown
+/// error map to [LocationUnavailable]; a fresh denial to [LocationDenied]; and
+/// a permanent denial to [LocationDeniedForever], which lets the UI offer
+/// [openLocationSettings].
 class GeolocatorLocationService implements LocationService {
   /// Creates the service, optionally over a custom [gateway] (defaults to the
   /// real plugin) and a [timeout] guarding a hanging fix.
@@ -72,34 +80,50 @@ class GeolocatorLocationService implements LocationService {
   final Duration timeout;
 
   @override
-  Future<DeviceLocation?> currentLocation() async {
+  Future<LocationResult> currentLocation() async {
     try {
-      if (!await gateway.isLocationServiceEnabled()) return null;
-      if (!await _hasPermission()) return null;
-      final position = await gateway.getCurrentPosition(
-        locationSettings: LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: timeout,
-        ),
-      );
-      return DeviceLocation(
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
+      if (!await gateway.isLocationServiceEnabled()) {
+        return const LocationUnavailable();
+      }
+      var permission = await gateway.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await gateway.requestPermission();
+      }
+      switch (permission) {
+        case LocationPermission.whileInUse:
+        case LocationPermission.always:
+          final position = await gateway.getCurrentPosition(
+            locationSettings: LocationSettings(
+              accuracy: LocationAccuracy.high,
+              timeLimit: timeout,
+            ),
+          );
+          return LocationFix(
+            DeviceLocation(
+              latitude: position.latitude,
+              longitude: position.longitude,
+            ),
+          );
+        case LocationPermission.deniedForever:
+          return const LocationDeniedForever();
+        case LocationPermission.denied:
+          return const LocationDenied();
+        case LocationPermission.unableToDetermine:
+          return const LocationUnavailable();
+      }
     } on Object {
       // Any failure (timeout, platform exception, unsupported) is "no fix":
       // the caller falls back to manual entry rather than seeing an error.
-      return null;
+      return const LocationUnavailable();
     }
   }
 
-  /// Whether the app has a usable grant, requesting once if not yet decided.
-  Future<bool> _hasPermission() async {
-    var permission = await gateway.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await gateway.requestPermission();
+  @override
+  Future<void> openLocationSettings() async {
+    try {
+      await gateway.openAppSettings();
+    } on Object {
+      // Opening settings is best-effort; never surface a failure to the caller.
     }
-    return permission == LocationPermission.whileInUse ||
-        permission == LocationPermission.always;
   }
 }

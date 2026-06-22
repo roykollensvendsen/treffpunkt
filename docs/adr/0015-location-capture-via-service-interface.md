@@ -19,10 +19,16 @@ that must stay green, especially with a second feature merging in parallel.
 
 ## Decision
 - Reach location through a small **`LocationService`** interface in the data
-  layer — the same pattern as `AuthRepository`. It exposes one method that
-  returns the current location or `null` (no fix / denied / unsupported), so the
-  presentation and domain layers never depend on a GPS plugin or platform APIs
-  and tests inject a fake.
+  layer — the same pattern as `AuthRepository` — so the presentation and domain
+  layers never depend on a GPS plugin or platform APIs and tests inject a fake.
+  Its `currentLocation()` reports a sealed **`LocationResult`** — `LocationFix`
+  (coordinates) · `LocationDenied` · `LocationDeniedForever` ·
+  `LocationUnavailable` — so callers `switch` exhaustively and the
+  permanently-denied case cannot be forgotten. A second method,
+  `openLocationSettings()`, opens the OS app settings; it is the only fix once a
+  permission is permanently denied. Every non-fix outcome still degrades to
+  manual entry — the sealed result only distinguishes them so the UI can offer
+  the right affordance.
 - The captured place is a pure-Dart **`Place`** value (a human `label` plus
   optional `latitude` / `longitude`), so a GPS fix can still be named and a typed
   label needs no coordinates — coordinates and label coexist (ADR-0012).
@@ -33,12 +39,16 @@ that must stay green, especially with a second feature merging in parallel.
   `geolocator` plugin (web + Android + iOS). It checks that location services
   are enabled, checks/requests permission, and only on a usable grant
   (`whileInUse` / `always`) fetches the current position with a high accuracy
-  and a finite timeout; **every other outcome returns `null`** — services off,
-  permission `denied` or `deniedForever`, an unsupported platform, a timeout or
-  any thrown error — so graceful degradation to manual entry holds. The static
-  `Geolocator.*` API sits behind a tiny **`GeolocatorGateway`** seam (the real
-  binding by default) so the permission/fallback logic is unit-tested with a
-  fake gateway; the wrapper itself is plugin glue and is not unit-tested.
+  and a finite timeout; **every other outcome maps to a non-fix `LocationResult`
+  (never an exception)** — services off / an unsupported platform / an
+  indeterminate `unableToDetermine` / a timeout / any thrown error →
+  `LocationUnavailable`; a fresh `denied` → `LocationDenied`;
+  `deniedForever` → `LocationDeniedForever` — so graceful degradation to manual
+  entry holds throughout. The static `Geolocator.*` API sits behind a tiny
+  **`GeolocatorGateway`** seam (the real binding by default, now also forwarding
+  `openAppSettings()` to `Geolocator.openAppSettings()`) so the permission /
+  fallback and `deniedForever` mapping are unit-tested with a fake gateway; the
+  wrapper itself is plugin glue and is not unit-tested.
 - Wire it as the real default through `runTreffpunkt(..., locationService:)`,
   which overrides `locationServiceProvider`; `main()` passes the
   `GeolocatorLocationService`. When the parameter is omitted (widget tests, the
@@ -62,9 +72,15 @@ that must stay green, especially with a second feature merging in parallel.
   - Web: no manifest entry — `geolocator_web` uses the browser Geolocation API,
     which only works in a **secure context (HTTPS)**; GitHub Pages and
     `localhost` qualify, so the deployed app and local dev both get a prompt.
-- Permanently-denied permission (`deniedForever`) currently just degrades to
-  manual entry; an "open app settings" affordance (`Geolocator.openAppSettings`)
-  is possible later but is out of scope here.
+- Permanently-denied permission (`deniedForever`) degrades to manual entry like
+  any other non-fix, **and** the setup screen now offers an "Åpne innstillinger"
+  (open settings) action — a SnackBar action calling
+  `LocationService.openLocationSettings()` — since the OS settings are the only
+  place that grant can be restored. The affordance is shown for
+  `LocationDeniedForever` only; a fresh denial, no-fix or a successful fix never
+  shows it. The `UnavailableLocationService` default is never permanently denied
+  and its `openLocationSettings()` is a no-op, so tests and unsupported
+  platforms see no settings prompt.
 
 ## Alternatives considered
 - **Add `geolocator` in spec 0008's first slice:** deferred at the time — it

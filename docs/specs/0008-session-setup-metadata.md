@@ -127,12 +127,17 @@ implementation is the follow-up in ADR-0015.
   passing neither returns the base unchanged; the base's UTC/local mode is kept.
 - `geolocator_location_service_test`: the `geolocator`-backed
   `GeolocatorLocationService`, driven through a fake `GeolocatorGateway` (no real
-  GPS), maps each outcome correctly — services disabled → `null`; permission
-  `denied` → `null`; `deniedForever` → `null`; initially `denied` then granted on
-  request → it requests once and returns the fix; granted (`whileInUse` /
-  `always`) with a position → a `DeviceLocation` carrying that lat/lng; the
-  gateway throwing → `null` (graceful, never rethrows). The trivial
-  `RealGeolocatorGateway` plugin binding is not unit-tested.
+  GPS), maps each outcome to the sealed `LocationResult` — services disabled →
+  `LocationUnavailable`; permission `denied` → `LocationDenied`;
+  `unableToDetermine` → `LocationUnavailable`; `deniedForever`
+  → `LocationDeniedForever` (and it never re-prompts); a re-prompt that returns
+  `deniedForever` → `LocationDeniedForever`; initially `denied` then granted on
+  request → it requests once and returns a `LocationFix`; granted (`whileInUse` /
+  `always`) with a position → a `LocationFix` carrying that lat/lng; the gateway
+  throwing → `LocationUnavailable` (graceful, never rethrows). `openLocationSettings`
+  forwards to the gateway's `openAppSettings` and swallows a gateway error
+  (best-effort, completes normally). The trivial `RealGeolocatorGateway`
+  plugin binding is not unit-tested.
 
 ### Widget tests
 
@@ -143,8 +148,15 @@ implementation is the follow-up in ADR-0015.
   place carrying that exact latitude/longitude into the recorded session; a GPS
   fix does **not** overwrite an already-typed label — the label is preserved in
   the field and the resulting `Place` keeps the label *and* the fix's
-  coordinates; with a fake that returns `null` the shooter can still type a label
-  and confirm; confirming navigates to the series target.
+  coordinates; with a fake reporting no fix (`LocationUnavailable`) the shooter
+  can still type a label and confirm; confirming navigates to the series target.
+  When the fake reports `LocationDeniedForever`, tapping "Bruk min posisjon"
+  shows an "Åpne innstillinger" action and tapping it calls the service's
+  `openLocationSettings`; manual entry still works afterwards — typing a place
+  and confirming reaches the series target with that label in the session's
+  metadata. A plain `LocationDenied`, a no-fix `LocationUnavailable`
+  and a successful `LocationFix` never show that action (manual entry stays a full
+  fallback in every case).
 - `series_screen_test` (extended): after completing a one-series program to the
   scorecard, the caption under `sessionMetadataKey` reads
   `'YYYY-MM-DD HH:MM · <label>'` when a place is present, shows the timestamp
