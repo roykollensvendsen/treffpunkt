@@ -18,6 +18,7 @@ class _FakeGateway implements GeolocatorGateway {
     this.afterRequest,
     this.position,
     this.throwOnPosition = false,
+    this.throwOnOpenSettings = false,
   });
 
   final bool serviceEnabled;
@@ -25,8 +26,10 @@ class _FakeGateway implements GeolocatorGateway {
   final LocationPermission? afterRequest;
   final Position? position;
   final bool throwOnPosition;
+  final bool throwOnOpenSettings;
 
   int requestCount = 0;
+  int openSettingsCount = 0;
 
   @override
   Future<bool> isLocationServiceEnabled() async => serviceEnabled;
@@ -45,6 +48,13 @@ class _FakeGateway implements GeolocatorGateway {
     if (throwOnPosition) throw Exception('boom');
     return Future<Position>.value(position);
   }
+
+  @override
+  Future<bool> openAppSettings() async {
+    openSettingsCount++;
+    if (throwOnOpenSettings) throw Exception('boom');
+    return true;
+  }
 }
 
 Position _positionAt(double latitude, double longitude) => Position(
@@ -62,26 +72,36 @@ Position _positionAt(double latitude, double longitude) => Position(
 
 void main() {
   group('GeolocatorLocationService', () {
-    test('returns null when location services are disabled', () async {
+    test('reports unavailable when location services are disabled', () async {
       final service = GeolocatorLocationService(
         gateway: _FakeGateway(serviceEnabled: false),
       );
-      expect(await service.currentLocation(), isNull);
+      expect(await service.currentLocation(), isA<LocationUnavailable>());
     });
 
-    test('returns null when permission is denied', () async {
+    test('reports denied when permission is denied', () async {
       final service = GeolocatorLocationService(
         gateway: _FakeGateway(permission: LocationPermission.denied),
       );
-      expect(await service.currentLocation(), isNull);
+      expect(await service.currentLocation(), isA<LocationDenied>());
     });
 
-    test('returns null when permission is permanently denied', () async {
+    test('reports unavailable when permission is unableToDetermine', () async {
+      final service = GeolocatorLocationService(
+        gateway: _FakeGateway(
+          permission: LocationPermission.unableToDetermine,
+        ),
+      );
+      expect(await service.currentLocation(), isA<LocationUnavailable>());
+    });
+
+    test('reports deniedForever when permission is permanently denied, '
+        'without re-prompting', () async {
       final gateway = _FakeGateway(
         permission: LocationPermission.deniedForever,
       );
       final service = GeolocatorLocationService(gateway: gateway);
-      expect(await service.currentLocation(), isNull);
+      expect(await service.currentLocation(), isA<LocationDeniedForever>());
       expect(gateway.requestCount, 0); // never re-prompts on permanent denial
     });
 
@@ -94,12 +114,28 @@ void main() {
       );
       final service = GeolocatorLocationService(gateway: gateway);
 
-      final fix = await service.currentLocation();
+      final result = await service.currentLocation();
 
       expect(gateway.requestCount, 1);
-      expect(fix?.latitude, 59.9);
-      expect(fix?.longitude, 10.7);
+      expect(result, isA<LocationFix>());
+      final fix = (result as LocationFix).location;
+      expect(fix.latitude, 59.9);
+      expect(fix.longitude, 10.7);
     });
+
+    test(
+      'reports deniedForever when a re-prompt is permanently denied',
+      () async {
+        final gateway = _FakeGateway(
+          permission: LocationPermission.denied,
+          afterRequest: LocationPermission.deniedForever,
+        );
+        final service = GeolocatorLocationService(gateway: gateway);
+
+        expect(await service.currentLocation(), isA<LocationDeniedForever>());
+        expect(gateway.requestCount, 1);
+      },
+    );
 
     test(
       'returns the DeviceLocation when granted and a position is read',
@@ -111,19 +147,43 @@ void main() {
           ),
         );
 
-        final fix = await service.currentLocation();
+        final result = await service.currentLocation();
 
-        expect(fix, isA<DeviceLocation>());
-        expect(fix?.latitude, 63.43);
-        expect(fix?.longitude, 10.39);
+        expect(result, isA<LocationFix>());
+        final fix = (result as LocationFix).location;
+        expect(fix.latitude, 63.43);
+        expect(fix.longitude, 10.39);
       },
     );
 
-    test('returns null (does not throw) when the gateway throws', () async {
-      final service = GeolocatorLocationService(
-        gateway: _FakeGateway(throwOnPosition: true),
-      );
-      expect(await service.currentLocation(), isNull);
+    test(
+      'reports unavailable (does not throw) when the gateway throws',
+      () async {
+        final service = GeolocatorLocationService(
+          gateway: _FakeGateway(throwOnPosition: true),
+        );
+        expect(await service.currentLocation(), isA<LocationUnavailable>());
+      },
+    );
+
+    test('openLocationSettings calls through to the gateway', () async {
+      final gateway = _FakeGateway();
+      final service = GeolocatorLocationService(gateway: gateway);
+
+      await service.openLocationSettings();
+
+      expect(gateway.openSettingsCount, 1);
     });
+
+    test(
+      'openLocationSettings swallows a gateway error (best-effort)',
+      () async {
+        final gateway = _FakeGateway(throwOnOpenSettings: true);
+        final service = GeolocatorLocationService(gateway: gateway);
+
+        await expectLater(service.openLocationSettings(), completes);
+        expect(gateway.openSettingsCount, 1);
+      },
+    );
   });
 }

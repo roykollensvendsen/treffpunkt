@@ -58,9 +58,7 @@ void main() {
   testWidgets('using my location fills the place from a GPS fix', (
     tester,
   ) async {
-    final location = FakeLocationService(
-      fix: const DeviceLocation(latitude: 59.9, longitude: 10.7),
-    );
+    final location = FakeLocationService.fix(latitude: 59.9, longitude: 10.7);
     await tester.pumpWidget(app(location));
 
     await tester.tap(find.byKey(useMyLocationKey));
@@ -83,9 +81,7 @@ void main() {
   testWidgets('a GPS fix does not overwrite an already-typed label', (
     tester,
   ) async {
-    final location = FakeLocationService(
-      fix: const DeviceLocation(latitude: 59.9, longitude: 10.7),
-    );
+    final location = FakeLocationService.fix(latitude: 59.9, longitude: 10.7);
     await tester.pumpWidget(app(location));
 
     // Type a label first, then ask for the fix.
@@ -133,6 +129,71 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(seriesTargetKey), findsOneWidget);
+  });
+
+  testWidgets('offers "Åpne innstillinger" when location is permanently denied '
+      'and tapping it opens the OS settings', (tester) async {
+    final location = FakeLocationService(
+      result: const LocationDeniedForever(),
+    );
+    await tester.pumpWidget(app(location));
+
+    await tester.tap(find.byKey(useMyLocationKey));
+    await tester.pumpAndSettle();
+
+    // The open-settings affordance appears.
+    expect(find.byKey(openLocationSettingsKey), findsOneWidget);
+    expect(find.text('Åpne innstillinger'), findsOneWidget);
+
+    await tester.tap(find.byKey(openLocationSettingsKey));
+    await tester.pump();
+    expect(location.openSettingsCount, 1);
+
+    // Let the SnackBar finish dismissing so it no longer overlaps the confirm
+    // button, then prove manual entry still works: typing a place and
+    // confirming reaches the shooting screen with that label in the metadata.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.enterText(find.byKey(placeFieldKey), 'Skytebanen');
+    await tester.tap(find.byKey(sessionConfirmKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(seriesTargetKey), findsOneWidget);
+    expect(pushedMetadata(tester)!.place!.label, 'Skytebanen');
+  });
+
+  testWidgets('does not offer "Åpne innstillinger" for a plain denial', (
+    tester,
+  ) async {
+    final location = FakeLocationService(result: const LocationDenied());
+    await tester.pumpWidget(app(location));
+
+    await tester.tap(find.byKey(useMyLocationKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(openLocationSettingsKey), findsNothing);
+  });
+
+  testWidgets('does not offer "Åpne innstillinger" when no fix is available', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(FakeLocationService())); // LocationUnavailable
+
+    await tester.tap(find.byKey(useMyLocationKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(openLocationSettingsKey), findsNothing);
+  });
+
+  testWidgets('does not offer "Åpne innstillinger" on a successful fix', (
+    tester,
+  ) async {
+    final location = FakeLocationService.fix(latitude: 59.9, longitude: 10.7);
+    await tester.pumpWidget(app(location));
+
+    await tester.tap(find.byKey(useMyLocationKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(openLocationSettingsKey), findsNothing);
   });
 
   // Reads the weapon threaded into the pushed SeriesScreen scope, so the gun

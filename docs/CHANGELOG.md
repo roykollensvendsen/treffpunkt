@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- When location permission is turned off for good, the session-setup step now
+  offers an "Åpne innstillinger" button that jumps straight to the app's
+  location settings — the only place that permission can be switched back on.
+  Every other case (a one-off "not now", location switched off, a browser
+  without GPS) still quietly falls back to typing the place by hand.
 - Your personal weapons now stick around: the guns you add are saved on-device
   and are still there after you close and reopen the app, with no network needed.
   Storage sits behind a `WeaponStore` interface (`shared_preferences`), mirroring

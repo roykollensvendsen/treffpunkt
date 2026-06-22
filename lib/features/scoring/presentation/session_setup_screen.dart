@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/domain/place.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
@@ -26,6 +27,10 @@ const Key placeFieldKey = ValueKey<String>('placeField');
 
 /// Key for the date / time field, used by tests.
 const Key dateTimeKey = ValueKey<String>('dateTime');
+
+/// Key for the "open settings" action shown when location is permanently
+/// denied, used by tests.
+const Key openLocationSettingsKey = ValueKey<String>('openLocationSettings');
 
 /// Captures when and where a session is shot, before shooting starts.
 ///
@@ -97,19 +102,43 @@ class _SessionSetupScreenState extends ConsumerState<SessionSetupScreen> {
 
   Future<void> _useMyLocation() async {
     setState(() => _locating = true);
-    final fix = await ref.read(locationServiceProvider).currentLocation();
+    final result = await ref.read(locationServiceProvider).currentLocation();
     if (!mounted) return;
     setState(() {
       _locating = false;
-      if (fix == null) return;
-      _latitude = fix.latitude;
-      _longitude = fix.longitude;
-      if (_placeController.text.trim().isEmpty) {
-        _placeController.text =
-            '${fix.latitude.toStringAsFixed(4)}, '
-            '${fix.longitude.toStringAsFixed(4)}';
+      if (result case LocationFix(:final location)) {
+        _latitude = location.latitude;
+        _longitude = location.longitude;
+        if (_placeController.text.trim().isEmpty) {
+          _placeController.text =
+              '${location.latitude.toStringAsFixed(4)}, '
+              '${location.longitude.toStringAsFixed(4)}';
+        }
       }
     });
+    // Only a permanent denial is fixable from the OS settings; every other
+    // non-fix outcome degrades silently to manual entry, exactly as before.
+    if (result is LocationDeniedForever) _offerOpenSettings();
+  }
+
+  /// Prompts the shooter to open the OS settings, where a permanently-denied
+  /// location permission is the only thing that can be re-granted.
+  void _offerOpenSettings() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Posisjon er avslått. Slå den på i innstillingene, '
+          'eller skriv inn stedet selv.',
+        ),
+        action: SnackBarAction(
+          key: openLocationSettingsKey,
+          label: 'Åpne innstillinger',
+          onPressed: () {
+            unawaited(ref.read(locationServiceProvider).openLocationSettings());
+          },
+        ),
+      ),
+    );
   }
 
   Place? _buildPlace() {
