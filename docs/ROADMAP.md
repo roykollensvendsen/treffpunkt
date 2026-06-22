@@ -18,8 +18,10 @@ The shooter records a complete session on-device, with no network needed
       scoring with an optional inner ten on the generalised `TargetGeometry`;
       10 m air rifle re-expressed (spec 0001's vectors unchanged). The `Session`
       aggregate root and stages land with persistence (0009).
-- [ ] 0005 — 25 m pistol target & scoring: a new, sourced geometry mirroring
-      spec 0001's vector table (precision and duel faces; inner-ten / X).
+- [x] 0005 — 25 m pistol target & scoring: the precision (rings 1–10) and rapid
+      / duel (rings 5–10) faces formally specified and sourced to ISSF, with a
+      vector table mirroring spec 0001's (both faces; inner-ten / X; the gauge
+      edge rule). Geometry already in code from 0004; spec 0005 locks it.
 - [x] 0006 — Series scoring screen: place one series of N shots on the target,
       see each shot's score and the running total, then seal it when complete.
       Discipline-agnostic; shipped with 10 m air rifle. (Multiple series per
