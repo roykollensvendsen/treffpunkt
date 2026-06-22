@@ -53,6 +53,8 @@ nav:
       - ADR-0011 Deploy to Pages: adr/0011-deploy-github-pages.md
       - ADR-0012 Session domain model: adr/0012-shooting-session-domain-model.md
       - ADR-0013 Offline-first & sync: adr/0013-offline-first-recording-and-sync.md
+  - Reference:
+      - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md
   - Changelog: CHANGELOG.md
 

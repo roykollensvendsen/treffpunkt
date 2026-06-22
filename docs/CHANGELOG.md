@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- A program catalogue (`docs/reference/program-catalogue.md`): the authoritative,
+  ISSF-sourced list of the in-scope concentric-ring shooting programs and their
+  target faces, with confirm-with-the-father flags for NSF-specific values.
 - Project scaffolding: a Flutter app for web, Android and iOS.
 - Development process: spec-driven workflow, TDD, Conventional Commits enforced
   by a commit-msg hook, strict lints (very_good_analysis), GPLv3 + REUSE
