@@ -4,9 +4,11 @@
 
 // Unit tests for the Session aggregate's guided progression (ADR-0012).
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/features/scoring/domain/place.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/series.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
+import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 
@@ -60,6 +62,29 @@ void main() {
     expect(session.isComplete, isTrue);
     expect(session.currentStageIndex, _program.stages.length);
     expect(session.newSeries(), isNull);
+  });
+
+  test('metadata defaults to null and is exposed when supplied', () {
+    expect(Session.start(_program).metadata, isNull);
+
+    final metadata = SessionMetadata(
+      capturedAt: DateTime.utc(2026, 6, 21, 14, 30),
+      place: const Place(label: 'Løvenskiold skytebane'),
+    );
+    final session = Session.start(_program, metadata: metadata);
+    expect(session.metadata, metadata);
+  });
+
+  test('sealing a series preserves the metadata', () {
+    final metadata = SessionMetadata(
+      capturedAt: DateTime.utc(2026, 6, 21, 14, 30),
+      place: const Place(label: 'Range'),
+    );
+    final session = Session.start(
+      _program,
+      metadata: metadata,
+    ).sealSeries(_fullSeries());
+    expect(session.metadata, metadata);
   });
 
   test('sealing a completed session throws a StateError', () {

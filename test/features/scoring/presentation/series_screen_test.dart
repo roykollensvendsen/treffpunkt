@@ -6,8 +6,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/features/scoring/domain/place.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
+import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
@@ -101,10 +103,69 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(sessionCompleteKey), findsOneWidget);
   });
+
+  // Shoots the one-series air-rifle program to its end and reaches the
+  // scorecard, so the metadata caption can be asserted.
+  Future<void> completeAirRifle(WidgetTester tester) async {
+    for (var i = 0; i < 10; i++) {
+      await tapTarget(tester);
+    }
+    await tester.tap(find.byKey(sealSeriesKey));
+    await tester.pumpAndSettle();
+  }
+
+  group('scorecard metadata caption', () {
+    testWidgets('stamps the date and place when both are present', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _app(
+          ProgramCatalogue.airRifle10m,
+          metadata: SessionMetadata(
+            capturedAt: DateTime(2026, 6, 21, 14, 30),
+            place: const Place(label: 'Løvenskiold skytebane'),
+          ),
+        ),
+      );
+      await completeAirRifle(tester);
+
+      expect(find.byKey(sessionCompleteKey), findsOneWidget);
+      final caption = tester.widget<Text>(find.byKey(sessionMetadataKey));
+      expect(caption.data, '2026-06-21 14:30 · Løvenskiold skytebane');
+    });
+
+    testWidgets('shows the timestamp only when the place is empty', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _app(
+          ProgramCatalogue.airRifle10m,
+          metadata: SessionMetadata(
+            capturedAt: DateTime(2026, 6, 21, 14, 30),
+          ),
+        ),
+      );
+      await completeAirRifle(tester);
+
+      final caption = tester.widget<Text>(find.byKey(sessionMetadataKey));
+      expect(caption.data, '2026-06-21 14:30');
+      expect(caption.data, isNot(contains('·')));
+    });
+
+    testWidgets('renders no caption when there is no metadata', (tester) async {
+      await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+      await completeAirRifle(tester);
+
+      expect(find.byKey(sessionCompleteKey), findsOneWidget);
+      expect(find.byKey(sessionMetadataKey), findsNothing);
+    });
+  });
 }
 
-Widget _app(ProgramDefinition program) {
+Widget _app(ProgramDefinition program, {SessionMetadata? metadata}) {
   return ProviderScope(
-    child: MaterialApp(home: SeriesScreen(program: program)),
+    child: MaterialApp(
+      home: SeriesScreen(program: program, metadata: metadata),
+    ),
   );
 }

@@ -7,10 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
-import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
 void main() {
-  testWidgets('lists programs and opens the series screen on tap', (
+  testWidgets('lists programs and opens the setup screen on tap', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -28,8 +28,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Navigated to the series screen for the chosen program's target.
-    expect(find.byKey(seriesTargetKey), findsOneWidget);
+    // Navigated to the session setup step (date/time + place) for the program.
+    expect(find.byKey(sessionConfirmKey), findsOneWidget);
     expect(find.text('25 m Finpistol'), findsWidgets);
   });
 }

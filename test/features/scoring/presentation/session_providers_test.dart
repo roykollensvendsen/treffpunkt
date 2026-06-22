@@ -6,7 +6,9 @@
 // series-by-series then stage-by-stage (with a face switch).
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/features/scoring/domain/place.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
+import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
@@ -93,6 +95,25 @@ void main() {
       ..advance(); // ignored
     expect(read().current!.placedCount, 1);
     expect(read().session.currentStageIndex, 0);
+  });
+
+  test('the session carries no metadata by default', () {
+    expect(read().session.metadata, isNull);
+  });
+
+  test('an overridden metadata provider is threaded into the session', () {
+    final metadata = SessionMetadata(
+      capturedAt: DateTime.utc(2026, 6, 21, 14, 30),
+      place: const Place(label: 'Løvenskiold skytebane'),
+    );
+    final scoped = ProviderContainer(
+      overrides: [
+        currentProgramDefinitionProvider.overrideWithValue(_program),
+        currentSessionMetadataProvider.overrideWithValue(metadata),
+      ],
+    );
+    addTearDown(scoped.dispose);
+    expect(scoped.read(sessionProvider).session.metadata, metadata);
   });
 
   test('moving a placed shot in the current series', () {

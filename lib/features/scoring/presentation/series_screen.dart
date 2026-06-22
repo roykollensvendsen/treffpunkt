@@ -8,6 +8,7 @@ import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/series_score.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
+import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/session_score.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
@@ -24,14 +25,39 @@ const Key stageProgressKey = ValueKey<String>('stageProgress');
 /// Key for the session-complete scorecard heading, used by tests.
 const Key sessionCompleteKey = ValueKey<String>('sessionComplete');
 
+/// Key for the captured date / place caption on the scorecard, used by tests.
+const Key sessionMetadataKey = ValueKey<String>('sessionMetadata');
+
+/// A one-line "date · place" caption for [metadata], or `null` when there is
+/// nothing to show.
+String? _metadataCaption(SessionMetadata? metadata) {
+  if (metadata == null) return null;
+  String two(int v) => v.toString().padLeft(2, '0');
+  final date = metadata.capturedAt;
+  final stamp =
+      '${date.year}-${two(date.month)}-${two(date.day)} '
+      '${two(date.hour)}:${two(date.minute)}';
+  final place = metadata.place?.label;
+  return place == null || place.isEmpty ? stamp : '$stamp · $place';
+}
+
 /// The guided session screen: shoot a program through its stages and series,
 /// watching the running total, then finishing to a session scorecard.
 class SeriesScreen extends StatelessWidget {
-  /// Creates the screen for [program] with optional app-bar [actions].
-  const SeriesScreen({required this.program, this.actions, super.key});
+  /// Creates the screen for [program], optionally tagged with the [metadata]
+  /// captured at setup and with optional app-bar [actions].
+  const SeriesScreen({
+    required this.program,
+    this.metadata,
+    this.actions,
+    super.key,
+  });
 
   /// The program (discipline) being shot.
   final ProgramDefinition program;
+
+  /// When and where this session was shot (spec 0008), or `null`.
+  final SessionMetadata? metadata;
 
   /// Extra actions shown in the app bar (e.g. a sign-out button).
   final List<Widget>? actions;
@@ -41,6 +67,7 @@ class SeriesScreen extends StatelessWidget {
     return ProviderScope(
       overrides: [
         currentProgramDefinitionProvider.overrideWithValue(program),
+        currentSessionMetadataProvider.overrideWithValue(metadata),
         sessionProvider.overrideWith(SessionNotifier.new),
       ],
       child: SessionView(actions: actions),
@@ -68,6 +95,7 @@ class SessionView extends ConsumerWidget {
       return _SessionScorecard(
         program: program,
         score: _scoring.scoreSession(recording.session),
+        metadata: recording.session.metadata,
         actions: actions,
       );
     }
@@ -423,16 +451,19 @@ class _SessionScorecard extends StatelessWidget {
   const _SessionScorecard({
     required this.program,
     required this.score,
+    this.metadata,
     this.actions,
   });
 
   final ProgramDefinition program;
   final SessionScore score;
+  final SessionMetadata? metadata;
   final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final caption = _metadataCaption(metadata);
     return Scaffold(
       appBar: AppBar(title: Text(program.name), actions: [...?actions]),
       body: SafeArea(
@@ -448,6 +479,16 @@ class _SessionScorecard extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              if (caption != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  caption,
+                  key: sessionMetadataKey,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               for (var i = 0; i < program.stages.length; i++)
                 _StageScoreRow(

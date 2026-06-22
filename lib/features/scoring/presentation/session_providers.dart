@@ -3,9 +3,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/series.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
+import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 
 /// The program being recorded on the current screen.
@@ -15,6 +17,23 @@ import 'package:treffpunkt/features/scoring/domain/shot.dart';
 final currentProgramDefinitionProvider = Provider<ProgramDefinition>(
   (ref) =>
       throw UnimplementedError('override currentProgramDefinitionProvider'),
+);
+
+/// The metadata (when and where) captured for the current session, or `null`.
+///
+/// Overridden by the screen that mounts the session with the values gathered in
+/// the setup step (spec 0008); defaults to `null` (no metadata).
+final currentSessionMetadataProvider = Provider<SessionMetadata?>(
+  (ref) => null,
+);
+
+/// The app's [LocationService].
+///
+/// Defaults to one that never has a fix, so "use my location" degrades to
+/// manual entry until a real GPS implementation is wired (ADR-0015). Overridden
+/// in tests with a fake.
+final locationServiceProvider = Provider<LocationService>(
+  (ref) => const UnavailableLocationService(),
 );
 
 /// The in-progress session together with the current (unsealed) series and its
@@ -49,7 +68,8 @@ class SessionNotifier extends Notifier<SessionRecording> {
   @override
   SessionRecording build() {
     final program = ref.watch(currentProgramDefinitionProvider);
-    final session = Session.start(program);
+    final metadata = ref.watch(currentSessionMetadataProvider);
+    final session = Session.start(program, metadata: metadata);
     return SessionRecording(session: session, current: session.newSeries());
   }
 
