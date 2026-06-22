@@ -13,13 +13,12 @@ import 'package:treffpunkt/features/scoring/presentation/series_providers.dart';
 const Key seriesTargetKey = ValueKey<String>('seriesTarget');
 
 /// Interactive target for a series: tap to place the next shot, long-press a
-/// placed shot to pick it up and drag it, and pinch to zoom in (then pan with
-/// two fingers).
+/// placed shot to pick it up and drag it, and zoom in for precise placement.
 ///
-/// One-finger gestures (tap, long-press) place and move shots; two-finger
-/// gestures zoom and pan via the [InteractiveViewer]. Pointer coordinates reach
-/// the canvas already mapped back into its own space, so scoring is unaffected
-/// by the zoom.
+/// Zoom works with the on-target ＋ / − buttons (mouse / any device), a pinch on
+/// a touch screen, or a two-finger scroll on a trackpad. Pointer coordinates
+/// reach the canvas already mapped back into its own space, so scoring is
+/// unaffected by the zoom.
 class SeriesTarget extends ConsumerStatefulWidget {
   /// Creates the series target.
   const SeriesTarget({super.key});
@@ -31,6 +30,8 @@ class SeriesTarget extends ConsumerStatefulWidget {
 class _SeriesTargetState extends ConsumerState<SeriesTarget> {
   /// How close (mm) a long-press must be to a marker to pick it up.
   static const double _pickUpRadiusMm = 6;
+  static const double _minScale = 1;
+  static const double _maxScale = 6;
 
   final TransformationController _transform = TransformationController();
 
@@ -53,33 +54,68 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
           child: SizedBox(
             width: side,
             height: side,
-            child: InteractiveViewer(
-              transformationController: _transform,
-              minScale: 1,
-              maxScale: 6,
-              child: GestureDetector(
-                key: seriesTargetKey,
-                onTapUp: (details) =>
-                    _place(geometry, details.localPosition, side),
-                onLongPressStart: (details) =>
-                    _tryPickUp(geometry, shots, details.localPosition, side),
-                onLongPressMoveUpdate: (details) =>
-                    _drag(geometry, details.localPosition, side),
-                onLongPressEnd: (_) => ref.read(seriesProvider.notifier).drop(),
-                child: CustomPaint(
-                  size: Size.square(side),
-                  painter: SeriesPainter(
-                    geometry: geometry,
-                    shots: shots,
-                    draggingIndex: recording.draggingIndex,
+            child: Stack(
+              children: [
+                InteractiveViewer(
+                  transformationController: _transform,
+                  minScale: _minScale,
+                  maxScale: _maxScale,
+                  trackpadScrollCausesScale: true,
+                  child: GestureDetector(
+                    key: seriesTargetKey,
+                    onTapUp: (details) =>
+                        _place(geometry, details.localPosition, side),
+                    onLongPressStart: (details) => _tryPickUp(
+                      geometry,
+                      shots,
+                      details.localPosition,
+                      side,
+                    ),
+                    onLongPressMoveUpdate: (details) =>
+                        _drag(geometry, details.localPosition, side),
+                    onLongPressEnd: (_) =>
+                        ref.read(seriesProvider.notifier).drop(),
+                    child: CustomPaint(
+                      size: Size.square(side),
+                      painter: SeriesPainter(
+                        geometry: geometry,
+                        shots: shots,
+                        draggingIndex: recording.draggingIndex,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: _ZoomControls(
+                    onZoomIn: () => _zoomTo(_currentScale * 1.6, side),
+                    onZoomOut: () => _zoomTo(_currentScale / 1.6, side),
+                    onReset: () => _zoomTo(1, side),
+                  ),
+                ),
+              ],
             ),
           ),
         );
       },
     );
+  }
+
+  double get _currentScale => _transform.value.getMaxScaleOnAxis();
+
+  /// Sets a centred zoom level, clamped to [_minScale]..[_maxScale].
+  ///
+  /// Scaling by `s` about the centre `c` gives `x' = s·x + c·(1 - s)`, built
+  /// directly to avoid the deprecated `Matrix4.translate` / `scale`.
+  void _zoomTo(double target, double side) {
+    final clamped = target.clamp(_minScale, _maxScale);
+    final translate = (side / 2) * (1 - clamped);
+    _transform.value = Matrix4.identity()
+      ..setEntry(0, 0, clamped)
+      ..setEntry(1, 1, clamped)
+      ..setEntry(0, 3, translate)
+      ..setEntry(1, 3, translate);
   }
 
   double _scale(TargetGeometry geometry, double side) =>
@@ -126,5 +162,49 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
   void _drag(TargetGeometry geometry, Offset px, double side) {
     if (!ref.read(seriesProvider).isDragging) return;
     ref.read(seriesProvider.notifier).dragTo(_toShot(geometry, px, side));
+  }
+}
+
+/// The ＋ / − / reset zoom buttons overlaid on the target.
+class _ZoomControls extends StatelessWidget {
+  const _ZoomControls({
+    required this.onZoomIn,
+    required this.onZoomOut,
+    required this.onReset,
+  });
+
+  final VoidCallback onZoomIn;
+  final VoidCallback onZoomOut;
+  final VoidCallback onReset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: const StadiumBorder(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            key: const ValueKey<String>('zoomIn'),
+            icon: const Icon(Icons.add),
+            tooltip: 'Zoom in',
+            onPressed: onZoomIn,
+          ),
+          IconButton(
+            key: const ValueKey<String>('zoomReset'),
+            icon: const Icon(Icons.center_focus_strong),
+            tooltip: 'Reset zoom',
+            onPressed: onReset,
+          ),
+          IconButton(
+            key: const ValueKey<String>('zoomOut'),
+            icon: const Icon(Icons.remove),
+            tooltip: 'Zoom out',
+            onPressed: onZoomOut,
+          ),
+        ],
+      ),
+    );
   }
 }

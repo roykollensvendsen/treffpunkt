@@ -7,9 +7,10 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
-- Pinch to zoom in on the target (and pan with two fingers when zoomed) for
-  precise shot placement; tapping to place and long-pressing to move a shot
-  still work.
+- Zoom in on the target for precise shot placement — with the on-target ＋ / −
+  buttons (any device, incl. mouse), a pinch on a touch screen, or a two-finger
+  trackpad scroll; pan with two fingers when zoomed. Tapping to place and
+  long-pressing to move a shot still work.
 - A program picker: the signed-in app opens a list of the official programs, and
   choosing one opens its target (the new pistol faces show their inner-ten
   markers). Each program opens its first stage as a series for now.
