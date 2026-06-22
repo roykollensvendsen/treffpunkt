@@ -25,3 +25,10 @@ path = ["**/*.md", "**/*.yaml", "**/*.yml", "COPYING"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Roy Kollen Svendsen"
 SPDX-License-Identifier = "GPL-3.0-or-later"
+
+# Third-party Passkeys Web SDK, vendored for supabase_flutter (MIT, Corbado).
+[[annotations]]
+path = ["web/bundle.js"]
+precedence = "override"
+SPDX-FileCopyrightText = "2023 Corbado GmbH"
+SPDX-License-Identifier = "MIT"

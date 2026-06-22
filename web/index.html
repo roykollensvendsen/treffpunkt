@@ -31,6 +31,10 @@
 
   <title>treffpunkt</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Passkeys Web SDK required by supabase_flutter's transitive passkeys
+       dependency; without it the web app throws during init (spec 0003). -->
+  <script src="bundle.js"></script>
 </head>
 <body>
   <!--
