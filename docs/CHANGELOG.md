@@ -16,6 +16,12 @@ All notable changes to this project are documented here. The format is based on
 - Google sign-in via Supabase: a sign-in gate with sign-out, behind a fakeable
   `AuthRepository` so the feature is testable without real credentials
   (spec 0003, ADR-0010).
+
+### Fixed
+- The web app crashed on launch (`Cannot read properties of undefined (reading
+  'init')`) because `supabase_flutter` pulls in the Passkeys plugin whose Web
+  SDK was missing. Vendored the SDK (`web/bundle.js`) and load it in
+  `web/index.html`.
 - Development process: spec-driven workflow, TDD, Conventional Commits enforced
   by a commit-msg hook, strict lints (very_good_analysis), GPLv3 + REUSE
   licensing, and a MkDocs documentation site.
