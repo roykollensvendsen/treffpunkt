@@ -3,13 +3,15 @@
 Record and score your shots on official Norwegian Shooting Federation
 (NSF / ISSF) targets, then compare results across competitions.
 
-You tap the screen where each shot landed; Treffpunkt shows the score live, lets
-you nudge a shot with a long-press, and swipes you on to the next target. It runs
-on the web, Android and iOS from a single Flutter codebase.
+You tap the screen where each shot landed; Treffpunkt builds up the series shot
+by shot — each shot's score and the running total — and lets you nudge a shot
+with a long-press. It runs on the web, Android and iOS from a single Flutter
+codebase.
 
 ## Status
-Early development. Increment 0 is a walking skeleton: the 10 m air-rifle target
-with tap-to-place decimal scoring. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Early development. The app records a 10 m air-rifle series on a tap-to-place
+target with live whole-ring scoring and a series total, behind Google sign-in.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Quick start
 ```sh

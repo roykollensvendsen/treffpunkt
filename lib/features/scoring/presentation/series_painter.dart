@@ -2,32 +2,32 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 
-/// Paints a shooting target and an optional placed shot.
+/// Paints a shooting target and the shots of a series.
 ///
 /// Target millimetres are mapped to pixels so the full scoring area fits the
 /// shortest side of the paint area, centred.
-class TargetPainter extends CustomPainter {
-  /// Creates a painter for [geometry], marking [shot] if non-null.
-  ///
-  /// While [isDragging] is true the marker is drawn in a distinct colour.
-  const TargetPainter({
+class SeriesPainter extends CustomPainter {
+  /// Creates a painter for [geometry] marking every shot in [shots]. The shot
+  /// at [draggingIndex] (if any) is drawn as picked-up.
+  const SeriesPainter({
     required this.geometry,
-    required this.shot,
-    required this.isDragging,
+    required this.shots,
+    required this.draggingIndex,
   });
 
   /// The target whose rings are drawn.
   final TargetGeometry geometry;
 
-  /// The placed shot to mark, or `null`.
-  final Shot? shot;
+  /// The placed shots, in firing order.
+  final List<Shot> shots;
 
-  /// Whether the marker is currently picked up for dragging.
-  final bool isDragging;
+  /// The index of the shot currently picked up, or `null`.
+  final int? draggingIndex;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -56,14 +56,14 @@ class TargetPainter extends CustomPainter {
       );
     }
 
-    final placedShot = shot;
-    if (placedShot != null) {
+    final radius = geometry.pelletRadiusMm * scale;
+    for (var i = 0; i < shots.length; i++) {
+      final shot = shots[i];
       final markerCentre =
-          centre + Offset(placedShot.dxMm * scale, placedShot.dyMm * scale);
-      final radius = geometry.pelletRadiusMm * scale;
-      final fillColour = isDragging ? Colors.lightBlueAccent : Colors.amber;
+          centre + Offset(shot.dxMm * scale, shot.dyMm * scale);
+      final fill = i == draggingIndex ? Colors.lightBlueAccent : Colors.amber;
       canvas
-        ..drawCircle(markerCentre, radius, Paint()..color = fillColour)
+        ..drawCircle(markerCentre, radius, Paint()..color = fill)
         ..drawCircle(
           markerCentre,
           radius,
@@ -76,8 +76,8 @@ class TargetPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(TargetPainter oldDelegate) =>
-      oldDelegate.shot != shot ||
-      oldDelegate.isDragging != isDragging ||
-      oldDelegate.geometry != geometry;
+  bool shouldRepaint(SeriesPainter oldDelegate) =>
+      oldDelegate.draggingIndex != draggingIndex ||
+      oldDelegate.geometry != geometry ||
+      !listEquals(oldDelegate.shots, shots);
 }

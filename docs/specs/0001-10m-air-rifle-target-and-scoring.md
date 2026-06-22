@@ -64,7 +64,8 @@ centre. With `t = ceil(d / 0.25)`:
 By construction `floor(decimal) == integer` for every shot.
 
 > Note: the decimal model assumes evenly spaced rings, which holds for 10 m air
-> rifle. Other disciplines are out of scope for this spec (see ROADMAP 0010+).
+> rifle. The scoring domain is generalised in spec 0004; further disciplines are
+> out of scope for this spec (see ROADMAP 0005 and 0017+).
 
 ## Verification
 
@@ -106,9 +107,10 @@ Additional cases:
 
 ### System test
 
-Launching the app, tapping the centre of the rendered target, and reading the
-score shows the maximum value (10.9). Covered by
-`integration_test/place_shot_test.dart`.
+Launching the app and tapping the centre of the rendered target scores a ten.
+Covered by `integration_test/place_shot_test.dart`, which now exercises the
+air-rifle geometry through the series screen (spec 0006): the centre tap shows
+"1 / 10" and a series total of "10".
 
 ## Open questions
 

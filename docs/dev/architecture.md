@@ -2,7 +2,8 @@
 
 Treffpunkt is a Flutter app organised feature-first, with a **pure-Dart domain
 layer** so the scoring rules can be tested in isolation. The backend (Supabase)
-arrives at spec 0002; it is shown as *planned* below.
+arrives with authentication at spec 0003 and the data layer at spec 0010; it is
+shown as *planned* below.
 
 ## System context (C4)
 
@@ -25,7 +26,7 @@ C4Container
   title Containers — Treffpunkt
   Person(shooter, "Shooter")
   Container_Boundary(app, "Treffpunkt app (Flutter)") {
-    Container(ui, "Presentation", "Widgets + Riverpod", "Target canvas, scoreboards")
+    Container(ui, "Presentation", "Widgets + Riverpod", "Series screen, scoreboards")
     Container(domain, "Domain", "Pure Dart", "Scoring rules, entities")
     Container(data, "Data", "Dart + Supabase client", "Repositories (planned)")
   }
@@ -42,14 +43,18 @@ C4Container
 C4Component
   title Components — scoring feature
   Container(ui, "Presentation")
-  Component(canvas, "TargetCanvas", "ConsumerWidget", "Tap to place a shot")
-  Component(painter, "TargetPainter", "CustomPainter", "Draws rings + marker")
-  Component(provider, "shotPlacementProvider", "Riverpod", "Placed shot + drag state")
-  Component(scoring, "ScoringService", "Pure Dart", "Integer & decimal score")
-  Component(geometry, "TargetGeometry", "Pure Dart", "Ring radii, caliber")
-  Rel(canvas, provider, "Reads / writes")
-  Rel(canvas, painter, "Renders with")
-  Rel(canvas, scoring, "Computes score")
+  Component(screen, "SeriesScreen / SeriesView", "ConsumerWidget", "Target, shots list, total")
+  Component(target, "SeriesTarget", "ConsumerWidget", "Tap to place, long-press to move")
+  Component(painter, "SeriesPainter", "CustomPainter", "Draws rings + all shots")
+  Component(provider, "seriesProvider", "Riverpod", "Series + drag / sealed state")
+  Component(program, "Program / Series", "Pure Dart", "Discipline + shots per face")
+  Component(scoring, "ScoringService", "Pure Dart", "Ring, inner-ten, series total")
+  Component(geometry, "TargetGeometry", "Pure Dart", "Ring radii, caliber, inner ten")
+  Rel(screen, target, "Contains")
+  Rel(target, provider, "Reads / writes")
+  Rel(target, painter, "Renders with")
+  Rel(screen, scoring, "Scores the series")
+  Rel(provider, program, "Builds from")
   Rel(scoring, geometry, "Uses")
 ```
 
