@@ -92,6 +92,30 @@ void main() {
     expect(shot.dxMm, closeTo(0, 0.5));
     expect(shot.dyMm, closeTo(0, 0.5));
   });
+
+  testWidgets('pinching zooms the target in', (tester) async {
+    await tester.pumpWidget(_app());
+
+    final viewer = find.byType(InteractiveViewer);
+    expect(viewer, findsOneWidget);
+    final controller = tester
+        .widget<InteractiveViewer>(viewer)
+        .transformationController!;
+    expect(controller.value.getMaxScaleOnAxis(), 1.0);
+
+    final centre = tester.getCenter(find.byKey(seriesTargetKey));
+    final gesture1 = await tester.startGesture(centre - const Offset(20, 0));
+    final gesture2 = await tester.startGesture(centre + const Offset(20, 0));
+    await tester.pump();
+    await gesture1.moveBy(const Offset(-60, 0));
+    await gesture2.moveBy(const Offset(60, 0));
+    await tester.pump();
+    await gesture1.up();
+    await gesture2.up();
+    await tester.pump();
+
+    expect(controller.value.getMaxScaleOnAxis(), greaterThan(1.0));
+  });
 }
 
 Widget _app() {

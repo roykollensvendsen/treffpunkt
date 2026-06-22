@@ -13,16 +13,35 @@ import 'package:treffpunkt/features/scoring/presentation/series_providers.dart';
 const Key seriesTargetKey = ValueKey<String>('seriesTarget');
 
 /// Interactive target for a series: tap to place the next shot, long-press a
-/// placed shot to pick it up and drag it.
-class SeriesTarget extends ConsumerWidget {
+/// placed shot to pick it up and drag it, and pinch to zoom in (then pan with
+/// two fingers).
+///
+/// One-finger gestures (tap, long-press) place and move shots; two-finger
+/// gestures zoom and pan via the [InteractiveViewer]. Pointer coordinates reach
+/// the canvas already mapped back into its own space, so scoring is unaffected
+/// by the zoom.
+class SeriesTarget extends ConsumerStatefulWidget {
   /// Creates the series target.
   const SeriesTarget({super.key});
 
+  @override
+  ConsumerState<SeriesTarget> createState() => _SeriesTargetState();
+}
+
+class _SeriesTargetState extends ConsumerState<SeriesTarget> {
   /// How close (mm) a long-press must be to a marker to pick it up.
   static const double _pickUpRadiusMm = 6;
 
+  final TransformationController _transform = TransformationController();
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _transform.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final recording = ref.watch(seriesProvider);
     final geometry = recording.series.geometry;
     final shots = recording.series.shots;
@@ -34,21 +53,26 @@ class SeriesTarget extends ConsumerWidget {
           child: SizedBox(
             width: side,
             height: side,
-            child: GestureDetector(
-              key: seriesTargetKey,
-              onTapUp: (details) =>
-                  _place(ref, geometry, details.localPosition, side),
-              onLongPressStart: (details) =>
-                  _tryPickUp(ref, geometry, shots, details.localPosition, side),
-              onLongPressMoveUpdate: (details) =>
-                  _drag(ref, geometry, details.localPosition, side),
-              onLongPressEnd: (_) => ref.read(seriesProvider.notifier).drop(),
-              child: CustomPaint(
-                size: Size.square(side),
-                painter: SeriesPainter(
-                  geometry: geometry,
-                  shots: shots,
-                  draggingIndex: recording.draggingIndex,
+            child: InteractiveViewer(
+              transformationController: _transform,
+              minScale: 1,
+              maxScale: 6,
+              child: GestureDetector(
+                key: seriesTargetKey,
+                onTapUp: (details) =>
+                    _place(geometry, details.localPosition, side),
+                onLongPressStart: (details) =>
+                    _tryPickUp(geometry, shots, details.localPosition, side),
+                onLongPressMoveUpdate: (details) =>
+                    _drag(geometry, details.localPosition, side),
+                onLongPressEnd: (_) => ref.read(seriesProvider.notifier).drop(),
+                child: CustomPaint(
+                  size: Size.square(side),
+                  painter: SeriesPainter(
+                    geometry: geometry,
+                    shots: shots,
+                    draggingIndex: recording.draggingIndex,
+                  ),
                 ),
               ),
             ),
@@ -69,11 +93,10 @@ class SeriesTarget extends ConsumerWidget {
     );
   }
 
-  void _place(WidgetRef ref, TargetGeometry geometry, Offset px, double side) =>
+  void _place(TargetGeometry geometry, Offset px, double side) =>
       ref.read(seriesProvider.notifier).placeShot(_toShot(geometry, px, side));
 
   void _tryPickUp(
-    WidgetRef ref,
     TargetGeometry geometry,
     List<Shot> shots,
     Offset px,
@@ -100,7 +123,7 @@ class SeriesTarget extends ConsumerWidget {
     }
   }
 
-  void _drag(WidgetRef ref, TargetGeometry geometry, Offset px, double side) {
+  void _drag(TargetGeometry geometry, Offset px, double side) {
     if (!ref.read(seriesProvider).isDragging) return;
     ref.read(seriesProvider.notifier).dragTo(_toShot(geometry, px, side));
   }
