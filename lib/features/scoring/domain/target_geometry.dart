@@ -15,6 +15,7 @@ class TargetGeometry {
     required this.ringOuterDiametersMm,
     required this.blackBullDiameterMm,
     this.innerTenDiameterMm,
+    this.lowestRingValue = 1,
   });
 
   /// The ISSF / NSF 10 m air-rifle target (see spec 0001).
@@ -23,7 +24,8 @@ class TargetGeometry {
       caliberMm = 4.5,
       ringOuterDiametersMm = _airRifle10mRingDiametersMm,
       blackBullDiameterMm = 30.5,
-      innerTenDiameterMm = null;
+      innerTenDiameterMm = null,
+      lowestRingValue = 1;
 
   /// The ISSF 25 m pistol precision target (rings 1–10, inner ten 25 mm); see
   /// `docs/reference/program-catalogue.md`. Calibre defaults to .22 (5.6 mm).
@@ -32,7 +34,29 @@ class TargetGeometry {
       caliberMm = caliber,
       ringOuterDiametersMm = _pistol25mPrecisionRingDiametersMm,
       blackBullDiameterMm = 200,
-      innerTenDiameterMm = 25;
+      innerTenDiameterMm = 25,
+      lowestRingValue = 1;
+
+  /// The ISSF 10 m air-pistol target (rings 1–10, inner ten 5 mm); see the
+  /// program catalogue.
+  const TargetGeometry.airPistol10m()
+    : name = '10 m Air Pistol',
+      caliberMm = 4.5,
+      ringOuterDiametersMm = _airPistol10mRingDiametersMm,
+      blackBullDiameterMm = 59.5,
+      innerTenDiameterMm = 5,
+      lowestRingValue = 1;
+
+  /// The ISSF 25 m rapid-fire / silhouette target (rings 5–10 only, inner ten
+  /// 50 mm) used for the duel stage; see the program catalogue. Calibre
+  /// defaults to .22 (5.6 mm).
+  const TargetGeometry.pistol25mRapid({double caliber = 5.6})
+    : name = '25 m Pistol — Rapid',
+      caliberMm = caliber,
+      ringOuterDiametersMm = _pistol25mRapidRingDiametersMm,
+      blackBullDiameterMm = 500,
+      innerTenDiameterMm = 50,
+      lowestRingValue = 5;
 
   /// Human-readable discipline name, e.g. `'10 m Air Rifle'`.
   final String name;
@@ -53,6 +77,10 @@ class TargetGeometry {
   /// targets do (spec 0005).
   final double? innerTenDiameterMm;
 
+  /// Value of the outermost ring: 1 for a full 1–10 face, 5 for a reduced
+  /// 5–10 rapid-fire face. Ring values run [lowestRingValue]..[highestRing].
+  final int lowestRingValue;
+
   /// Radius of the pellet/bullet in millimetres.
   double get pelletRadiusMm => caliberMm / 2;
 
@@ -68,7 +96,7 @@ class TargetGeometry {
   }
 
   /// The innermost (highest-value) ring number, e.g. 10 for air rifle.
-  int get highestRing => ringOuterDiametersMm.length;
+  int get highestRing => lowestRingValue + ringOuterDiametersMm.length - 1;
 
   /// Whether the rings are evenly spaced (a constant diameter step), which the
   /// decimal scoring model assumes (spec 0001). True for 10 m air rifle.
@@ -82,13 +110,13 @@ class TargetGeometry {
     return true;
   }
 
-  /// Outer diameter (mm) of [ring], where ring 1 is the outermost.
+  /// Outer diameter (mm) of [ring], where [lowestRingValue] is the outermost.
   double outerDiameterMm(int ring) {
     assert(
-      ring >= 1 && ring <= highestRing,
-      'ring must be between 1 and $highestRing',
+      ring >= lowestRingValue && ring <= highestRing,
+      'ring must be between $lowestRingValue and $highestRing',
     );
-    return ringOuterDiametersMm[ring - 1];
+    return ringOuterDiametersMm[ring - lowestRingValue];
   }
 
   /// Centre-distance (mm) within which a shot's centre scores at least [ring].
@@ -98,7 +126,7 @@ class TargetGeometry {
       outerDiameterMm(ring) / 2 + pelletRadiusMm;
 
   /// Largest centre-distance (mm) that still scores; beyond this is a miss.
-  double get maxScoringRadiusMm => scoringRadiusMm(1);
+  double get maxScoringRadiusMm => scoringRadiusMm(lowestRingValue);
 }
 
 const List<double> _airRifle10mRingDiametersMm = <double>[
@@ -125,4 +153,27 @@ const List<double> _pistol25mPrecisionRingDiametersMm = <double>[
   150, // ring 8
   100, // ring 9
   50, // ring 10 (innermost)
+];
+
+const List<double> _airPistol10mRingDiametersMm = <double>[
+  155.5, // ring 1 (outermost)
+  139.5, // ring 2
+  123.5, // ring 3
+  107.5, // ring 4
+  91.5, // ring 5
+  75.5, // ring 6
+  59.5, // ring 7
+  43.5, // ring 8
+  27.5, // ring 9
+  11.5, // ring 10 (innermost)
+];
+
+// Rings 5–10 only (no 1–4); ring 5 is the outermost.
+const List<double> _pistol25mRapidRingDiametersMm = <double>[
+  500, // ring 5 (outermost)
+  420, // ring 6
+  340, // ring 7
+  260, // ring 8
+  180, // ring 9
+  100, // ring 10 (innermost)
 ];

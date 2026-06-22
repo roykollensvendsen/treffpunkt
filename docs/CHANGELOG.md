@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- The real program catalogue in code: 10 m air pistol, 25 m standard pistol,
+  fin- and grovpistol (precision + duell on two faces) and 50 m fripistol, plus
+  the air-pistol and 25 m rapid/silhouette (rings 5–10) target geometries.
 - A guided-flow session domain: a pure-Dart `Session` aggregate that walks a
   program's stages and series — advancing to a fresh face, then the next stage —
   and rolls up per-stage and total scores (ADR-0012).
