@@ -43,6 +43,7 @@ nav:
       - "0007 — Weapon catalogue & picker": specs/0007-weapon-catalogue-and-picker.md
       - "0008 — Session setup metadata": specs/0008-session-setup-metadata.md
       - "0009 — Offline session persistence": specs/0009-offline-session-persistence.md
+      - "0017 — 50 m rifle target & scoring": specs/0017-50m-rifle-target-and-scoring.md
       - "0019 — Personal weapon persistence": specs/0019-weapon-persistence.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md

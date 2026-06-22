@@ -27,6 +27,18 @@ class TargetGeometry {
       innerTenDiameterMm = null,
       lowestRingValue = 1;
 
+  /// The ISSF 50 m rifle target (rings 1–10, inner ten 5 mm); see spec 0017 and
+  /// `docs/reference/program-catalogue.md`. Calibre is .22 LR (5.6 mm). The
+  /// rings step a uniform 16 mm in diameter, from the 10-ring (10.4 mm) out to
+  /// ring 1 (154.4 mm).
+  const TargetGeometry.smallbore50m()
+    : name = '50 m Rifle',
+      caliberMm = 5.6,
+      ringOuterDiametersMm = _smallbore50mRingDiametersMm,
+      blackBullDiameterMm = 112.4,
+      innerTenDiameterMm = 5,
+      lowestRingValue = 1;
+
   /// The ISSF 25 m pistol precision target (rings 1–10, inner ten 25 mm); see
   /// `docs/reference/program-catalogue.md`. Calibre defaults to .22 (5.6 mm).
   const TargetGeometry.pistol25mPrecision({double caliber = 5.6})
@@ -140,6 +152,19 @@ const List<double> _airRifle10mRingDiametersMm = <double>[
   10.5, // ring 8
   5.5, // ring 9
   0.5, // ring 10 (innermost)
+];
+
+const List<double> _smallbore50mRingDiametersMm = <double>[
+  154.4, // ring 1 (outermost)
+  138.4, // ring 2
+  122.4, // ring 3
+  106.4, // ring 4
+  90.4, // ring 5
+  74.4, // ring 6
+  58.4, // ring 7
+  42.4, // ring 8
+  26.4, // ring 9
+  10.4, // ring 10 (innermost)
 ];
 
 const List<double> _pistol25mPrecisionRingDiametersMm = <double>[
