@@ -38,6 +38,7 @@ nav:
       - "0002 — Move a placed shot": specs/0002-move-a-placed-shot.md
       - "0003 — Google sign-in": specs/0003-google-sign-in.md
       - "0004 — Program, series & scoring": specs/0004-program-series-and-series-scoring.md
+      - "0005 — 25 m pistol target & scoring": specs/0005-25m-pistol-target-and-scoring.md
       - "0006 — Series scoring screen": specs/0006-series-scoring-screen.md
       - "0007 — Weapon catalogue & picker": specs/0007-weapon-catalogue-and-picker.md
       - "0008 — Session setup metadata": specs/0008-session-setup-metadata.md

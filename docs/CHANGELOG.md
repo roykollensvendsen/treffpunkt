@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Spec 0005: the 25 m pistol target and scoring is now written down. It
+  documents both faces — the precision face (rings 1–10) and the rapid / duel
+  face (rings 5–10) — with their ring sizes, the inner ten ("X"), the black, and
+  the .22 vs centre-fire gauge edge, sourced to the ISSF rules. The existing
+  geometry is locked behind a vector table of shot positions to expected ring
+  for both faces, so it can never silently drift. No app behaviour changes.
 - Use your device's location to fill the place in the session-setup step:
   "Bruk min posisjon" now reads a real GPS fix (browser, Android and iOS) via the
   `geolocator` plugin, asking for permission the first time. Typing the place by
