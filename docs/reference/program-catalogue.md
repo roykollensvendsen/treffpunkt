@@ -2,74 +2,77 @@
 
 The authoritative reference for the official shooting **programs** Treffpunkt
 supports. Each seeded `ProgramDefinition` (see
-[ADR-0012](../adr/0012-shooting-session-domain-model.md)) implements one row here,
-so this page is the single source of truth — and the single home for every
-"confirm with the father / NSF Skytterboka" checkpoint.
+[ADR-0012](../adr/0012-shooting-session-domain-model.md)) implements one row here.
 
 ## Scope
 
 **In scope — concentric-ring targets** (scored 1–10 or 5–10, integer + optional
-inner ten, or decimal). Treffpunkt's `TargetGeometry` + `ScoringService` already
-represent and score these.
-
-**Out of scope (for now)** — different scoring paradigms, each a separate later
-effort: silhouette / zone targets (*silhuettpistol*), field (*felt*: T96,
-Norgesfelt, finfelt/grovfelt), running target (*løpende elg*), practical (PPC) and
-shotgun (trap/skeet).
+inner ten, or decimal). **Out of scope** (different scoring, separate later):
+field (*felt*, T96/Kråkefelt), silhouette *figures*, magnum, PPC 1500, running
+target (*løpende elg*) and shotgun.
 
 ## Sourcing & confidence
 
-Geometry is taken from the **ISSF Rule Book** (high confidence). The complete
-**NSF** program set and its NSF-specific structures (series counts, time limits,
-permitted calibres) are not reliably available online — the NSF "Skyteprogrammer"
-document is an image scan — so every NSF-specific value below is marked
-**⚑ (confirm with far / NSF Skytterboka)** and must be verified before its
-`ProgramDefinition` is locked. Confidence: **H**igh / **M**edium / **L**ow.
+Target-face **geometry** is taken verbatim from **ISSF Technical Rules §6.3.4**
+(NSF reprints the same tables) — all **high** confidence, cross-checked against
+Wikimedia/target-maker spec sheets. Program **structures** (shot counts, faces)
+are high-confidence at the ISSF level; a few NSF-specific **timings** rest on club
+/ SNL sources because the canonical *NSF Pistolregler* PDF is offline. National-only
+events (hurtigpistol, sprintluft, fripistol-B, NAIS, 15 m/200 m rifle) are sourced
+from the NSF 2019/2023 *Nasjonalt regelverk*. Items still needing the father are
+listed at the bottom. Confidence: **H** / **M** / **L**.
 
 ## Target faces (shared geometry)
 
-A program references one or more of these faces. Diameters in millimetres, centre
-at the origin. "Ring step" is the increase in *outer diameter* per ring outward.
+Diameters in millimetres, centre at the origin. The full ring table is the 10-ring
+plus the step repeated outward.
 
-| Face | Rings | 10-ring ⌀ | Ring step | Inner-ten (X) ⌀ | Black ⌀ | Scoring | Conf. |
-|------|-------|-----------|-----------|------------------|---------|---------|-------|
-| 10 m air rifle | 1–10 | 0.5 | +5.0 → 45.5 | — (decimal) | 30.5 | integer + decimal 10.0–10.9 | H |
-| 10 m air pistol | 1–10 | 11.5 | +16.0 → 155.5 ⚑ | 5.0 | 59.5 | integer + inner-ten (decimal in finals) | M |
-| 25 m precision (pistol) | 1–10 | 50 | +50 → 500 | 25 | 200 | integer + inner-ten | H |
-| 25 m rapid / duel (pistol) | 5–10 | 100 | +80 → 500 | 50 | — | integer + inner-ten | H |
-| 50 m precision (free pistol) | 1–10 | 50 | +50 → 500 ⚑ | 25 | 200 | integer + inner-ten | M |
-| 50 m rifle (smallbore) | 1–10 | TBD ⚑ | TBD ⚑ | TBD / decimal | TBD | decimal 10.0–10.9 | L |
-| 300 m rifle | 1–10 | TBD ⚑ | TBD ⚑ | TBD | TBD | integer / decimal | L |
+| Face | Rings | 10-ring ⌀ | Step (⌀) | Inner-ten ⌀ | Black ⌀ | Scoring | Conf. |
+|------|-------|-----------|----------|-------------|---------|---------|-------|
+| 10 m air rifle | 1–10 | 0.5 | +5 → 45.5 | — | 30.5 | decimal 10.0–10.9 | H |
+| 10 m air pistol | 1–10 | 11.5 | +16 → 155.5 | 5.0 | 59.5 | integer + inner-ten (decimal in finals) | H |
+| 25 m precision / 50 m pistol | 1–10 | 50 | +50 → 500 | 25 | 200 | integer + inner-ten | H |
+| 25 m rapid / silhouette | 5–10 | 100 | +80 → 500 | 50 | 500 (whole) | integer + inner-ten | H |
+| 50 m rifle | 1–10 | 10.4 | +16 → 154.4 | 5.0 | 112.4 | decimal (prone); integer (3-pos) | H |
+| 300 m rifle | 1–10 | 100 | +100 → 1000 | 50 | 600 | integer (decimal finals) | H |
+| Colt (Fripistol-B, NSF) | 1–10 | 25 | +25 → 250 | 12.5 | — | integer + inner-ten | H |
+| 10 m air-duel (NSF) | 5–10 | 23 | +26.5 → 155.5 | 11.5 | — | integer + inner-ten | H |
+| 200 m rifle (NSF, scaled) | 1–10 | 64 | +66.67 → 664 | 30.67 | 397 | integer + inner-ten | H |
+| 15 m / luftsprint (NSF) | 1–10 | 2 | +9 → 83 | — | 38 / 29 | integer | H |
 
-The **bullet gauge** (inward-edge rule: a hole touching a ring line scores the
-higher ring) is ⌀ 5.6 mm for .22 and ⌀ 9.65 mm for centre-fire (ISSF, H).
+The **gauge** (inward-edge rule) is ⌀ 5.6 mm for .22 and ⌀ 9.65 mm for centre-fire.
 
 ## Programs
 
-| Program (NO) | ISSF | Disc. | Dist. | Weapon class / calibre | Face(s) → stages | Series (shots × count) | Timing | Conf. |
-|---|---|---|---|---|---|---|---|---|
-| Luftrifle | 10 m Air Rifle | rifle | 10 m | air 4.5 mm | air rifle | 10 × N (match 60) ⚑ | match limit | H / M |
-| Luftpistol | 10 m Air Pistol | pistol | 10 m | air 4.5 mm | air pistol | 5 × N (40 / 60) ⚑ | match limit | M |
-| Standardpistol | 25 m Standard Pistol | pistol | 25 m | .22 | precision | 5 × 12 = 60 ⚑ | 150 / 20 / 10 s | M |
-| Finpistol | 25 m (fin) | pistol | 25 m | .22 | precision + rapid → *presisjon*, *duell* | 5 × N per stage ⚑ | presisjon slow; duell timed ⚑ | M |
-| Grovpistol | 25 m (grov) | pistol | 25 m | centre-fire 7.62–9.65 mm | precision + rapid → *presisjon*, *duell* | as finpistol ⚑ | as finpistol ⚑ | M |
-| Fripistol | 50 m Pistol | pistol | 50 m | .22 | 50 m precision | 10 × 6 = 60 ⚑ | ~2 h total ⚑ | M |
-| Hurtigpistol fin / grov | 25 m rapid | pistol | 25 m | .22 / centre-fire | rapid / duel | 5 × N ⚑ | timed (e.g. 8 / 6 / 4 s) ⚑ | L |
-| Miniatyrrifle 50 m | 50 m Rifle | rifle | 50 m | .22 | 50 m rifle | per position ⚑ | match | L |
-| 300 m rifle | 300 m Rifle | rifle | 300 m | centre-fire | 300 m rifle | per position ⚑ | match | L |
+| Program (NO) | ISSF | Dist. | Calibre | Stages → faces | Shots | Scoring | Conf. |
+|---|---|---|---|---|---|---|---|
+| Luftrifle | 10 m Air Rifle | 10 m | air 4.5 mm | 1 face (air rifle) | 30 / 40 / 60 | decimal | H |
+| Luftpistol | 10 m Air Pistol | 10 m | air 4.5 mm | 1 face (air pistol) | 60 (40 W/V/J) | integer + X | H |
+| Finpistol (6F) | 25 m Sport Pistol | 25 m | .22 | Presisjon 6×5 (precision) + Duell 6×5 (rapid, 3 s/7 s) | 60 | integer + X | H |
+| Grovpistol (6G) | 25 m Centre-Fire | 25 m | 7.62–9.65 mm | as finpistol (precision + rapid) | 60 | integer + X | H |
+| Standardpistol (5) | 25 m Standard | 25 m | .22 | 3 stages 4×5 on precision @ 150/20/10 s | 60 | integer + X | H |
+| Silhuettpistol (4) | ~25 m Rapid Fire | 25 m | .22 | rapid face; 2×30 @ 8/6/4 s | 60 | integer + X | M |
+| Hurtigpistol (7F/7G…) | national | 25 m | .22 / c-f | rapid face; prøve + 4×5 @10 s + 4×5 @8 s + 4×5 @6 s | 60 | integer + X | H |
+| Fripistol (2A) | 50 m Pistol | 50 m | .22 | precision/50 m face; 6×10, 2 h | 60 | integer + X (X scored) | H |
+| Sprintluft (3D) | national | 10 m | air 4.5 mm | air-duel face; 30 in 15 min | 30 | integer + X | H |
+| 50 m rifle | 50 m Rifle | 50 m | .22 | 50 m rifle face; 3×20 or 60 prone | 60 | decimal (prone) / integer | H |
+| 200/300 m rifle | 300 m Rifle | 200/300 m | c-f ≤ 8 mm | 300 m / scaled 200 m face; 3×20 | 60 | integer | M |
 
-NAIS and any other NSF programs are added once confirmed with the father.
+(NAIS, fripistol-B, 15 m rifle and 10 m luftsprint are documented in the sources;
+seeded as confirmed.)
 
-## To confirm with the father / NSF Skytterboka
-- The complete official NSF program set (which programs; Norwegian names / codes).
-- Per program: shots per series, number of series, time limits, permitted calibres.
-- 10 m air pistol: the full ring table; inner-ten vs decimal in NSF practice.
-- The 50 m free-pistol face exact ring table; 50 m and 300 m rifle target geometry.
-- Whether finpistol / grovpistol = 6×5 *presisjon* + 6×5 *duell* (60 shots), and
-  the *duell* timing (e.g. 3 s exposed / 7 s hidden, or 20 / 10 s series).
+## Still to confirm with the father / a live NSF rulebook
+- **Per-series precision time** for fin/grov: 5 min (Evje) vs 6 min (SNL).
+- **Silhuettpistol** exact series-per-timing and single-turning vs 5-target bank.
+- **Luftpistol** face: ISSF 11.5 mm (asserted) vs the national air-duel face.
+- **Fripistol** modelling: true 50 m (precision face) vs national Fripistol-B 25 m
+  (Colt face) — or both.
+- **NAIS** shot count (30 per 2011 reglement vs 6×5 per Evje).
+- Class reductions for women / juniors / veterans; 50 m & 300 m rifle 3×20 vs 3×40.
 
 ## Sources
-- ISSF Technical Rules, Pistol Rules and Rifle Rules (2023); ISSF Rules for Paper
-  Target Scoring.
-- NSF Pistolregler; NSF "Skyteprogrammer og tillatte kalibre".
-- Spec 0001 (10 m air rifle) for the air-rifle face.
+- ISSF Technical Rules §6.3.4 (target tables) and Pistol/Rifle Rules (event
+  structures); NSF *Nasjonalt regelverk* (pistol 2019, rifle 2023).
+- Evje Pistolklubb, Oslo PK, Store norske leksikon (SNL), Wikipedia/Wikimedia and
+  target-maker spec sheets (cross-checks).
+- Spec 0001 (10 m air rifle).
