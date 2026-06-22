@@ -47,6 +47,11 @@ The shooter records a complete session on-device, with no network needed
       and the inner-ten edge). A representative "50 m Rifle Prone" program is
       seeded integer + inner ten; the exact NSF course of fire, decimal usage,
       black and calibre are confirm-with-the-father flags.
+- [x] 0018 — 300 m rifle target & scoring: the ISSF 300 m rifle face (rings 1–10,
+      inner ten 50 mm, centre-fire) formally specified and sourced to ISSF, with
+      a vector table mirroring spec 0017. A representative "300 m Rifle" program
+      is seeded integer + inner ten; the exact NSF course of fire, decimal usage,
+      black and the centre-fire gauge edge are confirm-with-the-father flags.
 - [x] 0019 — Personal weapon persistence: the shooter's own weapons (spec 0007)
       are saved on-device and survive a restart, behind a `WeaponStore` interface
       mirroring 0009 (`shared_preferences`, ADR-0016). The list is loaded once at
@@ -69,7 +74,7 @@ The shooter records a complete session on-device, with no network needed
 
 ## Increment 3 — polish & breadth
 - [ ] 0016 — Responsive/adaptive polish; PWA install; store builds.
-- [ ] 0018+ — More programs/disciplines (300 m rifle, further pistol programs, …).
+- [ ] 0020+ — More programs/disciplines (further pistol programs, field, …).
 
 ## Requirements added 2026-06-22 → where each lives
 - Date, time and place (GPS or manual) per session → **0008** (ADR-0012).

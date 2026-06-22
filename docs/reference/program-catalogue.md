@@ -33,14 +33,24 @@ plus the step repeated outward.
 | 10 m air pistol | 1–10 | 11.5 | +16 → 155.5 | 5.0 | 59.5 | integer + inner-ten (decimal in finals) | H |
 | 25 m precision / 50 m pistol | 1–10 | 50 | +50 → 500 | 25 | 200 | integer + inner-ten | H |
 | 25 m rapid / silhouette | 5–10 | 100 | +80 → 500 | 50 | 500 (whole) | integer + inner-ten | H |
-| 50 m rifle | 1–10 | 10.4 | +16 → 154.4 | 5.0 | 112.4 | decimal (prone); integer (3-pos) | H |
-| 300 m rifle | 1–10 | 100 | +100 → 1000 | 50 | 600 | integer (decimal finals) | H |
+| 50 m rifle | 1–10 | 10.4 | +16 → 154.4 | 5.0 | 112.4† | integer + X (decimal?†) | H (geom) |
+| 300 m rifle | 1–10 | 100 | +100 → 1000 | 50 | 600† | integer + X (decimal?†) | H (geom) |
 | Colt (Fripistol-B, NSF) | 1–10 | 25 | +25 → 250 | 12.5 | — | integer + inner-ten | H |
 | 10 m air-duel (NSF) | 5–10 | 23 | +26.5 → 155.5 | 11.5 | — | integer + inner-ten | H |
 | 200 m rifle (NSF, scaled) | 1–10 | 64 | +66.67 → 664 | 30.67 | 397 | integer + inner-ten | H |
 | 15 m / luftsprint (NSF) | 1–10 | 2 | +9 → 83 | — | 38 / 29 | integer | H |
 
-The **gauge** (inward-edge rule) is ⌀ 5.6 mm for .22 and ⌀ 9.65 mm for centre-fire.
+The **gauge** (inward-edge rule) is ⌀ 5.6 mm for .22, ⌀ 9.65 mm for centre-fire
+**pistol** (grovpistol) and ⌀ 8 mm for the centre-fire **rifle** (300 m, ≤ 8 mm
+class)† — the two centre-fire gauges differ because the bullet edges do.
+
+† The rifle rows above are **geometry-confirmed (ISSF §6.3.4) but
+course-of-fire-, scoring-style-, black- and calibre/gauge-unconfirmed**: scoring
+style (integer + X vs decimal), the exact NSF course of fire, the rendered black
+diameter, and — for 300 m — the exact centre-fire gauge edge are
+confirm-with-the-father flags (specs 0017 / 0018). They are seeded integer + X
+with the geometry shown; the flagged facts are not asserted as sourced. See the
+"Still to confirm" list below.
 
 ## Programs
 
@@ -55,8 +65,8 @@ The **gauge** (inward-edge rule) is ⌀ 5.6 mm for .22 and ⌀ 9.65 mm for centr
 | Hurtigpistol (7F/7G…) | national | 25 m | .22 / c-f | rapid face; prøve + 4×5 @10 s + 4×5 @8 s + 4×5 @6 s | 60 | integer + X | H |
 | Fripistol (2A) | 50 m Pistol | 50 m | .22 | precision/50 m face; 6×10, 2 h | 60 | integer + X (X scored) | H |
 | Sprintluft (3D) | national | 10 m | air 4.5 mm | air-duel face; 30 in 15 min | 30 | integer + X | H |
-| 50 m rifle | 50 m Rifle | 50 m | .22 | 50 m rifle face; 3×20 or 60 prone | 60 | decimal (prone) / integer | H |
-| 200/300 m rifle | 300 m Rifle | 200/300 m | c-f ≤ 8 mm | 300 m / scaled 200 m face; 3×20 | 60 | integer | M |
+| 50 m rifle | 50 m Rifle | 50 m | .22† | 50 m rifle face; 6×10 prone (3×20 / 3×40?†) | 60 | integer + X (decimal?†) | M† |
+| 200/300 m rifle | 300 m Rifle | 200/300 m | c-f ≤ 8 mm† | 300 m / scaled 200 m face; 6×10 (3×20 / 3×40?†) | 60 | integer + X (decimal?†) | M† |
 
 (NAIS, fripistol-B, 15 m rifle and 10 m luftsprint are documented in the sources;
 seeded as confirmed.)
@@ -68,7 +78,17 @@ seeded as confirmed.)
 - **Fripistol** modelling: true 50 m (precision face) vs national Fripistol-B 25 m
   (Colt face) — or both.
 - **NAIS** shot count (30 per 2011 reglement vs 6×5 per Evje).
-- Class reductions for women / juniors / veterans; 50 m & 300 m rifle 3×20 vs 3×40.
+- Class reductions for women / juniors / veterans.
+- **50 m & 300 m rifle** (specs 0017 / 0018 — geometry is ISSF-sourced, the rest
+  is flagged):
+  - **Course of fire** — seeded as 6×10 prone; confirm 60 prone vs 3×20 vs 3×40.
+  - **Scoring style** — seeded integer + X; confirm whether NSF scores these to a
+    decimal (as electronic targets / ISSF finals do).
+  - **Black diameter** — 50 m ⌀ 112.4 mm, 300 m ⌀ 600 mm asserted (render-only);
+    confirm the exact NSF black.
+  - **Calibre / gauge** — 50 m asserted .22 LR (only permitted class?); 300 m
+    centre-fire ⌀ 8 mm gauge edge (vs the ⌀ 9.65 mm pistol gauge) — confirm the
+    exact ≤ 8 mm class gauge.
 
 ## Sources
 - ISSF Technical Rules §6.3.4 (target tables) and Pistol/Rifle Rules (event
