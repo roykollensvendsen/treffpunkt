@@ -27,10 +27,10 @@ The shooter records a complete session on-device, with no network needed
 - [ ] 0007 — Weapons: a seeded reference catalogue (NSF classes + calibres) plus
       the shooter's own weapons referencing it; pick a weapon per session; a
       program accepts only its permitted weapon classes.
-- [ ] 0008 — Session metadata: date & time, and place — GPS coordinates when
-      available and permitted, plus a human label the shooter can refine
-      (range / lane / relay); manual entry as a full alternative, not just a
-      fallback.
+- [x] 0008 — Session metadata: date & time, and place captured before shooting —
+      a human label plus optional coordinates, from device location or typed by
+      hand (manual entry is a full alternative); real GPS deferred behind a
+      `LocationService` interface (ADR-0015).
 - [ ] 0009 — Offline-first persistence: create, complete and store a whole
       session locally with no network; it survives an app restart.
 

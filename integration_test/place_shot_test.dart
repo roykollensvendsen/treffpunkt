@@ -11,6 +11,7 @@ import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
 import '../test/features/auth/fake_auth_repository.dart';
 
@@ -27,10 +28,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Pick the air-rifle program from the catalogue, then score on its target.
+    // Pick the air-rifle program from the catalogue, confirm the session setup
+    // (date/time + place), then score on its target.
     await tester.tap(
       find.byKey(const ValueKey<String>('program-10 m Air Rifle')),
     );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(sessionConfirmKey));
     await tester.pumpAndSettle();
 
     expect(find.text('0 / 10'), findsOneWidget);

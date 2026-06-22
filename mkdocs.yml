@@ -39,6 +39,7 @@ nav:
       - "0003 — Google sign-in": specs/0003-google-sign-in.md
       - "0004 — Program, series & scoring": specs/0004-program-series-and-series-scoring.md
       - "0006 — Series scoring screen": specs/0006-series-scoring-screen.md
+      - "0008 — Session setup metadata": specs/0008-session-setup-metadata.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
@@ -53,6 +54,7 @@ nav:
       - ADR-0011 Deploy to Pages: adr/0011-deploy-github-pages.md
       - ADR-0012 Session domain model: adr/0012-shooting-session-domain-model.md
       - ADR-0013 Offline-first & sync: adr/0013-offline-first-recording-and-sync.md
+      - ADR-0015 Location capture: adr/0015-location-capture-via-service-interface.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md
