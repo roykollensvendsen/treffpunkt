@@ -49,3 +49,10 @@ app.*.map.json
 
 # FVM
 .fvm/
+
+# Local config & secrets (see docs/adr/0010-secrets-and-config-injection.md)
+/config/env.local.json
+/config/env.prod.json
+/supabase/.env
+/supabase/.branches
+/supabase/.temp
