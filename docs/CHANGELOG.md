@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- The session scorecard now lists every target face (skive) on its own line:
+  under each stage you see each series' score (ring total over its maximum, and
+  the inner-ten count when there is one), kept subordinate to the per-stage
+  subtotal and the grand total — so you can read each face's result the way a
+  paper scorecard does (spec 0023).
 - The shot you just fired now stands out: while shooting a series the most
   recently placed shot is ringed with a coloured halo on the target (at the same
   size as the others), and its row in the shots list is highlighted, so you can
