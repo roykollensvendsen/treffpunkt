@@ -83,3 +83,23 @@ increment, not this one.
 - **Blocking the scorecard on a successful upload:** rejected — it would fail the
   offline-first requirement (ADR-0013); upload is fire-and-forget and the local
   recording is authoritative this run.
+
+## Amendment (2026-06-23, spec 0029): the read surfaces failures
+
+The original decision made **both** `upload()` and `list()` silently best-effort
+(swallow every error). For `list()` that proved wrong: an empty account and a
+failed read both returned `const []`, so a real misconfiguration — most often the
+hosted migration not yet applied, giving `GET /rest/v1/sessions` → `404` — looked
+exactly like "no sessions yet" and could only be found in the browser network
+panel.
+
+Amended (spec 0029): the **read** is no longer silent. `list()` returns `const
+[]` only for a successful empty read and **throws `SessionSyncException`** on a
+genuine failure (missing table, denied permission, dropped connection, timeout).
+`syncedSessionsProvider` propagates it, and "Mine økter" shows a dismissible,
+non-blocking banner while still rendering every local session.
+
+The **upload** path is unchanged — it stays silent best-effort so a completion is
+never blocked, and a not-yet-uploaded session is already signalled by its
+*"Ikke synkronisert"* badge (spec 0026). The offline-first guarantee and the
+one-file-per-backend purity boundary are untouched.
