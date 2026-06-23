@@ -12,6 +12,7 @@ import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dar
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/data/supabase_session_repository.dart';
+import 'package:treffpunkt/features/settings/data/theme_mode_store.dart';
 import 'package:treffpunkt/features/weapons/data/weapon_store.dart';
 
 Future<void> main() async {
@@ -30,6 +31,10 @@ Future<void> main() async {
   // Load the saved weapons once here (prefs is already awaited) so the notifier
   // can start populated without an async build (spec 0019).
   final savedWeapons = await weaponStore.load();
+  final themeModeStore = SharedPreferencesThemeModeStore(prefs);
+  // Load the saved theme once here too, so the app starts on the right theme
+  // without a first-frame flash of the wrong one (spec 0030).
+  final initialThemeMode = await themeModeStore.load();
   runTreffpunkt(
     SupabaseAuthRepository(Supabase.instance.client.auth),
     sessionStore: SharedPreferencesSessionStore(prefs),
@@ -38,5 +43,7 @@ Future<void> main() async {
     weaponStore: weaponStore,
     initialWeapons: savedWeapons,
     locationService: const GeolocatorLocationService(),
+    themeModeStore: themeModeStore,
+    initialThemeMode: initialThemeMode,
   );
 }

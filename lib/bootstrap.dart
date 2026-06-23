@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/app.dart';
@@ -12,6 +13,8 @@ import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/settings/data/theme_mode_store.dart';
+import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
 import 'package:treffpunkt/features/weapons/data/weapon_store.dart';
 import 'package:treffpunkt/features/weapons/data/weapons_store.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
@@ -36,6 +39,12 @@ import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 /// `main()` passes the `shared_preferences`-backed store so completed sessions
 /// survive a restart and upload later; omitting it keeps the in-memory default,
 /// so tests and the integration harness never touch real storage.
+///
+/// [themeModeStore] persists the chosen theme (spec 0030) and
+/// [initialThemeMode] seeds it at launch — `main()` loads the saved choice from
+/// the store before this call so the app starts on the right theme without a
+/// first-frame flash. Omitting them follows the system/browser theme, so tests
+/// and the integration harness never touch real storage.
 void runTreffpunkt(
   AuthRepository authRepository, {
   SessionStore? sessionStore,
@@ -44,6 +53,8 @@ void runTreffpunkt(
   WeaponStore? weaponStore,
   List<Weapon>? initialWeapons,
   LocationService? locationService,
+  ThemeModeStore? themeModeStore,
+  ThemeMode? initialThemeMode,
 }) {
   runApp(
     ProviderScope(
@@ -61,6 +72,10 @@ void runTreffpunkt(
           initialWeaponsProvider.overrideWithValue(initialWeapons),
         if (locationService != null)
           locationServiceProvider.overrideWithValue(locationService),
+        if (themeModeStore != null)
+          themeModeStoreProvider.overrideWithValue(themeModeStore),
+        if (initialThemeMode != null)
+          initialThemeModeProvider.overrideWithValue(initialThemeMode),
       ],
       child: const TreffpunktApp(),
     ),

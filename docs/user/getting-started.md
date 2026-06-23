@@ -29,5 +29,12 @@ top of the program list: tap it to return to the exact target you were on, with
 every shot you had already placed still there. A finished session clears itself,
 so the card only appears while a session is in progress.
 
+## Light or dark
+
+By default the app follows your device or browser theme — dark phone, dark app.
+To override it, tap the theme button (the brightness icon) in the top bar and
+choose **System**, **Lyst** (light) or **Mørkt** (dark). Your choice is
+remembered the next time you open the app.
+
 Signing in, competitions and scoreboards are on the way — see the
 [Roadmap](../ROADMAP.md).
