@@ -40,13 +40,14 @@ one-liner: `shots.isEmpty ? null : shots.length - 1`. Exposing it as a computed
 `SeriesPainter.highlightedIndex` keeps the rule pure and unit-testable without a
 canvas, and lets the painter and the shots list agree on the same shot.
 
-On the target the highlight is a larger marker (≈1.4× the pellet radius) in the
-same amber fill with an extra outer "halo" ring in a distinct highlight colour
-(`Colors.deepOrange`). Growing the marker and adding a ring reads as "this one"
-without inventing a second shot colour or hiding the pellet, and stays legible
-on both the black bull and the white field. Drag styling (`lightBlueAccent`)
-already signals "I am moving this shot"; letting it win avoids two competing
-emphases on one marker and keeps spec 0002's behaviour intact.
+On the target the highlight is an extra outer "halo" ring in a distinct
+highlight colour (`Colors.deepOrange`) around the marker at its normal size —
+the latest shot is the same amber dot as the others, ringed. A halo reads as
+"this one" without enlarging the marker (which would shift how the shot appears
+to sit in its ring) or inventing a second shot colour, and stays legible on both
+the black bull and the white field. Drag styling (`lightBlueAccent`) already
+signals "I am moving this shot"; letting it win avoids two competing emphases on
+one marker and keeps spec 0002's behaviour intact.
 
 In the list the matching emphasis is a bold ring value plus a `Key` on the
 emphasised row, so tests can find it and so the visual cue is consistent with
@@ -63,9 +64,9 @@ int? get highlightedIndex => shots.isEmpty ? null : shots.length - 1;
 ```
 
 `paint` draws each marker as today, except the shot at `highlightedIndex` (when
-it is not the dragged shot) is drawn at `radius * 1.4` with the normal amber
-fill, the normal black outline, and an additional `deepOrange` stroked halo ring
-just outside it. The dragged shot (`draggingIndex`) keeps its `lightBlueAccent`
+it is not the dragged shot) gets an additional `deepOrange` stroked halo ring
+just outside it, at the normal marker size — the amber fill and black outline are
+unchanged. The dragged shot (`draggingIndex`) keeps its `lightBlueAccent`
 fill and is never given the halo. `shouldRepaint` is unchanged in spirit: it
 already repaints when `shots` or `draggingIndex` change, which is exactly when
 the highlighted marker can move or change styling.
@@ -84,10 +85,10 @@ on "the latest shot".
   equals `shots.length - 1` for a non-empty one (checked at one and several
   shots).
 - `series_painter_test` (render proof, recording `Canvas`): with several shots
-  and no drag, the last marker draws an extra circle (the halo) and a larger
-  filled radius that the earlier markers do not. With `draggingIndex` set to the
-  last shot, that marker is drawn with the drag fill and *without* the halo —
-  drag wins.
+  and no drag, the last marker has the same filled radius as the earlier ones but
+  draws an extra `deepOrange` halo ring (wider than the marker) that they do not.
+  With `draggingIndex` set to the last shot, that marker is drawn with the drag
+  fill and *without* the halo — drag wins.
 
 ### Widget tests
 
