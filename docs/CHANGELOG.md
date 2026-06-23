@@ -7,6 +7,14 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- You can now see which build of the app you are running. A discreet line at the
+  bottom of the sign-in screen and the program picker shows the build version —
+  the deploy's short commit and build time (e.g. "build a1b2c3d4 ·
+  2026-06-23T17:30Z"), or "build dev" for a local build. So after a deploy you
+  can confirm at a glance that you are on the latest build instead of a stale
+  cached page, and report the exact build when something looks wrong. The
+  version is the same one the cache-bust query uses, so the screen and the
+  loaded assets always agree (spec 0028).
 - The empty "Mine økter" screen is now welcoming and useful: when you have no
   saved sessions yet it shows a friendly note ("Ingen lagrede økter ennå"), a
   hint ("Fullfør en økt for å se den her.") and a "Velg program" button that

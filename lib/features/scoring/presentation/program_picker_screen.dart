@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
@@ -115,57 +116,76 @@ class ProgramPickerScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 700),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (saved != null)
-                  Card(
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    child: ListTile(
-                      key: resumeSessionKey,
-                      leading: const Icon(Icons.play_circle_outline),
-                      title: const Text('Fortsett økt'),
-                      subtitle: Text(_resumeSubtitle(saved)),
-                      trailing: IconButton(
-                        key: discardSessionKey,
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: 'Forkast lagret økt',
-                        onPressed: () => unawaited(_discard(ref)),
-                      ),
-                      onTap: () => unawaited(_resume(context, ref, saved)),
-                    ),
-                  ),
-                for (final definition in ProgramCatalogue.all)
-                  Card(
-                    child: Semantics(
-                      button: true,
-                      label:
-                          'Velg program: ${definition.name}, '
-                          '${_subtitle(definition)}',
-                      // Carry the tap action on the SAME node as the label so a
-                      // screen reader can activate the tile; `ExcludeSemantics`
-                      // would otherwise drop the ListTile's own tap action.
-                      onTap: () =>
-                          unawaited(_startProgram(context, ref, definition)),
-                      child: ExcludeSemantics(
-                        child: ListTile(
-                          key: ValueKey<String>('program-${definition.name}'),
-                          title: Text(definition.name),
-                          subtitle: Text(_subtitle(definition)),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => unawaited(
-                            _startProgram(context, ref, definition),
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 700),
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      if (saved != null)
+                        Card(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.secondaryContainer,
+                          child: ListTile(
+                            key: resumeSessionKey,
+                            leading: const Icon(Icons.play_circle_outline),
+                            title: const Text('Fortsett økt'),
+                            subtitle: Text(_resumeSubtitle(saved)),
+                            trailing: IconButton(
+                              key: discardSessionKey,
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: 'Forkast lagret økt',
+                              onPressed: () => unawaited(_discard(ref)),
+                            ),
+                            onTap: () =>
+                                unawaited(_resume(context, ref, saved)),
                           ),
                         ),
-                      ),
-                    ),
+                      for (final definition in ProgramCatalogue.all)
+                        Card(
+                          child: Semantics(
+                            button: true,
+                            label:
+                                'Velg program: ${definition.name}, '
+                                '${_subtitle(definition)}',
+                            // Carry the tap action on the SAME node as the
+                            // label so a screen reader can activate the tile;
+                            // `ExcludeSemantics` would otherwise drop the
+                            // ListTile's own tap action.
+                            onTap: () => unawaited(
+                              _startProgram(context, ref, definition),
+                            ),
+                            child: ExcludeSemantics(
+                              child: ListTile(
+                                key: ValueKey<String>(
+                                  'program-${definition.name}',
+                                ),
+                                title: Text(definition.name),
+                                subtitle: Text(_subtitle(definition)),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => unawaited(
+                                  _startProgram(context, ref, definition),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-              ],
+                ),
+              ),
             ),
-          ),
+            // A discreet build-version footer below the program list so a user
+            // can confirm which build they are running (spec 0028).
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: BuildVersionLabel(),
+            ),
+          ],
         ),
       ),
     );

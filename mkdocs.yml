@@ -51,6 +51,8 @@ nav:
       - "0024 — Personal session sync": specs/0024-personal-session-sync.md
       - "0025 — Upload queue": specs/0025-upload-queue.md
       - "0026 — My sessions list": specs/0026-my-sessions-list.md
+      - "0027 — Cache-bust the web deploy": specs/0027-cache-bust-web-deploy.md
+      - "0028 — Build-version stamp": specs/0028-build-version-stamp.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
