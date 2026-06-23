@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
+import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
@@ -84,7 +85,13 @@ class ProgramPickerScreen extends ConsumerWidget {
 
   /// Opens the "My sessions" history (spec 0026), then refreshes the resume
   /// card on return (the same store re-read the other navigations do).
+  ///
+  /// Invalidates [mySessionsProvider] **before** pushing the screen so its
+  /// synced read (`SessionRepository.list()`) re-runs each time the history is
+  /// opened, surfacing sessions that have synced since it was last viewed. The
+  /// pending half stays live on its own (it watches the upload queue).
   Future<void> _openMySessions(BuildContext context, WidgetRef ref) async {
+    ref.invalidate(mySessionsProvider);
     await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const MySessionsScreen()),
     );
@@ -96,7 +103,7 @@ class ProgramPickerScreen extends ConsumerWidget {
     final saved = ref.watch(savedRecordingProvider).value;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Choose a program'),
+        title: const Text('Velg program'),
         actions: [
           IconButton(
             key: mySessionsButtonKey,
@@ -174,5 +181,5 @@ String _subtitle(ProgramDefinition definition) {
   final discipline = definition.discipline == Discipline.rifle
       ? 'Rifle'
       : 'Pistol';
-  return '$discipline · ${definition.totalShots} shots';
+  return '$discipline · ${definition.totalShots} skudd';
 }

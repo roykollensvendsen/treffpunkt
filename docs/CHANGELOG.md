@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- The empty "Mine økter" screen is now welcoming and useful: when you have no
+  saved sessions yet it shows a friendly note ("Ingen lagrede økter ennå"), a
+  hint ("Fullfør en økt for å se den her.") and a "Velg program" button that
+  takes you straight back to pick a program — so a first-time shooter is told
+  what to do next instead of facing a bare line of text.
 - You can now look back at your saved sessions. A new "Mine økter" screen (open
   it from the history button in the top bar) lists every session you have
   recorded, newest first: the ones already saved to your account and the ones
@@ -147,6 +152,14 @@ All notable changes to this project are documented here. The format is based on
   50 m / 300 m rifle structure.
 
 ### Fixed
+- A session you just finished now shows up in "Mine økter" right away. The list
+  used to read your saved sessions once and never refresh, so if you opened the
+  (empty) list, went back, completed a session and reopened, the finished
+  session was missing until you fully restarted. The list now follows your live
+  upload queue, so a just-completed session appears the moment it is recorded,
+  and the synced sessions are re-read each time you open the screen (spec 0026).
+- The home screen is now fully Norwegian: the title reads "Velg program" and the
+  program subtitles count "skudd" instead of "shots".
 - Pinch-to-zoom on the target now works on phones in any direction: while a
   finger is on the target the page stops scrolling, so a two-finger pinch (even a
   vertical one) zooms the target instead of being swallowed by the page scroll,

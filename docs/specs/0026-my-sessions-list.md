@@ -36,14 +36,14 @@ per-series (skive) breakdown shown when the session was first completed (spec
    crash the screen. The Supabase implementation stays the only file importing
    `supabase_flutter` and stays excluded from automated tests (ADR-0017).
 2. **Combine synced and pending.** A `mySessionsProvider` (a `FutureProvider`)
-   loads the synced records (`sessionRepositoryProvider.list()`) and the pending
-   records (`pendingUploadsStoreProvider.load()`), and unions them
-   **deduplicated by `id`** — a record present in both counts as **synced** (the
-   server copy wins; the pending one is a duplicate awaiting removal). Each entry
-   is tagged **synced** or **pending**. The list is sorted **most-recent-first by
-   `capturedAt`**, with records that have no `capturedAt` sorted last. The
-   view-model is a small, pure, testable list of `MySessionEntry { record,
-   synced }`.
+   loads the synced records (`sessionRepositoryProvider.list()`) and takes the
+   pending records from the **live upload queue** (`uploadQueueProvider`'s
+   in-memory state, spec 0025), and unions them **deduplicated by `id`** — a
+   record present in both counts as **synced** (the server copy wins; the
+   pending one is a duplicate awaiting removal). Each entry is tagged **synced**
+   or **pending**. The list is sorted **most-recent-first by `capturedAt`**,
+   with records that have no `capturedAt` sorted last. The view-model is a
+   small, pure, testable list of `MySessionEntry { record, synced }`.
 3. **The "My sessions" screen.** `MySessionsScreen` (a `ConsumerWidget`) shows an
    app bar titled **"Mine økter"** and watches `mySessionsProvider`:
    - **Data**: a list of cards, one per entry, each showing the program name, the
@@ -51,7 +51,11 @@ per-series (skive) breakdown shown when the session was first completed (spec
      `· N×X` when `innerTens > 0`), and the weapon name when present. A **pending**
      entry carries a clear **"Ikke synkronisert"** badge; a synced entry does
      not. Rows and badges carry findable `Key`s for tests.
-   - **Empty**: a friendly empty state, **"Ingen lagrede økter ennå"**.
+   - **Empty**: a friendly empty state — an icon, the line **"Ingen lagrede
+     økter ennå"**, the hint **"Fullfør en økt for å se den her."**, and a
+     **"Velg program"** button (a findable `Key`) that returns to the program
+     picker (`Navigator.maybePop`, since the screen is pushed from it), so a
+     first-time shooter is told what to do next.
    - **Loading / error**: a progress indicator while loading; a graceful message
      on error (the provider itself is best-effort, so an error is unlikely).
    - All visible text is Norwegian and the rows carry `Semantics` labels
@@ -103,6 +107,18 @@ Making the merge a **pure view-model** (`MySessionEntry` list) keeps the
 synced/pending/dedup/sort logic unit-testable without a widget or a real
 backend, mirroring how the rest of the domain is kept testable in isolation.
 
+**Keeping the list current.** The pending half is read from the **live** upload
+queue (`uploadQueueProvider`'s in-memory state), not a one-shot
+`PendingUploadsStore.load()`, so the instant a completed session is enqueued
+(spec 0025) the queue state changes, `mySessionsProvider` recomputes, and the
+new row appears **with no reopen** — fixing a defect where a session finished
+after the screen was first shown stayed invisible because the cached one-shot
+read was never refreshed. The synced half is refreshed by
+`ref.invalidate(mySessionsProvider)` **before** the picker pushes the screen,
+so a session that has synced since the list was last viewed shows on the next
+open. The empty state's **"Velg program"** button is a plain
+`Navigator.maybePop` back to the picker, the screen's only entry point.
+
 ## Design
 
 ```
@@ -117,19 +133,22 @@ lib/features/scoring/
   presentation/
     my_sessions_providers.dart     MySessionEntry { record, synced };
                                    mySessionsProvider (FutureProvider): union of
-                                   list() (synced) + load() (pending), deduped by
-                                   id (synced wins), tagged, sorted recent-first
-                                   (null capturedAt last). mergeMySessions(...) is
-                                   a pure helper so the merge is unit-testable.
+                                   list() (synced) + watch(uploadQueueProvider)
+                                   (pending, live), deduped by id (synced wins),
+                                   tagged, sorted recent-first (null capturedAt
+                                   last). mergeMySessions(...) is a pure helper so
+                                   the merge is unit-testable.
     my_sessions_screen.dart        MySessionsScreen (ConsumerWidget): "Mine økter"
                                    app bar; cards (program, date/place, score,
                                    weapon, "Ikke synkronisert" badge on pending);
-                                   empty / loading / error states; tap -> detail.
+                                   friendly empty state (hint + "Velg program"
+                                   button), loading / error states; tap -> detail.
     series_screen.dart             _SessionScorecard -> public SessionScorecard
                                    (read-only scorecard reused by both screens);
                                    live screen behaviour and keys unchanged.
     program_picker_screen.dart     + "Mine økter" history app-bar action (before
-                                   the sign-out button) that pushes MySessionsScreen.
+                                   the sign-out button) that invalidates
+                                   mySessionsProvider then pushes MySessionsScreen.
 ```
 
 The detail view resolves the program from `ProgramCatalogue` via
@@ -157,7 +176,11 @@ name) is caught and replaced with the **"Kan ikke vise denne økta"** message.
   Supabase):
   - renders one row per entry showing program / score / weapon, with the
     **"Ikke synkronisert"** badge present **only** on the pending entries;
-  - shows the **"Ingen lagrede økter ennå"** empty state when there are none;
+  - a session **enqueued onto the live upload queue after the list is first
+    shown** appears (with its pending badge) **without the screen being
+    reopened** — the regression guard for the stale one-shot-read defect;
+  - shows the **"Ingen lagrede økter ennå"** empty state with its hint and the
+    **"Velg program"** button when there are none;
   - tapping a row opens the detail scorecard, which shows the per-stage and
     per-series (skive) breakdown for **that** session (assert a per-series row
     from the payload);
@@ -167,6 +190,8 @@ name) is caught and replaced with the **"Kan ikke vise denne økta"** message.
 - `series_screen_test` (unchanged): the extracted public `SessionScorecard`
   keeps the live completion screen green — completing a program still reaches the
   same scorecard with the same keys and per-series rows.
+- `program_picker_screen_test`: opening the empty **"Mine økter"** history and
+  tapping its **"Velg program"** button pops back to the `ProgramPickerScreen`.
 
 ### System tests
 
@@ -176,7 +201,10 @@ name) is caught and replaced with the **"Kan ikke vise denne økta"** message.
 
 ## Open questions
 
-- Pull-to-refresh / live updates as a session syncs in the background (the list
-  is a one-shot read today; `ref.invalidate` refreshes it on return).
+- Pull-to-refresh and live updates **as a session uploads in the background**:
+  the pending half is now live (it watches the upload queue, so a just-completed
+  session appears at once), and the synced half re-reads each time the screen is
+  opened (`ref.invalidate(mySessionsProvider)`); a record moving from pending to
+  synced *while the screen stays open* is still only reflected on the next open.
 - Deleting a session from the list, and filtering by program or competition —
   later increments (competition identity arrives with spec 0012).

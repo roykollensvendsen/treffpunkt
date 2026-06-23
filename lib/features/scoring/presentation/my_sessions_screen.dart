@@ -26,6 +26,10 @@ const Key notSyncedBadgeKey = ValueKey<String>('notSyncedBadge');
 /// Key for the empty-state message when no session is saved, used by tests.
 const Key noSessionsKey = ValueKey<String>('noSessions');
 
+/// Key for the "Velg program" call-to-action on the empty state, which returns
+/// to the program picker; used by tests.
+const Key pickProgramButtonKey = ValueKey<String>('pickProgramButton');
+
 /// Key for the "cannot show this session" message in the detail view when a
 /// stored payload names a program that no longer resolves, used by tests.
 const Key unreadableSessionKey = ValueKey<String>('unreadableSession');
@@ -72,15 +76,66 @@ class _SessionsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
-      return const _CenteredMessage(
-        'Ingen lagrede økter ennå',
-        key: noSessionsKey,
-      );
+      return const _EmptyState();
     }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: entries.length,
       itemBuilder: (context, index) => _SessionCard(entry: entries[index]),
+    );
+  }
+}
+
+/// The friendly empty state: a cue that nothing is saved yet, a hint on how to
+/// change that, and a call-to-action back to the program picker.
+///
+/// The screen is pushed from the picker, so the button just pops back to it
+/// ([NavigatorState.maybePop]). The whole column is announced as one block to a
+/// screen reader, with the actionable button kept tappable.
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.history_toggle_off,
+              size: 56,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Ingen lagrede økter ennå',
+              key: noSessionsKey,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Fullfør en økt for å se den her.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              key: pickProgramButtonKey,
+              onPressed: () => unawaited(Navigator.of(context).maybePop()),
+              icon: const Icon(Icons.add),
+              label: const Text('Velg program'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

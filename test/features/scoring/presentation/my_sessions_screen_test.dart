@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
@@ -22,6 +23,9 @@ import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
+
+import '../../auth/fake_auth_repository.dart';
 
 const Shot _centre = Shot(dxMm: 0, dyMm: 0);
 const ScoringService _scoring = ScoringService();
@@ -242,7 +246,65 @@ void main() {
     expect(find.byKey(noSessionsKey), findsOneWidget);
     expect(find.text('Ingen lagrede økter ennå'), findsOneWidget);
     expect(find.byKey(mySessionCardKey), findsNothing);
+    // The friendly empty state carries a hint and a "Velg program" call to
+    // action so a first-time shooter knows what to do next.
+    expect(find.text('Fullfør en økt for å se den her.'), findsOneWidget);
+    expect(find.byKey(pickProgramButtonKey), findsOneWidget);
+    expect(find.text('Velg program'), findsOneWidget);
   });
+
+  testWidgets(
+    'a session enqueued after the list is shown appears without reopening',
+    (tester) async {
+      // The bug (spec 0026): a just-completed session did not show until the
+      // screen was reopened, because the list was a one-shot store read. Mount
+      // the screen empty, enqueue a completed session onto the live queue while
+      // it is on screen, and assert the row (and its pending badge) appears
+      // with no remount. Signed out, so the enqueued record stays pending (its
+      // flush no-ops) and the "Ikke synkronisert" badge is shown.
+      final repository = InMemorySessionRepository();
+      final pendingStore = InMemoryPendingUploadsStore();
+      final authRepository = FakeAuthRepository();
+      addTearDown(authRepository.dispose);
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(authRepository),
+          sessionRepositoryProvider.overrideWithValue(repository),
+          pendingUploadsStoreProvider.overrideWithValue(pendingStore),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: MySessionsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // First shown: the empty state, no card.
+      expect(find.byKey(noSessionsKey), findsOneWidget);
+      expect(find.byKey(mySessionCardKey), findsNothing);
+
+      // A session completes and is enqueued onto the live upload queue.
+      final record = _recordFor(
+        ProgramCatalogue.airPistol10m,
+        id: 'fresh-1',
+        capturedAt: DateTime(2026, 6, 23, 12),
+      );
+      await container.read(uploadQueueProvider.notifier).enqueue(record);
+      await tester.pumpAndSettle();
+
+      // The row appears immediately — no reopen — with its pending badge.
+      expect(find.byKey(noSessionsKey), findsNothing);
+      expect(find.byKey(mySessionCard('fresh-1')), findsOneWidget);
+      expect(find.text('10 m Air Pistol'), findsOneWidget);
+      expect(find.text('600 / 600 · 60×X'), findsOneWidget);
+      expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
+      expect(find.text('Ikke synkronisert'), findsOneWidget);
+    },
+  );
 
   testWidgets('tapping a row opens the detail scorecard with the breakdown', (
     tester,
