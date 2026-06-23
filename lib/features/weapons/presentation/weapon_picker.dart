@@ -39,8 +39,9 @@ class WeaponPicker extends ConsumerWidget {
   /// The catalogue classes permitted for [program], by discipline and label.
   ///
   /// Filters by **both** discipline and label: a label such as `'Air 4.5 mm'`
-  /// is shared by the air-rifle and air-pistol classes, so matching on label
-  /// alone would wrongly offer the air-pistol class to an air-rifle program.
+  /// could be shared across disciplines (it once was, by the now-removed
+  /// air-rifle class), so matching on label alone could offer a
+  /// wrong-discipline class to a program.
   List<WeaponClass> get _permittedClasses => WeaponCatalogue.all
       .where(
         (weaponClass) =>

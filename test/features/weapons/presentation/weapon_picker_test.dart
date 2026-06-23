@@ -110,24 +110,26 @@ void main() {
   });
 
   testWidgets(
-    "offers only the program's discipline when classes share a label",
+    'offers only the matching-discipline class for the air-pistol program',
     (tester) async {
-      // 'Air 4.5 mm' is shared by the air-rifle and air-pistol classes; the
-      // add list for an air-RIFLE program must not offer the air-pistol class.
-      // Both share the same label, so distinguish them by their discipline.
+      // The picker filters the catalogue by **both** discipline and label, so
+      // the add list for the air-PISTOL program offers only the air-pistol
+      // class. (Air rifle once shared the 'Air 4.5 mm' label across disciplines
+      // and exercised the discipline tie-break; it was removed with the
+      // air-rifle program, so the label is no longer shared — but the
+      // discipline filter still holds.)
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
-        _app(container, program: ProgramCatalogue.airRifle10m),
+        _app(container, program: ProgramCatalogue.airPistol10m),
       );
 
       await tester.tap(find.byKey(addWeaponKey));
       await tester.pumpAndSettle();
 
       // Open the class dropdown and collect the distinct classes it offers.
-      // Exactly one — the rifle one — must be offered, not also the air-pistol
-      // class that shares the 'Air 4.5 mm' label.
+      // Exactly one — the air-pistol class — must be offered.
       await tester.tap(find.byType(DropdownButtonFormField<WeaponClass>));
       await tester.pumpAndSettle();
       final offered = tester
@@ -138,23 +140,19 @@ void main() {
           .whereType<WeaponClass>()
           .toSet();
       expect(offered, hasLength(1));
-      expect(offered.single.discipline, Discipline.rifle);
-      expect(
-        offered.any((c) => c.discipline == Discipline.pistol),
-        isFalse,
-        reason: 'the air-pistol class must not be offered for an air rifle',
-      );
+      expect(offered.single.discipline, Discipline.pistol);
+      expect(offered.single.label, 'Air 4.5 mm');
 
-      // And the weapon actually produced is a rifle-discipline weapon.
+      // And the weapon actually produced is a pistol-discipline weapon.
       await tester.tap(find.text('Air 4.5 mm').last);
       await tester.pumpAndSettle();
-      await tester.enterText(find.byKey(weaponNameFieldKey), 'My air rifle');
+      await tester.enterText(find.byKey(weaponNameFieldKey), 'My air pistol');
       await tester.tap(find.byKey(saveWeaponKey));
       await tester.pumpAndSettle();
 
       final weapons = container.read(weaponsProvider);
       expect(weapons, hasLength(1));
-      expect(weapons.single.discipline, Discipline.rifle);
+      expect(weapons.single.discipline, Discipline.pistol);
       expect(weapons.single.classLabel, 'Air 4.5 mm');
     },
   );

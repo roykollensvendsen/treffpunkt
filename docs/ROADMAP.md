@@ -46,8 +46,14 @@ The shooter records a complete session on-device, with no network needed
   and their target faces were seeded from ISSF geometry on NSF-unconfirmed
   footing. The NSF domain expert did not recognise them, so they were removed
   entirely (programs, geometries, weapon classes, specs and tests). Revisit only
-  if NSF confirms a 50 m / 300 m rifle structure. The 10 m air rifle (spec 0001)
-  is unaffected.
+  if NSF confirms a 50 m / 300 m rifle structure.
+- The **10 m air rifle is no longer offered in the program list** (NSF domain
+  expert's request): it is dropped from the program picker and its orphaned
+  weapon class removed. Its scoring foundation stays — spec 0001, decimal
+  scoring, the `TargetGeometry.airRifle10m()` target and the
+  `ProgramCatalogue.airRifle10m` reference remain (the latter still resolves by
+  name so older saved sessions load); the program is simply not in the offered
+  list.
 - [x] 0019 — Personal weapon persistence: the shooter's own weapons (spec 0007)
       are saved on-device and survive a restart, behind a `WeaponStore` interface
       mirroring 0009 (`shared_preferences`, ADR-0016). The list is loaded once at

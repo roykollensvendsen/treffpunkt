@@ -28,7 +28,7 @@ void main() {
     fake.emit(const SignedIn(AppUser(id: 't', email: 'a@b.no')));
     await tester.pumpAndSettle();
     expect(find.byKey(signInWithGoogleButtonKey), findsNothing);
-    expect(find.text('10 m Air Rifle'), findsWidgets);
+    expect(find.text('10 m Air Pistol'), findsWidgets);
 
     fake.emit(const SignedOut());
     await tester.pumpAndSettle();

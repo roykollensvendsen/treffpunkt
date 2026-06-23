@@ -14,13 +14,6 @@ import 'package:treffpunkt/features/weapons/domain/weapon_class.dart';
 /// still to confirm with the father (spec 0007) — the labels mirror those the
 /// program catalogue already uses.
 abstract final class WeaponCatalogue {
-  /// Air rifle, 4.5 mm (10 m air rifle).
-  static const WeaponClass airRifle = WeaponClass(
-    discipline: Discipline.rifle,
-    caliberLabel: '4.5 mm',
-    label: 'Air 4.5 mm',
-  );
-
   /// Air pistol, 4.5 mm (10 m air pistol).
   static const WeaponClass airPistol = WeaponClass(
     discipline: Discipline.pistol,
@@ -42,14 +35,12 @@ abstract final class WeaponCatalogue {
     label: 'Centre-fire 7.62–9.65 mm',
   );
 
-  /// All seeded classes, in display order. Two classes may share a
-  /// [WeaponClass.label] (e.g. air rifle and air pistol both use `'Air 4.5
-  /// mm'`); [all] holds the distinct classes, keyed on the (discipline, label)
-  /// pair. The picker matches a program to its classes by discipline *and*
-  /// label, so a label shared across disciplines never offers the
-  /// wrong-discipline class.
+  /// All seeded classes, in display order. Each is keyed on the (discipline,
+  /// label) pair: the picker matches a program to its classes by discipline
+  /// *and* label, so a label shared across disciplines would never offer the
+  /// wrong-discipline class. (Air rifle once shared the `'Air 4.5 mm'` label
+  /// with air pistol; it was removed with the air-rifle program.)
   static const List<WeaponClass> all = <WeaponClass>[
-    airRifle,
     airPistol,
     smallborePistol,
     centreFirePistol,

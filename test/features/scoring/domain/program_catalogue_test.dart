@@ -26,14 +26,27 @@ void main() {
     expect(program.totalShots, 60);
   });
 
-  test('the catalogue contains the 10 m air-rifle program', () {
-    expect(ProgramCatalogue.all, contains(ProgramCatalogue.airRifle10m));
+  test('the 10 m air-rifle reference program is kept but not offered', () {
+    // Spec 0001 / decimal-scoring reference and test fixture: the const still
+    // exists, but it is deliberately left out of the offered program list at
+    // the NSF domain expert's request.
     expect(ProgramCatalogue.airRifle10m.discipline, Discipline.rifle);
     expect(ProgramCatalogue.airRifle10m.totalShots, 10);
+    expect(ProgramCatalogue.all, isNot(contains(ProgramCatalogue.airRifle10m)));
+    // It is still resolvable by name so a session recorded before the change
+    // still loads — it is simply not in the offered list.
+    expect(
+      ProgramCatalogue.byName('10 m Air Rifle'),
+      same(ProgramCatalogue.airRifle10m),
+    );
   });
 
   test('the catalogue seeds the real pistol programs', () {
-    expect(ProgramCatalogue.all.length, 6);
+    expect(ProgramCatalogue.all.length, 5);
+    expect(
+      ProgramCatalogue.all.every((p) => p.discipline == Discipline.pistol),
+      isTrue,
+    );
 
     // Standard pistol: three timed stages of 4 x 5 = 60.
     expect(ProgramCatalogue.standardPistol25m.stages.length, 3);
@@ -52,10 +65,16 @@ void main() {
 
   test('byName resolves a known program and returns null otherwise', () {
     expect(
+      ProgramCatalogue.byName('10 m Air Pistol'),
+      same(ProgramCatalogue.airPistol10m),
+    );
+    expect(ProgramCatalogue.byName('Nope'), isNull);
+    // Air rifle is not in the offered list but stays resolvable by name, so a
+    // session recorded before the change still loads.
+    expect(
       ProgramCatalogue.byName('10 m Air Rifle'),
       same(ProgramCatalogue.airRifle10m),
     );
-    expect(ProgramCatalogue.byName('Nope'), isNull);
 
     // Every seeded program is found by its own unique name.
     for (final definition in ProgramCatalogue.all) {

@@ -111,11 +111,19 @@ All notable changes to this project are documented here. The format is based on
   optional inner-ten ring on the target geometry (spec 0004).
 
 ### Removed
+- The 10 m air rifle is no longer offered in the program list. At the NSF domain
+  expert's request, air rifle is dropped from the program picker (and its now
+  orphaned air-rifle weapon class is removed). The scoring foundation it
+  introduced is kept intact: spec 0001, the decimal-scoring rules, the
+  `TargetGeometry.airRifle10m()` target and the `ProgramCatalogue.airRifle10m`
+  reference all remain (the reference still resolves by name, so any session
+  recorded before the change still loads) — air rifle is simply not in the
+  offered list.
 - The 50 m rifle and 300 m rifle programs (and their target faces and weapon
   classes) have been taken out. They had been seeded from ISSF geometry, but the
   NSF domain expert did not recognise them as Norwegian programs, so they rested
   on unconfirmed footing. They are removed entirely until NSF confirms a real
-  50 m / 300 m rifle structure. The 10 m air rifle is unaffected.
+  50 m / 300 m rifle structure.
 
 ### Fixed
 - Pinch-to-zoom on the target now works on phones in any direction: while a
