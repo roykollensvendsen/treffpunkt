@@ -115,6 +115,28 @@ void main() {
     expect(find.byKey(noSessionsKey), findsOneWidget);
   });
 
+  testWidgets(
+    'the empty-state "Velg program" button returns to the picker (spec 0026)',
+    (tester) async {
+      await tester.pumpWidget(app(InMemorySessionStore()));
+      await tester.pumpAndSettle();
+
+      // Open the empty "Mine økter" history.
+      await tester.tap(find.byKey(mySessionsButtonKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(MySessionsScreen), findsOneWidget);
+      expect(find.byKey(pickProgramButtonKey), findsOneWidget);
+
+      // Tapping the call to action pops back to the program picker.
+      await tester.tap(find.byKey(pickProgramButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MySessionsScreen), findsNothing);
+      expect(find.byType(ProgramPickerScreen), findsOneWidget);
+      expect(find.text('Velg program'), findsWidgets);
+    },
+  );
+
   testWidgets('resumes a saved session restored to its shots', (tester) async {
     final session = Session.start(ProgramCatalogue.airRifle10m);
     final current = session

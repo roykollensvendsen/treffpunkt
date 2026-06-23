@@ -4,10 +4,10 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
 /// One row of the "My sessions" list (spec 0026): a saved [record] together
 /// with whether it has [synced] to the account, or is still waiting in the
@@ -74,12 +74,20 @@ List<MySessionEntry> mergeMySessions({
 
 /// The shooter's saved sessions for the "My sessions" screen (spec 0026).
 ///
-/// Loads the synced records ([SessionRepository.list]) and the pending ones
-/// ([PendingUploadsStore.load], spec 0025), then [mergeMySessions] unions them
-/// deduplicated by id (synced winning), tagged, most-recent-first. Both reads
-/// are best-effort at their source, so this provider does not need to throw.
+/// Loads the synced records ([SessionRepository.list]) and takes the pending
+/// ones from the **live** upload queue ([uploadQueueProvider], spec 0025), then
+/// [mergeMySessions] unions them deduplicated by id (synced winning), tagged,
+/// most-recent-first.
+///
+/// Watching the queue's in-memory state (not a one-shot
+/// `PendingUploadsStore.load()`) is what keeps the list current: the instant a
+/// completed session is enqueued the queue state changes, so this provider
+/// recomputes and the screen shows the new row with no reopen. The synced read
+/// is refreshed by `ref.invalidate(mySessionsProvider)` each time the screen is
+/// opened (the picker does this before pushing it). Both inputs are best-effort
+/// at their source, so this provider does not need to throw.
 final mySessionsProvider = FutureProvider<List<MySessionEntry>>((ref) async {
   final synced = await ref.watch(sessionRepositoryProvider).list();
-  final pending = await ref.watch(pendingUploadsStoreProvider).load();
+  final pending = ref.watch(uploadQueueProvider);
   return mergeMySessions(synced: synced, pending: pending);
 });
