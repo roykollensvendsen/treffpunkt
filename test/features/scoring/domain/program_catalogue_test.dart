@@ -33,7 +33,7 @@ void main() {
   });
 
   test('the catalogue seeds the real pistol programs', () {
-    expect(ProgramCatalogue.all.length, 8);
+    expect(ProgramCatalogue.all.length, 6);
 
     // Standard pistol: three timed stages of 4 x 5 = 60.
     expect(ProgramCatalogue.standardPistol25m.stages.length, 3);
@@ -48,25 +48,6 @@ void main() {
 
     // Grovpistol uses a centre-fire calibre.
     expect(ProgramCatalogue.grovpistol25m.stages[0].geometry.caliberMm, 9.65);
-  });
-
-  test('the catalogue seeds the 50 m rifle prone program', () {
-    const rifle = ProgramCatalogue.rifle50mProne;
-    expect(ProgramCatalogue.all, contains(rifle));
-    expect(rifle.discipline, Discipline.rifle);
-    expect(rifle.totalShots, 60); // six 10-shot series
-    expect(rifle.stages.single.geometry.name, '50 m Rifle');
-    expect(rifle.stages.single.geometry.lowestRingValue, 1);
-  });
-
-  test('the catalogue seeds the 300 m rifle program', () {
-    const rifle = ProgramCatalogue.rifle300m;
-    expect(ProgramCatalogue.all, contains(rifle));
-    expect(rifle.discipline, Discipline.rifle);
-    expect(rifle.totalShots, 60); // six 10-shot series
-    expect(rifle.stages.single.geometry.name, '300 m Rifle');
-    expect(rifle.stages.single.geometry.lowestRingValue, 1);
-    expect(rifle.stages.single.geometry.caliberMm, 8.0); // centre-fire gauge
   });
 
   test('byName resolves a known program and returns null otherwise', () {

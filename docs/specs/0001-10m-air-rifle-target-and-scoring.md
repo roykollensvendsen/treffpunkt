@@ -65,7 +65,7 @@ By construction `floor(decimal) == integer` for every shot.
 
 > Note: the decimal model assumes evenly spaced rings, which holds for 10 m air
 > rifle. The scoring domain is generalised in spec 0004; further disciplines are
-> out of scope for this spec (see ROADMAP 0005 and 0017+).
+> out of scope for this spec (see ROADMAP 0005+).
 
 ## Verification
 

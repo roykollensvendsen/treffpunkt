@@ -30,22 +30,6 @@ All notable changes to this project are documented here. The format is based on
   and the shot list / score now sit side by side, so you can see your shots
   next to the face without scrolling. On a phone everything looks exactly as
   before — one tidy column.
-- Spec 0018 and the 300 m rifle target: Treffpunkt now knows the official ISSF
-  300 m rifle face (the long-range full-bore target) — its ten rings, the inner
-  ten ("X"), the black and the centre-fire gauge edge, sourced to the ISSF rules.
-  A "300 m Rifle" program (60 shots in six 10-shot series, scored to whole rings
-  plus inner tens) joins the catalogue. The geometry is locked behind a vector
-  table of shot positions to expected ring, so it can never silently drift. The
-  exact NSF course of fire, whether NSF scores it to a decimal, and the black and
-  the centre-fire gauge edge are written down as confirm-with-the-father flags.
-- Spec 0017 and the 50 m rifle target: Treffpunkt now knows the official ISSF
-  50 m rifle face (the .22 smallbore target) — its ten rings, the inner ten
-  ("X"), the black and the .22 gauge edge, sourced to the ISSF rules. A "50 m
-  Rifle Prone" program (60 shots in six 10-shot series, scored to whole rings
-  plus inner tens) joins the catalogue. The geometry is locked behind a vector
-  table of shot positions to expected ring, so it can never silently drift. The
-  exact NSF course of fire, whether NSF scores it to a decimal, and the black
-  and calibre are written down as confirm-with-the-father flags.
 - When location permission is turned off for good, the session-setup step now
   offers an "Åpne innstillinger" button that jumps straight to the app's
   location settings — the only place that permission can be switched back on.
@@ -125,6 +109,13 @@ All notable changes to this project are documented here. The format is based on
 - The pure-Dart series core: a `Program`, an immutable `Series`, and series
   scoring (per-shot ring, inner-ten count, running total and maximum), with an
   optional inner-ten ring on the target geometry (spec 0004).
+
+### Removed
+- The 50 m rifle and 300 m rifle programs (and their target faces and weapon
+  classes) have been taken out. They had been seeded from ISSF geometry, but the
+  NSF domain expert did not recognise them as Norwegian programs, so they rested
+  on unconfirmed footing. They are removed entirely until NSF confirms a real
+  50 m / 300 m rifle structure. The 10 m air rifle is unaffected.
 
 ### Fixed
 - Pinch-to-zoom on the target now works on phones in any direction: while a

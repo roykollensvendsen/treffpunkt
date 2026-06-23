@@ -41,17 +41,13 @@ The shooter records a complete session on-device, with no network needed
       in-progress series included — and a "Fortsett økt" card resumes it. Stored
       behind a `SessionStore` interface (`shared_preferences`, ADR-0016); geometry
       is rebuilt from the catalogue, not serialized.
-- [x] 0017 — 50 m rifle target & scoring: the ISSF 50 m rifle face (rings 1–10,
-      inner ten 5 mm, .22 LR) formally specified and sourced to ISSF, with a
-      vector table mirroring specs 0001 / 0005 (both sides of every ring boundary
-      and the inner-ten edge). A representative "50 m Rifle Prone" program is
-      seeded integer + inner ten; the exact NSF course of fire, decimal usage,
-      black and calibre are confirm-with-the-father flags.
-- [x] 0018 — 300 m rifle target & scoring: the ISSF 300 m rifle face (rings 1–10,
-      inner ten 50 mm, centre-fire) formally specified and sourced to ISSF, with
-      a vector table mirroring spec 0017. A representative "300 m Rifle" program
-      is seeded integer + inner ten; the exact NSF course of fire, decimal usage,
-      black and the centre-fire gauge edge are confirm-with-the-father flags.
+- ~~0017 — 50 m rifle target & scoring~~ **(removed)** and
+  ~~0018 — 300 m rifle target & scoring~~ **(removed)**: these two rifle programs
+  and their target faces were seeded from ISSF geometry on NSF-unconfirmed
+  footing. The NSF domain expert did not recognise them, so they were removed
+  entirely (programs, geometries, weapon classes, specs and tests). Revisit only
+  if NSF confirms a 50 m / 300 m rifle structure. The 10 m air rifle (spec 0001)
+  is unaffected.
 - [x] 0019 — Personal weapon persistence: the shooter's own weapons (spec 0007)
       are saved on-device and survive a restart, behind a `WeaponStore` interface
       mirroring 0009 (`shared_preferences`, ADR-0016). The list is loaded once at
