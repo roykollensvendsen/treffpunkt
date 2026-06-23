@@ -31,9 +31,10 @@ void main() {
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
-    expect(find.text('10 m Air Rifle'), findsOneWidget);
     expect(find.text('25 m Finpistol'), findsOneWidget);
     expect(find.text('10 m Air Pistol'), findsOneWidget);
+    // Air rifle is the spec-0001 reference / fixture but is not offered.
+    expect(find.text('10 m Air Rifle'), findsNothing);
 
     await tester.tap(
       find.byKey(const ValueKey<String>('program-25 m Finpistol')),
@@ -52,7 +53,9 @@ void main() {
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
-    final tile = find.bySemanticsLabel(RegExp('^Velg program: 10 m Air Rifle'));
+    final tile = find.bySemanticsLabel(
+      RegExp('^Velg program: 10 m Air Pistol'),
+    );
     expect(tile, findsOneWidget);
 
     // A labelled "button" is useless to a screen reader if it carries no tap
@@ -77,7 +80,7 @@ void main() {
     // `semantics.tap` throws if the node carries no tap action, so this also
     // guards against the "announced but inert" defect.
     tester.semantics.tap(
-      find.semantics.byLabel(RegExp('^Velg program: 10 m Air Rifle')),
+      find.semantics.byLabel(RegExp('^Velg program: 10 m Air Pistol')),
     );
     await tester.pumpAndSettle();
 

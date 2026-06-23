@@ -28,10 +28,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Pick the air-rifle program from the catalogue, confirm the session setup
+    // Pick the air-pistol program from the catalogue, confirm the session setup
     // (date/time + place), then score on its target.
     await tester.tap(
-      find.byKey(const ValueKey<String>('program-10 m Air Rifle')),
+      find.byKey(const ValueKey<String>('program-10 m Air Pistol')),
     );
     await tester.pumpAndSettle();
 

@@ -12,6 +12,12 @@ import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 /// still to confirm with the father (noted in the reference).
 abstract final class ProgramCatalogue {
   /// 10 m air rifle: a single 10-shot series (decimal scoring).
+  ///
+  /// Kept as the spec-0001 reference program and the decimal-scoring source —
+  /// it backs `TargetGeometry.airRifle10m()` and is the canonical test fixture
+  /// — but it is deliberately *not* in [all], so it is not offered in the
+  /// program picker: the NSF domain expert does not want air rifle in the
+  /// program list.
   static const ProgramDefinition airRifle10m = ProgramDefinition(
     name: '10 m Air Rifle',
     discipline: Discipline.rifle,
@@ -129,9 +135,14 @@ abstract final class ProgramCatalogue {
     ],
   );
 
-  /// All seeded programs, in display order.
+  /// All seeded programs **offered to the shooter**, in display order.
+  ///
+  /// Air rifle ([airRifle10m]) is intentionally absent: it is retained as the
+  /// spec-0001 / decimal-scoring reference and test fixture but is not offered
+  /// in the program list at the NSF domain expert's request. It is still
+  /// resolvable by [byName] so a session recorded before the change still
+  /// loads (see [_resolvable]).
   static const List<ProgramDefinition> all = <ProgramDefinition>[
-    airRifle10m,
     airPistol10m,
     standardPistol25m,
     finpistol25m,
@@ -139,13 +150,23 @@ abstract final class ProgramCatalogue {
     freePistol50m,
   ];
 
+  /// Every program a stored session may name: the offered [all] plus the
+  /// retained-but-not-offered reference programs (air rifle). Used only by
+  /// [byName]; the picker reads [all].
+  static const List<ProgramDefinition> _resolvable = <ProgramDefinition>[
+    ...all,
+    airRifle10m,
+  ];
+
   /// The program whose unique [name] matches, or `null` when none does.
   ///
   /// Used to resolve a stored session back to its definition (spec 0009): a
   /// recording keeps the program name, not the geometry, so the canonical
-  /// stage geometries are always rebuilt from here.
+  /// stage geometries are always rebuilt from here. Resolves the offered
+  /// programs ([all]) and the retained reference programs (air rifle), so a
+  /// session recorded before air rifle was dropped from the list still loads.
   static ProgramDefinition? byName(String name) {
-    for (final definition in all) {
+    for (final definition in _resolvable) {
       if (definition.name == name) return definition;
     }
     return null;
