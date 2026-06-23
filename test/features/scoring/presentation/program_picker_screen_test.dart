@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
@@ -95,6 +96,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(resumeSessionKey), findsNothing);
+  });
+
+  testWidgets('shows the build-version stamp (spec 0028)', (tester) async {
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(buildVersionKey), findsOneWidget);
+    expect(find.textContaining('build '), findsOneWidget);
   });
 
   testWidgets('the "My sessions" action opens the history screen (spec 0026)', (

@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/auth/presentation/sign_in_screen.dart';
 
@@ -37,5 +38,14 @@ void main() {
     await tester.tap(find.byKey(signInWithGoogleButtonKey));
     await tester.pumpAndSettle();
     expect(find.textContaining('failed'), findsOneWidget);
+  });
+
+  testWidgets('shows the build-version stamp (spec 0028)', (tester) async {
+    final fake = FakeAuthRepository();
+    addTearDown(fake.dispose);
+    await tester.pumpWidget(_screen(fake));
+
+    expect(find.byKey(buildVersionKey), findsOneWidget);
+    expect(find.textContaining('build '), findsOneWidget);
   });
 }

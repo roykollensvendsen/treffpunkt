@@ -40,6 +40,24 @@ On push to `main`, the workflow builds the web app with `--base-href
 /treffpunkt/` and the variables above, then publishes `build/web` to Pages.
 `--base-href` matches the repository name; update it if the repo is renamed.
 
+## Build-version stamp (spec 0028)
+The "Build web" step also injects the running build's identity so a user can
+confirm at a glance which build they are on (and report it when something looks
+stale):
+
+```
+--dart-define=BUILD_SHA="${GITHUB_SHA::8}"
+--dart-define=BUILD_TIME="$(date -u +%Y-%m-%dT%H:%MZ)"
+```
+
+`BUILD_SHA` is the **same** 8-character short SHA the cache-bust step stamps into
+the `?v=` query (spec 0027), so the SHA shown on screen equals the one in the
+asset URLs. The app reads these with `String.fromEnvironment`
+(`lib/config/build_info.dart`) and shows a discreet footer — `build <sha> ·
+<time>` — at the bottom of the sign-in screen and the program picker. A build
+without these defines (a local `flutter run`/`flutter build`, and the CI build)
+falls back to `build dev`; the CI build is intentionally left on that fallback.
+
 ## Cache-busting the entry (spec 0027)
 Pages serves the entry files with a 10-minute `max-age`, and they are referenced
 by stable, un-hashed URLs: `index.html` loads `flutter_bootstrap.js`, which loads
