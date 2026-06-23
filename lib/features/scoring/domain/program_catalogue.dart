@@ -120,6 +120,144 @@ abstract final class ProgramCatalogue {
     ],
   );
 
+  /// 25 m hurtigpistol fin (.22): 60 shots in twelve 5-shot series on the duel
+  /// face, across three timed stages (10 s / 8 s / 6 s). NSF national rapid-fire
+  /// program (NSF Skyteprogrammer – Pistol §8.26).
+  static const ProgramDefinition hurtigpistolFin25m = ProgramDefinition(
+    name: '25 m Hurtigpistol fin',
+    discipline: Discipline.pistol,
+    weaponClasses: <String>['.22 LR'],
+    stages: <StageDefinition>[
+      StageDefinition(
+        name: '10 s',
+        geometry: TargetGeometry.pistol25mRapid(),
+        shotsPerSeries: 5,
+        seriesCount: 4,
+        secondsPerSeries: 10,
+      ),
+      StageDefinition(
+        name: '8 s',
+        geometry: TargetGeometry.pistol25mRapid(),
+        shotsPerSeries: 5,
+        seriesCount: 4,
+        secondsPerSeries: 8,
+      ),
+      StageDefinition(
+        name: '6 s',
+        geometry: TargetGeometry.pistol25mRapid(),
+        shotsPerSeries: 5,
+        seriesCount: 4,
+        secondsPerSeries: 6,
+      ),
+    ],
+  );
+
+  /// 25 m hurtigpistol grov (centre-fire .32–.38): same structure as
+  /// [hurtigpistolFin25m] with a coarser calibre (NSF Skyteprogrammer §8.26).
+  static const ProgramDefinition hurtigpistolGrov25m = ProgramDefinition(
+    name: '25 m Hurtigpistol grov',
+    discipline: Discipline.pistol,
+    weaponClasses: <String>['Centre-fire 7.62–9.65 mm'],
+    stages: <StageDefinition>[
+      StageDefinition(
+        name: '10 s',
+        geometry: TargetGeometry.pistol25mRapid(caliber: 9.65),
+        shotsPerSeries: 5,
+        seriesCount: 4,
+        secondsPerSeries: 10,
+      ),
+      StageDefinition(
+        name: '8 s',
+        geometry: TargetGeometry.pistol25mRapid(caliber: 9.65),
+        shotsPerSeries: 5,
+        seriesCount: 4,
+        secondsPerSeries: 8,
+      ),
+      StageDefinition(
+        name: '6 s',
+        geometry: TargetGeometry.pistol25mRapid(caliber: 9.65),
+        shotsPerSeries: 5,
+        seriesCount: 4,
+        secondsPerSeries: 6,
+      ),
+    ],
+  );
+
+  /// NAIS 25 m fin (.22–.32): 30 shots in six 5-shot series on the duel face —
+  /// two 150 s precision series, two duel series, one 20 s and one 10 s series.
+  /// NSF "Reglement for merkeskyting til NAIS-medaljen" / Skyteprogrammer §8.29.
+  static const ProgramDefinition naisFin25m = ProgramDefinition(
+    name: '25 m NAIS fin',
+    discipline: Discipline.pistol,
+    weaponClasses: <String>['.22 LR'],
+    stages: <StageDefinition>[
+      StageDefinition(
+        name: 'Presisjon 150 s',
+        geometry: TargetGeometry.pistol25mRapid(),
+        shotsPerSeries: 5,
+        seriesCount: 2,
+        secondsPerSeries: 150,
+      ),
+      StageDefinition(
+        name: 'Duell',
+        geometry: TargetGeometry.pistol25mRapid(),
+        shotsPerSeries: 5,
+        seriesCount: 2,
+      ),
+      StageDefinition(
+        name: '20 s',
+        geometry: TargetGeometry.pistol25mRapid(),
+        shotsPerSeries: 5,
+        seriesCount: 1,
+        secondsPerSeries: 20,
+      ),
+      StageDefinition(
+        name: '10 s',
+        geometry: TargetGeometry.pistol25mRapid(),
+        shotsPerSeries: 5,
+        seriesCount: 1,
+        secondsPerSeries: 10,
+      ),
+    ],
+  );
+
+  /// NAIS 25 m grov (centre-fire .38–.45): same structure as [naisFin25m] with
+  /// a coarser calibre (NSF NAIS-medaljen reglement / Skyteprogrammer §8.29).
+  static const ProgramDefinition naisGrov25m = ProgramDefinition(
+    name: '25 m NAIS grov',
+    discipline: Discipline.pistol,
+    weaponClasses: <String>['Centre-fire 7.62–9.65 mm'],
+    stages: <StageDefinition>[
+      StageDefinition(
+        name: 'Presisjon 150 s',
+        geometry: TargetGeometry.pistol25mRapid(caliber: 9.65),
+        shotsPerSeries: 5,
+        seriesCount: 2,
+        secondsPerSeries: 150,
+      ),
+      StageDefinition(
+        name: 'Duell',
+        geometry: TargetGeometry.pistol25mRapid(caliber: 9.65),
+        shotsPerSeries: 5,
+        seriesCount: 2,
+      ),
+      StageDefinition(
+        name: '20 s',
+        geometry: TargetGeometry.pistol25mRapid(caliber: 9.65),
+        shotsPerSeries: 5,
+        seriesCount: 1,
+        secondsPerSeries: 20,
+      ),
+      StageDefinition(
+        name: '10 s',
+        geometry: TargetGeometry.pistol25mRapid(caliber: 9.65),
+        shotsPerSeries: 5,
+        seriesCount: 1,
+        secondsPerSeries: 10,
+      ),
+    ],
+  );
+
   /// 50 m free pistol (fripistol): six 10-shot series on the precision face.
   static const ProgramDefinition freePistol50m = ProgramDefinition(
     name: '50 m Fripistol',
@@ -147,6 +285,10 @@ abstract final class ProgramCatalogue {
     standardPistol25m,
     finpistol25m,
     grovpistol25m,
+    hurtigpistolFin25m,
+    hurtigpistolGrov25m,
+    naisFin25m,
+    naisGrov25m,
     freePistol50m,
   ];
 
