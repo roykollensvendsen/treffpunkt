@@ -88,7 +88,7 @@ void main() {
           .toList();
     }
 
-    test('draws the last marker larger with an extra halo ring', () {
+    test('draws the last marker at normal size with a coloured halo ring', () {
       final canvas = _RecordingCanvas();
       _painter(shots).paint(canvas, size);
 
@@ -102,18 +102,25 @@ void main() {
       expect(earlierFills.single.radius, closeTo(pelletRadius, 0.01));
       expect(earlier.where((c) => c.radius > pelletRadius + 0.5), isEmpty);
 
-      // The last marker: a larger filled disc and at least one extra ring
-      // (the halo) beyond the plain fill + black outline pair.
+      // The last marker: the SAME-sized fill (not enlarged) plus an extra
+      // coloured halo ring beyond the plain fill + black outline pair.
       final last = markersNear(canvas, shots.last);
       final lastFill = last.firstWhere(
         (c) => c.paint.style == PaintingStyle.fill,
       );
       expect(
         lastFill.radius,
-        greaterThan(pelletRadius + 0.5),
-        reason: 'the last marker should be drawn larger',
+        closeTo(pelletRadius, 0.01),
+        reason: 'the last marker is emphasised by a halo, not by size',
       );
-      // More circles than an ordinary marker (the extra halo ring).
+      // The halo: a stroked ring wider than the marker, in the highlight
+      // colour — an extra circle an ordinary marker does not have.
+      final halo = last.firstWhere(
+        (c) =>
+            c.paint.style == PaintingStyle.stroke &&
+            c.radius > pelletRadius + 0.5,
+      );
+      expect(halo.paint.color, isSameColorAs(Colors.deepOrange));
       expect(last.length, greaterThan(earlier.length));
     });
 

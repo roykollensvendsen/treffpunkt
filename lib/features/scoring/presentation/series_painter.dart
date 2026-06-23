@@ -29,11 +29,8 @@ class SeriesPainter extends CustomPainter {
   /// The index of the shot currently picked up, or `null`.
   final int? draggingIndex;
 
-  /// How much larger the highlighted (most recently placed) marker is drawn,
-  /// relative to an ordinary marker, so the latest shot stands out.
-  static const double _highlightScale = 1.4;
-
-  /// The colour of the extra outer "halo" ring around the highlighted marker.
+  /// The colour of the outer "halo" ring drawn around the highlighted (most
+  /// recently placed) marker, so the latest shot stands out.
   static const Color _highlightColor = Colors.deepOrange;
 
   /// The index of the shot to emphasise — the most recently placed (highest
@@ -82,22 +79,23 @@ class SeriesPainter extends CustomPainter {
       // Precedence: drag styling wins over the last-shot highlight, which wins
       // over an ordinary marker. A dragged shot is never given the halo.
       final highlighted = !dragging && i == highlightedIndex;
-      final markerRadius = highlighted ? radius * _highlightScale : radius;
       final fill = dragging ? Colors.lightBlueAccent : Colors.amber;
       canvas
-        ..drawCircle(markerCentre, markerRadius, Paint()..color = fill)
+        ..drawCircle(markerCentre, radius, Paint()..color = fill)
         ..drawCircle(
           markerCentre,
-          markerRadius,
+          radius,
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5
             ..color = Colors.black,
         );
       if (highlighted) {
+        // The latest shot is emphasised by a halo ring, at the same marker
+        // size as the others (not enlarged).
         canvas.drawCircle(
           markerCentre,
-          markerRadius + 2.5,
+          radius + 2.5,
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2
