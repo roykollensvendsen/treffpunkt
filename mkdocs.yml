@@ -55,6 +55,7 @@ nav:
       - "0028 — Build-version stamp": specs/0028-build-version-stamp.md
       - "0029 — Surface cloud-sync failures": specs/0029-surface-sync-failures.md
       - "0030 — Theme mode (light / dark)": specs/0030-theme-mode-selection.md
+      - "0031 — Hurtigpistol & NAIS": specs/0031-hurtigpistol-and-nais.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

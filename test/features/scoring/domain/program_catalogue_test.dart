@@ -42,7 +42,7 @@ void main() {
   });
 
   test('the catalogue seeds the real pistol programs', () {
-    expect(ProgramCatalogue.all.length, 5);
+    expect(ProgramCatalogue.all.length, 9);
     expect(
       ProgramCatalogue.all.every((p) => p.discipline == Discipline.pistol),
       isTrue,
@@ -61,6 +61,59 @@ void main() {
 
     // Grovpistol uses a centre-fire calibre.
     expect(ProgramCatalogue.grovpistol25m.stages[0].geometry.caliberMm, 9.65);
+  });
+
+  test('hurtigpistol fin/grov: 12 series of 5 on the duel face, timed', () {
+    for (final program in <ProgramDefinition>[
+      ProgramCatalogue.hurtigpistolFin25m,
+      ProgramCatalogue.hurtigpistolGrov25m,
+    ]) {
+      // 60 shots across three timed stages of 4 x 5 (NSF §8.26).
+      expect(program.totalShots, 60);
+      expect(program.stages.length, 3);
+      expect(program.stages.map((s) => s.seriesCount), <int>[4, 4, 4]);
+      expect(
+        program.stages.map((s) => s.secondsPerSeries),
+        <int>[10, 8, 6],
+      );
+      // Every series is shot on the duel face (lowest ring 5).
+      expect(
+        program.stages.every((s) => s.geometry.lowestRingValue == 5),
+        isTrue,
+      );
+    }
+    // Fin is rimfire; grov is centre-fire.
+    expect(
+      ProgramCatalogue.hurtigpistolFin25m.stages[0].geometry.caliberMm,
+      5.6,
+    );
+    expect(
+      ProgramCatalogue.hurtigpistolGrov25m.stages[0].geometry.caliberMm,
+      9.65,
+    );
+  });
+
+  test('NAIS fin/grov: 30 shots in six series on the duel face', () {
+    for (final program in <ProgramDefinition>[
+      ProgramCatalogue.naisFin25m,
+      ProgramCatalogue.naisGrov25m,
+    ]) {
+      // 30 shots: two 150 s, two duel, one 20 s, one 10 s (NSF §8.29).
+      expect(program.totalShots, 30);
+      expect(program.stages.length, 4);
+      expect(program.stages.map((s) => s.seriesCount), <int>[2, 2, 1, 1]);
+      expect(
+        program.stages.map((s) => s.secondsPerSeries),
+        <int?>[150, null, 20, 10],
+      );
+      // Every series is shot on the duel face (lowest ring 5).
+      expect(
+        program.stages.every((s) => s.geometry.lowestRingValue == 5),
+        isTrue,
+      );
+    }
+    expect(ProgramCatalogue.naisFin25m.stages[0].geometry.caliberMm, 5.6);
+    expect(ProgramCatalogue.naisGrov25m.stages[0].geometry.caliberMm, 9.65);
   });
 
   test('byName resolves a known program and returns null otherwise', () {
