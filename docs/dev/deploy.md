@@ -109,6 +109,12 @@ supabase migration list --linked                # confirm: each shows under both
 `Applying migration … Finished` line and a matching `migration list` row are the
 real confirmation.)
 
+`20260623140000_competitions.sql` (spec 0010) adds the `profiles`,
+`competitions`, `competition_members` and `competition_invitations` tables with
+their Row-Level Security, the `SECURITY DEFINER` helper functions, the
+owner-auto-membership trigger and the `accept_invitation` RPC. Apply it the same
+way; it must be applied before competitions work.
+
 ### Apply via the SQL editor (no CLI)
 Open the project's **SQL editor**, paste the contents of the migration file, and
 **Run**. Expect *"Success. No rows returned."*

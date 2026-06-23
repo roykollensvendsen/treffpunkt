@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/bootstrap.dart';
 import 'package:treffpunkt/config/app_config.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
+import 'package:treffpunkt/features/competitions/data/supabase_competition_repository.dart';
 import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
@@ -45,5 +46,8 @@ Future<void> main() async {
     locationService: const GeolocatorLocationService(),
     themeModeStore: themeModeStore,
     initialThemeMode: initialThemeMode,
+    competitionRepository: SupabaseCompetitionRepository(
+      Supabase.instance.client,
+    ),
   );
 }

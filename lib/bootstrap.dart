@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/app.dart';
 import 'package:treffpunkt/features/auth/domain/auth_repository.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
@@ -45,6 +47,10 @@ import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 /// the store before this call so the app starts on the right theme without a
 /// first-frame flash. Omitting them follows the system/browser theme, so tests
 /// and the integration harness never touch real storage.
+///
+/// [competitionRepository] backs the competitions feature (spec 0010): `main()`
+/// passes the Supabase-backed one; omitting it keeps the in-memory default, so
+/// tests and the integration harness never reach real Supabase.
 void runTreffpunkt(
   AuthRepository authRepository, {
   SessionStore? sessionStore,
@@ -55,6 +61,7 @@ void runTreffpunkt(
   LocationService? locationService,
   ThemeModeStore? themeModeStore,
   ThemeMode? initialThemeMode,
+  CompetitionRepository? competitionRepository,
 }) {
   runApp(
     ProviderScope(
@@ -76,6 +83,10 @@ void runTreffpunkt(
           themeModeStoreProvider.overrideWithValue(themeModeStore),
         if (initialThemeMode != null)
           initialThemeModeProvider.overrideWithValue(initialThemeMode),
+        if (competitionRepository != null)
+          competitionRepositoryProvider.overrideWithValue(
+            competitionRepository,
+          ),
       ],
       child: const TreffpunktApp(),
     ),
