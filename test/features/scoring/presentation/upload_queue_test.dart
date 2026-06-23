@@ -61,6 +61,9 @@ class _ThrowingSessionRepository implements SessionRepository {
     callCount++;
     throw Exception('upload failed');
   }
+
+  @override
+  Future<List<SessionRecord>> list() async => const <SessionRecord>[];
 }
 
 /// A repository whose first [upload] parks on a [Completer] (so a flush is
@@ -83,6 +86,9 @@ class _BlockingSessionRepository implements SessionRepository {
     }
     uploadedIds.add(record.id);
   }
+
+  @override
+  Future<List<SessionRecord>> list() async => const <SessionRecord>[];
 }
 
 /// A repository that uploads id `ok` but throws for id `bad` — until [heal] is
@@ -98,6 +104,9 @@ class _SelectiveSessionRepository implements SessionRepository {
     }
     uploadedIds.add(record.id);
   }
+
+  @override
+  Future<List<SessionRecord>> list() async => const <SessionRecord>[];
 }
 
 void main() {

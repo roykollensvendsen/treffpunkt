@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
+import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
@@ -17,6 +18,9 @@ const Key resumeSessionKey = ValueKey<String>('resumeSession');
 
 /// Key for the "discard saved session" action on the resume card (for tests).
 const Key discardSessionKey = ValueKey<String>('discardSession');
+
+/// Key for the "My sessions" app-bar action, used by tests (spec 0026).
+const Key mySessionsButtonKey = ValueKey<String>('mySessionsButton');
 
 /// Lets the shooter choose which official program to shoot, then opens the
 /// session setup step (date, time and place) before shooting (spec 0008).
@@ -78,11 +82,31 @@ class ProgramPickerScreen extends ConsumerWidget {
     ref.invalidate(savedRecordingProvider);
   }
 
+  /// Opens the "My sessions" history (spec 0026), then refreshes the resume
+  /// card on return (the same store re-read the other navigations do).
+  Future<void> _openMySessions(BuildContext context, WidgetRef ref) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const MySessionsScreen()),
+    );
+    ref.invalidate(savedRecordingProvider);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final saved = ref.watch(savedRecordingProvider).value;
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose a program'), actions: actions),
+      appBar: AppBar(
+        title: const Text('Choose a program'),
+        actions: [
+          IconButton(
+            key: mySessionsButtonKey,
+            icon: const Icon(Icons.history),
+            tooltip: 'Mine økter',
+            onPressed: () => unawaited(_openMySessions(context, ref)),
+          ),
+          ...?actions,
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

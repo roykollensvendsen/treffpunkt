@@ -63,6 +63,9 @@ class _ThrowingSessionRepository implements SessionRepository {
     callCount++;
     throw Exception('upload failed');
   }
+
+  @override
+  Future<List<SessionRecord>> list() async => const <SessionRecord>[];
 }
 
 /// A repository that only counts uploads, to pin upload-exactly-once.
@@ -73,6 +76,9 @@ class _CountingSessionRepository implements SessionRepository {
   Future<void> upload(SessionRecord record) async {
     callCount++;
   }
+
+  @override
+  Future<List<SessionRecord>> list() async => const <SessionRecord>[];
 }
 
 void main() {

@@ -54,4 +54,42 @@ final class SupabaseSessionRepository implements SessionRepository {
       }
     }
   }
+
+  @override
+  Future<List<SessionRecord>> list() async {
+    try {
+      final rows = await _client
+          .from(_table)
+          .select()
+          .order('captured_at', ascending: false);
+      return <SessionRecord>[for (final row in rows) _recordFromRow(row)];
+    } on Object catch (error) {
+      // Best-effort (ADR-0017), exactly like [upload]: a missing table or a
+      // dropped connection must not crash the "My sessions" screen — return an
+      // empty list and, in debug, surface so a real failure is diagnosable.
+      if (!kReleaseMode) {
+        debugPrint('Failed to list the session records: $error');
+      }
+      return const <SessionRecord>[];
+    }
+  }
+
+  /// Maps one `sessions` row back to a [SessionRecord] (the inverse of the
+  /// upsert map in [upload], using the same snake_case column names).
+  static SessionRecord _recordFromRow(Map<String, dynamic> row) {
+    final capturedAt = row['captured_at'] as String?;
+    return SessionRecord(
+      id: row['id'] as String,
+      program: row['program'] as String,
+      capturedAt: capturedAt == null ? null : DateTime.parse(capturedAt),
+      placeLabel: row['place_label'] as String?,
+      latitude: (row['latitude'] as num?)?.toDouble(),
+      longitude: (row['longitude'] as num?)?.toDouble(),
+      weaponName: row['weapon_name'] as String?,
+      total: (row['total'] as num).toInt(),
+      maxTotal: (row['max_total'] as num).toInt(),
+      innerTens: (row['inner_tens'] as num).toInt(),
+      payload: row['payload'] as Map<String, dynamic>,
+    );
+  }
 }
