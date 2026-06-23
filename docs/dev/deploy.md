@@ -40,6 +40,32 @@ On push to `main`, the workflow builds the web app with `--base-href
 /treffpunkt/` and the variables above, then publishes `build/web` to Pages.
 `--base-href` matches the repository name; update it if the repo is renamed.
 
+## Cache-busting the entry (spec 0027)
+Pages serves the entry files with a 10-minute `max-age`, and they are referenced
+by stable, un-hashed URLs: `index.html` loads `flutter_bootstrap.js`, which loads
+`main.dart.js` (the ~3 MB app bundle). Without busting, a refresh in the first
+ten minutes after a deploy is served the cached **old** bundle, so the change
+appears not to have shipped.
+
+We do **not** use a service worker (`--pwa-strategy=none`). Instead, the workflow
+runs `tool/cache_bust_web.sh build/web "${GITHUB_SHA::8}"` **after** the build
+and **before** the Pages upload. It appends a per-build version query
+`?v=<short commit sha>` to the `flutter_bootstrap.js` reference in `index.html`
+and to the `main.dart.js` reference in `flutter_bootstrap.js`. A new build yields
+new URLs (a guaranteed cache miss); Pages ignores the query and serves the file,
+which still exists under its original name. The script is **fail-loud** — if the
+expected references are missing (e.g. a future Flutter output-format change), it
+exits non-zero and the deploy fails rather than silently shipping a non-busted
+build. It is idempotent, so re-running it is safe.
+
+To run it by hand against a local build:
+
+```sh
+flutter build web --release --pwa-strategy=none --base-href /treffpunkt/ \
+  --dart-define-from-file=config/env.local.json
+sh tool/cache_bust_web.sh build/web "$(git rev-parse --short=8 HEAD)"
+```
+
 ## Database migrations
 The SQL files under `supabase/migrations/` are **not** applied automatically.
 Apply each to the hosted project with `supabase db push` (or paste it into the
