@@ -42,6 +42,12 @@ jobs:
             --base-href /treffpunkt/ \
             --dart-define=SUPABASE_URL='${{ vars.SUPABASE_URL }}' \
             --dart-define=SUPABASE_PUBLISHABLE_KEY='${{ vars.SUPABASE_PUBLISHABLE_KEY }}'
+      # Cache-bust the un-hashed entry references so a refresh after a deploy
+      # always loads this build, not a stale cached one (spec 0027). Fail-loud:
+      # if the expected references are gone, the deploy fails instead of
+      # silently shipping a non-busted build.
+      - name: Cache-bust web entry
+        run: sh tool/cache_bust_web.sh build/web "${GITHUB_SHA::8}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
