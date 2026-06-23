@@ -7,6 +7,8 @@
 // pending ones; the empty state; tapping a row opens the read-only scorecard
 // (per-stage + per-series breakdown); a payload naming an unresolvable program
 // shows a graceful message instead of crashing.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -245,7 +247,8 @@ void main() {
 
     expect(find.byKey(noSessionsKey), findsOneWidget);
     expect(find.text('Ingen lagrede økter ennå'), findsOneWidget);
-    expect(find.byKey(mySessionCardKey), findsNothing);
+    // No session cards are rendered in the empty state.
+    expect(find.byType(Card), findsNothing);
     // The friendly empty state carries a hint and a "Velg program" call to
     // action so a first-time shooter knows what to do next.
     expect(find.text('Fullfør en økt for å se den her.'), findsOneWidget);
@@ -285,7 +288,7 @@ void main() {
 
       // First shown: the empty state, no card.
       expect(find.byKey(noSessionsKey), findsOneWidget);
-      expect(find.byKey(mySessionCardKey), findsNothing);
+      expect(find.byType(Card), findsNothing);
 
       // A session completes and is enqueued onto the live upload queue.
       final record = _recordFor(
@@ -303,6 +306,65 @@ void main() {
       expect(find.text('600 / 600 · 60×X'), findsOneWidget);
       expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
       expect(find.text('Ikke synkronisert'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a local pending session shows even while the cloud read hangs',
+    (tester) async {
+      // The deployed-app defect: in the real app `sessionRepositoryProvider`
+      // is the Supabase-backed repository, whose `list()` hits hosted Supabase.
+      // If that read is slow or hangs (a paused free-tier project, offline, a
+      // table that stalls), a list that AWAITS it would stay loading forever
+      // and the user's just-completed LOCAL session would never appear. Mount
+      // the screen signed in, with a repository whose `list()` NEVER completes
+      // and a completed session already on the live upload queue, and assert
+      // the local row (with its pending badge) shows promptly — without
+      // `list()` ever completing. The cloud read is a non-blocking enhancement.
+      final repository = _HangingSessionRepository();
+      final pendingStore = InMemoryPendingUploadsStore();
+      final authRepository = FakeAuthRepository();
+      addTearDown(authRepository.dispose);
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(authRepository),
+          sessionRepositoryProvider.overrideWithValue(repository),
+          pendingUploadsStoreProvider.overrideWithValue(pendingStore),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      // A completed session is already waiting on the live upload queue (signed
+      // out, so its flush no-ops and it stays pending — "Ikke synkronisert").
+      final record = _recordFor(
+        ProgramCatalogue.airPistol10m,
+        id: 'local-1',
+        capturedAt: DateTime(2026, 6, 23, 12),
+      );
+      await container.read(uploadQueueProvider.notifier).enqueue(record);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: MySessionsScreen()),
+        ),
+      );
+      // Just pump frames — never settle, because the hung `list()` would make
+      // `pumpAndSettle` time out. The local row must already be on screen.
+      await tester.pump();
+      await tester.pump();
+
+      // The cloud read is still pending — yet the local session is shown.
+      expect(repository.listCompleted, isFalse);
+      expect(find.byKey(noSessionsKey), findsNothing);
+      expect(find.byKey(mySessionCard('local-1')), findsOneWidget);
+      expect(find.text('10 m Air Pistol'), findsOneWidget);
+      expect(find.text('600 / 600 · 60×X'), findsOneWidget);
+      expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
+      expect(find.text('Ikke synkronisert'), findsOneWidget);
+
+      // Release the hung read so the container can dispose cleanly.
+      repository.release();
     },
   );
 
@@ -359,4 +421,33 @@ void main() {
     expect(find.text('Kan ikke vise denne økta'), findsOneWidget);
     expect(find.byKey(sessionCompleteKey), findsNothing);
   });
+}
+
+/// A [SessionRepository] whose [list] never completes until [release] is called
+/// — a stand-in for a slow or hanging hosted Supabase read. [upload] succeeds,
+/// so it never interferes with the queue under test.
+class _HangingSessionRepository implements SessionRepository {
+  final Completer<List<SessionRecord>> _completer =
+      Completer<List<SessionRecord>>();
+
+  /// Whether the hung [list] future has resolved.
+  bool listCompleted = false;
+
+  @override
+  Future<void> upload(SessionRecord record) async {}
+
+  @override
+  Future<List<SessionRecord>> list() {
+    final future = _completer.future;
+    unawaited(future.then((_) => listCompleted = true));
+    return future;
+  }
+
+  /// Completes the hung [list] read (with no synced records), so the test's
+  /// container can dispose cleanly.
+  void release() {
+    if (!_completer.isCompleted) {
+      _completer.complete(const <SessionRecord>[]);
+    }
+  }
 }

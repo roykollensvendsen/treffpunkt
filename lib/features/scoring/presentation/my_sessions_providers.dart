@@ -37,6 +37,14 @@ class MySessionEntry {
   int get hashCode => Object.hash(record.id, synced);
 }
 
+/// How long to wait for the cloud read before treating it as "nothing yet".
+///
+/// The synced list is a pure enhancement layered onto the local sessions, so a
+/// slow or hanging hosted read (a paused free-tier project, offline, a stalling
+/// table) must never be able to spin forever; after this it yields `const []`
+/// and the local sessions stand alone until the next refresh.
+const Duration _syncedReadTimeout = Duration(seconds: 8);
+
 /// Merges the [synced] and [pending] records into the "My sessions" list (spec
 /// 0026): deduplicated by id (a record in both counts as **synced**), tagged,
 /// and sorted most-recent-first by `capturedAt` (records without one go last).
@@ -73,61 +81,54 @@ List<MySessionEntry> mergeMySessions({
   );
 }
 
-/// The shooter's saved sessions for the "My sessions" screen (spec 0026).
+/// The shooter's **synced** sessions from the account
+/// ([SessionRepository.list], spec 0026), loaded in the background — a pure
+/// enhancement that must never block the local sessions.
 ///
-/// Loads the synced records ([SessionRepository.list]) and the pending ones,
-/// then [mergeMySessions] unions them deduplicated by id (synced winning),
-/// tagged, most-recent-first.
+/// In the real app [sessionRepositoryProvider] is the Supabase-backed
+/// repository, whose `list()` hits hosted Supabase. That read can be slow or
+/// hang (a paused free-tier project, offline, a stalling table), so this is
+/// strictly **best-effort**: it is bounded by a [_syncedReadTimeout] (a hang
+/// resolves to `const []` rather than spinning forever) and any error is
+/// swallowed to `const []`. The "My sessions" screen folds this value in only
+/// once it resolves (`.value ?? const []`), so a slow, hanging or erroring
+/// cloud read can never hide the local sessions — it only ever **adds** synced
+/// rows when (and if) they arrive.
 ///
-/// The pending source is the **union** of two views of the same outbox,
-/// deduplicated by id:
-/// - the **live** upload queue ([uploadQueueProvider]'s in-memory state), so
-///   the instant a completed session is enqueued the queue state changes, this
-///   provider recomputes, and the screen shows the new row **with no reopen**;
-/// - the **persisted** [PendingUploadsStore] (a one-shot
-///   [PendingUploadsStore.load]), the single shared, durable source the enqueue
-///   **always** writes (spec 0025) before it flushes.
-///
-/// Reading both makes the list robust no matter how the queue notifier
-/// resolves: a completion runs inside `SeriesScreen`'s nested `ProviderScope`,
-/// and were its enqueue ever to update a different `uploadQueueProvider`
-/// instance than this root provider watches, the live state alone could miss
-/// the row — but the store copy still surfaces it, because the enqueue
-/// persisted there unconditionally. The live half keeps the immediacy; the
-/// store half keeps it correct. The synced read is refreshed by
-/// `ref.invalidate(mySessionsProvider)` each time the screen is opened (the
-/// picker does this before pushing it).
-///
-/// Every input is **best-effort**: an unreadable store yields no pending
-/// (swallowed, never thrown), the repository returns `const []` on error, so
-/// this provider never needs to throw.
-final mySessionsProvider = FutureProvider<List<MySessionEntry>>((ref) async {
-  final synced = await ref.watch(sessionRepositoryProvider).list();
-  final pending = await _pendingUnion(ref);
-  return mergeMySessions(synced: synced, pending: pending);
+/// Refreshed by `ref.invalidate(syncedSessionsProvider)` each time the screen
+/// is opened (the picker does this before pushing it), so a session that has
+/// synced since the list was last viewed shows on the next open.
+final syncedSessionsProvider = FutureProvider<List<SessionRecord>>((ref) async {
+  try {
+    return await ref
+        .watch(sessionRepositoryProvider)
+        .list()
+        .timeout(
+          _syncedReadTimeout,
+          onTimeout: () => const <SessionRecord>[],
+        );
+  } on Object catch (error) {
+    if (!kReleaseMode) {
+      debugPrint('Failed to read the synced sessions for My sessions: $error');
+    }
+    return const <SessionRecord>[];
+  }
 });
 
-/// The pending records to show: the **live** queue state unioned with the
-/// **persisted** store, deduplicated by id (the live copy wins a tie, so the
-/// freshest in-memory record is kept). Best-effort — an unreadable store
-/// contributes nothing rather than throwing.
-Future<List<SessionRecord>> _pendingUnion(Ref ref) async {
-  final live = ref.watch(uploadQueueProvider);
-  final stored = await _loadStored(ref);
-  final byId = <String, SessionRecord>{};
-  // Stored first, then live overwrites by id — the live (freshest) copy wins.
-  for (final record in stored) {
-    byId[record.id] = record;
-  }
-  for (final record in live) {
-    byId[record.id] = record;
-  }
-  return byId.values.toList();
-}
-
-/// Loads the persisted pending uploads, swallowing any error so an unreadable
-/// store simply contributes no pending records (it never breaks the list).
-Future<List<SessionRecord>> _loadStored(Ref ref) async {
+/// The persisted **pending** sessions ([PendingUploadsStore.load], spec 0025),
+/// loaded in the background as the durable fallback for the local list.
+///
+/// The single shared, durable source the enqueue **always** writes before it
+/// flushes (spec 0025). The "My sessions" screen builds its pending rows from
+/// the **live** upload queue ([uploadQueueProvider]) synchronously — the
+/// just-completed session is there instantly — and folds this stored copy in
+/// once it resolves (`.value ?? const []`), so the list is correct even
+/// were the recording screen's nested scope ever to update a different queue
+/// instance than the screen watches. Best-effort: an unreadable store yields
+/// `const []` rather than throwing.
+///
+/// Refreshed alongside [syncedSessionsProvider] when the screen is opened.
+final storedPendingProvider = FutureProvider<List<SessionRecord>>((ref) async {
   try {
     return await ref.watch(pendingUploadsStoreProvider).load();
   } on Object catch (error) {
@@ -136,4 +137,4 @@ Future<List<SessionRecord>> _loadStored(Ref ref) async {
     }
     return const <SessionRecord>[];
   }
-}
+});

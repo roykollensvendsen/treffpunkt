@@ -87,12 +87,16 @@ class ProgramPickerScreen extends ConsumerWidget {
   /// Opens the "My sessions" history (spec 0026), then refreshes the resume
   /// card on return (the same store re-read the other navigations do).
   ///
-  /// Invalidates [mySessionsProvider] **before** pushing the screen so its
-  /// synced read (`SessionRepository.list()`) re-runs each time the history is
-  /// opened, surfacing sessions that have synced since it was last viewed. The
-  /// pending half stays live on its own (it watches the upload queue).
+  /// Invalidates the background reads **before** pushing the screen so they
+  /// re-run each time the history is opened: [syncedSessionsProvider] re-reads
+  /// the account (`SessionRepository.list()`), surfacing sessions that have
+  /// synced since it was last viewed, and [storedPendingProvider] re-reads the
+  /// durable outbox. The pending half stays live on its own (the screen watches
+  /// the upload queue), so the local sessions never wait on either read.
   Future<void> _openMySessions(BuildContext context, WidgetRef ref) async {
-    ref.invalidate(mySessionsProvider);
+    ref
+      ..invalidate(syncedSessionsProvider)
+      ..invalidate(storedPendingProvider);
     await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const MySessionsScreen()),
     );

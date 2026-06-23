@@ -160,6 +160,14 @@ All notable changes to this project are documented here. The format is based on
   50 m / 300 m rifle structure.
 
 ### Fixed
+- A session you just finished now shows in "Mine økter" immediately, even when
+  the connection to your saved sessions is slow or unavailable. Previously the
+  list waited to read your account before showing anything, so on the real app a
+  slow or stalled cloud read (for example a paused or offline backend) left the
+  screen spinning and your just-completed session never appeared. The list now
+  shows the sessions saved on your device right away and quietly adds your
+  account's synced sessions in the background once they load — with a safety
+  timeout so a hanging cloud read can never hold up the screen (spec 0026).
 - A session you just finished now shows up in "Mine økter" right away. The list
   used to read your saved sessions once and never refresh, so if you opened the
   (empty) list, went back, completed a session and reopened, the finished

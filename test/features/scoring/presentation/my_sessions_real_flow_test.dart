@@ -26,12 +26,12 @@ import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
-import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
 import '../../auth/fake_auth_repository.dart';
 
@@ -118,15 +118,15 @@ void main() {
 }
 
 /// The id of the single session shown in "Mine økter", read from the live
-/// list provider in the widget's own scope, so the card can be located by its
+/// upload queue in the widget's own scope, so the card can be located by its
 /// per-id key without knowing the generated UUID up front.
 String _onlySessionId(WidgetTester tester) {
   final element = tester.element(find.byType(MySessionsScreen));
-  final entries = ProviderScope.containerOf(
+  final pending = ProviderScope.containerOf(
     element,
-  ).read(mySessionsProvider).requireValue;
-  expect(entries, hasLength(1));
-  return entries.single.record.id;
+  ).read(uploadQueueProvider);
+  expect(pending, hasLength(1));
+  return pending.single.id;
 }
 
 /// A [SessionRepository] that never accepts an upload (so a completed session
