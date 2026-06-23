@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/settings/presentation/theme_mode_button.dart';
 
 /// Key for the Google sign-in button (used by widget and system tests).
 const Key signInWithGoogleButtonKey = ValueKey<String>(
@@ -59,6 +60,14 @@ class SignInScreen extends ConsumerWidget {
                       ),
                     ),
                 ],
+              ),
+            ),
+            // The theme switcher, reachable before signing in too (spec 0030).
+            const Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: EdgeInsets.all(4),
+                child: ThemeModeButton(),
               ),
             ),
             // A discreet build-version footer so a user can confirm which build

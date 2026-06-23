@@ -54,6 +54,7 @@ nav:
       - "0027 — Cache-bust the web deploy": specs/0027-cache-bust-web-deploy.md
       - "0028 — Build-version stamp": specs/0028-build-version-stamp.md
       - "0029 — Surface cloud-sync failures": specs/0029-surface-sync-failures.md
+      - "0030 — Theme mode (light / dark)": specs/0030-theme-mode-selection.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
@@ -72,6 +73,7 @@ nav:
       - ADR-0015 Location capture: adr/0015-location-capture-via-service-interface.md
       - ADR-0016 Local session store: adr/0016-local-session-store-shared-preferences.md
       - ADR-0017 Personal session sync: adr/0017-personal-session-sync.md
+      - ADR-0018 Theme mode persistence: adr/0018-theme-mode-persistence.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md
