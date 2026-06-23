@@ -6,9 +6,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:treffpunkt/features/auth/domain/auth_status.dart';
-import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
+import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
@@ -19,6 +18,7 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
+import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 import 'package:uuid/uuid.dart';
 
@@ -60,6 +60,16 @@ final sessionStoreProvider = Provider<SessionStore>(
 /// repository.
 final sessionRepositoryProvider = Provider<SessionRepository>(
   (ref) => InMemorySessionRepository(),
+);
+
+/// The app's [PendingUploadsStore] for the upload queue (spec 0025).
+///
+/// Defaults to an in-memory store so tests and the integration harness never
+/// touch real storage; `main()` overrides it with the `shared_preferences`-
+/// backed store. The completed sessions waiting to upload live here (the
+/// durable outbox behind [uploadQueueProvider]).
+final pendingUploadsStoreProvider = Provider<PendingUploadsStore>(
+  (ref) => InMemoryPendingUploadsStore(),
 );
 
 /// Mints a new stable client-generated id for a recording (spec 0024).
@@ -174,57 +184,41 @@ class SessionNotifier extends Notifier<SessionRecording> {
     );
   }
 
-  /// Uploads the completed session to the shooter's account when signed in
-  /// (spec 0024).
+  /// Enqueues the completed session onto the durable upload queue (spec 0025).
   ///
-  /// Fire-and-forget and best-effort: it runs only when signed in, never blocks
-  /// the UI, and a throwing repository is swallowed so completion is unharmed.
-  /// Idempotent by the recording's id — a re-upload (e.g. a resumed-then-
-  /// completed session) overwrites the same row.
-  void _uploadIfSignedIn() {
-    if (!_isSignedIn()) return;
+  /// Fire-and-forget and best-effort: it never blocks reaching the scorecard,
+  /// and the queue swallows any storage or upload error. Enqueuing (not a
+  /// direct upload) is what makes completion loss-proof: the record is
+  /// persisted the instant it is enqueued and flushed (uploaded, then removed)
+  /// whenever possible, so a session finished offline or signed out uploads
+  /// itself later. Idempotent by the recording's id (the queue dedups by it).
+  void _enqueueCompletedSession() {
     final session = state.session;
     final record = SessionRecord.fromSession(
       session,
       _scoring.scoreSession(session),
       id: state.id,
     );
-    // Read the repository and invoke the upload synchronously (the provider may
-    // be disposed before a deferred read runs), but do not await it — it is
-    // fire-and-forget off the happy path. A synchronous throw is caught here
-    // and a rejected future is swallowed by `catchError`, so a throwing
-    // repository can never break completion (the real Supabase repo also
-    // swallows internally).
-    final repository = ref.read(sessionRepositoryProvider);
+    // Read the queue notifier synchronously (the provider may be disposed
+    // before a deferred read runs), but do not await the enqueue: it is
+    // fire-and-forget off the happy path. A synchronous throw (e.g. the queue's
+    // auth providers are not wired in a scoring-only screen scope) is caught
+    // here and a rejected future is swallowed, so it never breaks completion.
     try {
       unawaited(
-        repository.upload(record).catchError((
+        ref.read(uploadQueueProvider.notifier).enqueue(record).catchError((
           Object error,
           StackTrace stackTrace,
         ) {
           if (!kReleaseMode) {
-            debugPrint('Failed to upload the completed session: $error');
+            debugPrint('Failed to enqueue the completed session: $error');
           }
         }),
       );
     } on Object catch (error) {
       if (!kReleaseMode) {
-        debugPrint('Failed to upload the completed session: $error');
+        debugPrint('Failed to enqueue the completed session: $error');
       }
-    }
-  }
-
-  /// Whether a user is currently signed in.
-  ///
-  /// Best-effort: a scoring-only screen may mount without the auth providers
-  /// wired (they are overridden at the app root, not in `SeriesScreen`'s nested
-  /// scope), in which case reading the status throws — treat that as signed out
-  /// so completion is never blocked.
-  bool _isSignedIn() {
-    try {
-      return ref.read(authStateChangesProvider).value is SignedIn;
-    } on Object {
-      return false;
     }
   }
 
@@ -304,10 +298,11 @@ class SessionNotifier extends Notifier<SessionRecording> {
       current: next.newSeries(),
     );
     _persist();
-    // Sealing the last series completes the session: upload it to the
-    // shooter's account when signed in (spec 0024). Fire-and-forget and
-    // best-effort, so it never blocks reaching the scorecard.
-    if (state.isComplete) _uploadIfSignedIn();
+    // Sealing the last series completes the session: enqueue it on the durable
+    // upload queue (spec 0025), which persists it (so it is never lost) and
+    // flushes it whenever possible. Fire-and-forget and best-effort, so it
+    // never blocks reaching the scorecard.
+    if (state.isComplete) _enqueueCompletedSession();
   }
 }
 

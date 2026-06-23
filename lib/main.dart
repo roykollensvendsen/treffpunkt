@@ -9,6 +9,7 @@ import 'package:treffpunkt/bootstrap.dart';
 import 'package:treffpunkt/config/app_config.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
 import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
+import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/data/supabase_session_repository.dart';
 import 'package:treffpunkt/features/weapons/data/weapon_store.dart';
@@ -33,6 +34,7 @@ Future<void> main() async {
     SupabaseAuthRepository(Supabase.instance.client.auth),
     sessionStore: SharedPreferencesSessionStore(prefs),
     sessionRepository: SupabaseSessionRepository(Supabase.instance.client),
+    pendingUploadsStore: SharedPreferencesPendingUploadsStore(prefs),
     weaponStore: weaponStore,
     initialWeapons: savedWeapons,
     locationService: const GeolocatorLocationService(),

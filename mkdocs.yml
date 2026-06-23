@@ -48,6 +48,8 @@ nav:
       - "0021 — Target owns its gestures": specs/0021-target-owns-its-gestures.md
       - "0022 — Target pinch-zoom on touch": specs/0022-target-pinch-zoom-on-touch.md
       - "0023 — Per-series results": specs/0023-per-series-results.md
+      - "0024 — Personal session sync": specs/0024-personal-session-sync.md
+      - "0025 — Upload queue": specs/0025-upload-queue.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
@@ -65,6 +67,7 @@ nav:
       - ADR-0014 Weapon domain model: adr/0014-weapon-domain-model.md
       - ADR-0015 Location capture: adr/0015-location-capture-via-service-interface.md
       - ADR-0016 Local session store: adr/0016-local-session-store-shared-preferences.md
+      - ADR-0017 Personal session sync: adr/0017-personal-session-sync.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md

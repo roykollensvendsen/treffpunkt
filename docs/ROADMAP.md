@@ -71,6 +71,13 @@ The shooter records a complete session on-device, with no network needed
       reinstall or device. Distinct from the competition sync in 0012 (no
       competition identity yet); the foundation for the pending-upload queue and
       the "My sessions" history (ADR-0017).
+- [x] 0025 — Upload queue: a completed session is enqueued in a durable on-device
+      outbox (`PendingUploadsStore`, `shared_preferences`) and flushed — uploaded
+      then removed — on completion, on app start and when the user signs in, so a
+      session finished offline or signed out is never lost and uploads itself
+      later. Deduplicated by the client-generated id (an idempotent upsert);
+      best-effort, so a throwing repository never breaks completion (ADR-0013,
+      ADR-0017). The "My sessions" read-back screen is the next increment.
 - [ ] 0012 — Sync: upload completed local sessions to the chosen competition when
       online; idempotent and queued; an upload that doesn't match the
       competition's program goes to a *needs-attention* state, not an endless

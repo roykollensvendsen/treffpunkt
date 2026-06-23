@@ -64,6 +64,28 @@ class SessionRecord {
     );
   }
 
+  /// Rebuilds a record from a [json] map produced by [toJson] (spec 0025).
+  ///
+  /// The inverse of [toJson]: every field round-trips losslessly, so a record
+  /// persisted in the upload queue reads back identical. Optional fields absent
+  /// from the map come back `null`.
+  factory SessionRecord.fromJson(Map<String, dynamic> json) {
+    final capturedAt = json['capturedAt'] as String?;
+    return SessionRecord(
+      id: json['id'] as String,
+      program: json['program'] as String,
+      capturedAt: capturedAt == null ? null : DateTime.parse(capturedAt),
+      placeLabel: json['placeLabel'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      weaponName: json['weaponName'] as String?,
+      total: json['total'] as int,
+      maxTotal: json['maxTotal'] as int,
+      innerTens: json['innerTens'] as int,
+      payload: json['payload'] as Map<String, dynamic>,
+    );
+  }
+
   /// The stable client-generated id; the upload (upsert) key (ADR-0017).
   final String id;
 
@@ -96,4 +118,24 @@ class SessionRecord {
 
   /// The lossless snapshot of the session (spec 0009 `SessionSnapshot.toJson`).
   final Map<String, dynamic> payload;
+
+  /// A JSON-able map of this record, round-tripped by [SessionRecord.fromJson]
+  /// (spec 0025).
+  ///
+  /// Serializes the queued record (not the row sent to Supabase) so a completed
+  /// session can wait in the durable upload queue across a restart. The
+  /// [capturedAt] is an ISO-8601 string; [payload] is carried through verbatim.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'id': id,
+    'program': program,
+    'capturedAt': capturedAt?.toIso8601String(),
+    'placeLabel': placeLabel,
+    'latitude': latitude,
+    'longitude': longitude,
+    'weaponName': weaponName,
+    'total': total,
+    'maxTotal': maxTotal,
+    'innerTens': innerTens,
+    'payload': payload,
+  };
 }

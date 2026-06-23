@@ -7,6 +7,14 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Finished sessions are never lost, even offline or signed out. When you
+  complete a session it now joins a durable upload queue saved on your device,
+  and the queue empties itself by uploading whenever it can: the moment you
+  finish, the next time you open the app, and right after you sign in. So a
+  session shot with no signal — or before you have signed in — uploads itself
+  automatically later instead of vanishing. Uploading stays quiet and
+  best-effort (it never blocks finishing, never crashes on a dropped
+  connection), and the same session is never uploaded twice (spec 0025).
 - When you are signed in, finishing a session now quietly saves it to your
   account in the cloud, so your results survive reinstalling the app or switching
   devices. The save never blocks finishing, never crashes if the connection

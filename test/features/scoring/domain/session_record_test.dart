@@ -121,4 +121,82 @@ void main() {
     expect(record.innerTens, 4);
     expect(record.payload['id'], 'no-meta');
   });
+
+  // The JSON round-trip (spec 0025): a queued record is persisted as JSON and
+  // read back identical, so a completed session survives a restart in the
+  // queue.
+  void expectRoundTrips(SessionRecord record) {
+    final restored = SessionRecord.fromJson(record.toJson());
+    expect(restored.id, record.id);
+    expect(restored.program, record.program);
+    expect(restored.capturedAt, record.capturedAt);
+    expect(restored.placeLabel, record.placeLabel);
+    expect(restored.latitude, record.latitude);
+    expect(restored.longitude, record.longitude);
+    expect(restored.weaponName, record.weaponName);
+    expect(restored.total, record.total);
+    expect(restored.maxTotal, record.maxTotal);
+    expect(restored.innerTens, record.innerTens);
+    expect(restored.payload, record.payload);
+  }
+
+  test('toJson/fromJson round-trips a full record losslessly', () {
+    const record = SessionRecord(
+      id: 'abc-123',
+      program: '25 m Finpistol',
+      total: 39,
+      maxTotal: 40,
+      innerTens: 3,
+      placeLabel: 'Løvenskiold',
+      latitude: 59.9,
+      longitude: 10.7,
+      weaponName: 'My pistol',
+      payload: <String, dynamic>{
+        'id': 'abc-123',
+        'program': '25 m Finpistol',
+        'current': null,
+        'nested': <String, dynamic>{'value': 7},
+      },
+    );
+    final full = SessionRecord(
+      id: record.id,
+      program: record.program,
+      capturedAt: DateTime(2026, 6, 21, 14, 30),
+      placeLabel: record.placeLabel,
+      latitude: record.latitude,
+      longitude: record.longitude,
+      weaponName: record.weaponName,
+      total: record.total,
+      maxTotal: record.maxTotal,
+      innerTens: record.innerTens,
+      payload: record.payload,
+    );
+
+    expectRoundTrips(full);
+    // The nested payload map survives intact.
+    final restored = SessionRecord.fromJson(full.toJson());
+    expect(
+      (restored.payload['nested'] as Map<String, dynamic>)['value'],
+      7,
+    );
+  });
+
+  test('toJson/fromJson round-trips a minimal record (optionals null)', () {
+    const minimal = SessionRecord(
+      id: 'min',
+      program: '10 m Air Pistol',
+      total: 0,
+      maxTotal: 100,
+      innerTens: 0,
+      payload: <String, dynamic>{'id': 'min'},
+    );
+
+    expectRoundTrips(minimal);
+    final restored = SessionRecord.fromJson(minimal.toJson());
+    expect(restored.capturedAt, isNull);
+    expect(restored.placeLabel, isNull);
+    expect(restored.latitude, isNull);
+    expect(restored.longitude, isNull);
+    expect(restored.weaponName, isNull);
+  });
 }

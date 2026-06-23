@@ -8,6 +8,7 @@ import 'package:treffpunkt/app.dart';
 import 'package:treffpunkt/features/auth/domain/auth_repository.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
+import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
@@ -30,10 +31,16 @@ import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 /// [initialWeapons] seeds the personal-weapons list at launch — `main()` loads
 /// it from the [weaponStore] before this call so the notifier starts populated
 /// without an async `build` (spec 0019). Omitting it starts with no weapons.
+///
+/// [pendingUploadsStore] is the durable upload queue's storage (spec 0025):
+/// `main()` passes the `shared_preferences`-backed store so completed sessions
+/// survive a restart and upload later; omitting it keeps the in-memory default,
+/// so tests and the integration harness never touch real storage.
 void runTreffpunkt(
   AuthRepository authRepository, {
   SessionStore? sessionStore,
   SessionRepository? sessionRepository,
+  PendingUploadsStore? pendingUploadsStore,
   WeaponStore? weaponStore,
   List<Weapon>? initialWeapons,
   LocationService? locationService,
@@ -46,6 +53,8 @@ void runTreffpunkt(
           sessionStoreProvider.overrideWithValue(sessionStore),
         if (sessionRepository != null)
           sessionRepositoryProvider.overrideWithValue(sessionRepository),
+        if (pendingUploadsStore != null)
+          pendingUploadsStoreProvider.overrideWithValue(pendingUploadsStore),
         if (weaponStore != null)
           weaponStoreProvider.overrideWithValue(weaponStore),
         if (initialWeapons != null)
