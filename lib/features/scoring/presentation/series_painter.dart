@@ -29,6 +29,19 @@ class SeriesPainter extends CustomPainter {
   /// The index of the shot currently picked up, or `null`.
   final int? draggingIndex;
 
+  /// How much larger the highlighted (most recently placed) marker is drawn,
+  /// relative to an ordinary marker, so the latest shot stands out.
+  static const double _highlightScale = 1.4;
+
+  /// The colour of the extra outer "halo" ring around the highlighted marker.
+  static const Color _highlightColor = Colors.deepOrange;
+
+  /// The index of the shot to emphasise — the most recently placed (highest
+  /// index) — or `null` when the series has no shots.
+  ///
+  /// Exposed so the highlight rule is unit-testable without rendering.
+  int? get highlightedIndex => shots.isEmpty ? null : shots.length - 1;
+
   @override
   void paint(Canvas canvas, Size size) {
     final side = size.shortestSide;
@@ -65,17 +78,32 @@ class SeriesPainter extends CustomPainter {
       final shot = shots[i];
       final markerCentre =
           centre + Offset(shot.dxMm * scale, shot.dyMm * scale);
-      final fill = i == draggingIndex ? Colors.lightBlueAccent : Colors.amber;
+      final dragging = i == draggingIndex;
+      // Precedence: drag styling wins over the last-shot highlight, which wins
+      // over an ordinary marker. A dragged shot is never given the halo.
+      final highlighted = !dragging && i == highlightedIndex;
+      final markerRadius = highlighted ? radius * _highlightScale : radius;
+      final fill = dragging ? Colors.lightBlueAccent : Colors.amber;
       canvas
-        ..drawCircle(markerCentre, radius, Paint()..color = fill)
+        ..drawCircle(markerCentre, markerRadius, Paint()..color = fill)
         ..drawCircle(
           markerCentre,
-          radius,
+          markerRadius,
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5
             ..color = Colors.black,
         );
+      if (highlighted) {
+        canvas.drawCircle(
+          markerCentre,
+          markerRadius + 2.5,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2
+            ..color = _highlightColor,
+        );
+      }
     }
   }
 
