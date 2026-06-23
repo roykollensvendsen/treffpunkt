@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_gate.dart';
 import 'package:treffpunkt/features/auth/presentation/sign_out_button.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_mode_button.dart';
@@ -26,7 +27,12 @@ class TreffpunktApp extends ConsumerWidget {
     // for a session to complete. Without this the queue would only build on the
     // next completion, and a session finished offline last run would never
     // upload after a plain restart.
-    ref.watch(uploadQueueProvider);
+    // Keep the upload queue (spec 0025) and the on-sign-in profile sync (spec
+    // 0010) alive for the whole session, so completed sessions upload and a
+    // signed-in user's profile is upserted for the shared scoreboard.
+    ref
+      ..watch(uploadQueueProvider)
+      ..watch(profileSyncProvider);
     return MaterialApp(
       title: 'Treffpunkt',
       theme: lightTheme,

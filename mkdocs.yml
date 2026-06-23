@@ -43,6 +43,7 @@ nav:
       - "0007 — Weapon catalogue & picker": specs/0007-weapon-catalogue-and-picker.md
       - "0008 — Session setup metadata": specs/0008-session-setup-metadata.md
       - "0009 — Offline session persistence": specs/0009-offline-session-persistence.md
+      - "0010 — Competitions: data & RLS": specs/0010-competitions-data-and-rls.md
       - "0019 — Personal weapon persistence": specs/0019-weapon-persistence.md
       - "0020 — Highlight the last shot": specs/0020-highlight-the-last-shot.md
       - "0021 — Target owns its gestures": specs/0021-target-owns-its-gestures.md
@@ -75,6 +76,7 @@ nav:
       - ADR-0016 Local session store: adr/0016-local-session-store-shared-preferences.md
       - ADR-0017 Personal session sync: adr/0017-personal-session-sync.md
       - ADR-0018 Theme mode persistence: adr/0018-theme-mode-persistence.md
+      - ADR-0019 Competitions data model: adr/0019-competitions-data-model.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md

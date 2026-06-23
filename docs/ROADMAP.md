@@ -60,9 +60,12 @@ The shooter records a complete session on-device, with no network needed
       launch to seed the notifier and rewritten on every add/remove.
 
 ## Increment 2 — competitions, sync and scoreboards
-- [ ] 0010 — Data & RLS: Supabase schema for profiles, competitions
-      (public/private), invitations and results; Row-Level Security — including a
-      read policy so a competition's participants can read its results.
+- [x] 0010 — Data & RLS: Supabase schema for profiles, competitions
+      (public/private) and **explicit invitations** (owner invites by email);
+      Row-Level Security with a participant-read policy, recursion broken with
+      `SECURITY DEFINER` helpers, and an owner-auto-membership trigger +
+      `accept_invitation` RPC. Foundation only (no UI). **Results deferred to
+      0012** so the live owner-only `sessions` policy is not broadened.
 - [ ] 0011 — Competitions: create / invite / join; a competition fixes its
       program(s) and target-set, so the right targets are shown to every entrant.
 - [x] 0024 — Personal session sync: the first sync step — when signed in,
