@@ -2,14 +2,24 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:treffpunkt/features/scoring/domain/series_score.dart';
+
 /// The rolled-up score of one stage (its sealed series summed).
 class StageScore {
-  /// Creates a stage score.
+  /// Creates a stage score from its per-[series] scores and the rolled-up
+  /// [total] / [innerTens] / [maxTotal].
   const StageScore({
+    required this.series,
     required this.total,
     required this.innerTens,
     required this.maxTotal,
   });
+
+  /// The score of each series (skive) in the stage, in firing order.
+  ///
+  /// One entry per sealed series; pass an unmodifiable list. The stage
+  /// [total] / [innerTens] / [maxTotal] are the sums of these.
+  final List<SeriesScore> series;
 
   /// Sum of the stage's ring scores so far.
   final int total;

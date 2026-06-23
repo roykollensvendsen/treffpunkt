@@ -29,6 +29,15 @@ const Key sessionCompleteKey = ValueKey<String>('sessionComplete');
 /// Key for the captured date / place caption on the scorecard, used by tests.
 const Key sessionMetadataKey = ValueKey<String>('sessionMetadata');
 
+/// Type key shared by every per-series (skive) result row on the scorecard,
+/// used by tests to count the rows (spec 0023).
+const Key seriesResultRowKey = ValueKey<String>('seriesResultRow');
+
+/// Key for the per-series result row of series [seriesIndex] (0-based) under
+/// stage [stageIndex] (0-based) on the scorecard, used by tests (spec 0023).
+Key seriesResultRow(int stageIndex, int seriesIndex) =>
+    ValueKey<String>('seriesResultRow-$stageIndex-$seriesIndex');
+
 /// Key for the shots-list row of the most recently placed shot, used by tests.
 ///
 /// At most one row carries this key; it moves to the new last row as each
@@ -814,6 +823,7 @@ class _SessionScorecard extends StatelessWidget {
                 const SizedBox(height: 12),
                 for (var i = 0; i < program.stages.length; i++)
                   _StageScoreRow(
+                    stageIndex: i,
                     name: program.stages[i].name,
                     score: score.stages[i],
                   ),
@@ -829,8 +839,14 @@ class _SessionScorecard extends StatelessWidget {
 }
 
 class _StageScoreRow extends StatelessWidget {
-  const _StageScoreRow({required this.name, required this.score});
+  const _StageScoreRow({
+    required this.stageIndex,
+    required this.name,
+    required this.score,
+  });
 
+  /// 0-based index of the stage, used to key its per-series rows.
+  final int stageIndex;
   final String name;
   final StageScore score;
 
@@ -838,26 +854,85 @@ class _StageScoreRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final suffix = score.innerTens > 0 ? '  ·  ${score.innerTens}×X' : '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          label: _scoreSemanticsLabel(
+            prefix: name,
+            total: score.total,
+            maxTotal: score.maxTotal,
+            innerTens: score.innerTens,
+          ),
+          child: ExcludeSemantics(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(name, style: theme.textTheme.titleMedium),
+                  Text(
+                    '${score.total} / ${score.maxTotal}$suffix',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // Each series (skive) is shown subordinate to the stage subtotal, in
+        // firing order, so every face's own result is visible (spec 0023).
+        for (var i = 0; i < score.series.length; i++)
+          _SeriesResultRow(
+            key: seriesResultRow(stageIndex, i),
+            number: i + 1,
+            score: score.series[i],
+          ),
+      ],
+    );
+  }
+}
+
+/// One series (skive) result on the scorecard, subordinate to its stage
+/// subtotal: a `Serie N` label and the series total over its maximum, with a
+/// `· N×X` inner-ten suffix when present (spec 0023).
+class _SeriesResultRow extends StatelessWidget {
+  const _SeriesResultRow({
+    required this.number,
+    required this.score,
+    super.key,
+  });
+
+  /// 1-based series number within its stage (the skive number).
+  final int number;
+  final SeriesScore score;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final label = 'Serie $number';
+    final suffix = score.innerTens > 0 ? '  ·  ${score.innerTens}×X' : '';
+    final style = theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     return Semantics(
       label: _scoreSemanticsLabel(
-        prefix: name,
+        prefix: label,
         total: score.total,
         maxTotal: score.maxTotal,
         innerTens: score.innerTens,
       ),
       child: ExcludeSemantics(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          // Indented from the left so the skive rows sit under the stage row.
+          padding: const EdgeInsets.only(left: 16, top: 2, bottom: 2),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(name, style: theme.textTheme.titleMedium),
-              Text(
-                '${score.total} / ${score.maxTotal}$suffix',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text(label, style: style),
+              Text('${score.total} / ${score.maxTotal}$suffix', style: style),
             ],
           ),
         ),

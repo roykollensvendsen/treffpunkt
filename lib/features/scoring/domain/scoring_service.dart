@@ -97,16 +97,23 @@ class ScoringService {
     var grandMaxTotal = 0;
     for (var i = 0; i < session.program.stages.length; i++) {
       final stage = session.program.stages[i];
+      final seriesScores = <SeriesScore>[];
       var total = 0;
       var innerTens = 0;
       for (final series in session.sealedSeriesByStage[i]) {
         final score = scoreSeries(series);
+        seriesScores.add(score);
         total += score.total;
         innerTens += score.innerTens;
       }
       final maxTotal = stage.totalShots * stage.geometry.highestRing;
       stageScores.add(
-        StageScore(total: total, innerTens: innerTens, maxTotal: maxTotal),
+        StageScore(
+          series: List<SeriesScore>.unmodifiable(seriesScores),
+          total: total,
+          innerTens: innerTens,
+          maxTotal: maxTotal,
+        ),
       );
       grandTotal += total;
       grandInnerTens += innerTens;

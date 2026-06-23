@@ -373,6 +373,101 @@ void main() {
 
       handle.dispose();
     });
+
+    testWidgets('labels each series (skive) row on the scorecard', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_app(_twoStage));
+
+      // Shoot both single-series stages with centre shots to the scorecard.
+      await tapTarget(tester);
+      await tapTarget(tester);
+      await tester.tap(find.byKey(sealSeriesKey)); // advance to stage B
+      await tester.pumpAndSettle();
+      await tapTarget(tester);
+      await tapTarget(tester);
+      await tester.tap(find.byKey(sealSeriesKey)); // finish
+      await tester.pumpAndSettle();
+
+      // Each stage's single skive reads its own per-series score in words.
+      expect(
+        find.bySemanticsLabel('Serie 1: 20 av 20, 2 indre tiere'),
+        findsNWidgets(2),
+      );
+
+      handle.dispose();
+    });
+  });
+
+  group('per-series results on the scorecard (spec 0023)', () {
+    // Every per-series (skive) row carries a key whose string starts with the
+    // shared key's value, so the rows can be counted across stages.
+    final seriesRowPrefix = (seriesResultRowKey as ValueKey<String>).value;
+    final seriesRows = find.byWidgetPredicate((widget) {
+      final key = widget.key;
+      return key is ValueKey<String> &&
+          key.value.startsWith(seriesRowPrefix) &&
+          key.value != seriesRowPrefix;
+    });
+
+    // Shoots a multi-series program to completion, sealing every series with
+    // centre shots, so the scorecard shows the full per-skive breakdown.
+    Future<void> completeProgram(
+      WidgetTester tester,
+      ProgramDefinition program,
+    ) async {
+      await tester.pumpWidget(_app(program));
+      for (final stage in program.stages) {
+        for (var s = 0; s < stage.seriesCount; s++) {
+          for (var shot = 0; shot < stage.shotsPerSeries; shot++) {
+            await tapTarget(tester);
+          }
+          await tester.tap(find.byKey(sealSeriesKey));
+          await tester.pumpAndSettle();
+        }
+      }
+    }
+
+    testWidgets('lists one row per series under a multi-series stage', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await completeProgram(tester, ProgramCatalogue.finpistol25m);
+
+      expect(find.byKey(sessionCompleteKey), findsOneWidget);
+
+      // Finpistol precision = 6 series, duel = 6 series -> 12 series rows.
+      expect(seriesRows, findsNWidgets(12));
+      // The first precision series is findable by its stage/series key and
+      // reads as a ring-50 skive with five inner tens (five centre shots).
+      expect(find.byKey(seriesResultRow(0, 0)), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Serie 1: 50 av 50, 5 indre tiere'),
+        findsWidgets,
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('shows one series row for a single-series program', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await completeProgram(tester, ProgramCatalogue.airRifle10m);
+
+      expect(find.byKey(sessionCompleteKey), findsOneWidget);
+      // Air rifle is one 10-shot series -> exactly one series row.
+      expect(seriesRows, findsNWidgets(1));
+      expect(find.byKey(seriesResultRow(0, 0)), findsOneWidget);
+      // Ten centre shots score 100 of 100 (air rifle records no inner ten).
+      expect(
+        find.bySemanticsLabel('Serie 1: 100 av 100'),
+        findsOneWidget,
+      );
+
+      handle.dispose();
+    });
   });
 
   group('scorecard metadata caption', () {
