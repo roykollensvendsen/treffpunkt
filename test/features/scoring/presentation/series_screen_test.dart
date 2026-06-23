@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // Widget tests for the guided session screen.
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -450,6 +451,53 @@ void main() {
         '2026-06-21 14:30 · Løvenskiold skytebane · My air rifle',
       );
     });
+  });
+
+  group('the target owns wheel/trackpad gestures (spec 0021)', () {
+    // The page's scroll body — the SingleChildScrollView wrapping the whole
+    // session layout. (The scorecard has its own; on the recording screen this
+    // is the only one.)
+    SingleChildScrollView pageScrollView(WidgetTester tester) =>
+        tester.widget<SingleChildScrollView>(
+          find.byType(SingleChildScrollView),
+        );
+
+    testWidgets(
+      'suspends page scrolling while a mouse pointer is over the target, '
+      'and restores it when the pointer leaves',
+      (tester) async {
+        await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+
+        // Before any hover the page scrolls with the platform default physics.
+        expect(
+          pageScrollView(tester).physics,
+          isNot(isA<NeverScrollableScrollPhysics>()),
+        );
+
+        final mouse = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await mouse.addPointer(location: Offset.zero);
+        addTearDown(mouse.removePointer);
+
+        // Hovering the target hands wheel/trackpad zoom and pan to the target,
+        // so the page must stop scrolling.
+        await mouse.moveTo(tester.getCenter(find.byKey(seriesTargetKey)));
+        await tester.pump();
+        expect(
+          pageScrollView(tester).physics,
+          isA<NeverScrollableScrollPhysics>(),
+        );
+
+        // Moving off the target restores normal page scrolling.
+        await mouse.moveTo(const Offset(2, 2));
+        await tester.pump();
+        expect(
+          pageScrollView(tester).physics,
+          isNot(isA<NeverScrollableScrollPhysics>()),
+        );
+      },
+    );
   });
 }
 

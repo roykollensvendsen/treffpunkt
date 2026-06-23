@@ -235,28 +235,30 @@ class SessionView extends ConsumerWidget {
             ];
             final legend = _Legend(hasInnerTen: current.geometry.hasInnerTen);
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: _CenteredContent(
-                maxWidth: wide ? _maxWideContentWidth : _maxContentWidth,
-                child: wide
-                    ? _wideLayout(
-                        header: header,
-                        stageHeader: stageHeader,
-                        target: target,
-                        shots: shots,
-                        totals: totals,
-                        legend: legend,
-                      )
-                    : _stackedLayout(
-                        header: header,
-                        stageHeader: stageHeader,
-                        target: target,
-                        shots: shots,
-                        totals: totals,
-                        legend: legend,
-                      ),
-              ),
+            // The target is passed through [hoverGuard] so that, while a mouse
+            // or trackpad pointer is over it, the page stops scrolling and the
+            // wheel/trackpad zoom and drag pan fall through to the target's
+            // InteractiveViewer instead of being stolen by the page scroll
+            // (spec 0021).
+            return _SessionScrollBody(
+              maxWidth: wide ? _maxWideContentWidth : _maxContentWidth,
+              builder: (hoverGuard) => wide
+                  ? _wideLayout(
+                      header: header,
+                      stageHeader: stageHeader,
+                      target: hoverGuard(target),
+                      shots: shots,
+                      totals: totals,
+                      legend: legend,
+                    )
+                  : _stackedLayout(
+                      header: header,
+                      stageHeader: stageHeader,
+                      target: hoverGuard(target),
+                      shots: shots,
+                      totals: totals,
+                      legend: legend,
+                    ),
             );
           },
         ),
@@ -338,6 +340,65 @@ class SessionView extends ConsumerWidget {
         const SizedBox(height: 12),
         legend,
       ],
+    );
+  }
+}
+
+/// The scrolling body of the session screen.
+///
+/// It hands the wheel/trackpad zoom and the drag pan to the interactive target
+/// while a mouse or trackpad pointer is over it: a [MouseRegion] around the
+/// target tracks whether the pointer is over it, and the page
+/// [SingleChildScrollView] switches to [NeverScrollableScrollPhysics] while it
+/// is, so the scroll and drag fall through to the target's `InteractiveViewer`
+/// instead of being stolen by the page scroll (spec 0021).
+///
+/// A [MouseRegion]'s enter / exit fire only for hovering devices (mouse,
+/// trackpad), so a finger never triggers it: the touch pinch-to-zoom and the
+/// single-finger page scroll are unaffected.
+class _SessionScrollBody extends StatefulWidget {
+  const _SessionScrollBody({required this.maxWidth, required this.builder});
+
+  /// The maximum content width passed to [_CenteredContent].
+  final double maxWidth;
+
+  /// Builds the layout, wrapping the target in the supplied hover guard — the
+  /// callback that puts the target inside the [MouseRegion] that suspends page
+  /// scrolling while a pointer is over it.
+  final Widget Function(Widget Function(Widget target) hoverGuard) builder;
+
+  @override
+  State<_SessionScrollBody> createState() => _SessionScrollBodyState();
+}
+
+class _SessionScrollBodyState extends State<_SessionScrollBody> {
+  /// Whether a mouse / trackpad pointer is currently over the target.
+  bool _overTarget = false;
+
+  /// Wraps [target] so entering it suspends page scrolling and leaving it
+  /// restores it. The `setState` calls are guarded so a repeated enter / exit
+  /// does not rebuild needlessly.
+  Widget _hoverGuard(Widget target) {
+    return MouseRegion(
+      onEnter: (_) {
+        if (!_overTarget) setState(() => _overTarget = true);
+      },
+      onExit: (_) {
+        if (_overTarget) setState(() => _overTarget = false);
+      },
+      child: target,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      physics: _overTarget ? const NeverScrollableScrollPhysics() : null,
+      child: _CenteredContent(
+        maxWidth: widget.maxWidth,
+        child: widget.builder(_hoverGuard),
+      ),
     );
   }
 }

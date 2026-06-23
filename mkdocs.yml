@@ -47,6 +47,7 @@ nav:
       - "0018 — 300 m rifle target & scoring": specs/0018-300m-rifle-target-and-scoring.md
       - "0019 — Personal weapon persistence": specs/0019-weapon-persistence.md
       - "0020 — Highlight the last shot": specs/0020-highlight-the-last-shot.md
+      - "0021 — Target owns its gestures": specs/0021-target-owns-its-gestures.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
