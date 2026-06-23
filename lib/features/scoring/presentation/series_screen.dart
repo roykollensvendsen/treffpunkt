@@ -235,18 +235,18 @@ class SessionView extends ConsumerWidget {
             ];
             final legend = _Legend(hasInnerTen: current.geometry.hasInnerTen);
 
-            // The target is passed through [hoverGuard] so that, while a mouse
-            // or trackpad pointer is over it, the page stops scrolling and the
-            // wheel/trackpad zoom and drag pan fall through to the target's
-            // InteractiveViewer instead of being stolen by the page scroll
-            // (spec 0021).
+            // The target is passed through [scrollGuard] so that, while a
+            // pointer hovers it (mouse/trackpad) or is pressed on it (a finger),
+            // the page stops scrolling and the wheel/trackpad zoom and the
+            // pinch/drag fall through to the target's InteractiveViewer instead
+            // of being stolen by the page scroll (spec 0021).
             return _SessionScrollBody(
               maxWidth: wide ? _maxWideContentWidth : _maxContentWidth,
-              builder: (hoverGuard) => wide
+              builder: (scrollGuard) => wide
                   ? _wideLayout(
                       header: header,
                       stageHeader: stageHeader,
-                      target: hoverGuard(target),
+                      target: scrollGuard(target),
                       shots: shots,
                       totals: totals,
                       legend: legend,
@@ -254,7 +254,7 @@ class SessionView extends ConsumerWidget {
                   : _stackedLayout(
                       header: header,
                       stageHeader: stageHeader,
-                      target: hoverGuard(target),
+                      target: scrollGuard(target),
                       shots: shots,
                       totals: totals,
                       legend: legend,
@@ -346,47 +346,70 @@ class SessionView extends ConsumerWidget {
 
 /// The scrolling body of the session screen.
 ///
-/// It hands the wheel/trackpad zoom and the drag pan to the interactive target
-/// while a mouse or trackpad pointer is over it: a [MouseRegion] around the
-/// target tracks whether the pointer is over it, and the page
-/// [SingleChildScrollView] switches to [NeverScrollableScrollPhysics] while it
-/// is, so the scroll and drag fall through to the target's `InteractiveViewer`
-/// instead of being stolen by the page scroll (spec 0021).
+/// It hands the wheel/trackpad zoom and the pinch/drag to the interactive
+/// target while a pointer is interacting with it: a [MouseRegion] tracks a
+/// hovering mouse/trackpad pointer and a [Listener] counts fingers pressed on
+/// the target. While either holds, the page [SingleChildScrollView] switches to
+/// [NeverScrollableScrollPhysics], so the wheel scroll and the pinch/drag fall
+/// through to the target's `InteractiveViewer` instead of being stolen by the
+/// page scroll (spec 0021).
 ///
-/// A [MouseRegion]'s enter / exit fire only for hovering devices (mouse,
-/// trackpad), so a finger never triggers it: the touch pinch-to-zoom and the
-/// single-finger page scroll are unaffected.
+/// The touch case matters because a two-finger pinch with a vertical component
+/// otherwise loses the gesture arena to the page's vertical scroll (the page
+/// zooms only on horizontal pinches, if at all); suspending the page scroll
+/// while a finger is down removes that competing recogniser so the pinch zooms
+/// in any direction.
 class _SessionScrollBody extends StatefulWidget {
   const _SessionScrollBody({required this.maxWidth, required this.builder});
 
   /// The maximum content width passed to [_CenteredContent].
   final double maxWidth;
 
-  /// Builds the layout, wrapping the target in the supplied hover guard — the
-  /// callback that puts the target inside the [MouseRegion] that suspends page
-  /// scrolling while a pointer is over it.
-  final Widget Function(Widget Function(Widget target) hoverGuard) builder;
+  /// Builds the layout, wrapping the target in the supplied scroll guard — the
+  /// callback that puts the target inside the [MouseRegion] + [Listener] that
+  /// suspend page scrolling while a pointer hovers or presses it.
+  final Widget Function(Widget Function(Widget target) scrollGuard) builder;
 
   @override
   State<_SessionScrollBody> createState() => _SessionScrollBodyState();
 }
 
 class _SessionScrollBodyState extends State<_SessionScrollBody> {
-  /// Whether a mouse / trackpad pointer is currently over the target.
-  bool _overTarget = false;
+  /// Whether a mouse / trackpad pointer is currently hovering the target.
+  bool _hovering = false;
 
-  /// Wraps [target] so entering it suspends page scrolling and leaving it
-  /// restores it. The `setState` calls are guarded so a repeated enter / exit
-  /// does not rebuild needlessly.
-  Widget _hoverGuard(Widget target) {
+  /// How many pointers (fingers) are currently pressed on the target.
+  int _pointersDown = 0;
+
+  /// Whether page scrolling is suspended so the target owns the gesture.
+  bool get _suspendScroll => _hovering || _pointersDown > 0;
+
+  /// Applies [change], then rebuilds only if it flipped [_suspendScroll] — so
+  /// the stream of hover / pointer events does not rebuild needlessly.
+  void _update(VoidCallback change) {
+    final before = _suspendScroll;
+    change();
+    if (_suspendScroll != before) setState(() {});
+  }
+
+  /// Wraps [target] so hovering it (mouse/trackpad) or pressing it (a finger)
+  /// suspends page scrolling, and leaving / releasing restores it. The
+  /// [Listener] only observes pointers — it never joins the gesture arena — so
+  /// the target's own tap / long-press / pinch behaviour is unchanged.
+  Widget _scrollGuard(Widget target) {
     return MouseRegion(
-      onEnter: (_) {
-        if (!_overTarget) setState(() => _overTarget = true);
-      },
-      onExit: (_) {
-        if (_overTarget) setState(() => _overTarget = false);
-      },
-      child: target,
+      onEnter: (_) => _update(() => _hovering = true),
+      onExit: (_) => _update(() => _hovering = false),
+      child: Listener(
+        onPointerDown: (_) => _update(() => _pointersDown++),
+        onPointerUp: (_) => _update(() {
+          if (_pointersDown > 0) _pointersDown--;
+        }),
+        onPointerCancel: (_) => _update(() {
+          if (_pointersDown > 0) _pointersDown--;
+        }),
+        child: target,
+      ),
     );
   }
 
@@ -394,10 +417,10 @@ class _SessionScrollBodyState extends State<_SessionScrollBody> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      physics: _overTarget ? const NeverScrollableScrollPhysics() : null,
+      physics: _suspendScroll ? const NeverScrollableScrollPhysics() : null,
       child: _CenteredContent(
         maxWidth: widget.maxWidth,
-        child: widget.builder(_hoverGuard),
+        child: widget.builder(_scrollGuard),
       ),
     );
   }

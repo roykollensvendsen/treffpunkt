@@ -498,6 +498,39 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'suspends page scrolling while a finger is pressed on the target, '
+      'so a two-finger pinch is not stolen by the page scroll',
+      (tester) async {
+        await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+        expect(
+          pageScrollView(tester).physics,
+          isNot(isA<NeverScrollableScrollPhysics>()),
+        );
+
+        // A finger down on the target suspends the page scroll, so the pinch's
+        // scale gesture wins the arena over the page's vertical drag instead of
+        // the page stealing it (the vertical-pinch bug on touch).
+        // startGesture defaults to a touch pointer.
+        final touch = await tester.startGesture(
+          tester.getCenter(find.byKey(seriesTargetKey)),
+        );
+        await tester.pump();
+        expect(
+          pageScrollView(tester).physics,
+          isA<NeverScrollableScrollPhysics>(),
+        );
+
+        // Lifting the finger restores normal page scrolling.
+        await touch.up();
+        await tester.pump();
+        expect(
+          pageScrollView(tester).physics,
+          isNot(isA<NeverScrollableScrollPhysics>()),
+        );
+      },
+    );
   });
 }
 

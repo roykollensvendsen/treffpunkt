@@ -122,7 +122,7 @@ unaffected.
 
 ## Open questions
 
-- Distinguishing a single-finger touch *pan* of the target from a single-finger
-  *page scroll* on phones is out of scope here; this fix targets the
-  mouse/trackpad conflict reported on web/desktop. Touch pinch-to-zoom is
-  unaffected.
+- Touch pinch-to-zoom and single-finger pan on the target are handled by the
+  follow-up spec 0022 (suspend the page scroll while a finger is on the target).
+  A drag that *starts* on the target no longer scrolls the page on any platform;
+  the surrounding content scrolls normally.
