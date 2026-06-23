@@ -85,10 +85,39 @@ sh tool/cache_bust_web.sh build/web "$(git rev-parse --short=8 HEAD)"
 ```
 
 ## Database migrations
-The SQL files under `supabase/migrations/` are **not** applied automatically.
-Apply each to the hosted project with `supabase db push` (or paste it into the
-SQL editor). In particular, `20260623120000_sessions.sql` creates the
-`public.sessions` table with owner-only Row-Level Security and grants the
-signed-in role table access; it **must be applied before personal-session
-uploads take effect** (ADR-0017). Until it is applied, the best-effort upload
-logs and returns, so the deployed app is unharmed.
+The SQL files under `supabase/migrations/` are **not** applied automatically
+(ADR-0017). Apply each to the hosted project yourself. In particular,
+`20260623120000_sessions.sql` creates the `public.sessions` table with owner-only
+Row-Level Security and grants the signed-in role table access; it **must be
+applied before personal-session sync works** (spec 0024). Until it is applied,
+the best-effort upload logs and returns and the read fails — see *Troubleshooting*
+below — so recording and the local list are unharmed.
+
+### Apply via the Supabase CLI (recommended)
+From the repo root, with the [Supabase CLI](https://supabase.com/docs/guides/cli)
+installed:
+
+```sh
+supabase login                                  # one-time: opens a browser for an access token
+supabase link --project-ref <your-project-ref>  # one-time: prompts for the DB password
+supabase db push                                # applies every pending migration
+supabase migration list --linked                # confirm: each shows under both Local and Remote
+```
+
+`db push` is idempotent — already-applied migrations are skipped. (A
+`failed to cache migrations catalog … pgdelta` warning is cosmetic; the
+`Applying migration … Finished` line and a matching `migration list` row are the
+real confirmation.)
+
+### Apply via the SQL editor (no CLI)
+Open the project's **SQL editor**, paste the contents of the migration file, and
+**Run**. Expect *"Success. No rows returned."*
+
+### Troubleshooting: sessions don't sync
+If saved sessions show but never sync (they keep the *"Ikke synkronisert"* badge,
+and "Mine økter" shows the *"Kunne ikke hente økter fra skyen"* banner from spec
+0029), the table is almost certainly missing on hosted. Confirm it from the
+browser network panel: a `GET …/rest/v1/sessions` returning **`404`** means
+`public.sessions` does not exist on the hosted project — apply the migration
+above. A `200` means the table is live; an empty list then just means no synced
+sessions yet.

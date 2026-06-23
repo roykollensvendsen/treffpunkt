@@ -113,6 +113,39 @@ Widget _app({
   );
 }
 
+/// Builds the screen with a custom [repository] (e.g. one whose `list()`
+/// throws), seeding only the local [pending] sessions — used to exercise the
+/// cloud-read-failure path (spec 0029).
+Widget _appWith({
+  required SessionRepository repository,
+  required List<SessionRecord> pending,
+}) {
+  final pendingStore = InMemoryPendingUploadsStore();
+  return ProviderScope(
+    overrides: [
+      sessionRepositoryProvider.overrideWithValue(repository),
+      pendingUploadsStoreProvider.overrideWithValue(pendingStore),
+    ],
+    child: _Seeder(
+      repository: repository,
+      pendingStore: pendingStore,
+      synced: const <SessionRecord>[],
+      pending: pending,
+    ),
+  );
+}
+
+/// A [SessionRepository] whose synced read always fails (spec 0029), so the
+/// screen takes the cloud-read-failure path. The upload is a no-op.
+class _ThrowingSessionRepository implements SessionRepository {
+  @override
+  Future<void> upload(SessionRecord record) async {}
+
+  @override
+  Future<List<SessionRecord>> list() async =>
+      throw const SessionSyncException('boom');
+}
+
 /// Seeds the fakes before mounting the screen, so the FutureProvider reads the
 /// records on its first load.
 class _Seeder extends StatefulWidget {
@@ -123,7 +156,7 @@ class _Seeder extends StatefulWidget {
     required this.pending,
   });
 
-  final InMemorySessionRepository repository;
+  final SessionRepository repository;
   final InMemoryPendingUploadsStore pendingStore;
   final List<SessionRecord> synced;
   final List<SessionRecord> pending;
@@ -157,6 +190,72 @@ class _SeederState extends State<_Seeder> {
 }
 
 void main() {
+  testWidgets(
+    'shows a sync-error banner when the cloud read fails, and still lists the '
+    'local sessions',
+    (tester) async {
+      await tester.pumpWidget(
+        _appWith(
+          repository: _ThrowingSessionRepository(),
+          pending: <SessionRecord>[
+            _recordFor(
+              ProgramCatalogue.airPistol10m,
+              id: 'pending-1',
+              capturedAt: DateTime(2026, 6, 21, 10),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // The failure is surfaced, but the local session still renders below it.
+      expect(find.byKey(syncErrorBannerKey), findsOneWidget);
+      expect(find.byKey(mySessionCard('pending-1')), findsOneWidget);
+      expect(find.byKey(noSessionsKey), findsNothing);
+    },
+  );
+
+  testWidgets('the sync-error banner can be dismissed', (tester) async {
+    await tester.pumpWidget(
+      _appWith(
+        repository: _ThrowingSessionRepository(),
+        pending: <SessionRecord>[
+          _recordFor(ProgramCatalogue.airPistol10m, id: 'pending-1'),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(syncErrorBannerKey), findsOneWidget);
+
+    await tester.tap(find.byKey(syncErrorDismissKey));
+    await tester.pumpAndSettle();
+
+    // The notice is gone; the local session stays in place.
+    expect(find.byKey(syncErrorBannerKey), findsNothing);
+    expect(find.byKey(mySessionCard('pending-1')), findsOneWidget);
+  });
+
+  testWidgets('shows no sync-error banner when the cloud read succeeds', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        synced: <SessionRecord>[
+          _recordFor(
+            ProgramCatalogue.airPistol10m,
+            id: 'synced-1',
+            capturedAt: DateTime(2026, 6, 20),
+          ),
+        ],
+        pending: const <SessionRecord>[],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(syncErrorBannerKey), findsNothing);
+    expect(find.byKey(mySessionCard('synced-1')), findsOneWidget);
+  });
+
   testWidgets('renders a row per entry with program, score and weapon', (
     tester,
   ) async {

@@ -23,6 +23,14 @@ const Key notSyncedBadgeKey = ValueKey<String>('notSyncedBadge');
 /// Key for the empty-state message when no session is saved, used by tests.
 const Key noSessionsKey = ValueKey<String>('noSessions');
 
+/// Key for the non-blocking banner shown when the cloud read fails, used by
+/// tests (spec 0029).
+const Key syncErrorBannerKey = ValueKey<String>('syncErrorBanner');
+
+/// Key for the dismiss action on the sync-error banner, used by tests (spec
+/// 0029).
+const Key syncErrorDismissKey = ValueKey<String>('syncErrorDismiss');
+
 /// Key for the "Velg program" call-to-action on the empty state, which returns
 /// to the program picker; used by tests.
 const Key pickProgramButtonKey = ValueKey<String>('pickProgramButton');
@@ -60,7 +68,11 @@ class MySessionsScreen extends ConsumerWidget {
     // when it resolves — never awaited, so it can never hold up the list.
     final live = ref.watch(uploadQueueProvider);
     final stored = ref.watch(storedPendingProvider).value ?? const [];
-    final synced = ref.watch(syncedSessionsProvider).value ?? const [];
+    final syncedAsync = ref.watch(syncedSessionsProvider);
+    final synced = syncedAsync.value ?? const <SessionRecord>[];
+    // A cloud read that *failed* (not merely empty) — surface it, but never let
+    // it hide the local sessions, which still render below (spec 0029).
+    final syncFailed = syncedAsync.hasError;
 
     final pending = _unionById(<List<SessionRecord>>[stored, live]);
     final entries = mergeMySessions(synced: synced, pending: pending);
@@ -71,7 +83,12 @@ class MySessionsScreen extends ConsumerWidget {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-            child: _SessionsList(entries: entries),
+            child: Column(
+              children: [
+                if (syncFailed) const _SyncErrorBanner(),
+                Expanded(child: _SessionsList(entries: entries)),
+              ],
+            ),
           ),
         ),
       ),
@@ -158,6 +175,70 @@ class _EmptyState extends StatelessWidget {
               label: const Text('Velg program'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A non-blocking notice that the cloud read failed (spec 0029): the local
+/// sessions still render below, so this only *explains* why synced sessions may
+/// be missing — it never replaces the list. Dismissible, since the local
+/// sessions remain usable regardless.
+class _SyncErrorBanner extends StatefulWidget {
+  const _SyncErrorBanner();
+
+  @override
+  State<_SyncErrorBanner> createState() => _SyncErrorBannerState();
+}
+
+class _SyncErrorBannerState extends State<_SyncErrorBanner> {
+  bool _dismissed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_dismissed) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Semantics(
+        liveRegion: true,
+        container: true,
+        child: Container(
+          key: syncErrorBannerKey,
+          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+          decoration: BoxDecoration(
+            color: scheme.errorContainer,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.cloud_off_outlined,
+                size: 18,
+                color: scheme.onErrorContainer,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Kunne ikke hente økter fra skyen — viser lokale.',
+                  style: TextStyle(
+                    color: scheme.onErrorContainer,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              IconButton(
+                key: syncErrorDismissKey,
+                visualDensity: VisualDensity.compact,
+                iconSize: 18,
+                color: scheme.onErrorContainer,
+                tooltip: 'Lukk',
+                onPressed: () => setState(() => _dismissed = true),
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
         ),
       ),
     );

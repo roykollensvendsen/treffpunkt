@@ -7,10 +7,9 @@
 // most-recent-first by capturedAt (a capturedAt-less record sorts last). Plus
 // provider-level guards that the two background reads are non-blocking and
 // best-effort: storedPendingProvider surfaces a record the store holds (the
-// durable fallback for the local list), and syncedSessionsProvider never spins
-// forever on a hung cloud read (it times out to an empty list).
-import 'dart:async';
-
+// durable fallback for the local list). The failed-cloud-read path — where the
+// read throws and the screen shows a banner (spec 0029) — is covered end-to-end
+// in my_sessions_screen_test.dart against the real syncedSessionsProvider.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
@@ -136,54 +135,4 @@ void main() {
       expect(stored.map((r) => r.id), <String>['store-only']);
     },
   );
-
-  testWidgets(
-    'syncedSessionsProvider resolves to empty when the cloud read hangs',
-    (tester) async {
-      // In the real app the repository is the Supabase-backed one, whose list()
-      // can hang. The provider must NOT spin forever: it is bounded by a
-      // timeout, resolving to const [] so the local sessions are never held up.
-      // (Driven under flutter_test's fake clock, so the real 8 s timeout fires
-      // without the test taking 8 s of wall time.)
-      final repository = _HangingSessionRepository();
-      final authRepository = FakeAuthRepository();
-      addTearDown(authRepository.dispose);
-      final container = ProviderContainer(
-        overrides: [
-          authRepositoryProvider.overrideWithValue(authRepository),
-          sessionRepositoryProvider.overrideWithValue(repository),
-          pendingUploadsStoreProvider.overrideWithValue(
-            InMemoryPendingUploadsStore(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      List<SessionRecord>? resolved;
-      unawaited(
-        container.read(syncedSessionsProvider.future).then((v) => resolved = v),
-      );
-
-      // Well before any sane timeout it is still pending (the read hangs).
-      await tester.pump(const Duration(seconds: 1));
-      expect(resolved, isNull);
-
-      // Past the bound, it resolves to an empty list rather than spinning.
-      await tester.pump(const Duration(seconds: 30));
-      expect(resolved, isEmpty);
-    },
-  );
-}
-
-/// A [SessionRepository] whose [list] never completes — a stand-in for a slow
-/// or hanging hosted Supabase read.
-class _HangingSessionRepository implements SessionRepository {
-  final Completer<List<SessionRecord>> _completer =
-      Completer<List<SessionRecord>>();
-
-  @override
-  Future<void> upload(SessionRecord record) async {}
-
-  @override
-  Future<List<SessionRecord>> list() => _completer.future;
 }

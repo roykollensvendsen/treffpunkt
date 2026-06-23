@@ -4,6 +4,26 @@
 
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 
+/// Thrown by [SessionRepository.list] when the synced read fails — a missing
+/// table, denied permission, a dropped connection or a timeout (spec 0029).
+///
+/// It lets a caller tell a genuine failure apart from an empty account, so the
+/// "My sessions" screen can show a non-blocking "couldn't reach the cloud"
+/// notice instead of a failure looking like "no sessions yet".
+/// [SessionRepository.upload] does **not** throw this — it stays silent
+/// (ADR-0017) so it never blocks recording.
+class SessionSyncException implements Exception {
+  /// Creates an exception wrapping the underlying [cause].
+  const SessionSyncException(this.cause);
+
+  /// The underlying error — e.g. a `PostgrestException` or a
+  /// `TimeoutException`.
+  final Object cause;
+
+  @override
+  String toString() => 'SessionSyncException: $cause';
+}
+
 /// Uploads a completed session to the shooter's account (spec 0024).
 ///
 /// The rest of the app depends on this interface, not a concrete backend —
@@ -24,10 +44,15 @@ abstract interface class SessionRepository {
   /// The shooter's synced sessions, most recent first (spec 0026).
   ///
   /// Reads back the records previously uploaded to the account, ordered by when
-  /// they were shot (newest first). Best-effort, like [upload]: a real backend
-  /// swallows every error and returns an empty list rather than throwing
-  /// (ADR-0017), so the "My sessions" screen never crashes on a missing table
-  /// or a dropped connection.
+  /// they were shot (newest first). A successful read of an empty account
+  /// returns `const []`.
+  ///
+  /// Unlike [upload], the read is **not** silent: it throws a
+  /// [SessionSyncException] when the cloud read fails — a missing table, denied
+  /// permission, a dropped connection or a timeout (spec 0029). The failure is
+  /// then distinct from an empty account, so the "My sessions" screen surfaces
+  /// a non-blocking notice (and still shows the local sessions) rather than a
+  /// failure silently looking like "no sessions yet".
   Future<List<SessionRecord>> list();
 }
 

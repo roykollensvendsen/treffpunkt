@@ -64,13 +64,14 @@ final class SupabaseSessionRepository implements SessionRepository {
           .order('captured_at', ascending: false);
       return <SessionRecord>[for (final row in rows) _recordFromRow(row)];
     } on Object catch (error) {
-      // Best-effort (ADR-0017), exactly like [upload]: a missing table or a
-      // dropped connection must not crash the "My sessions" screen — return an
-      // empty list and, in debug, surface so a real failure is diagnosable.
+      // Surface the failure (spec 0029) — unlike [upload], the read throws so a
+      // missing table or a dropped connection can show as a non-blocking notice
+      // on the "My sessions" screen rather than masquerading as an empty
+      // account. In debug, also print so a real failure is diagnosable.
       if (!kReleaseMode) {
         debugPrint('Failed to list the session records: $error');
       }
-      return const <SessionRecord>[];
+      throw SessionSyncException(error);
     }
   }
 

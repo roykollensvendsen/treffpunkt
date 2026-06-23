@@ -37,12 +37,13 @@ class MySessionEntry {
   int get hashCode => Object.hash(record.id, synced);
 }
 
-/// How long to wait for the cloud read before treating it as "nothing yet".
+/// How long to wait for the cloud read before treating it as a failure.
 ///
 /// The synced list is a pure enhancement layered onto the local sessions, so a
 /// slow or hanging hosted read (a paused free-tier project, offline, a stalling
-/// table) must never be able to spin forever; after this it yields `const []`
-/// and the local sessions stand alone until the next refresh.
+/// table) must never be able to spin forever; past this the read times out and
+/// throws, surfacing as a non-blocking notice (spec 0029) while the local
+/// sessions stand alone until the next refresh.
 const Duration _syncedReadTimeout = Duration(seconds: 8);
 
 /// Merges the [synced] and [pending] records into the "My sessions" list (spec
@@ -87,32 +88,26 @@ List<MySessionEntry> mergeMySessions({
 ///
 /// In the real app [sessionRepositoryProvider] is the Supabase-backed
 /// repository, whose `list()` hits hosted Supabase. That read can be slow or
-/// hang (a paused free-tier project, offline, a stalling table), so this is
-/// strictly **best-effort**: it is bounded by a [_syncedReadTimeout] (a hang
-/// resolves to `const []` rather than spinning forever) and any error is
-/// swallowed to `const []`. The "My sessions" screen folds this value in only
-/// once it resolves (`.value ?? const []`), so a slow, hanging or erroring
-/// cloud read can never hide the local sessions — it only ever **adds** synced
-/// rows when (and if) they arrive.
+/// hang (a paused free-tier project, offline, a stalling table), so it is
+/// bounded by a [_syncedReadTimeout]: past it the read **times out and throws**
+/// rather than spinning forever.
+///
+/// A failure — the timeout, a missing table, denied permission, a dropped
+/// connection — propagates as this provider's error state (spec 0029). The "My
+/// sessions" screen reads the value defensively (`.value ?? const []`) so a
+/// failed read can never hide the local sessions, and reads `hasError` to add a
+/// non-blocking "couldn't reach the cloud" notice. A **successful** empty read
+/// returns `const []` with no error, so an empty account is never mistaken
+/// for a failure.
 ///
 /// Refreshed by `ref.invalidate(syncedSessionsProvider)` each time the screen
 /// is opened (the picker does this before pushing it), so a session that has
 /// synced since the list was last viewed shows on the next open.
-final syncedSessionsProvider = FutureProvider<List<SessionRecord>>((ref) async {
-  try {
-    return await ref
-        .watch(sessionRepositoryProvider)
-        .list()
-        .timeout(
-          _syncedReadTimeout,
-          onTimeout: () => const <SessionRecord>[],
-        );
-  } on Object catch (error) {
-    if (!kReleaseMode) {
-      debugPrint('Failed to read the synced sessions for My sessions: $error');
-    }
-    return const <SessionRecord>[];
-  }
+final syncedSessionsProvider = FutureProvider<List<SessionRecord>>((ref) {
+  return ref
+      .watch(sessionRepositoryProvider)
+      .list()
+      .timeout(_syncedReadTimeout);
 });
 
 /// The persisted **pending** sessions ([PendingUploadsStore.load], spec 0025),
