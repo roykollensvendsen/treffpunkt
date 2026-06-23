@@ -50,4 +50,23 @@ void main() {
 
     expect(repository.uploads.map((r) => r.id), <String>['a', 'b']);
   });
+
+  group('list (spec 0026)', () {
+    test('returns an empty list before any upload', () async {
+      final repository = InMemorySessionRepository();
+
+      expect(await repository.list(), isEmpty);
+    });
+
+    test('returns the uploaded records', () async {
+      final repository = InMemorySessionRepository();
+
+      await repository.upload(_record('a', total: 90));
+      await repository.upload(_record('b', total: 95));
+
+      final listed = await repository.list();
+      expect(listed.map((r) => r.id), <String>['a', 'b']);
+      expect(listed.map((r) => r.total), <int>[90, 95]);
+    });
+  });
 }

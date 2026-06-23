@@ -12,9 +12,6 @@ import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 /// concrete `SupabaseSessionRepository` is the only file importing
 /// `supabase_flutter` (ADR-0017).
 ///
-// The single method is intentional: this seam exists for the fake (ADR-0017),
-// so the one-member-abstract shape is the point, not a smell.
-// ignore: one_member_abstracts
 abstract interface class SessionRepository {
   /// Uploads [record] to the backend, keyed by its [SessionRecord.id].
   ///
@@ -23,6 +20,15 @@ abstract interface class SessionRepository {
   /// is best-effort — a real backend swallows transport errors (ADR-0017) — so
   /// callers may fire-and-forget.
   Future<void> upload(SessionRecord record);
+
+  /// The shooter's synced sessions, most recent first (spec 0026).
+  ///
+  /// Reads back the records previously uploaded to the account, ordered by when
+  /// they were shot (newest first). Best-effort, like [upload]: a real backend
+  /// swallows every error and returns an empty list rather than throwing
+  /// (ADR-0017), so the "My sessions" screen never crashes on a missing table
+  /// or a dropped connection.
+  Future<List<SessionRecord>> list();
 }
 
 /// A [SessionRepository] that keeps uploaded records in memory only.
@@ -45,4 +51,7 @@ class InMemorySessionRepository implements SessionRepository {
   Future<void> upload(SessionRecord record) async {
     _byId[record.id] = record;
   }
+
+  @override
+  Future<List<SessionRecord>> list() async => uploads;
 }

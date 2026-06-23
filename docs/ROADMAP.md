@@ -78,6 +78,14 @@ The shooter records a complete session on-device, with no network needed
       later. Deduplicated by the client-generated id (an idempotent upsert);
       best-effort, so a throwing repository never breaks completion (ADR-0013,
       ADR-0017). The "My sessions" read-back screen is the next increment.
+- [x] 0026 — My sessions list: a "Mine økter" screen lists the shooter's saved
+      sessions — the ones synced to the account (0024) and the ones still waiting
+      in the upload queue (0025) — most recent first, each with its key result
+      and a clear "not synced yet" marker on the pending ones. Tapping one opens
+      its read-only scorecard, rebuilt from the stored payload and re-scored, with
+      the same per-stage + per-series breakdown (0023); an unresolvable program
+      shows a graceful message. Best-effort read-back (server `list()` returns
+      empty on any error), unioned and deduplicated by id (synced wins, ADR-0017).
 - [ ] 0012 — Sync: upload completed local sessions to the chosen competition when
       online; idempotent and queued; an upload that doesn't match the
       competition's program goes to a *needs-attention* state, not an endless

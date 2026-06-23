@@ -11,6 +11,7 @@ import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
+import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
@@ -94,6 +95,24 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(resumeSessionKey), findsNothing);
+  });
+
+  testWidgets('the "My sessions" action opens the history screen (spec 0026)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(mySessionsButtonKey), findsOneWidget);
+    expect(find.byTooltip('Mine økter'), findsOneWidget);
+
+    await tester.tap(find.byKey(mySessionsButtonKey));
+    await tester.pumpAndSettle();
+
+    // Navigated to the "Mine økter" screen; an empty store shows its empty
+    // state rather than crashing.
+    expect(find.byType(MySessionsScreen), findsOneWidget);
+    expect(find.byKey(noSessionsKey), findsOneWidget);
   });
 
   testWidgets('resumes a saved session restored to its shots', (tester) async {

@@ -181,7 +181,7 @@ class SessionView extends ConsumerWidget {
     final program = ref.watch(currentProgramDefinitionProvider);
 
     if (recording.isComplete) {
-      return _SessionScorecard(
+      return SessionScorecard(
         program: program,
         score: _scoring.scoreSession(recording.session),
         metadata: recording.session.metadata,
@@ -775,19 +775,39 @@ class _Legend extends StatelessWidget {
   }
 }
 
-class _SessionScorecard extends StatelessWidget {
-  const _SessionScorecard({
+/// A read-only session scorecard (spec 0023): the program name, an optional
+/// date/place/weapon caption, one row per stage with its per-series (skive)
+/// breakdown, and the grand total.
+///
+/// Shared by the live completion screen ([SessionView]) and the "My sessions"
+/// detail view (spec 0026), so the two can never drift apart. Pure presentation
+/// — a function of the [program] and the precomputed [score] — so the history
+/// detail re-scores a stored session and renders the identical card.
+class SessionScorecard extends StatelessWidget {
+  /// Creates a scorecard for [program] showing [score], optionally captioned
+  /// with the [metadata] and [weapon] and carrying app-bar [actions].
+  const SessionScorecard({
     required this.program,
     required this.score,
     this.metadata,
     this.weapon,
     this.actions,
+    super.key,
   });
 
+  /// The program (discipline) the session was shot in.
   final ProgramDefinition program;
+
+  /// The rolled-up session score rendered on the card.
   final SessionScore score;
+
+  /// When and where the session was shot, or `null` when none was recorded.
   final SessionMetadata? metadata;
+
+  /// The weapon the session was shot with, or `null` when none was recorded.
   final Weapon? weapon;
+
+  /// Extra actions shown in the app bar (e.g. a sign-out button).
   final List<Widget>? actions;
 
   @override

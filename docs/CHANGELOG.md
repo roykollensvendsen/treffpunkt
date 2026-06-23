@@ -7,6 +7,15 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- You can now look back at your saved sessions. A new "Mine økter" screen (open
+  it from the history button in the top bar) lists every session you have
+  recorded, newest first: the ones already saved to your account and the ones
+  still waiting to upload, each marked "Ikke synkronisert" until it syncs. Each
+  card shows the program, when and where you shot it, the score and the weapon,
+  and tapping one opens its full scorecard — the same per-stage and per-series
+  (skive) breakdown you saw when you finished it. A session whose program is no
+  longer available shows a friendly "Kan ikke vise denne økta" instead of
+  failing (spec 0026).
 - Finished sessions are never lost, even offline or signed out. When you
   complete a session it now joins a durable upload queue saved on your device,
   and the queue empties itself by uploading whenever it can: the moment you
