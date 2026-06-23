@@ -7,6 +7,10 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- When you are signed in, finishing a session now quietly saves it to your
+  account in the cloud, so your results survive reinstalling the app or switching
+  devices. The save never blocks finishing, never crashes if the connection
+  drops, and re-saving the same session never makes a duplicate (spec 0024).
 - The session scorecard now lists every target face (skive) on its own line:
   under each stage you see each series' score (ring total over its maximum, and
   the inner-ten count when there is one), kept subordinate to the per-stage

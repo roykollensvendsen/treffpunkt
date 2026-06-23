@@ -191,4 +191,29 @@ void main() {
       throwsA(isA<FormatException>()),
     );
   });
+
+  test('the stable id round-trips through toJson/fromJson (spec 0024)', () {
+    final session = Session.start(ProgramCatalogue.airRifle10m);
+    final snapshot = SessionSnapshot(
+      session: session,
+      current: session.newSeries(),
+      id: 'stable-uuid',
+    );
+
+    final restored = roundTrip(snapshot);
+    expect(restored.id, 'stable-uuid');
+    expect(restored, snapshot);
+  });
+
+  test('a snapshot written before spec 0024 (no id) loads with a null id', () {
+    final session = Session.start(ProgramCatalogue.airRifle10m);
+    // The JSON a pre-0024 store wrote carries no `id` key.
+    final json = SessionSnapshot(
+      session: session,
+      current: session.newSeries(),
+    ).toJson()..remove('id');
+
+    final restored = SessionSnapshot.fromJson(json);
+    expect(restored.id, isNull);
+  });
 }

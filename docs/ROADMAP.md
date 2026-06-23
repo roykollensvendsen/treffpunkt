@@ -65,6 +65,12 @@ The shooter records a complete session on-device, with no network needed
       read policy so a competition's participants can read its results.
 - [ ] 0011 — Competitions: create / invite / join; a competition fixes its
       program(s) and target-set, so the right targets are shown to every entrant.
+- [x] 0024 — Personal session sync: the first sync step — when signed in,
+      completing a session uploads it to the shooter's own account (owner-only
+      RLS), best-effort and idempotent, so results follow the account across a
+      reinstall or device. Distinct from the competition sync in 0012 (no
+      competition identity yet); the foundation for the pending-upload queue and
+      the "My sessions" history (ADR-0017).
 - [ ] 0012 — Sync: upload completed local sessions to the chosen competition when
       online; idempotent and queued; an upload that doesn't match the
       competition's program goes to a *needs-attention* state, not an endless

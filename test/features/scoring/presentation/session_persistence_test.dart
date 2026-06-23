@@ -86,7 +86,10 @@ void main() {
 
     // A fresh mount restored from the store shows the same three shots, with
     // the same running total — the in-progress series came back intact.
-    final restored = SessionRecording.fromSnapshot((await store.load())!);
+    final restored = SessionRecording.fromSnapshot(
+      (await store.load())!,
+      fallbackId: () => 'fallback',
+    );
     await tester.pumpWidget(app(store, restored: restored));
     await tester.pumpAndSettle();
 

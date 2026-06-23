@@ -6,15 +6,21 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/auth/domain/auth_status.dart';
+import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
+import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
+import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/series.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
+import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
+import 'package:uuid/uuid.dart';
 
 /// The program being recorded on the current screen.
 ///
@@ -47,6 +53,25 @@ final sessionStoreProvider = Provider<SessionStore>(
   (ref) => InMemorySessionStore(),
 );
 
+/// The app's [SessionRepository] for uploading completed sessions (spec 0024).
+///
+/// Defaults to an in-memory repository so tests and the integration harness
+/// never reach a real backend; `main()` overrides it with the Supabase-backed
+/// repository.
+final sessionRepositoryProvider = Provider<SessionRepository>(
+  (ref) => InMemorySessionRepository(),
+);
+
+/// Mints a new stable client-generated id for a recording (spec 0024).
+///
+/// Defaults to a random UUID v4. Overridden in tests with a deterministic
+/// generator so the id under test is predictable. The domain never reads this —
+/// the id is generated here in the presentation layer and supplied to the value
+/// types — so the domain stays pure (ADR-0017).
+final sessionIdGeneratorProvider = Provider<String Function()>(
+  (ref) => const Uuid().v4,
+);
+
 /// A recording to resume into, or `null` to start fresh (spec 0009).
 ///
 /// Overridden by the screen that resumes a saved session; the notifier reads it
@@ -59,7 +84,11 @@ final restoredRecordingProvider = Provider<SessionRecording?>((ref) => null);
 /// The program picker watches this to offer a "resume" affordance.
 final savedRecordingProvider = FutureProvider<SessionRecording?>((ref) async {
   final snapshot = await ref.watch(sessionStoreProvider).load();
-  return snapshot == null ? null : SessionRecording.fromSnapshot(snapshot);
+  if (snapshot == null) return null;
+  return SessionRecording.fromSnapshot(
+    snapshot,
+    fallbackId: ref.watch(sessionIdGeneratorProvider),
+  );
 });
 
 /// The app's [LocationService].
@@ -74,21 +103,32 @@ final locationServiceProvider = Provider<LocationService>(
 /// The in-progress session together with the current (unsealed) series and its
 /// drag state.
 class SessionRecording {
-  /// Creates a recording.
+  /// Creates a recording with the stable client-generated [id] (spec 0024).
   const SessionRecording({
     required this.session,
+    required this.id,
     this.current,
     this.draggingIndex,
   });
 
   /// Rebuilds a recording from a stored [snapshot] (spec 0009).
-  SessionRecording.fromSnapshot(SessionSnapshot snapshot)
-    : session = snapshot.session,
-      current = snapshot.current,
-      draggingIndex = null;
+  ///
+  /// Keeps the snapshot's [SessionSnapshot.id] so a resumed session uploads
+  /// under the same id (spec 0024); a snapshot written before spec 0024 has no
+  /// id, so [fallbackId] mints a fresh one.
+  SessionRecording.fromSnapshot(
+    SessionSnapshot snapshot, {
+    required String Function() fallbackId,
+  }) : session = snapshot.session,
+       current = snapshot.current,
+       id = snapshot.id ?? fallbackId(),
+       draggingIndex = null;
 
   /// The session so far (sealed series, grouped by stage).
   final Session session;
+
+  /// The recording's stable client-generated id; the upload key (spec 0024).
+  final String id;
 
   /// The series currently being shot, or `null` when the session is complete.
   final Series? current;
@@ -104,12 +144,14 @@ class SessionRecording {
 
   /// A persistable snapshot of this recording (drops the transient drag state).
   SessionSnapshot toSnapshot() =>
-      SessionSnapshot(session: session, current: current);
+      SessionSnapshot(session: session, current: current, id: id);
 }
 
 /// Records a guided session: placing shots in the current series, then sealing
 /// it to advance to the next series or stage.
 class SessionNotifier extends Notifier<SessionRecording> {
+  static const ScoringService _scoring = ScoringService();
+
   @override
   SessionRecording build() {
     final restored = ref.watch(restoredRecordingProvider);
@@ -122,7 +164,68 @@ class SessionNotifier extends Notifier<SessionRecording> {
       metadata: metadata,
       weapon: weapon,
     );
-    return SessionRecording(session: session, current: session.newSeries());
+    return SessionRecording(
+      session: session,
+      // A stable client-generated id minted once when recording starts; it
+      // survives a save/resume because it is serialized in the snapshot (spec
+      // 0024). A resumed recording keeps its own id via the restored branch.
+      id: ref.read(sessionIdGeneratorProvider)(),
+      current: session.newSeries(),
+    );
+  }
+
+  /// Uploads the completed session to the shooter's account when signed in
+  /// (spec 0024).
+  ///
+  /// Fire-and-forget and best-effort: it runs only when signed in, never blocks
+  /// the UI, and a throwing repository is swallowed so completion is unharmed.
+  /// Idempotent by the recording's id — a re-upload (e.g. a resumed-then-
+  /// completed session) overwrites the same row.
+  void _uploadIfSignedIn() {
+    if (!_isSignedIn()) return;
+    final session = state.session;
+    final record = SessionRecord.fromSession(
+      session,
+      _scoring.scoreSession(session),
+      id: state.id,
+    );
+    // Read the repository and invoke the upload synchronously (the provider may
+    // be disposed before a deferred read runs), but do not await it — it is
+    // fire-and-forget off the happy path. A synchronous throw is caught here
+    // and a rejected future is swallowed by `catchError`, so a throwing
+    // repository can never break completion (the real Supabase repo also
+    // swallows internally).
+    final repository = ref.read(sessionRepositoryProvider);
+    try {
+      unawaited(
+        repository.upload(record).catchError((
+          Object error,
+          StackTrace stackTrace,
+        ) {
+          if (!kReleaseMode) {
+            debugPrint('Failed to upload the completed session: $error');
+          }
+        }),
+      );
+    } on Object catch (error) {
+      if (!kReleaseMode) {
+        debugPrint('Failed to upload the completed session: $error');
+      }
+    }
+  }
+
+  /// Whether a user is currently signed in.
+  ///
+  /// Best-effort: a scoring-only screen may mount without the auth providers
+  /// wired (they are overridden at the app root, not in `SeriesScreen`'s nested
+  /// scope), in which case reading the status throws — treat that as signed out
+  /// so completion is never blocked.
+  bool _isSignedIn() {
+    try {
+      return ref.read(authStateChangesProvider).value is SignedIn;
+    } on Object {
+      return false;
+    }
   }
 
   /// Saves the recording locally so it survives a restart (spec 0009), or
@@ -150,6 +253,7 @@ class SessionNotifier extends Notifier<SessionRecording> {
     if (current == null || current.isComplete) return;
     state = SessionRecording(
       session: state.session,
+      id: state.id,
       current: current.placeShot(shot),
       draggingIndex: state.draggingIndex,
     );
@@ -161,6 +265,7 @@ class SessionNotifier extends Notifier<SessionRecording> {
     if (state.current == null) return;
     state = SessionRecording(
       session: state.session,
+      id: state.id,
       current: state.current,
       draggingIndex: index,
     );
@@ -173,6 +278,7 @@ class SessionNotifier extends Notifier<SessionRecording> {
     if (current == null || index == null) return;
     state = SessionRecording(
       session: state.session,
+      id: state.id,
       current: current.moveShot(index, shot),
       draggingIndex: index,
     );
@@ -182,6 +288,7 @@ class SessionNotifier extends Notifier<SessionRecording> {
   /// Drops the picked-up shot, ending the drag.
   void drop() => state = SessionRecording(
     session: state.session,
+    id: state.id,
     current: state.current,
   );
 
@@ -191,8 +298,16 @@ class SessionNotifier extends Notifier<SessionRecording> {
     final current = state.current;
     if (current == null || !current.isComplete) return;
     final next = state.session.sealSeries(current);
-    state = SessionRecording(session: next, current: next.newSeries());
+    state = SessionRecording(
+      session: next,
+      id: state.id,
+      current: next.newSeries(),
+    );
     _persist();
+    // Sealing the last series completes the session: upload it to the
+    // shooter's account when signed in (spec 0024). Fire-and-forget and
+    // best-effort, so it never blocks reaching the scorecard.
+    if (state.isComplete) _uploadIfSignedIn();
   }
 }
 

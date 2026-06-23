@@ -16,16 +16,23 @@ import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 ///
 /// Holds the [session] (program by name, optional weapon and metadata, and the
 /// sealed series grouped by stage) together with the [current] in-progress
-/// series' shots. Pure value type: it converts to and from a JSON-able map
-/// **without** serializing any target geometry — on [SessionSnapshot.fromJson]
-/// the program is resolved from [ProgramCatalogue] and every series is rebuilt
-/// from the stage geometries, so a stored recording always scores against the
-/// current tables.
+/// series' shots, plus the recording's stable client-generated [id] (spec
+/// 0024). Pure value type: it converts to and from a JSON-able map **without**
+/// serializing any target geometry — on [SessionSnapshot.fromJson] the program
+/// is resolved from [ProgramCatalogue] and every series is rebuilt from the
+/// stage geometries, so a stored recording always scores against the current
+/// tables.
 @immutable
 class SessionSnapshot {
   /// Creates a snapshot of [session] with the [current] in-progress series, or
-  /// `null` when the session is complete.
-  const SessionSnapshot({required this.session, this.current});
+  /// `null` when the session is complete, optionally carrying the recording's
+  /// stable [id] (spec 0024).
+  ///
+  /// The [id] is the upload key (ADR-0017); it is supplied by the caller — the
+  /// domain never generates it — so the value type stays pure. A snapshot
+  /// without an [id] (a record written before spec 0024) carries `null`, and
+  /// the recording mints a fresh id on load.
+  const SessionSnapshot({required this.session, this.current, this.id});
 
   /// Rebuilds a snapshot from a [json] map produced by [toJson].
   ///
@@ -66,7 +73,11 @@ class SessionSnapshot {
     final current = currentJson == null
         ? null
         : _seriesFrom(session.currentStage!, currentJson as List<dynamic>);
-    return SessionSnapshot(session: session, current: current);
+    return SessionSnapshot(
+      session: session,
+      current: current,
+      id: json['id'] as String?,
+    );
   }
 
   /// The session so far (sealed series grouped by stage).
@@ -75,9 +86,14 @@ class SessionSnapshot {
   /// The in-progress series' shots, or `null` when the session is complete.
   final Series? current;
 
+  /// The recording's stable client-generated id (spec 0024), or `null` when the
+  /// snapshot predates spec 0024 (the recording then mints a fresh id on load).
+  final String? id;
+
   /// A JSON-able map of this snapshot; geometry is intentionally omitted.
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'id': id,
       'program': session.program.name,
       'weapon': _weaponJson(session.weapon),
       'metadata': _metadataJson(session.metadata),
@@ -186,11 +202,13 @@ class SessionSnapshot {
   @override
   bool operator ==(Object other) =>
       other is SessionSnapshot &&
+      other.id == id &&
       _sessionEquals(other.session) &&
       _seriesEquals(current, other.current);
 
   @override
   int get hashCode => Object.hash(
+    id,
     session.program.name,
     session.weapon,
     session.metadata,
