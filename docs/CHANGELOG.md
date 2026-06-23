@@ -165,7 +165,10 @@ All notable changes to this project are documented here. The format is based on
   (empty) list, went back, completed a session and reopened, the finished
   session was missing until you fully restarted. The list now follows your live
   upload queue, so a just-completed session appears the moment it is recorded,
-  and the synced sessions are re-read each time you open the screen (spec 0026).
+  and the synced sessions are re-read each time you open the screen. As a
+  belt-and-suspenders guard it also reads the durable on-device queue that every
+  finished session is saved to, so the just-completed session is shown reliably
+  no matter how the recording screen is wired internally (spec 0026).
 - The home screen is now fully Norwegian: the title reads "Velg program" and the
   program subtitles count "skudd" instead of "shots".
 - Pinch-to-zoom on the target now works on phones in any direction: while a

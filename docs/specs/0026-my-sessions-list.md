@@ -36,14 +36,20 @@ per-series (skive) breakdown shown when the session was first completed (spec
    crash the screen. The Supabase implementation stays the only file importing
    `supabase_flutter` and stays excluded from automated tests (ADR-0017).
 2. **Combine synced and pending.** A `mySessionsProvider` (a `FutureProvider`)
-   loads the synced records (`sessionRepositoryProvider.list()`) and takes the
-   pending records from the **live upload queue** (`uploadQueueProvider`'s
-   in-memory state, spec 0025), and unions them **deduplicated by `id`** — a
-   record present in both counts as **synced** (the server copy wins; the
-   pending one is a duplicate awaiting removal). Each entry is tagged **synced**
-   or **pending**. The list is sorted **most-recent-first by `capturedAt`**,
-   with records that have no `capturedAt` sorted last. The view-model is a
-   small, pure, testable list of `MySessionEntry { record, synced }`.
+   loads the synced records (`sessionRepositoryProvider.list()`) and the pending
+   records, and unions them **deduplicated by `id`** — a record present in both
+   counts as **synced** (the server copy wins; the pending one is a duplicate
+   awaiting removal). The **pending** records are themselves the **union of two
+   views of the same outbox**, deduplicated by `id`: the **live upload queue**
+   (`uploadQueueProvider`'s in-memory state, spec 0025) **and** the **persisted
+   store** (`pendingUploadsStoreProvider.load()`), the single shared, durable
+   source the enqueue **always** writes (the live copy wins a tie, keeping the
+   freshest in-memory record). Reading the store too is **best-effort** — an
+   unreadable store contributes no pending records rather than throwing. Each
+   entry is tagged **synced** or **pending**. The list is sorted
+   **most-recent-first by `capturedAt`**, with records that have no `capturedAt`
+   sorted last. The view-model is a small, pure, testable list of
+   `MySessionEntry { record, synced }`.
 3. **The "My sessions" screen.** `MySessionsScreen` (a `ConsumerWidget`) shows an
    app bar titled **"Mine økter"** and watches `mySessionsProvider`:
    - **Data**: a list of cards, one per entry, each showing the program name, the
@@ -107,17 +113,36 @@ Making the merge a **pure view-model** (`MySessionEntry` list) keeps the
 synced/pending/dedup/sort logic unit-testable without a widget or a real
 backend, mirroring how the rest of the domain is kept testable in isolation.
 
-**Keeping the list current.** The pending half is read from the **live** upload
-queue (`uploadQueueProvider`'s in-memory state), not a one-shot
-`PendingUploadsStore.load()`, so the instant a completed session is enqueued
-(spec 0025) the queue state changes, `mySessionsProvider` recomputes, and the
-new row appears **with no reopen** — fixing a defect where a session finished
-after the screen was first shown stayed invisible because the cached one-shot
-read was never refreshed. The synced half is refreshed by
+**Keeping the list current.** The pending half reads the **live** upload queue
+(`uploadQueueProvider`'s in-memory state), so the instant a completed session is
+enqueued (spec 0025) the queue state changes, `mySessionsProvider` recomputes,
+and the new row appears **with no reopen** — fixing a defect where a session
+finished after the screen was first shown stayed invisible because the cached
+one-shot read was never refreshed. The synced half is refreshed by
 `ref.invalidate(mySessionsProvider)` **before** the picker pushes the screen,
 so a session that has synced since the list was last viewed shows on the next
 open. The empty state's **"Velg program"** button is a plain
 `Navigator.maybePop` back to the picker, the screen's only entry point.
+
+**Robust pending source — the live queue *unioned with* the durable store.** The
+pending half is the **union** of the live `uploadQueueProvider` state **and** the
+persisted `PendingUploadsStore`, deduplicated by `id`. The live half gives the
+immediacy above; the store half guarantees **correctness regardless of how the
+queue notifier resolves**. A completed session is enqueued from inside
+`SeriesScreen`'s **nested `ProviderScope`** (spec 0004 wiring): the enqueue both
+mutates the queue's in-memory state *and* persists the record to the shared
+store *before* it flushes. The store is therefore the single shared, durable
+source the enqueue **always** writes. Were the nested scope ever to resolve a
+*different* `uploadQueueProvider` instance than this root provider watches, the
+live state alone could miss the just-finished row — but the store copy still
+surfaces it. Reading both keeps the list correct without giving up the live
+half's no-reopen immediacy, and the store read is best-effort (an unreadable
+store simply contributes nothing), so the provider still never needs to throw.
+This is a belt-and-suspenders guard: the live-only read is already correct when
+the root queue is built eagerly at app start (`TreffpunktApp` watches it), and
+the high-fidelity flow test confirms the real picker → setup → series → history
+path shows the finished session; the store union makes that independent of any
+future scope/instance change.
 
 ## Design
 
@@ -133,11 +158,14 @@ lib/features/scoring/
   presentation/
     my_sessions_providers.dart     MySessionEntry { record, synced };
                                    mySessionsProvider (FutureProvider): union of
-                                   list() (synced) + watch(uploadQueueProvider)
-                                   (pending, live), deduped by id (synced wins),
-                                   tagged, sorted recent-first (null capturedAt
-                                   last). mergeMySessions(...) is a pure helper so
-                                   the merge is unit-testable.
+                                   list() (synced) + pending, deduped by id
+                                   (synced wins), tagged, sorted recent-first
+                                   (null capturedAt last). The pending half is the
+                                   union of watch(uploadQueueProvider) (live) and
+                                   pendingUploadsStoreProvider.load() (durable),
+                                   deduped by id (live wins), best-effort.
+                                   mergeMySessions(...) is a pure helper so the
+                                   merge is unit-testable.
     my_sessions_screen.dart        MySessionsScreen (ConsumerWidget): "Mine økter"
                                    app bar; cards (program, date/place, score,
                                    weapon, "Ikke synkronisert" badge on pending);
@@ -162,13 +190,16 @@ name) is caught and replaced with the **"Kan ikke vise denne økta"** message.
 
 - `session_repository_test` (extended): `InMemorySessionRepository.list()`
   returns the uploaded records (and an empty list before any upload).
-- `my_sessions_providers_test` (the pure merge):
+- `my_sessions_providers_test` (the pure merge + the union):
   - synced-only records become synced entries; pending-only records become
     pending entries; with neither, the list is empty;
   - a record present in **both** sources appears **once**, tagged **synced**
     (the dedup tiebreak), asserted by `id`;
   - entries are sorted **most-recent-first by `capturedAt`**, with a
-    `capturedAt`-less record sorted **last**.
+    `capturedAt`-less record sorted **last**;
+  - `mySessionsProvider` surfaces a record that is in the **persisted store but
+    not in the live queue's in-memory state**, tagged pending — the guard that
+    the pending half is the store *union*, not the live queue alone.
 
 ### Widget tests
 
@@ -187,6 +218,14 @@ name) is caught and replaced with the **"Kan ikke vise denne økta"** message.
   - a record whose payload names a program **not resolvable** by
     `ProgramCatalogue` shows the **"Kan ikke vise denne økta"** message instead
     of crashing.
+- `my_sessions_real_flow_test` (the **high-fidelity completion flow**): mounts
+  the whole app the way `main()` does (`runTreffpunkt`, signed in, in-memory
+  fakes), then drives the **real UI** — picker → `SessionSetupScreen` →
+  `SeriesScreen` (its nested `ProviderScope`) — to **complete a whole session**,
+  navigates back and opens **"Mine økter"** via the picker's history button, and
+  asserts the finished session's row (program, score) shows with the **"Ikke
+  synkronisert"** badge. This pins the real nested-scope completion → history
+  path, the case the earlier single-`ProviderContainer` test could not reach.
 - `series_screen_test` (unchanged): the extracted public `SessionScorecard`
   keeps the live completion screen green — completing a program still reaches the
   same scorecard with the same keys and per-series rows.

@@ -4,10 +4,20 @@
 
 // Unit tests for the "My sessions" merge (spec 0026): the synced + pending
 // union is deduplicated by id (synced wins), tagged synced/pending, and sorted
-// most-recent-first by capturedAt (a capturedAt-less record sorts last).
+// most-recent-first by capturedAt (a capturedAt-less record sorts last). Plus a
+// provider-level guard that the pending half is the UNION of the live upload
+// queue and the persisted store, so a record only the store knows about still
+// shows (robustness against a queue/scope-instance discrepancy).
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
+import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+
+import '../../auth/fake_auth_repository.dart';
 
 SessionRecord _record(String id, {DateTime? capturedAt}) => SessionRecord(
   id: id,
@@ -92,4 +102,39 @@ void main() {
 
     expect(entries.map((e) => e.record.id), <String>['dated', 'undated']);
   });
+
+  test(
+    'mySessionsProvider unions the persisted store, not only the live queue',
+    () async {
+      // A record that is in the persisted pending store but NOT in the live
+      // upload queue's in-memory state — the exact case the store-union guards:
+      // were the completion's enqueue ever to update a different queue instance
+      // than this provider watches, the live state alone would miss it, but the
+      // store copy (the enqueue always persists it) still surfaces it.
+      final pendingStore = InMemoryPendingUploadsStore();
+      await pendingStore.save(<SessionRecord>[
+        _record('store-only', capturedAt: DateTime(2026, 6, 21)),
+      ]);
+      final authRepository = FakeAuthRepository();
+      addTearDown(authRepository.dispose);
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(authRepository),
+          sessionRepositoryProvider.overrideWithValue(
+            InMemorySessionRepository(),
+          ),
+          pendingUploadsStoreProvider.overrideWithValue(pendingStore),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final entries = await container.read(mySessionsProvider.future);
+
+      // The store-only record shows, tagged pending — even though the live
+      // queue (read fresh here) never had it in its in-memory state.
+      expect(entries, hasLength(1));
+      expect(entries.single.record.id, 'store-only');
+      expect(entries.single.synced, isFalse);
+    },
+  );
 }
