@@ -122,6 +122,10 @@ All notable changes to this project are documented here. The format is based on
   optional inner-ten ring on the target geometry (spec 0004).
 
 ### Fixed
+- Zooming and panning the target now work reliably on web and desktop: while the
+  mouse / trackpad pointer is over the target, the wheel zoom and the drag pan
+  go to the target instead of scrolling the page, and moving the pointer off it
+  restores normal page scrolling. Touch pinch-to-zoom is unchanged (spec 0021).
 - New web deploys are no longer served stale: the Flutter service worker is
   disabled for the GitHub Pages build (`--pwa-strategy=none`), and a small
   killswitch in `web/index.html` unregisters any worker left from an earlier build
