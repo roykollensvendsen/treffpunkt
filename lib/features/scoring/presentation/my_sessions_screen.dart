@@ -11,10 +11,7 @@ import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
-
-/// Key shared by every saved-session card on the "My sessions" list, used by
-/// tests to count the rows (spec 0026).
-const Key mySessionCardKey = ValueKey<String>('mySessionCard');
+import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
 /// Key for the card of the saved session with the given [id], used by tests.
 Key mySessionCard(String id) => ValueKey<String>('mySessionCard-$id');
@@ -40,30 +37,57 @@ const double _maxContentWidth = 700;
 /// The "My sessions" screen (spec 0026): the shooter's saved sessions — synced
 /// to the account (spec 0024) and waiting in the upload queue (spec 0025) —
 /// most recent first, each opening its read-only scorecard.
+///
+/// The list is built **synchronously** so a slow or unavailable cloud read can
+/// never hide a session the shooter has on the device. The **pending** (local)
+/// rows come from the **live** upload queue ([uploadQueueProvider]) with no
+/// await — the just-completed session is there instantly — folded with the
+/// durable [storedPendingProvider] as a fallback. The **synced** rows from the
+/// account ([syncedSessionsProvider]) are a pure enhancement that merges in
+/// only once it resolves (`.value ?? const []`); every background source
+/// contributes `const []` until ready (and stays best-effort), so the local
+/// sessions always render at once and the screen never sits on a spinner
+/// waiting on the network.
 class MySessionsScreen extends ConsumerWidget {
   /// Creates the "My sessions" screen.
   const MySessionsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessions = ref.watch(mySessionsProvider);
+    // Pending (local) sessions render immediately: the live queue is the
+    // just-completed session's instant home, and the durable store is the
+    // belt-and-suspenders fallback. The synced (cloud) read is layered on top
+    // when it resolves — never awaited, so it can never hold up the list.
+    final live = ref.watch(uploadQueueProvider);
+    final stored = ref.watch(storedPendingProvider).value ?? const [];
+    final synced = ref.watch(syncedSessionsProvider).value ?? const [];
+
+    final pending = _unionById(<List<SessionRecord>>[stored, live]);
+    final entries = mergeMySessions(synced: synced, pending: pending);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Mine økter')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-            child: sessions.when(
-              data: (entries) => _SessionsList(entries: entries),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => const _CenteredMessage(
-                'Kunne ikke laste øktene dine',
-              ),
-            ),
+            child: _SessionsList(entries: entries),
           ),
         ),
       ),
     );
+  }
+
+  /// Unions the [sources] of pending records, deduplicated by id; a later
+  /// source wins a tie, so passing `[stored, live]` keeps the freshest copy.
+  static List<SessionRecord> _unionById(List<List<SessionRecord>> sources) {
+    final byId = <String, SessionRecord>{};
+    for (final source in sources) {
+      for (final record in source) {
+        byId[record.id] = record;
+      }
+    }
+    return byId.values.toList();
   }
 }
 
