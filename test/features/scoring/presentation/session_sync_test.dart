@@ -104,6 +104,16 @@ void main() {
     expect(container.read(sessionProvider).isComplete, isTrue);
   }
 
+  // Completion now enqueues onto the durable upload queue (spec 0025), which
+  // persists then flushes the record across a few async hops; drain those
+  // fire-and-forget microtasks before asserting on the repository.
+  Future<void> settle(ProviderContainer container) async {
+    for (var i = 0; i < 3; i++) {
+      await container.pump();
+      await Future<void>.delayed(Duration.zero);
+    }
+  }
+
   test('completing while signed in uploads exactly one record with the '
       'recording id and score', () async {
     final repository = InMemorySessionRepository();
@@ -115,7 +125,7 @@ void main() {
     addTearDown(container.dispose);
 
     completeSession(container);
-    await container.pump();
+    await settle(container);
 
     expect(repository.uploads, hasLength(1));
     final record = repository.uploads.single;
@@ -154,7 +164,7 @@ void main() {
         ..placeShot(_centre)
         ..placeShot(_centre)
         ..advance();
-      await container.pump();
+      await settle(container);
       expect(container.read(sessionProvider).isComplete, isFalse);
       expect(repository.callCount, 0);
 
@@ -163,7 +173,7 @@ void main() {
         ..placeShot(_centre)
         ..placeShot(_centre)
         ..advance();
-      await container.pump();
+      await settle(container);
       expect(container.read(sessionProvider).isComplete, isTrue);
       expect(repository.callCount, 1);
     },
@@ -202,7 +212,7 @@ void main() {
       container.read(sessionProvider.notifier)
         ..placeShot(_centre)
         ..advance();
-      await container.pump();
+      await settle(container);
 
       expect(container.read(sessionProvider).isComplete, isTrue);
       expect(repository.uploads.single.id, 'resumed-id');
@@ -218,7 +228,7 @@ void main() {
     addTearDown(container.dispose);
 
     completeSession(container);
-    await container.pump();
+    await settle(container);
 
     expect(repository.uploads, isEmpty);
   });
@@ -235,7 +245,7 @@ void main() {
         id: 'dup',
       );
       completeSession(first);
-      await first.pump();
+      await settle(first);
       first.dispose();
 
       // A second, independent completion under the same id (e.g. a resumed,
@@ -246,7 +256,7 @@ void main() {
         id: 'dup',
       );
       completeSession(second);
-      await second.pump();
+      await settle(second);
       second.dispose();
 
       expect(repository.uploads, hasLength(1));
@@ -264,7 +274,7 @@ void main() {
 
     // Completing must not throw even though the repository does.
     completeSession(container);
-    await container.pump();
+    await settle(container);
 
     expect(repository.callCount, 1);
     // The UI state is intact: the session reached the complete state.
