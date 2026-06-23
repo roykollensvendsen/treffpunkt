@@ -28,16 +28,6 @@ abstract final class WeaponCatalogue {
     label: 'Air 4.5 mm',
   );
 
-  /// Smallbore (.22 LR) rifle — 50 m rifle (miniatyrrifle). Shares the `.22 LR`
-  /// label with the smallbore pistol class; the two are distinct on discipline
-  /// (the catalogue's uniqueness is on the (discipline, label) pair), just as
-  /// air rifle and air pistol share `'Air 4.5 mm'`.
-  static const WeaponClass smallboreRifle = WeaponClass(
-    discipline: Discipline.rifle,
-    caliberLabel: '.22 LR',
-    label: '.22 LR',
-  );
-
   /// Smallbore (.22 LR) pistol — finpistol, standard, free pistol.
   static const WeaponClass smallborePistol = WeaponClass(
     discipline: Discipline.pistol,
@@ -52,26 +42,16 @@ abstract final class WeaponCatalogue {
     label: 'Centre-fire 7.62–9.65 mm',
   );
 
-  /// Centre-fire rifle (≤ 8 mm) — 300 m rifle. The exact NSF calibre class is a
-  /// confirm-with-the-father flag (spec 0018); the label mirrors the program.
-  static const WeaponClass centreFireRifle = WeaponClass(
-    discipline: Discipline.rifle,
-    caliberLabel: '≤ 8 mm',
-    label: 'Centre-fire ≤ 8 mm',
-  );
-
   /// All seeded classes, in display order. Two classes may share a
   /// [WeaponClass.label] (e.g. air rifle and air pistol both use `'Air 4.5
-  /// mm'`, and the smallbore rifle and pistol both use `'.22 LR'`); [all] holds
-  /// the distinct classes, keyed on the (discipline, label) pair. The picker
-  /// matches a program to its classes by discipline *and* label, so a label
-  /// shared across disciplines never offers the wrong-discipline class.
+  /// mm'`); [all] holds the distinct classes, keyed on the (discipline, label)
+  /// pair. The picker matches a program to its classes by discipline *and*
+  /// label, so a label shared across disciplines never offers the
+  /// wrong-discipline class.
   static const List<WeaponClass> all = <WeaponClass>[
     airRifle,
     airPistol,
-    smallboreRifle,
     smallborePistol,
     centreFirePistol,
-    centreFireRifle,
   ];
 }
