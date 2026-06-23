@@ -29,6 +29,12 @@ const Key sessionCompleteKey = ValueKey<String>('sessionComplete');
 /// Key for the captured date / place caption on the scorecard, used by tests.
 const Key sessionMetadataKey = ValueKey<String>('sessionMetadata');
 
+/// Key for the shots-list row of the most recently placed shot, used by tests.
+///
+/// At most one row carries this key; it moves to the new last row as each
+/// further shot is placed, matching the highlight on the target (spec 0020).
+const Key lastShotRowKey = ValueKey<String>('lastShotRow');
+
 /// Width (logical px) above which the shooting screen lays the target and the
 /// shot/score column out side by side instead of stacked.
 const double _sideBySideBreakpoint = 900;
@@ -454,17 +460,33 @@ class _ShotsList extends StatelessWidget {
     return Column(
       children: [
         for (var i = from; i <= to; i++)
-          _ShotRow(index: i, score: i <= placed ? score.shots[i - 1] : null),
+          _ShotRow(
+            // The most recently placed shot is the highest placed index; it
+            // carries the matching last-shot emphasis (spec 0020).
+            key: placed > 0 && i == placed ? lastShotRowKey : null,
+            index: i,
+            score: i <= placed ? score.shots[i - 1] : null,
+            highlighted: placed > 0 && i == placed,
+          ),
       ],
     );
   }
 }
 
 class _ShotRow extends StatelessWidget {
-  const _ShotRow({required this.index, required this.score});
+  const _ShotRow({
+    required this.index,
+    required this.score,
+    this.highlighted = false,
+    super.key,
+  });
 
   final int index;
   final ShotScore? score;
+
+  /// Whether this is the most recently placed shot, given the matching
+  /// last-shot emphasis (bold, accent) consistent with the target (spec 0020).
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -475,6 +497,14 @@ class _ShotRow extends StatelessWidget {
     final label = pending
         ? 'Skudd $index: ikke plassert'
         : 'Skudd $index: ${shotScore.ring}${innerTen ? ', indre tier' : ''}';
+    final Color? ringColor;
+    if (highlighted) {
+      ringColor = Colors.deepOrange;
+    } else if (pending) {
+      ringColor = theme.colorScheme.onSurfaceVariant;
+    } else {
+      ringColor = null;
+    }
     return Semantics(
       label: label,
       child: ExcludeSemantics(
@@ -501,8 +531,8 @@ class _ShotRow extends StatelessWidget {
               Text(
                 pending ? '–' : '${shotScore.ring}',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: pending ? theme.colorScheme.onSurfaceVariant : null,
+                  fontWeight: highlighted ? FontWeight.bold : FontWeight.w600,
+                  color: ringColor,
                 ),
               ),
               if (innerTen) ...[

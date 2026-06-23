@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- The shot you just fired now stands out: while shooting a series the most
+  recently placed shot is drawn larger with a coloured halo on the target, and
+  its row in the shots list is highlighted, so you can instantly see where your
+  latest shot landed. As you place each new shot the emphasis moves to it. A
+  shot you are dragging keeps its blue "moving" look (spec 0020).
 - The app now works with a screen reader (TalkBack / VoiceOver). The target
   announces itself and how to use it, the series and session totals are read
   aloud in words ("Serie-sum: 87 av 100, 3 indre tiere") instead of loose

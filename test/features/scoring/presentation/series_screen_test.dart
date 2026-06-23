@@ -132,6 +132,39 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  group('last-shot highlight in the shots list', () {
+    // The shot number of the row that carries the last-shot highlight key. Each
+    // row holds its number (in the avatar) first, then the ring value, so the
+    // number is the first Text — and it is what must move as shots are placed.
+    String markedShotNumber(WidgetTester tester) {
+      final text = find.descendant(
+        of: find.byKey(lastShotRowKey),
+        matching: find.byType(Text),
+      );
+      return tester.widget<Text>(text.first).data!;
+    }
+
+    testWidgets('marks the most recently placed row and moves the mark', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_app(_precision5));
+
+      // A zero-shot series highlights no row.
+      expect(find.byKey(lastShotRowKey), findsNothing);
+
+      // After one shot, the mark is on shot 1.
+      await tapTarget(tester);
+      expect(find.byKey(lastShotRowKey), findsOneWidget);
+      expect(markedShotNumber(tester), '1');
+
+      // A second shot moves the mark to shot 2 — exactly one row stays marked,
+      // and it is the new last row, not the old one.
+      await tapTarget(tester);
+      expect(find.byKey(lastShotRowKey), findsOneWidget);
+      expect(markedShotNumber(tester), '2');
+    });
+  });
+
   group('responsive layout', () {
     Future<void> pumpAt(WidgetTester tester, Size logicalSize) async {
       tester.view.devicePixelRatio = 1;
