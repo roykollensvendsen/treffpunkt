@@ -162,6 +162,38 @@ void main() {
     expect(aliceTop, lessThan(meTop));
   });
 
+  testWidgets('the scoreboard updates live when a result is submitted', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '10 m Air Pistol',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+
+    await tester.pumpWidget(
+      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(noResultsKey), findsOneWidget); // empty board
+
+    // Another participant submits — the live stream updates the board with no
+    // reopen.
+    final alice = repo.asUser(userId: 'alice', email: 'alice@example.com');
+    await alice.upsertOwnProfile(
+      const Profile(id: 'alice', displayName: 'Alice'),
+    );
+    await alice.submitResult(_res('r-alice', user: 'alice', total: 575));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(noResultsKey), findsNothing);
+    expect(find.byKey(resultRowKey('r-alice')), findsOneWidget);
+    expect(find.text('Alice'), findsOneWidget);
+  });
+
   testWidgets('Skyt nå opens setup for the competition program', (
     tester,
   ) async {

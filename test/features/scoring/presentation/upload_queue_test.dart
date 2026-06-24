@@ -97,6 +97,9 @@ class _SpyCompetitionRepository implements CompetitionRepository {
   @override
   Future<List<CompetitionResult>> resultsOf(String competitionId) async =>
       throw UnimplementedError();
+  @override
+  Stream<List<CompetitionResult>> watchResults(String competitionId) =>
+      throw UnimplementedError();
 }
 
 /// A repository whose [upload] always throws, to prove the queue keeps the

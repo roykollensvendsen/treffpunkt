@@ -95,7 +95,9 @@ The shooter records a complete session on-device, with no network needed
       upload queue) to a `competition_results` scoreboard every participant reads.
       Program always matches (no needs-attention needed). A basic scoreboard read
       ships here; Realtime + ranking is 0013.
-- [ ] 0013 — Per-competition result list, visible to every participant
+- [x] 0013 — Live scoreboard: the per-competition result list updates live via
+      Supabase Realtime (RLS-scoped), ranked best-per-shooter. Original line:
+      Per-competition result list, visible to every participant
       (Supabase Realtime).
 - [ ] 0014 — Fair cross-competition ranking (public top-score list).
 - [ ] 0015 — Browse own & published results.
