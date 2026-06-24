@@ -99,6 +99,12 @@ The shooter records a complete session on-device, with no network needed
       Supabase Realtime (RLS-scoped), ranked best-per-shooter. Original line:
       Per-competition result list, visible to every participant
       (Supabase Realtime).
+- [x] 0032 — Invite a registered shooter from a list: the owner picks a
+      registered shooter (name + avatar) instead of typing an email; a
+      `SECURITY DEFINER` RPC resolves their email server-side and writes the same
+      email-keyed invitation, so no email reaches the client and the accept flow
+      is unchanged (ADR-0020). The type-an-email control stays for people not yet
+      registered.
 - [ ] 0014 — Fair cross-competition ranking (public top-score list).
 - [ ] 0015 — Browse own & published results.
 

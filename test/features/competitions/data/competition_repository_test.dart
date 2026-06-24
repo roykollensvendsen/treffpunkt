@@ -78,6 +78,57 @@ void main() {
     );
   });
 
+  test('listShooters returns the registered shooters', () async {
+    final alice = InMemoryCompetitionRepository(
+      currentUserId: 'alice',
+      currentEmail: 'alice@example.com',
+    );
+    final bob = alice.asUser(userId: 'bob', email: 'bob@example.com');
+    await alice.upsertOwnProfile(
+      const Profile(id: 'alice', displayName: 'Alice'),
+    );
+    await bob.upsertOwnProfile(const Profile(id: 'bob', displayName: 'Bob'));
+
+    final shooters = await alice.listShooters();
+    expect(
+      shooters.map((p) => p.displayName).toSet(),
+      <String>{'Alice', 'Bob'},
+    );
+  });
+
+  test('inviteUser routes a picked shooter into the competition', () async {
+    final alice = InMemoryCompetitionRepository(
+      currentUserId: 'alice',
+      currentEmail: 'alice@example.com',
+    );
+    final bob = alice.asUser(userId: 'bob', email: 'Bob@Example.com');
+    // Bob syncs his profile on sign-in, so the backend knows his email.
+    await bob.upsertOwnProfile(const Profile(id: 'bob', displayName: 'Bob'));
+    await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+
+    // Alice invites Bob by picking him — she never handles his email.
+    await alice.inviteUser('c1', 'bob');
+
+    final invites = await bob.listMyInvitations();
+    expect(invites.map((i) => i.competitionId), <String>['c1']);
+    await bob.acceptInvitation('c1');
+    final members = await bob.membersOf('c1');
+    expect(members.map((m) => m.userId).toSet(), <String>{'alice', 'bob'});
+  });
+
+  test('inviteUser throws for a shooter with no known email', () async {
+    final alice = InMemoryCompetitionRepository(
+      currentUserId: 'alice',
+      currentEmail: 'alice@example.com',
+    );
+    await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+    // No profile sync for 'ghost', so the backend has no email to invite.
+    await expectLater(
+      alice.inviteUser('c1', 'ghost'),
+      throwsA(isA<CompetitionSyncException>()),
+    );
+  });
+
   test('accepting without a pending invitation throws', () async {
     final repo = InMemoryCompetitionRepository(
       currentUserId: 'bob',

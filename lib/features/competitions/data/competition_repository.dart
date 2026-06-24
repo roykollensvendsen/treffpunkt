@@ -57,6 +57,20 @@ abstract interface class CompetitionRepository {
   /// Throws [CompetitionSyncException] on failure.
   Future<void> invite(String competitionId, String email);
 
+  /// The registered shooters, for the invite picker (spec 0032).
+  ///
+  /// Profiles hold only a name and avatar — never an email — so the picker can
+  /// show who is who without exposing addresses. Throws
+  /// [CompetitionSyncException] on a failed read.
+  Future<List<Profile>> listShooters();
+
+  /// Invites the registered shooter [userId] to [competitionId] (owner only).
+  ///
+  /// The shooter's email is resolved server-side (never reaches the client) and
+  /// reused as the email-keyed invitation, so the accept flow is unchanged.
+  /// Idempotent. Throws [CompetitionSyncException] on failure.
+  Future<void> inviteUser(String competitionId, String userId);
+
   /// The caller's pending invitations, each with its competition attached.
   ///
   /// Throws [CompetitionSyncException] on a failed read.
@@ -102,6 +116,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
   /// Creates an in-memory repository acting as [currentUserId] / [currentEmail].
   InMemoryCompetitionRepository({this.currentUserId, this.currentEmail})
     : _profiles = <String, Profile>{},
+      _emailByUserId = <String, String>{},
       _competitions = <String, Competition>{},
       _members = <String, Set<String>>{},
       _invitations = <CompetitionInvitation>[],
@@ -112,6 +127,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     this.currentUserId,
     this.currentEmail,
     this._profiles,
+    this._emailByUserId,
     this._competitions,
     this._members,
     this._invitations,
@@ -126,6 +142,9 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
   final String? currentEmail;
 
   final Map<String, Profile> _profiles;
+  // The server-side userId -> email map the real backend reads from auth.users.
+  // Populated when a user syncs their own profile (the only time we know both).
+  final Map<String, String> _emailByUserId;
   final Map<String, Competition> _competitions;
   final Map<String, Set<String>> _members;
   final List<CompetitionInvitation> _invitations;
@@ -143,6 +162,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
         userId,
         email,
         _profiles,
+        _emailByUserId,
         _competitions,
         _members,
         _invitations,
@@ -155,6 +175,12 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
   @override
   Future<void> upsertOwnProfile(Profile profile) async {
     _profiles[profile.id] = profile;
+    // Mirror the server knowing the user's email (from auth.users) when they
+    // sync their own profile — the only moment we hold both id and email.
+    final email = currentEmail;
+    if (currentUserId == profile.id && email != null) {
+      _emailByUserId[profile.id] = email;
+    }
   }
 
   @override
@@ -183,6 +209,21 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
         invitedBy: currentUserId,
       ),
     );
+  }
+
+  @override
+  Future<List<Profile>> listShooters() async =>
+      _profiles.values.toList(growable: false);
+
+  @override
+  Future<void> inviteUser(String competitionId, String userId) async {
+    final email = _emailByUserId[userId];
+    if (email == null) {
+      throw const CompetitionSyncException(
+        'unknown user, or user has no email',
+      );
+    }
+    await invite(competitionId, email);
   }
 
   @override

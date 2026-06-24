@@ -9,7 +9,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/domain/scoreboard.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
@@ -53,6 +55,16 @@ const Key inviteEmailFieldKey = ValueKey<String>('inviteEmailField');
 
 /// Key for the invite submit action on the detail screen.
 const Key inviteSubmitKey = ValueKey<String>('inviteSubmit');
+
+/// Key for the registered-shooter picker on the detail screen (spec 0032).
+const Key shooterPickerKey = ValueKey<String>('shooterPicker');
+
+/// Key for the tile of the registered shooter [userId] in the picker.
+Key shooterTileKey(String userId) => ValueKey<String>('shooterTile-$userId');
+
+/// Key for the "invite" action on the registered shooter [userId].
+Key inviteShooterButtonKey(String userId) =>
+    ValueKey<String>('inviteShooter-$userId');
 
 /// Key for the "shoot for this competition" action on the detail screen.
 const Key shootForCompetitionKey = ValueKey<String>('shootForCompetition');
@@ -485,6 +497,27 @@ class _CompetitionDetailScreenState
     }
   }
 
+  /// Invites a registered shooter picked from the list (spec 0032). Their email
+  /// is resolved server-side; this client only knows the user id.
+  Future<void> _inviteUser(Profile shooter) async {
+    if (_inviting) return;
+    setState(() => _inviting = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final label = shooter.displayName ?? 'skytteren';
+    try {
+      await ref
+          .read(competitionRepositoryProvider)
+          .inviteUser(widget.competition.id, shooter.id);
+      messenger.showSnackBar(SnackBar(content: Text('Invitert $label.')));
+    } on CompetitionSyncException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke invitere.')),
+      );
+    } finally {
+      if (mounted) setState(() => _inviting = false);
+    }
+  }
+
   /// Starts the competition's fixed program; the result auto-submits on
   /// completion (spec 0012). On return, the scoreboard is refreshed.
   Future<void> _shoot() async {
@@ -499,6 +532,42 @@ class _CompetitionDetailScreenState
       ),
     );
     ref.invalidate(competitionScoreboardProvider(widget.competition.id));
+  }
+
+  /// The registered shooters the owner can invite (spec 0032): everyone with a
+  /// profile, minus the owner and the current members. Hidden while loading or
+  /// on error — the email field stays as the fallback.
+  List<Widget> _shooterPicker(List<CompetitionMember>? members) {
+    final shooters = ref.watch(shootersProvider);
+    final uid = ref.watch(currentUserIdProvider);
+    final excluded = <String>{
+      ?uid,
+      ...?members?.map((m) => m.userId),
+    };
+    return shooters.maybeWhen(
+      orElse: () => const <Widget>[],
+      data: (all) {
+        final invitable = all
+            .where((p) => !excluded.contains(p.id))
+            .toList(growable: false);
+        if (invitable.isEmpty) return const <Widget>[];
+        return <Widget>[
+          const _SectionHeader('Inviter en registrert skytter'),
+          Column(
+            key: shooterPickerKey,
+            children: <Widget>[
+              for (final shooter in invitable)
+                _ShooterTile(
+                  shooter: shooter,
+                  inviting: _inviting,
+                  onInvite: () => unawaited(_inviteUser(shooter)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ];
+      },
+    );
   }
 
   @override
@@ -552,6 +621,7 @@ class _CompetitionDetailScreenState
                     onInvite: () => unawaited(_invite()),
                   ),
                   const SizedBox(height: 16),
+                  ..._shooterPicker(members.value),
                 ],
                 const _SectionHeader('Resultater'),
                 ...results.when(
@@ -641,6 +711,38 @@ class _ResultRow extends StatelessWidget {
         style: Theme.of(
           context,
         ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+/// One row in the registered-shooter picker: name + avatar and an Inviter
+/// button. Shows only the name/avatar — never the shooter's email (spec 0032).
+class _ShooterTile extends StatelessWidget {
+  const _ShooterTile({
+    required this.shooter,
+    required this.inviting,
+    required this.onInvite,
+  });
+
+  final Profile shooter;
+  final bool inviting;
+  final VoidCallback onInvite;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarUrl = shooter.avatarUrl;
+    return ListTile(
+      key: shooterTileKey(shooter.id),
+      leading: CircleAvatar(
+        backgroundImage: avatarUrl == null ? null : NetworkImage(avatarUrl),
+        child: avatarUrl == null ? const Icon(Icons.person_outline) : null,
+      ),
+      title: Text(shooter.displayName ?? 'Ukjent skytter'),
+      trailing: FilledButton.tonal(
+        key: inviteShooterButtonKey(shooter.id),
+        onPressed: inviting ? null : onInvite,
+        child: const Text('Inviter'),
       ),
     );
   }
