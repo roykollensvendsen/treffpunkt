@@ -114,6 +114,10 @@ The shooter records a complete session on-device, with no network needed
       deletes the competition and, by the schema cascade, its members,
       invitations and results, then returns to the hub. Owner-only delete RLS
       already in place; a non-owner sees no button.
+- [x] 0037 — View another shooter's full scorecard: tap a scoreboard row to open
+      that shooter's per-stage/per-series card, rebuilt from the result payload
+      already on the client (RLS already allows participants to read it). No
+      backend change.
 - [ ] 0014 — Fair cross-competition ranking (public top-score list).
 - [ ] 0015 — Browse own & published results.
 

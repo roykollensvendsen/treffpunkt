@@ -797,6 +797,7 @@ class SessionScorecard extends StatelessWidget {
     this.metadata,
     this.weapon,
     this.actions,
+    this.title,
     super.key,
   });
 
@@ -815,12 +816,19 @@ class SessionScorecard extends StatelessWidget {
   /// Extra actions shown in the app bar (e.g. a sign-out button).
   final List<Widget>? actions;
 
+  /// App-bar title; defaults to the program name. Set it to show whose card
+  /// this is — e.g. another shooter's name on a competition result (spec 0037).
+  final String? title;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final caption = _metadataCaption(metadata, weapon);
     return Scaffold(
-      appBar: AppBar(title: Text(program.name), actions: [...?actions]),
+      appBar: AppBar(
+        title: Text(title ?? program.name),
+        actions: [...?actions],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),

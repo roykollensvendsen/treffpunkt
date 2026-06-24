@@ -20,7 +20,14 @@ import 'package:treffpunkt/features/competitions/domain/competition_member.dart'
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
+import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
+import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
+import 'package:treffpunkt/features/scoring/domain/session.dart';
+import 'package:treffpunkt/features/scoring/domain/session_record.dart';
+import 'package:treffpunkt/features/scoring/domain/shot.dart';
+import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
 import '../../auth/fake_auth_repository.dart';
@@ -337,6 +344,64 @@ void main() {
     expect(aliceTop, lessThan(meTop));
   });
 
+  testWidgets('tapping a shooter opens their full scorecard', (tester) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '10 m Luftpistol 60 skudd',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+    final alice = repo.asUser(userId: 'alice', email: 'alice@example.com');
+    await alice.upsertOwnProfile(
+      const Profile(id: 'alice', displayName: 'Alice'),
+    );
+    await alice.submitResult(_realResult('r-alice', user: 'alice'));
+
+    await tester.pumpWidget(
+      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(resultRowKey('r-alice')));
+    await tester.pumpAndSettle();
+
+    // Alice's full scorecard opens, titled with her name.
+    expect(find.byType(CompetitionResultScreen), findsOneWidget);
+    expect(find.byKey(sessionCompleteKey), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Alice'), findsOneWidget);
+  });
+
+  testWidgets('a result with an unreadable payload shows a message', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '10 m Luftpistol 60 skudd',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+    final alice = repo.asUser(userId: 'alice', email: 'alice@example.com');
+    await alice.upsertOwnProfile(
+      const Profile(id: 'alice', displayName: 'Alice'),
+    );
+    // An empty payload cannot be rebuilt into a session.
+    await alice.submitResult(_res('r-bad', user: 'alice', total: 500));
+
+    await tester.pumpWidget(
+      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(resultRowKey('r-bad')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(unreadableResultKey), findsOneWidget);
+  });
+
   testWidgets('the scoreboard updates live when a result is submitted', (
     tester,
   ) async {
@@ -466,3 +531,29 @@ CompetitionResult _res(
   innerTens: 0,
   payload: const <String, dynamic>{},
 );
+
+/// A result carrying a **real** session payload (every series shot centre), so
+/// its scorecard can be rebuilt — for the view-another-shooter test (0037).
+CompetitionResult _realResult(String id, {required String user}) {
+  const program = ProgramCatalogue.airPistol10m;
+  var session = Session.start(program);
+  for (final stage in program.stages) {
+    for (var s = 0; s < stage.seriesCount; s++) {
+      var series = session.newSeries()!;
+      for (var shot = 0; shot < stage.shotsPerSeries; shot++) {
+        series = series.placeShot(const Shot(dxMm: 0, dyMm: 0));
+      }
+      session = session.sealSeries(series);
+    }
+  }
+  final record = SessionRecord.fromSession(
+    session,
+    const ScoringService().scoreSession(session),
+    id: id,
+  );
+  return CompetitionResult.fromSessionRecord(
+    record,
+    competitionId: 'c1',
+    userId: user,
+  );
+}

@@ -65,6 +65,7 @@ nav:
       - "0034 — Delete a competition": specs/0034-delete-a-competition.md
       - "0035 — 10 m air pistol, 40 shots": specs/0035-air-pistol-40.md
       - "0036 — Rename 10 m air pistol": specs/0036-rename-air-pistol.md
+      - "0037 — View another shooter's result": specs/0037-view-other-shooter-result.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
