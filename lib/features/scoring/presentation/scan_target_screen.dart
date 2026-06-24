@@ -45,6 +45,9 @@ const Key scanUndoKey = ValueKey<String>('scanUndo');
 /// Key for the "confirm" action that commits the placed shots and returns.
 const Key scanConfirmKey = ValueKey<String>('scanConfirm');
 
+/// Key for the "auto-detect holes" action on the placement step (spec 0040).
+const Key scanDetectKey = ValueKey<String>('scanDetect');
+
 /// The steps of the scan flow.
 enum _ScanMode { capture, calibrate, place }
 
@@ -88,6 +91,8 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
   Uint8List? _imageBytes;
   PixelPoint? _centre;
   PixelPoint? _scale;
+  double _boxSide = 0;
+  bool _analysing = false;
   final List<Shot> _candidates = <Shot>[];
   int? _draggingIndex;
 
@@ -138,8 +143,60 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
   /// is shown, so the overlay is visible and usable before any drag: the centre
   /// at the box middle, the scale handle a third of the way out to the right.
   void _seedHandles(double side) {
+    _boxSide = side;
     _centre ??= PixelPoint(side / 2, side / 2);
     _scale ??= PixelPoint(side / 2 + side * 0.3, side / 2);
+  }
+
+  /// Auto-detects holes in the photo and appends them as editable shots (spec
+  /// 0040): de-duplicated against existing shots and capped at the remaining
+  /// capacity. Best-effort — a failure or no hits leaves manual placement
+  /// intact.
+  Future<void> _detect() async {
+    final bytes = _imageBytes;
+    final remaining = widget.maxShots - _candidates.length;
+    if (bytes == null || _analysing) return;
+    if (remaining <= 0) {
+      _showHint('Serien er full (${widget.maxShots} skudd).');
+      return;
+    }
+    setState(() => _analysing = true);
+    final detected = await ref
+        .read(targetScannerProvider)
+        .scan(
+          bytes,
+          calibration: _calibration,
+          boxSide: _boxSide,
+          geometry: widget.geometry,
+          maxHoles: remaining,
+        );
+    if (!mounted) return;
+    setState(() => _analysing = false);
+    if (detected == null) {
+      _showHint('Kunne ikke analysere bildet — merk treffene manuelt.');
+      return;
+    }
+    if (detected.isEmpty) {
+      _showHint('Fant ingen treff automatisk — merk dem selv.');
+      return;
+    }
+    final minSepMm = widget.geometry.pelletRadiusMm * 1.5;
+    final added = <Shot>[];
+    for (final shot in detected) {
+      if (added.length >= remaining) break;
+      final duplicate = _candidates
+          .followedBy(added)
+          .any((existing) => _distanceMm(existing, shot) < minSepMm);
+      if (!duplicate) added.add(shot);
+    }
+    setState(() => _candidates.addAll(added));
+    _showHint('La til ${added.length} treff — sjekk og juster.');
+  }
+
+  static double _distanceMm(Shot a, Shot b) {
+    final dx = a.dxMm - b.dxMm;
+    final dy = a.dyMm - b.dyMm;
+    return math.sqrt(dx * dx + dy * dy);
   }
 
   void _placeAt(Offset localPx) {
@@ -394,6 +451,19 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        FilledButton.tonalIcon(
+          key: scanDetectKey,
+          onPressed: _analysing ? null : _detect,
+          icon: _analysing
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.auto_fix_high),
+          label: Text(_analysing ? 'Analyserer…' : 'Finn treff automatisk'),
+        ),
+        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

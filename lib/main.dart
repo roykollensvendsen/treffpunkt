@@ -11,6 +11,7 @@ import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
 import 'package:treffpunkt/features/competitions/data/supabase_competition_repository.dart';
 import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_picker_image_source_service.dart';
+import 'package:treffpunkt/features/scoring/data/image_target_scanner.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/data/supabase_session_repository.dart';
@@ -46,6 +47,7 @@ Future<void> main() async {
     initialWeapons: savedWeapons,
     locationService: const GeolocatorLocationService(),
     imageSourceService: ImagePickerImageSourceService(),
+    targetScanner: const ImageTargetScanner(),
     themeModeStore: themeModeStore,
     initialThemeMode: initialThemeMode,
     competitionRepository: SupabaseCompetitionRepository(
