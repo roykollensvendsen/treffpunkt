@@ -63,6 +63,7 @@ nav:
       - "0032 — Invite a registered shooter": specs/0032-invite-registered-shooter.md
       - "0033 — Delete a session": specs/0033-delete-a-session.md
       - "0034 — Delete a competition": specs/0034-delete-a-competition.md
+      - "0035 — 10 m air pistol, 40 shots": specs/0035-air-pistol-40.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
