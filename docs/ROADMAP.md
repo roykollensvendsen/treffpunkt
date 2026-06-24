@@ -66,8 +66,9 @@ The shooter records a complete session on-device, with no network needed
       `SECURITY DEFINER` helpers, and an owner-auto-membership trigger +
       `accept_invitation` RPC. Foundation only (no UI). **Results deferred to
       0012** so the live owner-only `sessions` policy is not broadened.
-- [ ] 0011 — Competitions: create / invite / join; a competition fixes its
-      program(s) and target-set, so the right targets are shown to every entrant.
+- [x] 0011 — Competitions: create / invite (by email) / accept; a competition
+      fixes its program at creation. The hub, create form and detail screen on
+      top of the spec-0010 seam (no results/scoreboard yet — that is 0012/0013).
 - [x] 0024 — Personal session sync: the first sync step — when signed in,
       completing a session uploads it to the shooter's own account (owner-only
       RLS), best-effort and idempotent, so results follow the account across a

@@ -7,6 +7,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
@@ -93,6 +95,17 @@ class ProgramPickerScreen extends ConsumerWidget {
   /// synced since it was last viewed, and [storedPendingProvider] re-reads the
   /// durable outbox. The pending half stays live on its own (the screen watches
   /// the upload queue), so the local sessions never wait on either read.
+  /// Opens the competitions hub (spec 0011), refreshing its background reads
+  /// first so newly created or accepted competitions show on open.
+  Future<void> _openCompetitions(BuildContext context, WidgetRef ref) async {
+    ref
+      ..invalidate(myCompetitionsProvider)
+      ..invalidate(myInvitationsProvider);
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const CompetitionsScreen()),
+    );
+  }
+
   Future<void> _openMySessions(BuildContext context, WidgetRef ref) async {
     ref
       ..invalidate(syncedSessionsProvider)
@@ -110,6 +123,12 @@ class ProgramPickerScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Velg program'),
         actions: [
+          IconButton(
+            key: competitionsButtonKey,
+            icon: const Icon(Icons.emoji_events_outlined),
+            tooltip: 'Konkurranser',
+            onPressed: () => unawaited(_openCompetitions(context, ref)),
+          ),
           IconButton(
             key: mySessionsButtonKey,
             icon: const Icon(Icons.history),
