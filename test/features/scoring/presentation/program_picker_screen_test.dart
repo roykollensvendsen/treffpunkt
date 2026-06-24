@@ -34,7 +34,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('25 m Finpistol'), findsOneWidget);
-    expect(find.text('10 m Air Pistol'), findsOneWidget);
+    expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
     // Air rifle is the spec-0001 reference / fixture but is not offered.
     expect(find.text('10 m Air Rifle'), findsNothing);
 
@@ -56,7 +56,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final tile = find.bySemanticsLabel(
-      RegExp('^Velg program: 10 m Air Pistol'),
+      RegExp('^Velg program: 10 m Luftpistol 60 skudd'),
     );
     expect(tile, findsOneWidget);
 
@@ -82,7 +82,7 @@ void main() {
     // `semantics.tap` throws if the node carries no tap action, so this also
     // guards against the "announced but inert" defect.
     tester.semantics.tap(
-      find.semantics.byLabel(RegExp('^Velg program: 10 m Air Pistol')),
+      find.semantics.byLabel(RegExp('^Velg program: 10 m Luftpistol 60 skudd')),
     );
     await tester.pumpAndSettle();
 

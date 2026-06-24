@@ -32,9 +32,13 @@ abstract final class ProgramCatalogue {
     ],
   );
 
-  /// 10 m air pistol: 60 shots in six 10-shot series.
+  /// 10 m air pistol: 60 shots in six 10-shot series (the ISSF match).
+  ///
+  /// Named in Norwegian to match the rest of the catalogue; the old English
+  /// name "10 m Air Pistol" still resolves via [byName] (see [_renamedFrom]) so
+  /// sessions and competitions recorded under it still load.
   static const ProgramDefinition airPistol10m = ProgramDefinition(
-    name: '10 m Air Pistol',
+    name: '10 m Luftpistol 60 skudd',
     discipline: Discipline.pistol,
     weaponClasses: <String>['Air 4.5 mm'],
     stages: <StageDefinition>[
@@ -317,6 +321,12 @@ abstract final class ProgramCatalogue {
     airRifle10m,
   ];
 
+  /// Old program names mapped to their current one, so data stored under a name
+  /// that has since been renamed still resolves (spec 0036).
+  static const Map<String, String> _renamedFrom = <String, String>{
+    '10 m Air Pistol': '10 m Luftpistol 60 skudd',
+  };
+
   /// The program whose unique [name] matches, or `null` when none does.
   ///
   /// Used to resolve a stored session back to its definition (spec 0009): a
@@ -324,9 +334,14 @@ abstract final class ProgramCatalogue {
   /// stage geometries are always rebuilt from here. Resolves the offered
   /// programs ([all]) and the retained reference programs (air rifle), so a
   /// session recorded before air rifle was dropped from the list still loads.
+  ///
+  /// A name that has since been renamed (e.g. the old "10 m Air Pistol")
+  /// resolves through [_renamedFrom], so older stored sessions and competitions
+  /// still load after a rename (spec 0036).
   static ProgramDefinition? byName(String name) {
+    final canonical = _renamedFrom[name] ?? name;
     for (final definition in _resolvable) {
-      if (definition.name == name) return definition;
+      if (definition.name == canonical) return definition;
     }
     return null;
   }

@@ -109,7 +109,7 @@ void main() {
       expect(find.byKey(noSessionsKey), findsNothing);
       // Exactly one saved-session card (keyed by the recording's own id).
       expect(find.byKey(mySessionCard(_onlySessionId(tester))), findsOneWidget);
-      expect(find.text('10 m Air Pistol'), findsOneWidget);
+      expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
       expect(find.text('600 / 600 · 60×X'), findsOneWidget);
       expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
       expect(find.text('Ikke synkronisert'), findsOneWidget);

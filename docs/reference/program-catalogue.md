@@ -46,7 +46,7 @@ centre-fire **pistol** (grovpistol).
 | Program (NO) | ISSF | Dist. | Calibre | Stages → faces | Shots | Scoring | Conf. |
 |---|---|---|---|---|---|---|---|
 | Luftrifle | 10 m Air Rifle | 10 m | air 4.5 mm | 1 face (air rifle) | 30 / 40 / 60 | decimal | H |
-| Luftpistol | 10 m Air Pistol | 10 m | air 4.5 mm | 1 face (air pistol); 6×10 | 60 | integer + X | H |
+| Luftpistol 60 | 10 m Luftpistol 60 skudd | 10 m | air 4.5 mm | 1 face (air pistol); 6×10 | 60 | integer + X | H |
 | Luftpistol 40 | 10 m Luftpistol 40 skudd | 10 m | air 4.5 mm | 1 face (air pistol); 4×10 | 40 (W/V/J) | integer + X | H |
 | Finpistol (6F) | 25 m Sport Pistol | 25 m | .22 | Presisjon 6×5 (precision) + Duell 6×5 (rapid, 3 s/7 s) | 60 | integer + X | H |
 | Grovpistol (6G) | 25 m Centre-Fire | 25 m | 7.62–9.65 mm | as finpistol (precision + rapid) | 60 | integer + X | H |
@@ -59,6 +59,11 @@ centre-fire **pistol** (grovpistol).
 
 (NAIS, fripistol-B, 15 m rifle and 10 m luftsprint are documented in the sources;
 seeded as confirmed.)
+
+Both air-pistol programs use the Norwegian display names above; the ISSF
+international name for the 60-shot match is "10 m Air Pistol", kept as a
+resolver alias (`ProgramCatalogue._renamedFrom`, spec 0036) so sessions and
+competitions stored under it still load.
 
 ## Still to confirm with the father / a live NSF rulebook
 - **Per-series precision time** for fin/grov: 5 min (Evje) vs 6 min (SNL).
