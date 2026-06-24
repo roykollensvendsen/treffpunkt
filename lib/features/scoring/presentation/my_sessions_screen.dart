@@ -11,10 +11,18 @@ import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
 /// Key for the card of the saved session with the given [id], used by tests.
 Key mySessionCard(String id) => ValueKey<String>('mySessionCard-$id');
+
+/// Key for the overflow (Slett) menu on the session [id]'s card (spec 0033).
+Key deleteSessionMenuKey(String id) =>
+    ValueKey<String>('deleteSessionMenu-$id');
+
+/// Key for the confirm action in the delete-session dialog (spec 0033).
+const Key deleteSessionConfirmKey = ValueKey<String>('deleteSessionConfirm');
 
 /// Key for the "not synced yet" badge on a pending session's card, used by
 /// tests (spec 0026).
@@ -245,60 +253,85 @@ class _SyncErrorBannerState extends State<_SyncErrorBanner> {
   }
 }
 
-/// One saved session as a tappable card: program, date/place, score, weapon and
-/// a "not synced yet" badge on a pending entry; tapping opens the scorecard.
-class _SessionCard extends StatelessWidget {
+/// What the per-card overflow menu can do (spec 0033).
+enum _SessionCardAction { delete }
+
+/// One saved session as a tappable card: program, date/place, score, weapon
+/// and a "not synced yet" badge on a pending entry; tapping opens the
+/// scorecard, and a trailing menu can delete it (spec 0033).
+class _SessionCard extends ConsumerWidget {
   const _SessionCard({required this.entry});
 
   final MySessionEntry entry;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final record = entry.record;
     return Card(
-      child: Semantics(
-        button: true,
-        label: _semanticsLabel(entry),
-        onTap: () => unawaited(_open(context)),
-        child: ExcludeSemantics(
-          child: ListTile(
-            key: mySessionCard(record.id),
-            title: Text(record.program),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_metaLine(record) case final meta?)
-                  Text(
-                    meta,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+      child: Row(
+        children: [
+          // The card body is one "open" button to a screen reader; the
+          // menu beside it is a separate control (outside ExcludeSemantics).
+          Expanded(
+            child: Semantics(
+              button: true,
+              label: _semanticsLabel(entry),
+              onTap: () => unawaited(_open(context)),
+              child: ExcludeSemantics(
+                child: ListTile(
+                  key: mySessionCard(record.id),
+                  title: Text(record.program),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_metaLine(record) case final meta?)
+                        Text(
+                          meta,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      Text(
+                        _scoreLine(record),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (record.weaponName case final weapon?)
+                        Text(
+                          weapon,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      if (!entry.synced) ...[
+                        const SizedBox(height: 6),
+                        const _NotSyncedBadge(),
+                      ],
+                    ],
                   ),
-                Text(
-                  _scoreLine(record),
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  isThreeLine: true,
+                  onTap: () => unawaited(_open(context)),
                 ),
-                if (record.weaponName case final weapon?)
-                  Text(
-                    weapon,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                if (!entry.synced) ...[
-                  const SizedBox(height: 6),
-                  const _NotSyncedBadge(),
-                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: PopupMenuButton<_SessionCardAction>(
+              key: deleteSessionMenuKey(record.id),
+              tooltip: 'Flere valg',
+              onSelected: (_) => unawaited(_confirmAndDelete(context, ref)),
+              itemBuilder: (_) => const <PopupMenuEntry<_SessionCardAction>>[
+                PopupMenuItem<_SessionCardAction>(
+                  value: _SessionCardAction.delete,
+                  child: Text('Slett'),
+                ),
               ],
             ),
-            trailing: const Icon(Icons.chevron_right),
-            isThreeLine: true,
-            onTap: () => unawaited(_open(context)),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -308,6 +341,47 @@ class _SessionCard extends StatelessWidget {
       builder: (_) => SessionDetailScreen(record: entry.record),
     ),
   );
+
+  /// Confirms, then deletes the session from the cloud (when synced) and the
+  /// local queue, refreshing the list (spec 0033). A pending-only session needs
+  /// no network; a failed cloud delete leaves the card and shows a message.
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref) async {
+    // Captured before the await so no BuildContext is used across the gap.
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Slett økt?'),
+        content: const Text('Handlingen kan ikke angres.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Avbryt'),
+          ),
+          FilledButton(
+            key: deleteSessionConfirmKey,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Slett'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final id = entry.record.id;
+    try {
+      if (entry.synced) {
+        await ref.read(sessionRepositoryProvider).deleteById(id);
+      }
+      await ref.read(uploadQueueProvider.notifier).deleteById(id);
+      ref
+        ..invalidate(syncedSessionsProvider)
+        ..invalidate(storedPendingProvider);
+    } on Object {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke slette økta.')),
+      );
+    }
+  }
 
   /// A spoken label for the whole card, consistent with the app's score labels.
   static String _semanticsLabel(MySessionEntry entry) {

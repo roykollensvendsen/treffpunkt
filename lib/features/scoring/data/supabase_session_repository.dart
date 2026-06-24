@@ -75,6 +75,22 @@ final class SupabaseSessionRepository implements SessionRepository {
     }
   }
 
+  @override
+  Future<void> deleteById(String id) async {
+    try {
+      // RLS ("Sessions are deletable by their owner") gates this to the owner's
+      // own rows. Deleting a missing id affects no rows and is not an error.
+      await _client.from(_table).delete().eq('id', id);
+    } on Object catch (error) {
+      // A deliberate user action (spec 0033) — surface failure, unlike the
+      // silent best-effort upload (ADR-0017).
+      if (!kReleaseMode) {
+        debugPrint('Failed to delete the session record: $error');
+      }
+      throw SessionSyncException(error);
+    }
+  }
+
   /// Maps one `sessions` row back to a [SessionRecord] (the inverse of the
   /// upsert map in [upload], using the same snake_case column names).
   static SessionRecord _recordFromRow(Map<String, dynamic> row) {

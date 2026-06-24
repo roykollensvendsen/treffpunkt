@@ -120,6 +120,8 @@ class _ThrowingSessionRepository implements SessionRepository {
 
   @override
   Future<List<SessionRecord>> list() async => const <SessionRecord>[];
+  @override
+  Future<void> deleteById(String id) async {}
 }
 
 /// A repository whose first [upload] parks on a [Completer] (so a flush is
@@ -145,6 +147,8 @@ class _BlockingSessionRepository implements SessionRepository {
 
   @override
   Future<List<SessionRecord>> list() async => const <SessionRecord>[];
+  @override
+  Future<void> deleteById(String id) async {}
 }
 
 /// A repository that uploads id `ok` but throws for id `bad` — until [heal] is
@@ -163,6 +167,8 @@ class _SelectiveSessionRepository implements SessionRepository {
 
   @override
   Future<List<SessionRecord>> list() async => const <SessionRecord>[];
+  @override
+  Future<void> deleteById(String id) async {}
 }
 
 void main() {
@@ -226,6 +232,30 @@ void main() {
       // The queue drained and nothing is left persisted.
       expect(container.read(uploadQueueProvider), isEmpty);
       expect(await pendingStore.load(), isEmpty);
+    },
+  );
+
+  test(
+    'deleteById drops the id from the queue and the durable store',
+    () async {
+      final pendingStore = InMemoryPendingUploadsStore();
+      final container = makeContainer(
+        auth: const SignedOut(), // stays queued, so the delete is observable
+        repository: InMemorySessionRepository(),
+        pendingStore: pendingStore,
+      );
+      addTearDown(container.dispose);
+
+      final queue = container.read(uploadQueueProvider.notifier);
+      await queue.enqueue(_record('a'));
+      await queue.enqueue(_record('b'));
+
+      await queue.deleteById('a');
+
+      expect(container.read(uploadQueueProvider).map((r) => r.id), <String>[
+        'b',
+      ]);
+      expect((await pendingStore.load()).map((r) => r.id), <String>['b']);
     },
   );
 

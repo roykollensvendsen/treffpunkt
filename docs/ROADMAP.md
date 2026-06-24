@@ -105,6 +105,10 @@ The shooter records a complete session on-device, with no network needed
       email-keyed invitation, so no email reaches the client and the accept flow
       is unchanged (ADR-0020). The type-an-email control stays for people not yet
       registered.
+- [x] 0033 — Delete a session: each card in "Mine økter" has a Slett action
+      (with confirmation) that removes the session from the account (when synced)
+      and the local upload queue; a pending session deletes offline, the
+      `sessions` owner-delete RLS already in place.
 - [ ] 0014 — Fair cross-competition ranking (public top-score list).
 - [ ] 0015 — Browse own & published results.
 

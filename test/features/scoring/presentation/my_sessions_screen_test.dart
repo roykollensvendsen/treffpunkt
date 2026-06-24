@@ -144,6 +144,8 @@ class _ThrowingSessionRepository implements SessionRepository {
   @override
   Future<List<SessionRecord>> list() async =>
       throw const SessionSyncException('boom');
+  @override
+  Future<void> deleteById(String id) async {}
 }
 
 /// Seeds the fakes before mounting the screen, so the FutureProvider reads the
@@ -214,6 +216,81 @@ void main() {
       expect(find.byKey(noSessionsKey), findsNothing);
     },
   );
+
+  Future<void> tapDeleteAndConfirm(WidgetTester tester, String id) async {
+    await tester.tap(find.byKey(deleteSessionMenuKey(id)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Slett')); // the menu item opens the dialog
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(deleteSessionConfirmKey));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('deleting a pending session removes its card (offline)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        synced: const <SessionRecord>[],
+        pending: <SessionRecord>[
+          _recordFor(
+            ProgramCatalogue.airPistol10m,
+            id: 'pending-1',
+            capturedAt: DateTime(2026, 6, 21, 10),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(mySessionCard('pending-1')), findsOneWidget);
+
+    await tapDeleteAndConfirm(tester, 'pending-1');
+
+    expect(find.byKey(mySessionCard('pending-1')), findsNothing);
+    expect(find.byKey(noSessionsKey), findsOneWidget);
+  });
+
+  testWidgets('deleting a synced session removes its card', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        synced: <SessionRecord>[
+          _recordFor(
+            ProgramCatalogue.airPistol10m,
+            id: 'synced-1',
+            capturedAt: DateTime(2026, 6, 21, 10),
+          ),
+        ],
+        pending: const <SessionRecord>[],
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(mySessionCard('synced-1')), findsOneWidget);
+
+    await tapDeleteAndConfirm(tester, 'synced-1');
+
+    expect(find.byKey(mySessionCard('synced-1')), findsNothing);
+  });
+
+  testWidgets('cancelling the delete dialog keeps the session', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        synced: const <SessionRecord>[],
+        pending: <SessionRecord>[
+          _recordFor(ProgramCatalogue.airPistol10m, id: 'pending-1'),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(deleteSessionMenuKey('pending-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Slett'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Avbryt'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(mySessionCard('pending-1')), findsOneWidget);
+  });
 
   testWidgets('the sync-error banner can be dismissed', (tester) async {
     await tester.pumpWidget(
@@ -541,6 +618,9 @@ class _HangingSessionRepository implements SessionRepository {
     unawaited(future.then((_) => listCompleted = true));
     return future;
   }
+
+  @override
+  Future<void> deleteById(String id) async {}
 
   /// Completes the hung [list] read (with no synced records), so the test's
   /// container can dispose cleanly.

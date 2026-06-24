@@ -54,6 +54,13 @@ abstract interface class SessionRepository {
   /// a non-blocking notice (and still shows the local sessions) rather than a
   /// failure silently looking like "no sessions yet".
   Future<List<SessionRecord>> list();
+
+  /// Deletes the session [id] from the account (spec 0033).
+  ///
+  /// Unlike [upload], this is a deliberate action the user waits on, so it
+  /// **throws** [SessionSyncException] on failure (a dropped connection, denied
+  /// permission). Deleting an id that is not there is a no-op.
+  Future<void> deleteById(String id);
 }
 
 /// A [SessionRepository] that keeps uploaded records in memory only.
@@ -79,4 +86,9 @@ class InMemorySessionRepository implements SessionRepository {
 
   @override
   Future<List<SessionRecord>> list() async => uploads;
+
+  @override
+  Future<void> deleteById(String id) async {
+    _byId.remove(id);
+  }
 }
