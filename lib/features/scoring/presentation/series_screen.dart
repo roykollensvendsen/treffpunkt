@@ -6,16 +6,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
+import 'package:treffpunkt/features/scoring/domain/series.dart';
 import 'package:treffpunkt/features/scoring/domain/series_score.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/session_score.dart';
+import 'package:treffpunkt/features/scoring/domain/shot.dart';
+import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 /// Key for the "complete series" / advance action in the app bar.
 const Key sealSeriesKey = ValueKey<String>('sealSeries');
+
+/// Key for the "Skann skive" (camera scan) action in the app bar (spec 0039).
+const Key scanTargetActionKey = ValueKey<String>('scanTargetAction');
 
 /// Key for the series total value, used by tests.
 const Key seriesTotalKey = ValueKey<String>('seriesTotal');
@@ -180,6 +186,27 @@ class SessionView extends ConsumerWidget {
 
   static const ScoringService _scoring = ScoringService();
 
+  /// Opens the camera scan for [current]'s target (spec 0039) and commits the
+  /// shots the shooter places on the photo into the series. Capped at the
+  /// series' remaining capacity; the scan never seals the series itself.
+  Future<void> _scanTarget(
+    BuildContext context,
+    WidgetRef ref,
+    Series current,
+  ) async {
+    final shots = await Navigator.of(context).push<List<Shot>>(
+      MaterialPageRoute<List<Shot>>(
+        builder: (_) => ScanTargetScreen(
+          geometry: current.geometry,
+          maxShots: current.remaining,
+        ),
+      ),
+    );
+    if (shots != null && shots.isNotEmpty) {
+      ref.read(sessionProvider.notifier).placeShots(shots);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recording = ref.watch(sessionProvider);
@@ -207,6 +234,14 @@ class SessionView extends ConsumerWidget {
       appBar: AppBar(
         title: Text(program.name),
         actions: [
+          IconButton(
+            key: scanTargetActionKey,
+            icon: const Icon(Icons.document_scanner_outlined),
+            tooltip: 'Skann skive',
+            onPressed: current.isComplete
+                ? null
+                : () => _scanTarget(context, ref, current),
+          ),
           IconButton(
             key: sealSeriesKey,
             icon: const Icon(Icons.check),

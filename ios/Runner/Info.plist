@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Treffpunkt bruker posisjonen din til å merke hvor en skyteøkt ble gjennomført.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Treffpunkt bruker kameraet til å ta bilde av skiva så du kan merke treffene.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Treffpunkt bruker bildene dine så du kan velge et bilde av skiva å merke treffene på.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

@@ -97,6 +97,39 @@ void main() {
     expect(read().session.currentStageIndex, 0);
   });
 
+  test('placeShots appends every shot to the current series', () {
+    notifier().placeShots(const <Shot>[_centre, _centre]);
+    expect(read().current!.placedCount, 2);
+  });
+
+  test('placeShots fills the series but never auto-advances', () {
+    notifier().placeShots(const <Shot>[_centre, _centre]);
+    final recording = read();
+    expect(recording.current!.isComplete, isTrue);
+    // Still on the first stage's series — sealing stays the manual gesture.
+    expect(recording.session.currentStageIndex, 0);
+    expect(recording.isComplete, isFalse);
+  });
+
+  test('placeShots drops shots beyond the series capacity', () {
+    notifier().placeShots(
+      const <Shot>[_centre, _centre, _centre, _centre, _centre],
+    );
+    expect(read().current!.placedCount, 2); // capacity is 2
+  });
+
+  test('placeShots appends after shots already placed', () {
+    notifier()
+      ..placeShot(_centre)
+      ..placeShots(const <Shot>[_centre, _centre]); // only one fits
+    expect(read().current!.placedCount, 2);
+  });
+
+  test('placeShots with no shots leaves the series untouched', () {
+    notifier().placeShots(const <Shot>[]);
+    expect(read().current!.placedCount, 0);
+  });
+
   test('the session carries no metadata by default', () {
     expect(read().session.metadata, isNull);
   });
