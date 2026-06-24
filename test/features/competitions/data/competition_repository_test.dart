@@ -150,6 +150,25 @@ void main() {
     expect(results.map((r) => r.id), <String>['r-top', 'r-mid', 'r-low']);
     expect(results.first.profile?.displayName, 'Bob');
   });
+
+  test('watchResults emits the board, then re-emits after a submit', () async {
+    final repo = InMemoryCompetitionRepository(currentUserId: 'alice');
+    final expectation = expectLater(
+      repo.watchResults('c1'),
+      emitsInOrder(<Object>[
+        predicate<List<CompetitionResult>>((l) => l.isEmpty, 'empty board'),
+        predicate<List<CompetitionResult>>(
+          (l) => l.length == 1 && l.first.id == 's1',
+          'one result',
+        ),
+      ]),
+    );
+    // Let the stream emit the initial empty board and subscribe to changes
+    // before the submit fires.
+    await Future<void>.delayed(Duration.zero);
+    await repo.submitResult(_result('s1', competitionId: 'c1', total: 580));
+    await expectation;
+  });
 }
 
 CompetitionResult _result(

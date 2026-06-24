@@ -10,6 +10,7 @@ import 'package:treffpunkt/features/competitions/data/competition_repository.dar
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/competitions/domain/scoreboard.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
@@ -497,14 +498,14 @@ class _CompetitionDetailScreenState
         ),
       ),
     );
-    ref.invalidate(competitionResultsProvider(widget.competition.id));
+    ref.invalidate(competitionScoreboardProvider(widget.competition.id));
   }
 
   @override
   Widget build(BuildContext context) {
     final competition = widget.competition;
     final members = ref.watch(competitionMembersProvider(competition.id));
-    final results = ref.watch(competitionResultsProvider(competition.id));
+    final results = ref.watch(competitionScoreboardProvider(competition.id));
     final uid = ref.watch(currentUserIdProvider);
     final isOwner = uid == competition.ownerId;
     // Only a participant may shoot for the competition (the insert policy gates
@@ -563,24 +564,28 @@ class _CompetitionDetailScreenState
                   error: (error, _) => <Widget>[
                     _ErrorRetry(
                       onRetry: () => ref.invalidate(
-                        competitionResultsProvider(competition.id),
+                        competitionScoreboardProvider(competition.id),
                       ),
                     ),
                   ],
-                  data: (list) => list.isEmpty
-                      ? const <Widget>[
-                          Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Text(
-                              'Ingen resultater ennå.',
-                              key: noResultsKey,
+                  data: (raw) {
+                    // One row per shooter (their best), ranked best first.
+                    final list = rankBestPerShooter(raw);
+                    return list.isEmpty
+                        ? const <Widget>[
+                            Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text(
+                                'Ingen resultater ennå.',
+                                key: noResultsKey,
+                              ),
                             ),
-                          ),
-                        ]
-                      : <Widget>[
-                          for (var i = 0; i < list.length; i++)
-                            _ResultRow(rank: i + 1, result: list[i]),
-                        ],
+                          ]
+                        : <Widget>[
+                            for (var i = 0; i < list.length; i++)
+                              _ResultRow(rank: i + 1, result: list[i]),
+                          ];
+                  },
                 ),
                 const SizedBox(height: 16),
                 const _SectionHeader('Deltakere'),

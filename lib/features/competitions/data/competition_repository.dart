@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
@@ -82,6 +84,13 @@ abstract interface class CompetitionRepository {
   /// submitter's profile, best first (highest [CompetitionResult.total], then
   /// most inner tens). Throws [CompetitionSyncException] on a failed read.
   Future<List<CompetitionResult>> resultsOf(String competitionId);
+
+  /// A live stream of [competitionId]'s results (spec 0013): it emits the
+  /// current scoreboard immediately, then re-emits whenever a result is
+  /// submitted, so the detail screen updates without reopening. The real
+  /// backend is driven by Supabase Realtime; each emission is the full re-read
+  /// of [resultsOf].
+  Stream<List<CompetitionResult>> watchResults(String competitionId);
 }
 
 /// A [CompetitionRepository] that keeps everything in memory only.
@@ -96,7 +105,8 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
       _competitions = <String, Competition>{},
       _members = <String, Set<String>>{},
       _invitations = <CompetitionInvitation>[],
-      _results = <String, Map<String, CompetitionResult>>{};
+      _results = <String, Map<String, CompetitionResult>>{},
+      _resultsChanged = StreamController<String>.broadcast();
 
   InMemoryCompetitionRepository._shared(
     this.currentUserId,
@@ -106,6 +116,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     this._members,
     this._invitations,
     this._results,
+    this._resultsChanged,
   );
 
   /// The acting user's id (owner/member checks), or `null` if signed out.
@@ -120,6 +131,9 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
   final List<CompetitionInvitation> _invitations;
   // competitionId -> (resultId -> result).
   final Map<String, Map<String, CompetitionResult>> _results;
+  // Emits a competitionId whenever a new result lands there, so watchResults
+  // re-reads the scoreboard (the in-memory stand-in for Supabase Realtime).
+  final StreamController<String> _resultsChanged;
 
   /// A view of the **same** store acting as a different user — for tests that
   /// drive a multi-user flow (one user invites, another accepts) against one
@@ -133,6 +147,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
         _members,
         _invitations,
         _results,
+        _resultsChanged,
       );
 
   String get _email => (currentEmail ?? '').toLowerCase();
@@ -230,13 +245,15 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
       result.competitionId,
       () => <String, CompetitionResult>{},
     );
-    // putIfAbsent mirrors the database's ON CONFLICT DO NOTHING: the first
-    // submission of a session id wins, and a re-submit is a no-op. The userId
-    // defaults to the acting user, as it does in the database.
-    final stored = result.userId != null
+    // ON CONFLICT DO NOTHING: the first submission of a session id wins, a
+    // re-submit is a no-op (and emits nothing).
+    if (byId.containsKey(result.id)) return;
+    // The userId defaults to the acting user, as it does in the database.
+    byId[result.id] = result.userId != null
         ? result
         : result.withUser(currentUserId);
-    byId.putIfAbsent(result.id, () => stored);
+    // Signal watchers of this competition (the Realtime stand-in).
+    if (_resultsChanged.hasListener) _resultsChanged.add(result.competitionId);
   }
 
   @override
@@ -247,5 +264,13 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
         final byTotal = b.total.compareTo(a.total);
         return byTotal != 0 ? byTotal : b.innerTens.compareTo(a.innerTens);
       });
+  }
+
+  @override
+  Stream<List<CompetitionResult>> watchResults(String competitionId) async* {
+    yield await resultsOf(competitionId);
+    await for (final changed in _resultsChanged.stream) {
+      if (changed == competitionId) yield await resultsOf(competitionId);
+    }
   }
 }

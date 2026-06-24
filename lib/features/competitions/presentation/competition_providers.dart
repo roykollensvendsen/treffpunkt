@@ -98,10 +98,12 @@ final competitionMembersProvider =
           ref.watch(competitionRepositoryProvider).membersOf(competitionId),
     );
 
-/// The scoreboard for a competition — its results, best first (spec 0012).
+/// The live scoreboard for a competition (spec 0013): its results, re-emitted
+/// whenever a participant submits (Supabase Realtime). The screen ranks the
+/// emitted results best-per-shooter for display.
 // ignore: specify_nonobvious_property_types
-final competitionResultsProvider =
-    FutureProvider.family<List<CompetitionResult>, String>(
+final competitionScoreboardProvider =
+    StreamProvider.family<List<CompetitionResult>, String>(
       (ref, competitionId) =>
-          ref.watch(competitionRepositoryProvider).resultsOf(competitionId),
+          ref.watch(competitionRepositoryProvider).watchResults(competitionId),
     );

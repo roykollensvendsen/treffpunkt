@@ -98,6 +98,9 @@ class _RecordingCompetitionRepository implements CompetitionRepository {
   @override
   Future<List<CompetitionResult>> resultsOf(String competitionId) async =>
       throw UnimplementedError();
+  @override
+  Stream<List<CompetitionResult>> watchResults(String competitionId) =>
+      throw UnimplementedError();
 }
 
 /// A repository whose profile upsert always fails (a misconfigured backend).

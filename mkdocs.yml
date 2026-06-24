@@ -46,6 +46,7 @@ nav:
       - "0010 — Competitions: data & RLS": specs/0010-competitions-data-and-rls.md
       - "0011 — Competitions: create/invite/join": specs/0011-competitions-create-invite-join.md
       - "0012 — Shoot for a competition": specs/0012-shoot-for-a-competition.md
+      - "0013 — Live scoreboard": specs/0013-live-scoreboard.md
       - "0019 — Personal weapon persistence": specs/0019-weapon-persistence.md
       - "0020 — Highlight the last shot": specs/0020-highlight-the-last-shot.md
       - "0021 — Target owns its gestures": specs/0021-target-owns-its-gestures.md

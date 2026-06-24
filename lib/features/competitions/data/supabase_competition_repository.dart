@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
@@ -197,5 +199,51 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
     } on Object catch (error) {
       throw CompetitionSyncException(error);
     }
+  }
+
+  @override
+  Stream<List<CompetitionResult>> watchResults(String competitionId) {
+    final controller = StreamController<List<CompetitionResult>>();
+    RealtimeChannel? channel;
+
+    Future<void> emit() async {
+      try {
+        if (!controller.isClosed) {
+          controller.add(await resultsOf(competitionId));
+        }
+      } on Object catch (error) {
+        if (!controller.isClosed) {
+          controller.addError(CompetitionSyncException(error));
+        }
+      }
+    }
+
+    controller
+      ..onListen = () {
+        // Subscribe to inserts/updates/deletes for this competition's results;
+        // Row-Level Security limits delivery to rows the user may read. On any
+        // change (and on the initial subscribe) re-read the full scoreboard.
+        channel = _client
+            .channel('competition_results:$competitionId')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'competition_results',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'competition_id',
+                value: competitionId,
+              ),
+              callback: (_) => unawaited(emit()),
+            )
+            .subscribe();
+        unawaited(emit());
+      }
+      ..onCancel = () async {
+        final open = channel;
+        if (open != null) await _client.removeChannel(open);
+        await controller.close();
+      };
+    return controller.stream;
   }
 }

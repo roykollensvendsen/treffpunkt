@@ -119,6 +119,11 @@ way; it must be applied before competitions work.
 `competition_results` table (the scoreboard) and its Row-Level Security, reusing
 the spec-0010 helpers. Apply it before "Skyt nå" can submit results.
 
+`20260623180000_competition_results_realtime.sql` (spec 0013) adds
+`competition_results` to the `supabase_realtime` publication so the scoreboard
+updates live. Apply it for live updates; RLS still scopes what each subscriber
+receives.
+
 ### Apply via the SQL editor (no CLI)
 Open the project's **SQL editor**, paste the contents of the migration file, and
 **Run**. Expect *"Success. No rows returned."*
