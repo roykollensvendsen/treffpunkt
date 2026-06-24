@@ -69,6 +69,14 @@ Key inviteShooterButtonKey(String userId) =>
 /// Key for the "shoot for this competition" action on the detail screen.
 const Key shootForCompetitionKey = ValueKey<String>('shootForCompetition');
 
+/// Key for the owner's "delete competition" action on the detail screen.
+const Key deleteCompetitionButtonKey = ValueKey<String>('deleteCompetition');
+
+/// Key for the confirm action in the delete-competition dialog (spec 0034).
+const Key deleteCompetitionConfirmKey = ValueKey<String>(
+  'deleteCompetitionConfirm',
+);
+
 /// Key for the empty-results state on the detail scoreboard.
 const Key noResultsKey = ValueKey<String>('noResults');
 
@@ -521,6 +529,48 @@ class _CompetitionDetailScreenState
     }
   }
 
+  /// Confirms, then deletes the competition (owner only, spec 0034); on success
+  /// returns to the hub with the list refreshed. The cascade removes its
+  /// members, invitations and results. A failure keeps the screen, with a
+  /// notice.
+  Future<void> _delete() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Slett konkurranse?'),
+        content: const Text(
+          'Alle deltakere, invitasjoner og resultater slettes. '
+          'Handlingen kan ikke angres.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Avbryt'),
+          ),
+          FilledButton(
+            key: deleteCompetitionConfirmKey,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Slett'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref
+          .read(competitionRepositoryProvider)
+          .deleteCompetition(widget.competition.id);
+      ref.invalidate(myCompetitionsProvider);
+      navigator.pop();
+    } on CompetitionSyncException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke slette konkurransen.')),
+      );
+    }
+  }
+
   /// Starts the competition's fixed program; the result auto-submits on
   /// completion (spec 0012). On return, the scoreboard is refreshed.
   Future<void> _shoot() async {
@@ -625,6 +675,16 @@ class _CompetitionDetailScreenState
                   ),
                   const SizedBox(height: 16),
                   ..._shooterPicker(members.value),
+                  OutlinedButton.icon(
+                    key: deleteCompetitionButtonKey,
+                    onPressed: () => unawaited(_delete()),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                    ),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Slett konkurranse'),
+                  ),
+                  const SizedBox(height: 16),
                 ],
                 const _SectionHeader('Resultater'),
                 ...results.when(

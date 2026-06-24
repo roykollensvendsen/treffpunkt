@@ -109,6 +109,11 @@ The shooter records a complete session on-device, with no network needed
       (with confirmation) that removes the session from the account (when synced)
       and the local upload queue; a pending session deletes offline, the
       `sessions` owner-delete RLS already in place.
+- [x] 0034 — Delete a competition: the owner gets a Slett konkurranse action
+      (with a confirmation that names the lost results) on the detail screen; it
+      deletes the competition and, by the schema cascade, its members,
+      invitations and results, then returns to the hub. Owner-only delete RLS
+      already in place; a non-owner sees no button.
 - [ ] 0014 — Fair cross-competition ranking (public top-score list).
 - [ ] 0015 — Browse own & published results.
 

@@ -240,6 +240,60 @@ void main() {
 
     expect(find.byKey(shooterPickerKey), findsNothing);
     expect(find.byKey(inviteEmailFieldKey), findsNothing);
+    expect(find.byKey(deleteCompetitionButtonKey), findsNothing);
+  });
+
+  testWidgets('the owner deletes the competition and returns to the hub', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '25 m NAIS fin',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+
+    // Start on the hub, open the detail, then delete.
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    expect(find.byKey(competitionCard('c1')), findsOneWidget);
+    await tester.tap(find.byKey(competitionCard('c1')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(deleteCompetitionButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(deleteCompetitionConfirmKey));
+    await tester.pumpAndSettle();
+
+    // Back on the hub; the competition is gone.
+    expect(find.byKey(competitionCard('c1')), findsNothing);
+    expect(find.byKey(noCompetitionsKey), findsOneWidget);
+  });
+
+  testWidgets('cancelling the delete keeps the competition', (tester) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '25 m NAIS fin',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+
+    await tester.pumpWidget(
+      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(deleteCompetitionButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Avbryt'));
+    await tester.pumpAndSettle();
+
+    // Still on the detail screen — nothing deleted.
+    expect(find.byKey(deleteCompetitionButtonKey), findsOneWidget);
   });
 
   testWidgets('the detail shows the scoreboard, best first', (tester) async {
@@ -367,6 +421,9 @@ class _GatedInviteRepository implements CompetitionRepository {
       _inner.createCompetition(competition);
   @override
   Future<List<Competition>> listMine() => _inner.listMine();
+  @override
+  Future<void> deleteCompetition(String competitionId) =>
+      _inner.deleteCompetition(competitionId);
   @override
   Future<void> invite(String competitionId, String email) =>
       _inner.invite(competitionId, email);
