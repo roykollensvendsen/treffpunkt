@@ -41,8 +41,30 @@ void main() {
     );
   });
 
+  test('10 m air pistol comes in a 60-shot and a 40-shot program', () {
+    // The 60-shot ISSF match (six 10-shot series).
+    expect(ProgramCatalogue.airPistol10m.totalShots, 60);
+
+    // The 40-shot NSF program (women / veterans / juniors): four 10-shot series.
+    const forty = ProgramCatalogue.airPistol10m40;
+    expect(forty.name, '10 m Luftpistol 40 skudd');
+    expect(forty.discipline, Discipline.pistol);
+    expect(forty.stages.single.seriesCount, 4);
+    expect(forty.stages.single.shotsPerSeries, 10);
+    expect(forty.totalShots, 40);
+    expect(forty.weaponClasses, <String>['Air 4.5 mm']);
+    // Same target face as the 60-shot program, just fewer series.
+    expect(
+      forty.stages.single.geometry.name,
+      ProgramCatalogue.airPistol10m.stages.single.geometry.name,
+    );
+    // Offered and resolvable by its unique name.
+    expect(ProgramCatalogue.all, contains(forty));
+    expect(ProgramCatalogue.byName('10 m Luftpistol 40 skudd'), same(forty));
+  });
+
   test('the catalogue seeds the real pistol programs', () {
-    expect(ProgramCatalogue.all.length, 9);
+    expect(ProgramCatalogue.all.length, 10);
     expect(
       ProgramCatalogue.all.every((p) => p.discipline == Discipline.pistol),
       isTrue,

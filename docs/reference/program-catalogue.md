@@ -46,7 +46,8 @@ centre-fire **pistol** (grovpistol).
 | Program (NO) | ISSF | Dist. | Calibre | Stages → faces | Shots | Scoring | Conf. |
 |---|---|---|---|---|---|---|---|
 | Luftrifle | 10 m Air Rifle | 10 m | air 4.5 mm | 1 face (air rifle) | 30 / 40 / 60 | decimal | H |
-| Luftpistol | 10 m Air Pistol | 10 m | air 4.5 mm | 1 face (air pistol) | 60 (40 W/V/J) | integer + X | H |
+| Luftpistol | 10 m Air Pistol | 10 m | air 4.5 mm | 1 face (air pistol); 6×10 | 60 | integer + X | H |
+| Luftpistol 40 | 10 m Luftpistol 40 skudd | 10 m | air 4.5 mm | 1 face (air pistol); 4×10 | 40 (W/V/J) | integer + X | H |
 | Finpistol (6F) | 25 m Sport Pistol | 25 m | .22 | Presisjon 6×5 (precision) + Duell 6×5 (rapid, 3 s/7 s) | 60 | integer + X | H |
 | Grovpistol (6G) | 25 m Centre-Fire | 25 m | 7.62–9.65 mm | as finpistol (precision + rapid) | 60 | integer + X | H |
 | Standardpistol (5) | 25 m Standard | 25 m | .22 | 3 stages 4×5 on precision @ 150/20/10 s | 60 | integer + X | H |

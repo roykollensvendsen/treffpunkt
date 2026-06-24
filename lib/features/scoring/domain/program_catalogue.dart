@@ -47,6 +47,22 @@ abstract final class ProgramCatalogue {
     ],
   );
 
+  /// 10 m air pistol, 40 shots: four 10-shot series (NSF women / veterans /
+  /// juniors), on the same face as the 60-shot [airPistol10m].
+  static const ProgramDefinition airPistol10m40 = ProgramDefinition(
+    name: '10 m Luftpistol 40 skudd',
+    discipline: Discipline.pistol,
+    weaponClasses: <String>['Air 4.5 mm'],
+    stages: <StageDefinition>[
+      StageDefinition(
+        name: 'Match',
+        geometry: TargetGeometry.airPistol10m(),
+        shotsPerSeries: 10,
+        seriesCount: 4,
+      ),
+    ],
+  );
+
   /// 25 m standard pistol: 12 series of 5 on the precision face across three
   /// timed stages (150 s / 20 s / 10 s).
   static const ProgramDefinition standardPistol25m = ProgramDefinition(
@@ -282,6 +298,7 @@ abstract final class ProgramCatalogue {
   /// loads (see [_resolvable]).
   static const List<ProgramDefinition> all = <ProgramDefinition>[
     airPistol10m,
+    airPistol10m40,
     standardPistol25m,
     finpistol25m,
     grovpistol25m,
