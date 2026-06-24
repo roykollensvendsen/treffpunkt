@@ -44,9 +44,12 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   @override
   Future<void> createCompetition(Competition competition) async {
     try {
-      await _client
-          .from('competitions')
-          .upsert(competition.toInsertJson(), onConflict: 'id');
+      // A plain insert, not an upsert: the id is freshly generated per create,
+      // so there is nothing to merge — and an `upsert` issues
+      // `ON CONFLICT DO UPDATE`, whose update path trips the owner-default
+      // Row-Level Security check (`owner_id` defaults to `auth.uid()` and is
+      // not sent), which a plain insert avoids.
+      await _client.from('competitions').insert(competition.toInsertJson());
     } on Object catch (error) {
       throw CompetitionSyncException(error);
     }
