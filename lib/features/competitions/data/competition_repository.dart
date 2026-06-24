@@ -37,9 +37,11 @@ abstract interface class CompetitionRepository {
   /// throw.
   Future<void> upsertOwnProfile(Profile profile);
 
-  /// Creates [competition] (owned by the caller); idempotent by id.
+  /// Creates [competition] (owned by the caller).
   ///
-  /// Throws [CompetitionSyncException] on failure — the user is waiting on it.
+  /// The id is freshly generated per create, so this is a one-shot insert (not
+  /// an upsert). Throws [CompetitionSyncException] on failure — the user is
+  /// waiting on it.
   Future<void> createCompetition(Competition competition);
 
   /// The competitions the caller owns or is a member of, newest first.
