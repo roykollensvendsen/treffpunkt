@@ -467,6 +467,9 @@ class _CompetitionDetailScreenState
     extends ConsumerState<CompetitionDetailScreen> {
   final TextEditingController _email = TextEditingController();
   bool _inviting = false;
+  // The shooter whose invite is in flight, so only that tile shows the pending
+  // state — not every Inviter button at once (they share this screen's state).
+  String? _invitingShooterId;
 
   @override
   void dispose() {
@@ -500,8 +503,8 @@ class _CompetitionDetailScreenState
   /// Invites a registered shooter picked from the list (spec 0032). Their email
   /// is resolved server-side; this client only knows the user id.
   Future<void> _inviteUser(Profile shooter) async {
-    if (_inviting) return;
-    setState(() => _inviting = true);
+    if (_invitingShooterId != null) return;
+    setState(() => _invitingShooterId = shooter.id);
     final messenger = ScaffoldMessenger.of(context);
     final label = shooter.displayName ?? 'skytteren';
     try {
@@ -514,7 +517,7 @@ class _CompetitionDetailScreenState
         const SnackBar(content: Text('Kunne ikke invitere.')),
       );
     } finally {
-      if (mounted) setState(() => _inviting = false);
+      if (mounted) setState(() => _invitingShooterId = null);
     }
   }
 
@@ -559,7 +562,7 @@ class _CompetitionDetailScreenState
               for (final shooter in invitable)
                 _ShooterTile(
                   shooter: shooter,
-                  inviting: _inviting,
+                  inviting: _invitingShooterId == shooter.id,
                   onInvite: () => unawaited(_inviteUser(shooter)),
                 ),
             ],

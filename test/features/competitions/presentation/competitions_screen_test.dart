@@ -5,6 +5,8 @@
 // Widget tests for the competitions UI (spec 0011): the empty state; creating a
 // competition makes it appear in "Mine konkurranser"; accepting an invitation
 // moves it into the list; and the owner can invite someone by email.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +15,8 @@ import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
@@ -169,6 +173,53 @@ void main() {
     expect(invitations.map((i) => i.competitionId), <String>['c1']);
   });
 
+  testWidgets('inviting one shooter does not disable the others', (
+    tester,
+  ) async {
+    final inner = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '25 m NAIS fin',
+      ownerId: 'me',
+    );
+    await inner.createCompetition(competition);
+    await inner.upsertOwnProfile(const Profile(id: 'me', displayName: 'Me'));
+    final alice = inner.asUser(userId: 'alice', email: 'alice@example.com');
+    await alice.upsertOwnProfile(
+      const Profile(id: 'alice', displayName: 'Alice'),
+    );
+    final bob = inner.asUser(userId: 'bob', email: 'bob@example.com');
+    await bob.upsertOwnProfile(const Profile(id: 'bob', displayName: 'Bob'));
+    final gate = Completer<void>();
+    final repo = _GatedInviteRepository(inner, gate);
+
+    final auth = FakeAuthRepository(initial: const SignedIn(_me));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(auth),
+          competitionRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: const MaterialApp(
+          home: CompetitionDetailScreen(competition: competition),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tap Bob's invite; the invite parks on the gate so it is still in flight.
+    await tester.tap(find.byKey(inviteShooterButtonKey('bob')));
+    await tester.pump();
+
+    // Only Bob's button is disabled — Alice's stays tappable (no shared blink).
+    expect(_inviteEnabled(tester, inviteShooterButtonKey('bob')), isFalse);
+    expect(_inviteEnabled(tester, inviteShooterButtonKey('alice')), isTrue);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('a non-owner sees no invite controls', (tester) async {
     final repo = _meRepo();
     final alice = repo.asUser(userId: 'alice', email: 'alice@example.com');
@@ -288,6 +339,57 @@ void main() {
     expect(find.byType(SessionSetupScreen), findsOneWidget);
     expect(find.widgetWithText(AppBar, '10 m Air Pistol'), findsOneWidget);
   });
+}
+
+bool _inviteEnabled(WidgetTester tester, Key key) =>
+    tester.widget<FilledButton>(find.byKey(key)).onPressed != null;
+
+/// Wraps an in-memory repository but parks `inviteUser` on a gate, so a test
+/// can observe the in-flight state — only the tapped shooter's button should be
+/// disabled, never all of them. Every other call delegates straight through.
+class _GatedInviteRepository implements CompetitionRepository {
+  _GatedInviteRepository(this._inner, this._gate);
+
+  final InMemoryCompetitionRepository _inner;
+  final Completer<void> _gate;
+
+  @override
+  Future<void> inviteUser(String competitionId, String userId) async {
+    await _gate.future;
+    await _inner.inviteUser(competitionId, userId);
+  }
+
+  @override
+  Future<void> upsertOwnProfile(Profile profile) =>
+      _inner.upsertOwnProfile(profile);
+  @override
+  Future<void> createCompetition(Competition competition) =>
+      _inner.createCompetition(competition);
+  @override
+  Future<List<Competition>> listMine() => _inner.listMine();
+  @override
+  Future<void> invite(String competitionId, String email) =>
+      _inner.invite(competitionId, email);
+  @override
+  Future<List<Profile>> listShooters() => _inner.listShooters();
+  @override
+  Future<List<CompetitionInvitation>> listMyInvitations() =>
+      _inner.listMyInvitations();
+  @override
+  Future<void> acceptInvitation(String competitionId) =>
+      _inner.acceptInvitation(competitionId);
+  @override
+  Future<List<CompetitionMember>> membersOf(String competitionId) =>
+      _inner.membersOf(competitionId);
+  @override
+  Future<void> submitResult(CompetitionResult result) =>
+      _inner.submitResult(result);
+  @override
+  Future<List<CompetitionResult>> resultsOf(String competitionId) =>
+      _inner.resultsOf(competitionId);
+  @override
+  Stream<List<CompetitionResult>> watchResults(String competitionId) =>
+      _inner.watchResults(competitionId);
 }
 
 CompetitionResult _res(
