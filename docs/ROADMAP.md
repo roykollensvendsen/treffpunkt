@@ -126,6 +126,14 @@ The shooter records a complete session on-device, with no network needed
 - [ ] 0015 — Browse own & published results.
 
 ## Increment 3 — polish & breadth
+- [x] 0039 — Skann skive (camera-assisted shot placement): photograph the paper
+      target, align the app's ring overlay on it, tap each hole and commit the
+      scored shots into the series. Manual-assisted v1 (no ML): a pure-Dart
+      similarity-transform calibration and an `image_picker`-backed
+      `ImageSourceService` seam, web + mobile from one codebase (ADR-0021). The
+      foundation a later automatic hole-detection step (classical CV or a trained
+      model on a labelled NSF-target dataset) would pre-fill. Closes the domain
+      expert's "photo of the shot target" wish.
 - [ ] 0016 — Responsive/adaptive polish; PWA install; store builds.
 - [ ] 0020+ — More programs/disciplines (further pistol programs, field, …).
 

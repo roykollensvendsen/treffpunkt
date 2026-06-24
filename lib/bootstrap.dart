@@ -10,6 +10,7 @@ import 'package:treffpunkt/features/auth/domain/auth_repository.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
@@ -31,7 +32,10 @@ import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 /// [sessionStore], [sessionRepository] or [weaponStore] is given the in-memory
 /// default is used; when no [locationService] is given the always-unavailable
 /// default stays, so no test reaches real GPS (ADR-0015) — and no test reaches
-/// real Supabase for uploads (spec 0024).
+/// real Supabase for uploads (spec 0024). [imageSourceService] is the camera /
+/// gallery for the "Skann skive" scan (spec 0039): `main()` passes the
+/// `image_picker`-backed one; omitting it keeps the always-unavailable default,
+/// so tests and the integration harness never touch a real camera.
 ///
 /// [initialWeapons] seeds the personal-weapons list at launch — `main()` loads
 /// it from the [weaponStore] before this call so the notifier starts populated
@@ -59,6 +63,7 @@ void runTreffpunkt(
   WeaponStore? weaponStore,
   List<Weapon>? initialWeapons,
   LocationService? locationService,
+  ImageSourceService? imageSourceService,
   ThemeModeStore? themeModeStore,
   ThemeMode? initialThemeMode,
   CompetitionRepository? competitionRepository,
@@ -79,6 +84,8 @@ void runTreffpunkt(
           initialWeaponsProvider.overrideWithValue(initialWeapons),
         if (locationService != null)
           locationServiceProvider.overrideWithValue(locationService),
+        if (imageSourceService != null)
+          imageSourceServiceProvider.overrideWithValue(imageSourceService),
         if (themeModeStore != null)
           themeModeStoreProvider.overrideWithValue(themeModeStore),
         if (initialThemeMode != null)

@@ -3,19 +3,27 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // Widget tests for the guided session screen.
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/domain/place.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
+import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon_class.dart';
+
+import '../fake_image_source_service.dart';
 
 // A small two-stage program on two faces, for the advance test.
 const ProgramDefinition _twoStage = ProgramDefinition(
@@ -627,14 +635,55 @@ void main() {
       },
     );
   });
+
+  group('scanning a target places shots into the series (spec 0039)', () {
+    testWidgets('the scan action commits the placed shots', (tester) async {
+      final source = FakeImageSourceService(
+        result: ImagePicked(
+          PickedImage(bytes: _onePixelPng),
+        ),
+      );
+      await tester.pumpWidget(
+        _app(ProgramCatalogue.airRifle10m, imageSource: source),
+      );
+
+      // Open the scan screen, pick a photo, accept the default calibration.
+      await tester.tap(find.byKey(scanTargetActionKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(scanCameraButtonKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(scanCalibrateConfirmKey));
+      await tester.pumpAndSettle();
+
+      // A tap on the overlay centre is a ten; confirm returns it to the series.
+      await tester.tapAt(tester.getCenter(find.byKey(scanOverlayKey)));
+      await tester.pump();
+      await tester.tap(find.byKey(scanConfirmKey));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 / 10'), findsOneWidget);
+      expect(totalText(tester), '10');
+    });
+  });
 }
+
+/// A 1×1 transparent PNG, so the scan screen's `Image.memory` decodes.
+final Uint8List _onePixelPng = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk'
+  '+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+);
 
 Widget _app(
   ProgramDefinition program, {
   SessionMetadata? metadata,
   Weapon? weapon,
+  ImageSourceService? imageSource,
 }) {
   return ProviderScope(
+    overrides: [
+      if (imageSource != null)
+        imageSourceServiceProvider.overrideWithValue(imageSource),
+    ],
     child: MaterialApp(
       home: SeriesScreen(
         program: program,

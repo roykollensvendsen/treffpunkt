@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
@@ -114,6 +115,15 @@ final savedRecordingProvider = FutureProvider<SessionRecording?>((ref) async {
 /// in tests with a fake.
 final locationServiceProvider = Provider<LocationService>(
   (ref) => const UnavailableLocationService(),
+);
+
+/// The app's [ImageSourceService] for the camera "Skann skive" scan (0039).
+///
+/// Defaults to one that can never pick an image, so the scan feature degrades
+/// cleanly until the real `image_picker`-backed service is wired; `main()`
+/// overrides it. Tests inject a fake.
+final imageSourceServiceProvider = Provider<ImageSourceService>(
+  (ref) => const UnavailableImageSourceService(),
 );
 
 /// The in-progress session together with the current (unsealed) series and its
@@ -256,6 +266,31 @@ class SessionNotifier extends Notifier<SessionRecording> {
       session: state.session,
       id: state.id,
       current: current.placeShot(shot),
+      draggingIndex: state.draggingIndex,
+    );
+    _persist();
+  }
+
+  /// Appends [shots] to the current series in firing order, stopping when it is
+  /// full (spec 0039). Persists once and never seals/advances on its own.
+  ///
+  /// The camera scan commits a whole photo's shots in one call: extra shots
+  /// beyond the series' capacity are dropped (so a stray tap can't overflow),
+  /// and sealing stays the existing manual gesture so a scan that fills the
+  /// series behaves exactly like tapping the last shot by hand.
+  void placeShots(List<Shot> shots) {
+    final current = state.current;
+    if (current == null) return;
+    var next = current;
+    for (final shot in shots) {
+      if (next.isComplete) break;
+      next = next.placeShot(shot);
+    }
+    if (identical(next, current)) return;
+    state = SessionRecording(
+      session: state.session,
+      id: state.id,
+      current: next,
       draggingIndex: state.draggingIndex,
     );
     _persist();

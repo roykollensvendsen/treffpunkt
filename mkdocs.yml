@@ -27,6 +27,7 @@ nav:
       - Getting started: user/getting-started.md
       - Signing in: user/signing-in.md
       - Score a 10 m air-rifle target: user/score-a-10m-air-rifle-target.md
+      - Scan a paper target: user/scan-a-paper-target.md
   - Developer Guide:
       - Overview: dev/index.md
       - Architecture: dev/architecture.md
@@ -67,6 +68,7 @@ nav:
       - "0036 — Rename 10 m air pistol": specs/0036-rename-air-pistol.md
       - "0037 — View another shooter's result": specs/0037-view-other-shooter-result.md
       - "0038 — Calendar view of sessions": specs/0038-sessions-calendar.md
+      - "0039 — Skann skive (camera scan)": specs/0039-scan-target.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
@@ -88,6 +90,7 @@ nav:
       - ADR-0018 Theme mode persistence: adr/0018-theme-mode-persistence.md
       - ADR-0019 Competitions data model: adr/0019-competitions-data-model.md
       - ADR-0020 Invite by user-id RPC: adr/0020-invite-by-user-id-rpc.md
+      - ADR-0021 Target scan calibration: adr/0021-target-scan-calibration-and-image-source.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md
