@@ -10,6 +10,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
 Competition _comp(String id, {required String ownerId, String name = 'Cup'}) =>
@@ -101,4 +102,69 @@ void main() {
     final members = await alice.membersOf('c1');
     expect(members.single.profile?.displayName, 'Alice');
   });
+
+  test('submitResult is idempotent by id (first submission wins)', () async {
+    final repo = InMemoryCompetitionRepository(
+      currentUserId: 'alice',
+      currentEmail: 'alice@example.com',
+    );
+    await repo.submitResult(_result('s1', competitionId: 'c1', total: 580));
+    // A re-submit of the same session id is a no-op (the score is unchanged).
+    await repo.submitResult(_result('s1', competitionId: 'c1', total: 999));
+
+    final results = await repo.resultsOf('c1');
+    expect(results.map((r) => r.id), <String>['s1']);
+    expect(results.single.total, 580);
+    // The acting user is stamped (the DB defaults user_id to auth.uid()).
+    expect(results.single.userId, 'alice');
+  });
+
+  test('resultsOf is sorted best-first with submitter profiles', () async {
+    final repo = InMemoryCompetitionRepository(currentUserId: 'host');
+    await repo.upsertOwnProfile(const Profile(id: 'a', displayName: 'Alice'));
+    await repo.upsertOwnProfile(const Profile(id: 'b', displayName: 'Bob'));
+    // Same total → the one with more inner tens ranks higher.
+    await repo.submitResult(
+      _result('r-low', competitionId: 'c1', total: 560, userId: 'a'),
+    );
+    await repo.submitResult(
+      _result(
+        'r-top',
+        competitionId: 'c1',
+        total: 580,
+        innerTens: 8,
+        userId: 'b',
+      ),
+    );
+    await repo.submitResult(
+      _result(
+        'r-mid',
+        competitionId: 'c1',
+        total: 580,
+        innerTens: 3,
+        userId: 'a',
+      ),
+    );
+
+    final results = await repo.resultsOf('c1');
+    expect(results.map((r) => r.id), <String>['r-top', 'r-mid', 'r-low']);
+    expect(results.first.profile?.displayName, 'Bob');
+  });
 }
+
+CompetitionResult _result(
+  String id, {
+  required String competitionId,
+  required int total,
+  int innerTens = 0,
+  String? userId,
+}) => CompetitionResult(
+  id: id,
+  competitionId: competitionId,
+  userId: userId,
+  program: '10 m Air Pistol',
+  total: total,
+  maxTotal: 600,
+  innerTens: innerTens,
+  payload: const <String, dynamic>{},
+);

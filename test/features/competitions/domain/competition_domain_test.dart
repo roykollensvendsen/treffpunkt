@@ -10,7 +10,9 @@ import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
+import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 
 void main() {
   group('Profile', () {
@@ -124,6 +126,65 @@ void main() {
         'competition_id': 'c1',
         'invited_email': 'bob@example.com',
       });
+    });
+  });
+
+  group('CompetitionResult', () {
+    final record = SessionRecord(
+      id: 's1',
+      program: '10 m Air Pistol',
+      capturedAt: DateTime.utc(2026, 6, 23, 10),
+      total: 580,
+      maxTotal: 600,
+      innerTens: 5,
+      payload: const <String, dynamic>{'k': 'v'},
+    );
+
+    test('fromSessionRecord carries the id, program and score', () {
+      final result = CompetitionResult.fromSessionRecord(
+        record,
+        competitionId: 'c1',
+      );
+      expect(result.id, 's1');
+      expect(result.competitionId, 'c1');
+      expect(result.program, '10 m Air Pistol');
+      expect(result.total, 580);
+      expect(result.maxTotal, 600);
+      expect(result.innerTens, 5);
+      expect(result.userId, isNull); // the DB defaults it to auth.uid()
+    });
+
+    test('toInsertJson omits user_id and created_at', () {
+      final json = CompetitionResult.fromSessionRecord(
+        record,
+        competitionId: 'c1',
+      ).toInsertJson();
+      expect(json['id'], 's1');
+      expect(json['competition_id'], 'c1');
+      expect(json['total'], 580);
+      expect(json['max_total'], 600);
+      expect(json['inner_tens'], 5);
+      expect(json.containsKey('user_id'), isFalse);
+      expect(json.containsKey('created_at'), isFalse);
+    });
+
+    test('fromJson reads a row; withProfile / withUser attach', () {
+      final result = CompetitionResult.fromJson(const <String, dynamic>{
+        'id': 's1',
+        'competition_id': 'c1',
+        'user_id': 'u1',
+        'program': '10 m Air Pistol',
+        'total': 580,
+        'max_total': 600,
+        'inner_tens': 5,
+        'payload': <String, dynamic>{'k': 'v'},
+      });
+      expect(result.userId, 'u1');
+      expect(result.total, 580);
+
+      const profile = Profile(id: 'u1', displayName: 'Alice');
+      expect(result.withProfile(profile).profile, profile);
+      expect(result.withUser('u2').userId, 'u2');
     });
   });
 }

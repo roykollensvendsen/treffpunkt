@@ -90,10 +90,11 @@ The shooter records a complete session on-device, with no network needed
       the same per-stage + per-series breakdown (0023); an unresolvable program
       shows a graceful message. Best-effort read-back (server `list()` returns
       empty on any error), unioned and deduplicated by id (synced wins, ADR-0017).
-- [ ] 0012 — Sync: upload completed local sessions to the chosen competition when
-      online; idempotent and queued; an upload that doesn't match the
-      competition's program goes to a *needs-attention* state, not an endless
-      retry.
+- [x] 0012 — Shoot for a competition: "Skyt nå" launches the competition's fixed
+      program; on completion the result is submitted (idempotent, via the durable
+      upload queue) to a `competition_results` scoreboard every participant reads.
+      Program always matches (no needs-attention needed). A basic scoreboard read
+      ships here; Realtime + ranking is 0013.
 - [ ] 0013 — Per-competition result list, visible to every participant
       (Supabase Realtime).
 - [ ] 0014 — Fair cross-competition ranking (public top-score list).

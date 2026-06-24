@@ -43,11 +43,18 @@ const Key openLocationSettingsKey = ValueKey<String>('openLocationSettings');
 class SessionSetupScreen extends ConsumerStatefulWidget {
   /// Creates the setup screen for [program], seeding the date/time from [now]
   /// (defaults to the wall clock; injected in tests).
-  SessionSetupScreen({required this.program, DateTime? now, super.key})
-    : now = now ?? DateTime.now();
+  SessionSetupScreen({
+    required this.program,
+    DateTime? now,
+    this.competitionId,
+    super.key,
+  }) : now = now ?? DateTime.now();
 
   /// The program about to be shot.
   final ProgramDefinition program;
+
+  /// The competition this session is shot for (spec 0012), or `null`.
+  final String? competitionId;
 
   /// The moment used to seed the editable date and time.
   final DateTime now;
@@ -163,6 +170,7 @@ class _SessionSetupScreenState extends ConsumerState<SessionSetupScreen> {
             program: widget.program,
             metadata: metadata,
             weapon: _weapon,
+            competitionId: widget.competitionId,
           ),
         ),
       ),

@@ -14,6 +14,7 @@ import 'package:treffpunkt/features/competitions/data/competition_repository.dar
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 
@@ -90,6 +91,12 @@ class _RecordingCompetitionRepository implements CompetitionRepository {
       throw UnimplementedError();
   @override
   Future<List<CompetitionMember>> membersOf(String competitionId) async =>
+      throw UnimplementedError();
+  @override
+  Future<void> submitResult(CompetitionResult result) async =>
+      throw UnimplementedError();
+  @override
+  Future<List<CompetitionResult>> resultsOf(String competitionId) async =>
       throw UnimplementedError();
 }
 

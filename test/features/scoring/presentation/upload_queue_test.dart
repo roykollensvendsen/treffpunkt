@@ -14,6 +14,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
+import 'package:treffpunkt/features/competitions/domain/competition.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/competitions/domain/profile.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
@@ -41,15 +48,56 @@ const ProgramDefinition _program = ProgramDefinition(
 );
 const Shot _centre = Shot(dxMm: 0, dyMm: 0);
 
-SessionRecord _record(String id, {int total = 50, int innerTens = 0}) =>
-    SessionRecord(
-      id: id,
-      program: '10 m Air Pistol',
-      total: total,
-      maxTotal: 100,
-      innerTens: innerTens,
-      payload: <String, dynamic>{'id': id},
-    );
+SessionRecord _record(
+  String id, {
+  int total = 50,
+  int innerTens = 0,
+  String? competitionId,
+}) => SessionRecord(
+  id: id,
+  program: '10 m Air Pistol',
+  total: total,
+  maxTotal: 100,
+  innerTens: innerTens,
+  payload: <String, dynamic>{'id': id},
+  competitionId: competitionId,
+);
+
+/// Records the result ids submitted, and can be made to fail — to prove the
+/// queue submits competition results and keeps a record queued until it lands.
+class _SpyCompetitionRepository implements CompetitionRepository {
+  final List<String> submittedIds = <String>[];
+  bool fail = false;
+
+  @override
+  Future<void> submitResult(CompetitionResult result) async {
+    if (fail) throw const CompetitionSyncException('submit failed');
+    submittedIds.add(result.id);
+  }
+
+  @override
+  Future<void> upsertOwnProfile(Profile profile) async {}
+  @override
+  Future<void> createCompetition(Competition competition) async =>
+      throw UnimplementedError();
+  @override
+  Future<List<Competition>> listMine() async => throw UnimplementedError();
+  @override
+  Future<void> invite(String competitionId, String email) async =>
+      throw UnimplementedError();
+  @override
+  Future<List<CompetitionInvitation>> listMyInvitations() async =>
+      throw UnimplementedError();
+  @override
+  Future<void> acceptInvitation(String competitionId) async =>
+      throw UnimplementedError();
+  @override
+  Future<List<CompetitionMember>> membersOf(String competitionId) async =>
+      throw UnimplementedError();
+  @override
+  Future<List<CompetitionResult>> resultsOf(String competitionId) async =>
+      throw UnimplementedError();
+}
 
 /// A repository whose [upload] always throws, to prove the queue keeps the
 /// record and never breaks completion.
@@ -116,6 +164,7 @@ void main() {
     required PendingUploadsStore pendingStore,
     String id = 'fixed-id',
     FakeAuthRepository? authRepository,
+    CompetitionRepository? competitionRepository,
   }) {
     final authRepo = authRepository ?? FakeAuthRepository(initial: auth);
     return ProviderContainer(
@@ -126,6 +175,10 @@ void main() {
         pendingUploadsStoreProvider.overrideWithValue(pendingStore),
         sessionIdGeneratorProvider.overrideWithValue(() => id),
         restoredRecordingProvider.overrideWithValue(null),
+        if (competitionRepository != null)
+          competitionRepositoryProvider.overrideWithValue(
+            competitionRepository,
+          ),
       ],
     );
   }
@@ -464,4 +517,89 @@ void main() {
       expect(loaded.single.total, 99);
     },
   );
+
+  test('a session shot for a competition submits both the session and the '
+      'result', () async {
+    final sessionRepo = InMemorySessionRepository();
+    final compRepo = _SpyCompetitionRepository();
+    final container = makeContainer(
+      auth: const SignedIn(AppUser(id: 'u1')),
+      repository: sessionRepo,
+      pendingStore: InMemoryPendingUploadsStore(),
+      competitionRepository: compRepo,
+    );
+    addTearDown(container.dispose);
+    container.read(uploadQueueProvider);
+    await container.pump();
+
+    await container
+        .read(uploadQueueProvider.notifier)
+        .enqueue(_record('s1', competitionId: 'c1'));
+    await container.pump();
+
+    expect(sessionRepo.uploads.map((r) => r.id), <String>['s1']);
+    expect(compRepo.submittedIds, <String>['s1']);
+    expect(container.read(uploadQueueProvider), isEmpty);
+  });
+
+  test(
+    'a failed result submission keeps the record queued until it lands',
+    () async {
+      final sessionRepo = InMemorySessionRepository();
+      final compRepo = _SpyCompetitionRepository()..fail = true;
+      final container = makeContainer(
+        auth: const SignedIn(AppUser(id: 'u1')),
+        repository: sessionRepo,
+        pendingStore: InMemoryPendingUploadsStore(),
+        competitionRepository: compRepo,
+      );
+      addTearDown(container.dispose);
+      container.read(uploadQueueProvider);
+      await container.pump();
+
+      await container
+          .read(uploadQueueProvider.notifier)
+          .enqueue(_record('s1', competitionId: 'c1'));
+      await container.pump();
+
+      // The session uploaded, but the result submission failed → still queued.
+      expect(sessionRepo.uploads.map((r) => r.id), <String>['s1']);
+      expect(compRepo.submittedIds, isEmpty);
+      expect(
+        container.read(uploadQueueProvider).map((r) => r.id),
+        <String>['s1'],
+      );
+
+      // Heal and flush again → the result lands and the record is dropped (the
+      // session re-upload is an idempotent no-op).
+      compRepo.fail = false;
+      await container.read(uploadQueueProvider.notifier).flush();
+      await container.pump();
+      expect(compRepo.submittedIds, <String>['s1']);
+      expect(container.read(uploadQueueProvider), isEmpty);
+    },
+  );
+
+  test('a personal session never submits a competition result', () async {
+    final sessionRepo = InMemorySessionRepository();
+    final compRepo = _SpyCompetitionRepository();
+    final container = makeContainer(
+      auth: const SignedIn(AppUser(id: 'u1')),
+      repository: sessionRepo,
+      pendingStore: InMemoryPendingUploadsStore(),
+      competitionRepository: compRepo,
+    );
+    addTearDown(container.dispose);
+    container.read(uploadQueueProvider);
+    await container.pump();
+
+    await container
+        .read(uploadQueueProvider.notifier)
+        .enqueue(_record('s1')); // no competitionId
+    await container.pump();
+
+    expect(sessionRepo.uploads.map((r) => r.id), <String>['s1']);
+    expect(compRepo.submittedIds, isEmpty);
+    expect(container.read(uploadQueueProvider), isEmpty);
+  });
 }
