@@ -597,6 +597,90 @@ void main() {
     expect(find.text('Kan ikke vise denne økta'), findsOneWidget);
     expect(find.byKey(sessionCompleteKey), findsNothing);
   });
+
+  testWidgets('the calendar marks days with sessions and shows that day', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        synced: const <SessionRecord>[],
+        pending: <SessionRecord>[
+          _recordFor(
+            ProgramCatalogue.airPistol10m,
+            id: 'jun21',
+            capturedAt: DateTime(2026, 6, 21, 10),
+          ),
+          _recordFor(
+            ProgramCatalogue.airPistol10m,
+            id: 'jun10',
+            capturedAt: DateTime(2026, 6, 10, 9),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(calendarToggleKey));
+    await tester.pumpAndSettle();
+
+    // Opens on the newest session's month, with its day selected.
+    expect(find.text('Juni 2026'), findsOneWidget);
+    expect(
+      find.byKey(calendarDayDotKey(DateTime(2026, 6, 21))),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(calendarDayDotKey(DateTime(2026, 6, 10))),
+      findsOneWidget,
+    );
+    expect(find.byKey(mySessionCard('jun21')), findsOneWidget);
+    expect(find.byKey(mySessionCard('jun10')), findsNothing);
+
+    // Tap the 10th → its session shows instead.
+    await tester.tap(find.byKey(calendarDayKey(DateTime(2026, 6, 10))));
+    await tester.pumpAndSettle();
+    expect(find.byKey(mySessionCard('jun10')), findsOneWidget);
+    expect(find.byKey(mySessionCard('jun21')), findsNothing);
+
+    // Tap a day with no session → the hint shows.
+    await tester.tap(find.byKey(calendarDayKey(DateTime(2026, 6, 15))));
+    await tester.pumpAndSettle();
+    expect(find.byKey(noSessionsOnDayKey), findsOneWidget);
+
+    // Toggle back to the flat list.
+    await tester.tap(find.byKey(calendarToggleKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(calendarMonthLabelKey), findsNothing);
+    expect(find.byKey(mySessionCard('jun21')), findsOneWidget);
+    expect(find.byKey(mySessionCard('jun10')), findsOneWidget);
+  });
+
+  testWidgets('the calendar navigates between months', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        synced: const <SessionRecord>[],
+        pending: <SessionRecord>[
+          _recordFor(
+            ProgramCatalogue.airPistol10m,
+            id: 'jun21',
+            capturedAt: DateTime(2026, 6, 21, 10),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(calendarToggleKey));
+    await tester.pumpAndSettle();
+    expect(find.text('Juni 2026'), findsOneWidget);
+
+    await tester.tap(find.byKey(calendarNextMonthKey));
+    await tester.pumpAndSettle();
+    expect(find.text('Juli 2026'), findsOneWidget);
+
+    await tester.tap(find.byKey(calendarPrevMonthKey));
+    await tester.pumpAndSettle();
+    expect(find.text('Juni 2026'), findsOneWidget);
+  });
 }
 
 /// A [SessionRepository] whose [list] never completes until [release] is called
