@@ -80,6 +80,20 @@ class UploadQueueNotifier extends Notifier<List<SessionRecord>> {
     await _flushOnce();
   });
 
+  /// Removes the pending record [id] from the queue and its durable store (spec
+  /// 0033), run on the serial chain so it never races a flush.
+  ///
+  /// A no-op for an id that is not pending (e.g. an already-synced session,
+  /// removed from the cloud separately). Persisting the remainder is what makes
+  /// the removal durable across a restart.
+  Future<void> deleteById(String id) => _run(() async {
+    state = _dedupById(<SessionRecord>[
+      for (final pending in state)
+        if (pending.id != id) pending,
+    ]);
+    await _persist(state);
+  });
+
   /// Attempts to upload every pending record, dropping the ones that succeed
   /// and keeping the ones that fail (spec 0025).
   ///

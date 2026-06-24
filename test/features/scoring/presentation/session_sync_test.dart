@@ -66,6 +66,8 @@ class _ThrowingSessionRepository implements SessionRepository {
 
   @override
   Future<List<SessionRecord>> list() async => const <SessionRecord>[];
+  @override
+  Future<void> deleteById(String id) async {}
 }
 
 /// A repository that only counts uploads, to pin upload-exactly-once.
@@ -79,6 +81,8 @@ class _CountingSessionRepository implements SessionRepository {
 
   @override
   Future<List<SessionRecord>> list() async => const <SessionRecord>[];
+  @override
+  Future<void> deleteById(String id) async {}
 }
 
 void main() {

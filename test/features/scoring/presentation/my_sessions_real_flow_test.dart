@@ -138,4 +138,6 @@ class _OfflineSessionRepository implements SessionRepository {
 
   @override
   Future<List<SessionRecord>> list() async => const <SessionRecord>[];
+  @override
+  Future<void> deleteById(String id) async {}
 }
