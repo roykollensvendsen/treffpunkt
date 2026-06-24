@@ -10,6 +10,7 @@ import 'package:treffpunkt/features/auth/domain/auth_repository.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/scoring/data/contribution_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
@@ -17,7 +18,9 @@ import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/data/target_scanner.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/settings/data/contribution_consent_store.dart';
 import 'package:treffpunkt/features/settings/data/theme_mode_store.dart';
+import 'package:treffpunkt/features/settings/presentation/contribution_providers.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
 import 'package:treffpunkt/features/weapons/data/weapon_store.dart';
 import 'package:treffpunkt/features/weapons/data/weapons_store.dart';
@@ -39,7 +42,9 @@ import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 /// so tests and the integration harness never touch a real camera.
 /// [targetScanner] auto-detects holes in a scanned photo (spec 0040): `main()`
 /// passes the `image`-backed one; omitting it keeps the always-unavailable
-/// default, so tests never decode an image.
+/// default, so tests never decode an image. [contributionService] uploads
+/// consented training samples (spec 0041): `main()` passes the Supabase-backed
+/// one; omitting it keeps the no-op default, so tests never reach a backend.
 ///
 /// [initialWeapons] seeds the personal-weapons list at launch — `main()` loads
 /// it from the [weaponStore] before this call so the notifier starts populated
@@ -69,8 +74,12 @@ void runTreffpunkt(
   LocationService? locationService,
   ImageSourceService? imageSourceService,
   TargetScanner? targetScanner,
+  ContributionService? contributionService,
   ThemeModeStore? themeModeStore,
   ThemeMode? initialThemeMode,
+  ContributionConsentStore? contributionConsentStore,
+  bool? initialContributionEnabled,
+  bool? initialDisclosureShown,
   CompetitionRepository? competitionRepository,
 }) {
   runApp(
@@ -93,10 +102,24 @@ void runTreffpunkt(
           imageSourceServiceProvider.overrideWithValue(imageSourceService),
         if (targetScanner != null)
           targetScannerProvider.overrideWithValue(targetScanner),
+        if (contributionService != null)
+          contributionServiceProvider.overrideWithValue(contributionService),
         if (themeModeStore != null)
           themeModeStoreProvider.overrideWithValue(themeModeStore),
         if (initialThemeMode != null)
           initialThemeModeProvider.overrideWithValue(initialThemeMode),
+        if (contributionConsentStore != null)
+          contributionConsentStoreProvider.overrideWithValue(
+            contributionConsentStore,
+          ),
+        if (initialContributionEnabled != null)
+          initialContributionEnabledProvider.overrideWithValue(
+            initialContributionEnabled,
+          ),
+        if (initialDisclosureShown != null)
+          initialDisclosureShownProvider.overrideWithValue(
+            initialDisclosureShown,
+          ),
         if (competitionRepository != null)
           competitionRepositoryProvider.overrideWithValue(
             competitionRepository,

@@ -38,3 +38,7 @@ tapped them on the live target.
 - **Finn treff automatisk** is a helper, not magic: it works best on a sharp,
   straight-on, well-lit photo, and it may miss a hole or add a stray one — always
   glance over the result and fix it with a tap or **Angre** before you confirm.
+
+Confirming a scan also helps improve the detector — see
+[Treningsbilder og personvern](personvern-treningsbilder.md) for what's shared
+and how to turn it off.

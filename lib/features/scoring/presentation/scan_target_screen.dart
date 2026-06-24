@@ -2,18 +2,25 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/config/build_info.dart';
+import 'package:treffpunkt/features/auth/domain/auth_status.dart';
+import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_calibration.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
+import 'package:treffpunkt/features/scoring/domain/training_sample.dart';
 import 'package:treffpunkt/features/scoring/presentation/scan_overlay_painter.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/settings/presentation/contribution_disclosure.dart';
+import 'package:treffpunkt/features/settings/presentation/contribution_providers.dart';
 
 /// Key for the "take a photo" button on the capture step.
 const Key scanCameraButtonKey = ValueKey<String>('scanCameraButton');
@@ -50,6 +57,16 @@ const Key scanDetectKey = ValueKey<String>('scanDetect');
 
 /// The steps of the scan flow.
 enum _ScanMode { capture, calibrate, place }
+
+/// A placed shot together with its training-label provenance (spec 0041): the
+/// [source] that placed it and whether it was [edited] (dragged) afterwards.
+class _Candidate {
+  _Candidate(this.shot, this.source);
+
+  Shot shot;
+  final TrainingHoleSource source;
+  bool edited = false;
+}
 
 /// Camera-assisted shot placement (spec 0039): photograph the paper target,
 /// align the app's ring overlay on it, tap each bullet hole, and return the
@@ -93,8 +110,27 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
   PixelPoint? _scale;
   double _boxSide = 0;
   bool _analysing = false;
-  final List<Shot> _candidates = <Shot>[];
+  final List<_Candidate> _candidates = <_Candidate>[];
   int? _draggingIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowDisclosure());
+  }
+
+  /// Shows the one-time training-data disclosure on the first scan (spec 0041).
+  void _maybeShowDisclosure() {
+    if (!mounted) return;
+    if (ref.read(contributionConsentProvider).disclosureShown) return;
+    ref.read(contributionConsentProvider.notifier).markDisclosureShown();
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (_) => const ContributionDisclosureDialog(),
+      ),
+    );
+  }
 
   TargetCalibration get _calibration => TargetCalibration.fromHandles(
     centre: _centre!,
@@ -181,13 +217,15 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
       return;
     }
     final minSepMm = widget.geometry.pelletRadiusMm * 1.5;
-    final added = <Shot>[];
+    final added = <_Candidate>[];
     for (final shot in detected) {
       if (added.length >= remaining) break;
       final duplicate = _candidates
           .followedBy(added)
-          .any((existing) => _distanceMm(existing, shot) < minSepMm);
-      if (!duplicate) added.add(shot);
+          .any((existing) => _distanceMm(existing.shot, shot) < minSepMm);
+      if (!duplicate) {
+        added.add(_Candidate(shot, TrainingHoleSource.auto));
+      }
     }
     setState(() => _candidates.addAll(added));
     _showHint('La til ${added.length} treff — sjekk og juster.');
@@ -205,7 +243,12 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
       return;
     }
     setState(() {
-      _candidates.add(_calibration.shotFor(PixelPoint(localPx.dx, localPx.dy)));
+      _candidates.add(
+        _Candidate(
+          _calibration.shotFor(PixelPoint(localPx.dx, localPx.dy)),
+          TrainingHoleSource.manual,
+        ),
+      );
     });
   }
 
@@ -214,7 +257,7 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
     var nearest = -1;
     var nearestPx = double.infinity;
     for (var i = 0; i < _candidates.length; i++) {
-      final markerPx = _calibration.imagePxFor(_candidates[i]);
+      final markerPx = _calibration.imagePxFor(_candidates[i].shot);
       final distance = markerPx.distanceTo(press);
       if (distance < nearestPx) {
         nearestPx = distance;
@@ -230,9 +273,9 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
     final index = _draggingIndex;
     if (index == null) return;
     setState(() {
-      _candidates[index] = _calibration.shotFor(
-        PixelPoint(localPx.dx, localPx.dy),
-      );
+      _candidates[index]
+        ..shot = _calibration.shotFor(PixelPoint(localPx.dx, localPx.dy))
+        ..edited = true;
     });
   }
 
@@ -241,7 +284,47 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
     setState(_candidates.removeLast);
   }
 
-  void _confirm() => Navigator.of(context).pop(List<Shot>.of(_candidates));
+  void _confirm() {
+    final shots = <Shot>[for (final c in _candidates) c.shot];
+    _maybeContribute();
+    Navigator.of(context).pop(shots);
+  }
+
+  /// Captures the scan as a consented training sample (spec 0041), best-effort
+  /// and fire-and-forget: only when signed in and consent is on, so it never
+  /// blocks the pop above and never throws.
+  void _maybeContribute() {
+    // Entirely best-effort and off the happy path: any failure (an unwired
+    // provider in a test scope, a build error) must never break confirming.
+    try {
+      final bytes = _imageBytes;
+      if (bytes == null || _candidates.isEmpty) return;
+      final status = ref.read(authStateChangesProvider).value;
+      final uid = status is SignedIn ? status.user.id : null;
+      if (uid == null || !ref.read(contributionConsentProvider).enabled) return;
+      final sample = TrainingSample(
+        id: ref.read(sessionIdGeneratorProvider)(),
+        imageBytes: bytes,
+        geometry: widget.geometry,
+        calibration: _calibration,
+        boxSide: _boxSide,
+        holes: <TrainingHole>[
+          for (final c in _candidates)
+            TrainingHole(shot: c.shot, source: c.source, edited: c.edited),
+        ],
+        capturedAt: DateTime.now(),
+        appVersion: BuildInfo.label,
+      );
+      unawaited(
+        ref
+            .read(contributionServiceProvider)
+            .contribute(sample)
+            .catchError((Object _) {}),
+      );
+    } on Object {
+      // Swallow — contributing training data never blocks a scan.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +446,7 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
                 painter: ScanOverlayPainter(
                   geometry: widget.geometry,
                   calibration: calibration,
-                  shots: _candidates,
+                  shots: <Shot>[for (final c in _candidates) c.shot],
                 ),
               ),
             ),
@@ -442,7 +525,7 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
 
   Widget _placeControls() {
     final theme = Theme.of(context);
-    final lastShot = _candidates.isEmpty ? null : _candidates.last;
+    final lastShot = _candidates.isEmpty ? null : _candidates.last.shot;
     final lastRing = lastShot == null
         ? null
         : _scoring.integerScore(widget.geometry, lastShot);

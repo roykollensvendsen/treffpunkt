@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/scoring/data/contribution_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
@@ -134,6 +135,15 @@ final imageSourceServiceProvider = Provider<ImageSourceService>(
 /// overrides it. Tests inject a fake.
 final targetScannerProvider = Provider<TargetScanner>(
   (ref) => const UnavailableTargetScanner(),
+);
+
+/// The app's [ContributionService] for consented training-data upload (0041).
+///
+/// Defaults to one that never contributes, so tests and a fresh app never reach
+/// a backend; `main()` overrides it with the Supabase-backed service. Best-
+/// effort: capturing training data never blocks or breaks a scan.
+final contributionServiceProvider = Provider<ContributionService>(
+  (ref) => const UnavailableContributionService(),
 );
 
 /// The in-progress session together with the current (unsealed) series and its

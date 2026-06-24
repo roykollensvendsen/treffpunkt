@@ -132,6 +132,17 @@ email reaches the client). No table changes. Apply it before the "Velg skytter"
 invite picker can invite a registered shooter; the existing accept flow is
 unchanged.
 
+`20260624140000_training_samples.sql` (spec 0041) adds the consented
+training-image dataset: a **private** `training-images` Storage bucket with
+owner-prefix RLS (`<uid>/<id>.jpg`), and a `training_samples` table with
+owner-only select/insert/delete RLS. Apply it before scans can be contributed.
+**Erasing a user:** account deletion cascades the table rows but **not** the
+Storage objects, so when deleting a user also purge their prefix — e.g. in the
+SQL editor `delete from storage.objects where bucket_id = 'training-images' and
+(storage.foldername(name))[1] = '<uid>';` (or `supabase storage rm --recursive
+ss:///training-images/<uid>`). A self-serve "Slett mine bidrag" in the app is a
+planned fast-follow.
+
 ### Apply via the SQL editor (no CLI)
 Open the project's **SQL editor**, paste the contents of the migration file, and
 **Run**. Expect *"Success. No rows returned."*
