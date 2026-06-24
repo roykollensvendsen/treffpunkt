@@ -5,6 +5,7 @@
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
 /// Thrown when a competition read fails, or a foreground write the user is
@@ -69,6 +70,18 @@ abstract interface class CompetitionRepository {
   ///
   /// Throws [CompetitionSyncException] on a failed read.
   Future<List<CompetitionMember>> membersOf(String competitionId);
+
+  /// Submits the caller's [result] to its competition (spec 0012).
+  ///
+  /// Idempotent by the session id: a re-submit is a no-op (the durable upload
+  /// queue may retry). Throws [CompetitionSyncException] on failure — but the
+  /// queue swallows it and retries on the next flush.
+  Future<void> submitResult(CompetitionResult result);
+
+  /// The submitted results for [competitionId] — the scoreboard — each with its
+  /// submitter's profile, best first (highest [CompetitionResult.total], then
+  /// most inner tens). Throws [CompetitionSyncException] on a failed read.
+  Future<List<CompetitionResult>> resultsOf(String competitionId);
 }
 
 /// A [CompetitionRepository] that keeps everything in memory only.
@@ -82,7 +95,8 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     : _profiles = <String, Profile>{},
       _competitions = <String, Competition>{},
       _members = <String, Set<String>>{},
-      _invitations = <CompetitionInvitation>[];
+      _invitations = <CompetitionInvitation>[],
+      _results = <String, Map<String, CompetitionResult>>{};
 
   InMemoryCompetitionRepository._shared(
     this.currentUserId,
@@ -91,6 +105,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     this._competitions,
     this._members,
     this._invitations,
+    this._results,
   );
 
   /// The acting user's id (owner/member checks), or `null` if signed out.
@@ -103,6 +118,8 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
   final Map<String, Competition> _competitions;
   final Map<String, Set<String>> _members;
   final List<CompetitionInvitation> _invitations;
+  // competitionId -> (resultId -> result).
+  final Map<String, Map<String, CompetitionResult>> _results;
 
   /// A view of the **same** store acting as a different user — for tests that
   /// drive a multi-user flow (one user invites, another accepts) against one
@@ -115,6 +132,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
         _competitions,
         _members,
         _invitations,
+        _results,
       );
 
   String get _email => (currentEmail ?? '').toLowerCase();
@@ -204,5 +222,30 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
           ),
         )
         .toList();
+  }
+
+  @override
+  Future<void> submitResult(CompetitionResult result) async {
+    final byId = _results.putIfAbsent(
+      result.competitionId,
+      () => <String, CompetitionResult>{},
+    );
+    // putIfAbsent mirrors the database's ON CONFLICT DO NOTHING: the first
+    // submission of a session id wins, and a re-submit is a no-op. The userId
+    // defaults to the acting user, as it does in the database.
+    final stored = result.userId != null
+        ? result
+        : result.withUser(currentUserId);
+    byId.putIfAbsent(result.id, () => stored);
+  }
+
+  @override
+  Future<List<CompetitionResult>> resultsOf(String competitionId) async {
+    final byId = _results[competitionId] ?? const <String, CompetitionResult>{};
+    return byId.values.map((r) => r.withProfile(_profiles[r.userId])).toList()
+      ..sort((a, b) {
+        final byTotal = b.total.compareTo(a.total);
+        return byTotal != 0 ? byTotal : b.innerTens.compareTo(a.innerTens);
+      });
   }
 }

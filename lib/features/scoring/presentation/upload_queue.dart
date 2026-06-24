@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
@@ -121,21 +123,45 @@ class UploadQueueNotifier extends Notifier<List<SessionRecord>> {
     await _persist(remaining);
   }
 
-  /// Uploads [record], returning whether it succeeded; swallows every error so
-  /// a throwing repository leaves the record queued instead of breaking flush.
+  /// Uploads [record] and, when it was shot for a competition (spec 0012), also
+  /// submits its result; returns whether **everything** succeeded.
+  ///
+  /// Swallows every error so a throwing repository leaves the record queued
+  /// instead of breaking flush. The record is dropped only when both the
+  /// session upload and (if any) the result submission succeed; both are
+  /// idempotent, so a retry of a partially-synced record re-runs safely.
   Future<bool> _tryUpload(
     SessionRepository repository,
     SessionRecord record,
   ) async {
     try {
       await repository.upload(record);
-      return true;
     } on Object catch (error) {
       if (!kReleaseMode) {
         debugPrint('Failed to upload a queued session: $error');
       }
       return false;
     }
+
+    final competitionId = record.competitionId;
+    if (competitionId != null) {
+      try {
+        await ref
+            .read(competitionRepositoryProvider)
+            .submitResult(
+              CompetitionResult.fromSessionRecord(
+                record,
+                competitionId: competitionId,
+              ),
+            );
+      } on Object catch (error) {
+        if (!kReleaseMode) {
+          debugPrint('Failed to submit the competition result: $error');
+        }
+        return false;
+      }
+    }
+    return true;
   }
 
   /// Whether a user is currently signed in (best-effort, like the notifier).

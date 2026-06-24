@@ -12,6 +12,7 @@ import 'package:treffpunkt/features/competitions/data/competition_repository.dar
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:uuid/uuid.dart';
 
@@ -95,4 +96,12 @@ final competitionMembersProvider =
     FutureProvider.family<List<CompetitionMember>, String>(
       (ref, competitionId) =>
           ref.watch(competitionRepositoryProvider).membersOf(competitionId),
+    );
+
+/// The scoreboard for a competition — its results, best first (spec 0012).
+// ignore: specify_nonobvious_property_types
+final competitionResultsProvider =
+    FutureProvider.family<List<CompetitionResult>, String>(
+      (ref, competitionId) =>
+          ref.watch(competitionRepositoryProvider).resultsOf(competitionId),
     );

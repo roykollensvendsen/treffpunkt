@@ -131,6 +131,7 @@ class SeriesScreen extends StatelessWidget {
     this.weapon,
     this.restored,
     this.actions,
+    this.competitionId,
     super.key,
   });
 
@@ -149,6 +150,9 @@ class SeriesScreen extends StatelessWidget {
   /// Extra actions shown in the app bar (e.g. a sign-out button).
   final List<Widget>? actions;
 
+  /// The competition this session is shot for (spec 0012), or `null`.
+  final String? competitionId;
+
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
@@ -157,6 +161,7 @@ class SeriesScreen extends StatelessWidget {
         currentSessionMetadataProvider.overrideWithValue(metadata),
         currentWeaponProvider.overrideWithValue(weapon),
         restoredRecordingProvider.overrideWithValue(restored),
+        currentCompetitionIdProvider.overrideWithValue(competitionId),
         sessionProvider.overrideWith(SessionNotifier.new),
       ],
       child: SessionView(actions: actions),

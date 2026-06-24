@@ -115,6 +115,10 @@ their Row-Level Security, the `SECURITY DEFINER` helper functions, the
 owner-auto-membership trigger and the `accept_invitation` RPC. Apply it the same
 way; it must be applied before competitions work.
 
+`20260623160000_competition_results.sql` (spec 0012) adds the
+`competition_results` table (the scoreboard) and its Row-Level Security, reusing
+the spec-0010 helpers. Apply it before "Skyt nå" can submit results.
+
 ### Apply via the SQL editor (no CLI)
 Open the project's **SQL editor**, paste the contents of the migration file, and
 **Run**. Expect *"Success. No rows returned."*

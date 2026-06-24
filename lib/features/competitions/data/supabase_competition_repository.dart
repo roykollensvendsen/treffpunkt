@@ -8,6 +8,7 @@ import 'package:treffpunkt/features/competitions/data/competition_repository.dar
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
 /// [CompetitionRepository] backed by Supabase (spec 0010).
@@ -140,6 +141,58 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
       };
       return <CompetitionMember>[
         for (final m in members) m.withProfile(byId[m.userId]),
+      ];
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
+  Future<void> submitResult(CompetitionResult result) async {
+    try {
+      // Idempotent by id (the session id) via ON CONFLICT DO NOTHING, so a
+      // queued retry is a server-side no-op. DO NOTHING (not DO UPDATE) runs
+      // only the INSERT policy, so it is Row-Level-Security-safe — unlike an
+      // upsert that updates, which would trip the user-default WITH CHECK.
+      await _client
+          .from('competition_results')
+          .upsert(
+            result.toInsertJson(),
+            onConflict: 'id',
+            ignoreDuplicates: true,
+          );
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
+  Future<List<CompetitionResult>> resultsOf(String competitionId) async {
+    try {
+      final rows = await _client
+          .from('competition_results')
+          .select()
+          .eq('competition_id', competitionId)
+          .order('total', ascending: false)
+          .order('inner_tens', ascending: false);
+      final results = <CompetitionResult>[
+        for (final row in rows) CompetitionResult.fromJson(row),
+      ];
+      if (results.isEmpty) return results;
+
+      // No foreign key from results to profiles to embed, so read the
+      // submitters' profiles separately and attach them (like membersOf).
+      final ids = results.map((r) => r.userId).whereType<String>().toList();
+      final profileRows = await _client
+          .from('profiles')
+          .select()
+          .inFilter('id', ids);
+      final byId = <String, Profile>{
+        for (final row in profileRows)
+          row['id'] as String: Profile.fromJson(row),
+      };
+      return <CompetitionResult>[
+        for (final r in results) r.withProfile(byId[r.userId]),
       ];
     } on Object catch (error) {
       throw CompetitionSyncException(error);

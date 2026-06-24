@@ -34,6 +34,7 @@ class SessionRecord {
     this.latitude,
     this.longitude,
     this.weaponName,
+    this.competitionId,
   });
 
   /// Builds the uploadable record of a completed [session] with its [score].
@@ -46,6 +47,7 @@ class SessionRecord {
     Session session,
     SessionScore score, {
     required String id,
+    String? competitionId,
   }) {
     final metadata = session.metadata;
     final place = metadata?.place;
@@ -61,6 +63,7 @@ class SessionRecord {
       maxTotal: score.maxTotal,
       innerTens: score.innerTens,
       payload: SessionSnapshot(session: session, id: id).toJson(),
+      competitionId: competitionId,
     );
   }
 
@@ -83,6 +86,7 @@ class SessionRecord {
       maxTotal: json['maxTotal'] as int,
       innerTens: json['innerTens'] as int,
       payload: json['payload'] as Map<String, dynamic>,
+      competitionId: json['competitionId'] as String?,
     );
   }
 
@@ -119,6 +123,11 @@ class SessionRecord {
   /// The lossless snapshot of the session (spec 0009 `SessionSnapshot.toJson`).
   final Map<String, dynamic> payload;
 
+  /// The competition this session was shot for (spec 0012), or `null` for a
+  /// personal session. Carried only in the queued JSON — it is **not** a column
+  /// on the `sessions` table; the upload queue uses it to also submit a result.
+  final String? competitionId;
+
   /// A JSON-able map of this record, round-tripped by [SessionRecord.fromJson]
   /// (spec 0025).
   ///
@@ -137,5 +146,6 @@ class SessionRecord {
     'maxTotal': maxTotal,
     'innerTens': innerTens,
     'payload': payload,
+    'competitionId': competitionId,
   };
 }

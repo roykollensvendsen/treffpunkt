@@ -9,8 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
 /// Key for the "Competitions" app-bar action on the program picker (spec 0011).
 const Key competitionsButtonKey = ValueKey<String>('competitionsButton');
@@ -50,6 +52,15 @@ const Key inviteEmailFieldKey = ValueKey<String>('inviteEmailField');
 
 /// Key for the invite submit action on the detail screen.
 const Key inviteSubmitKey = ValueKey<String>('inviteSubmit');
+
+/// Key for the "shoot for this competition" action on the detail screen.
+const Key shootForCompetitionKey = ValueKey<String>('shootForCompetition');
+
+/// Key for the empty-results state on the detail scoreboard.
+const Key noResultsKey = ValueKey<String>('noResults');
+
+/// Key for the scoreboard row of the result with the given [id].
+Key resultRowKey(String id) => ValueKey<String>('resultRow-$id');
 
 const double _maxContentWidth = 700;
 
@@ -473,11 +484,34 @@ class _CompetitionDetailScreenState
     }
   }
 
+  /// Starts the competition's fixed program; the result auto-submits on
+  /// completion (spec 0012). On return, the scoreboard is refreshed.
+  Future<void> _shoot() async {
+    final program = ProgramCatalogue.byName(widget.competition.program);
+    if (program == null) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SessionSetupScreen(
+          program: program,
+          competitionId: widget.competition.id,
+        ),
+      ),
+    );
+    ref.invalidate(competitionResultsProvider(widget.competition.id));
+  }
+
   @override
   Widget build(BuildContext context) {
     final competition = widget.competition;
     final members = ref.watch(competitionMembersProvider(competition.id));
-    final isOwner = ref.watch(currentUserIdProvider) == competition.ownerId;
+    final results = ref.watch(competitionResultsProvider(competition.id));
+    final uid = ref.watch(currentUserIdProvider);
+    final isOwner = uid == competition.ownerId;
+    // Only a participant may shoot for the competition (the insert policy gates
+    // it too); today the detail is reached only as a participant.
+    final isParticipant =
+        isOwner || (members.value?.any((m) => m.userId == uid) ?? false);
+    final program = ProgramCatalogue.byName(competition.program);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -491,6 +525,25 @@ class _CompetitionDetailScreenState
               children: [
                 Text(_subtitle(competition), style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 16),
+                if (isParticipant) ...[
+                  FilledButton.icon(
+                    key: shootForCompetitionKey,
+                    onPressed: program == null
+                        ? null
+                        : () => unawaited(_shoot()),
+                    icon: const Icon(Icons.gps_fixed),
+                    label: const Text('Skyt nå'),
+                  ),
+                  if (program == null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Ukjent program',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                ],
                 if (isOwner) ...[
                   _InviteRow(
                     controller: _email,
@@ -499,6 +552,37 @@ class _CompetitionDetailScreenState
                   ),
                   const SizedBox(height: 16),
                 ],
+                const _SectionHeader('Resultater'),
+                ...results.when(
+                  loading: () => const <Widget>[
+                    Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  ],
+                  error: (error, _) => <Widget>[
+                    _ErrorRetry(
+                      onRetry: () => ref.invalidate(
+                        competitionResultsProvider(competition.id),
+                      ),
+                    ),
+                  ],
+                  data: (list) => list.isEmpty
+                      ? const <Widget>[
+                          Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Text(
+                              'Ingen resultater ennå.',
+                              key: noResultsKey,
+                            ),
+                          ),
+                        ]
+                      : <Widget>[
+                          for (var i = 0; i < list.length; i++)
+                            _ResultRow(rank: i + 1, result: list[i]),
+                        ],
+                ),
+                const SizedBox(height: 16),
                 const _SectionHeader('Deltakere'),
                 ...members.when(
                   loading: () => const <Widget>[
@@ -528,6 +612,30 @@ class _CompetitionDetailScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// One scoreboard row: rank, the submitter's name, and the score (spec 0012).
+class _ResultRow extends StatelessWidget {
+  const _ResultRow({required this.rank, required this.result});
+
+  final int rank;
+  final CompetitionResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final suffix = result.innerTens > 0 ? ' · ${result.innerTens}×X' : '';
+    return ListTile(
+      key: resultRowKey(result.id),
+      leading: CircleAvatar(radius: 14, child: Text('$rank')),
+      title: Text(result.profile?.displayName ?? 'Ukjent skytter'),
+      trailing: Text(
+        '${result.total} / ${result.maxTotal}$suffix',
+        style: Theme.of(
+          context,
+        ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }

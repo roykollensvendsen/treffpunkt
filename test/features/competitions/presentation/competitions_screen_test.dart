@@ -13,8 +13,11 @@ import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
 import '../../auth/fake_auth_repository.dart';
 
@@ -125,4 +128,77 @@ void main() {
     final invitations = await bob.listMyInvitations();
     expect(invitations.map((i) => i.competitionId), <String>['c1']);
   });
+
+  testWidgets('the detail shows the scoreboard, best first', (tester) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '10 m Air Pistol',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+    await repo.upsertOwnProfile(const Profile(id: 'me', displayName: 'Me'));
+    final alice = repo.asUser(userId: 'alice', email: 'alice@example.com');
+    await alice.upsertOwnProfile(
+      const Profile(id: 'alice', displayName: 'Alice'),
+    );
+    await repo.submitResult(_res('r-me', user: 'me', total: 560));
+    await alice.submitResult(_res('r-alice', user: 'alice', total: 580));
+
+    await tester.pumpWidget(
+      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(noResultsKey), findsNothing);
+    expect(find.byKey(resultRowKey('r-alice')), findsOneWidget);
+    expect(find.byKey(resultRowKey('r-me')), findsOneWidget);
+    expect(find.text('Alice'), findsOneWidget);
+    expect(find.text('580 / 600'), findsOneWidget);
+    // Best first: Alice's row sits above Me's.
+    final aliceTop = tester.getTopLeft(find.byKey(resultRowKey('r-alice'))).dy;
+    final meTop = tester.getTopLeft(find.byKey(resultRowKey('r-me'))).dy;
+    expect(aliceTop, lessThan(meTop));
+  });
+
+  testWidgets('Skyt nå opens setup for the competition program', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '10 m Air Pistol',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+
+    await tester.pumpWidget(
+      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(shootForCompetitionKey));
+    await tester.pumpAndSettle();
+
+    // The setup step for the competition's fixed program is shown.
+    expect(find.byType(SessionSetupScreen), findsOneWidget);
+    expect(find.widgetWithText(AppBar, '10 m Air Pistol'), findsOneWidget);
+  });
 }
+
+CompetitionResult _res(
+  String id, {
+  required String user,
+  required int total,
+}) => CompetitionResult(
+  id: id,
+  competitionId: 'c1',
+  userId: user,
+  program: '10 m Air Pistol',
+  total: total,
+  maxTotal: 600,
+  innerTens: 0,
+  payload: const <String, dynamic>{},
+);

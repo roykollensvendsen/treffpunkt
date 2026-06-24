@@ -45,6 +45,12 @@ final currentSessionMetadataProvider = Provider<SessionMetadata?>(
 /// the setup step (spec 0008 wiring); defaults to `null` (no weapon).
 final currentWeaponProvider = Provider<Weapon?>((ref) => null);
 
+/// The competition this session is being shot for (spec 0012), or `null` for a
+/// personal session. Overridden by `SeriesScreen` when launched from a
+/// competition; read at completion to tag the record so the upload queue also
+/// submits a result.
+final currentCompetitionIdProvider = Provider<String?>((ref) => null);
+
 /// The app's [SessionStore] for offline persistence (spec 0009).
 ///
 /// Defaults to an in-memory store so tests and a fresh app never touch real
@@ -198,6 +204,7 @@ class SessionNotifier extends Notifier<SessionRecording> {
       session,
       _scoring.scoreSession(session),
       id: state.id,
+      competitionId: ref.read(currentCompetitionIdProvider),
     );
     // Read the queue notifier synchronously (the provider may be disposed
     // before a deferred read runs), but do not await the enqueue: it is
