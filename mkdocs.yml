@@ -60,6 +60,7 @@ nav:
       - "0029 — Surface cloud-sync failures": specs/0029-surface-sync-failures.md
       - "0030 — Theme mode (light / dark)": specs/0030-theme-mode-selection.md
       - "0031 — Hurtigpistol & NAIS": specs/0031-hurtigpistol-and-nais.md
+      - "0032 — Invite a registered shooter": specs/0032-invite-registered-shooter.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
@@ -80,6 +81,7 @@ nav:
       - ADR-0017 Personal session sync: adr/0017-personal-session-sync.md
       - ADR-0018 Theme mode persistence: adr/0018-theme-mode-persistence.md
       - ADR-0019 Competitions data model: adr/0019-competitions-data-model.md
+      - ADR-0020 Invite by user-id RPC: adr/0020-invite-by-user-id-rpc.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md

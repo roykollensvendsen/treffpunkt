@@ -89,6 +89,36 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   }
 
   @override
+  Future<List<Profile>> listShooters() async {
+    try {
+      final rows = await _client
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .order('display_name');
+      return <Profile>[for (final row in rows) Profile.fromJson(row)];
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
+  Future<void> inviteUser(String competitionId, String userId) async {
+    try {
+      // The RPC resolves the shooter's email server-side and writes the
+      // email-keyed invitation; the email never reaches this client.
+      await _client.rpc<void>(
+        'invite_user_to_competition',
+        params: <String, dynamic>{
+          'cid': competitionId,
+          'target_user_id': userId,
+        },
+      );
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
   Future<List<CompetitionInvitation>> listMyInvitations() async {
     final email = _client.auth.currentUser?.email?.toLowerCase();
     if (email == null) return const <CompetitionInvitation>[];

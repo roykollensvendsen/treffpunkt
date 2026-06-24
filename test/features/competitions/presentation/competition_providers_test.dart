@@ -84,6 +84,11 @@ class _RecordingCompetitionRepository implements CompetitionRepository {
   Future<void> invite(String competitionId, String email) async =>
       throw UnimplementedError();
   @override
+  Future<List<Profile>> listShooters() async => throw UnimplementedError();
+  @override
+  Future<void> inviteUser(String competitionId, String userId) async =>
+      throw UnimplementedError();
+  @override
   Future<List<CompetitionInvitation>> listMyInvitations() async =>
       throw UnimplementedError();
   @override

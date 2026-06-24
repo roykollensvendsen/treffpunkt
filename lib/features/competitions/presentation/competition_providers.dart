@@ -87,6 +87,14 @@ final myInvitationsProvider = FutureProvider<List<CompetitionInvitation>>(
   (ref) => ref.watch(competitionRepositoryProvider).listMyInvitations(),
 );
 
+/// The registered shooters, for the invite picker (spec 0032). A foreground
+/// read; the detail screen filters out the owner and current members before
+/// showing them. Invalidated after inviting, so an invited shooter can be
+/// dropped from a later view if desired.
+final shootersProvider = FutureProvider<List<Profile>>(
+  (ref) => ref.watch(competitionRepositoryProvider).listShooters(),
+);
+
 /// The participants of a competition, for its detail view (spec 0011).
 // The family's concrete type (FutureProviderFamily) is not part of Riverpod's
 // public API, so it cannot be annotated here; the generic arguments below pin

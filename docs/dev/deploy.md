@@ -124,6 +124,14 @@ the spec-0010 helpers. Apply it before "Skyt nå" can submit results.
 updates live. Apply it for live updates; RLS still scopes what each subscriber
 receives.
 
+`20260624100000_invite_registered_shooter.sql` (spec 0032) adds the
+`invite_user_to_competition(cid, target_user_id)` `SECURITY DEFINER` RPC: it
+verifies the caller owns the competition, resolves the chosen shooter's email
+from `auth.users` server-side, and writes the same email-keyed invitation (so no
+email reaches the client). No table changes. Apply it before the "Velg skytter"
+invite picker can invite a registered shooter; the existing accept flow is
+unchanged.
+
 ### Apply via the SQL editor (no CLI)
 Open the project's **SQL editor**, paste the contents of the migration file, and
 **Run**. Expect *"Success. No rows returned."*
