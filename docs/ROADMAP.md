@@ -141,6 +141,13 @@ The shooter records a complete session on-device, with no network needed
       degrading to the manual flow on any failure (ADR-0022). Assistive (the
       shooter reviews); web + mobile, one new pure-Dart dependency (`image`)
       behind a `TargetScanner` seam. The ML route stays gated on a dataset.
+- [x] 0041 — Consented training-image collection: confirming a scan uploads the
+      photo + the human-marked hit labels to a private dataset (opt-out, default
+      on) to improve detection and later train a model. A one-time disclosure + a
+      settings toggle, EXIF/GPS stripped, signed-in + owner-only RLS, best-effort
+      fire-and-forget; labels are image-pixel + self-describing geometry, each
+      hole tagged auto/manual/edited (ADR-0023). Fast-follows: self-serve erasure,
+      the dataset export + review + model-training pipeline.
 - [ ] 0016 — Responsive/adaptive polish; PWA install; store builds.
 - [ ] 0020+ — More programs/disciplines (further pistol programs, field, …).
 

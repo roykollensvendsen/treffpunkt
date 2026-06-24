@@ -28,6 +28,7 @@ nav:
       - Signing in: user/signing-in.md
       - Score a 10 m air-rifle target: user/score-a-10m-air-rifle-target.md
       - Scan a paper target: user/scan-a-paper-target.md
+      - Treningsbilder og personvern: user/personvern-treningsbilder.md
   - Developer Guide:
       - Overview: dev/index.md
       - Architecture: dev/architecture.md
@@ -70,6 +71,7 @@ nav:
       - "0038 — Calendar view of sessions": specs/0038-sessions-calendar.md
       - "0039 — Skann skive (camera scan)": specs/0039-scan-target.md
       - "0040 — Auto-detect bullet holes": specs/0040-auto-detect-holes.md
+      - "0041 — Training-image collection": specs/0041-training-image-collection.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
@@ -93,6 +95,7 @@ nav:
       - ADR-0020 Invite by user-id RPC: adr/0020-invite-by-user-id-rpc.md
       - ADR-0021 Target scan calibration: adr/0021-target-scan-calibration-and-image-source.md
       - ADR-0022 Pure-Dart hole detection: adr/0022-pure-dart-hole-detection.md
+      - ADR-0023 Consented training data: adr/0023-consented-training-data.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md

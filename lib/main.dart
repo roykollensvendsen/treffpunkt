@@ -14,7 +14,9 @@ import 'package:treffpunkt/features/scoring/data/image_picker_image_source_servi
 import 'package:treffpunkt/features/scoring/data/image_target_scanner.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
+import 'package:treffpunkt/features/scoring/data/supabase_contribution_service.dart';
 import 'package:treffpunkt/features/scoring/data/supabase_session_repository.dart';
+import 'package:treffpunkt/features/settings/data/contribution_consent_store.dart';
 import 'package:treffpunkt/features/settings/data/theme_mode_store.dart';
 import 'package:treffpunkt/features/weapons/data/weapon_store.dart';
 
@@ -38,6 +40,15 @@ Future<void> main() async {
   // Load the saved theme once here too, so the app starts on the right theme
   // without a first-frame flash of the wrong one (spec 0030).
   final initialThemeMode = await themeModeStore.load();
+  final contributionConsentStore = SharedPreferencesContributionConsentStore(
+    prefs,
+  );
+  // Load the consent flags once here so the notifier starts correct and the
+  // one-time disclosure fires on the right run (spec 0041).
+  final initialContributionEnabled = await contributionConsentStore
+      .loadEnabled();
+  final initialDisclosureShown = await contributionConsentStore
+      .loadDisclosureShown();
   runTreffpunkt(
     SupabaseAuthRepository(Supabase.instance.client.auth),
     sessionStore: SharedPreferencesSessionStore(prefs),
@@ -48,8 +59,12 @@ Future<void> main() async {
     locationService: const GeolocatorLocationService(),
     imageSourceService: ImagePickerImageSourceService(),
     targetScanner: const ImageTargetScanner(),
+    contributionService: SupabaseContributionService(Supabase.instance.client),
     themeModeStore: themeModeStore,
     initialThemeMode: initialThemeMode,
+    contributionConsentStore: contributionConsentStore,
+    initialContributionEnabled: initialContributionEnabled,
+    initialDisclosureShown: initialDisclosureShown,
     competitionRepository: SupabaseCompetitionRepository(
       Supabase.instance.client,
     ),

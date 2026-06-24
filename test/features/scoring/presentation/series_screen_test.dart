@@ -20,6 +20,7 @@ import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/settings/presentation/contribution_providers.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon_class.dart';
 
@@ -684,6 +685,8 @@ Widget _app(
     overrides: [
       if (imageSource != null)
         imageSourceServiceProvider.overrideWithValue(imageSource),
+      // Skip the one-time training-data disclosure (spec 0041) in these tests.
+      initialDisclosureShownProvider.overrideWithValue(true),
     ],
     child: MaterialApp(
       home: SeriesScreen(

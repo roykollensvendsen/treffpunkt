@@ -13,12 +13,20 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/features/auth/domain/app_user.dart';
+import 'package:treffpunkt/features/auth/domain/auth_status.dart';
+import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
+import 'package:treffpunkt/features/scoring/domain/training_sample.dart';
 import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/settings/presentation/contribution_disclosure.dart';
+import 'package:treffpunkt/features/settings/presentation/contribution_providers.dart';
 
+import '../../auth/fake_auth_repository.dart';
+import '../fake_contribution_service.dart';
 import '../fake_image_source_service.dart';
 import '../fake_target_scanner.dart';
 
@@ -42,14 +50,27 @@ Future<_Host> _open(
   WidgetTester tester, {
   required FakeImageSourceService source,
   FakeTargetScanner? scanner,
+  FakeContributionService? contribution,
+  AuthStatus auth = const SignedOut(),
+  bool disclosureShown = true,
+  bool contributionEnabled = true,
   int maxShots = 10,
 }) async {
   final host = _Host();
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        authRepositoryProvider.overrideWithValue(
+          FakeAuthRepository(initial: auth),
+        ),
         imageSourceServiceProvider.overrideWithValue(source),
+        initialDisclosureShownProvider.overrideWithValue(disclosureShown),
+        initialContributionEnabledProvider.overrideWithValue(
+          contributionEnabled,
+        ),
         if (scanner != null) targetScannerProvider.overrideWithValue(scanner),
+        if (contribution != null)
+          contributionServiceProvider.overrideWithValue(contribution),
       ],
       child: MaterialApp(
         home: Builder(
@@ -249,6 +270,85 @@ void main() {
         find.text('Kunne ikke analysere bildet — merk treffene manuelt.'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('training-data contribution (spec 0041)', () {
+    const signedIn = SignedIn(AppUser(id: 'u1', email: 'a@b.no'));
+
+    Future<void> placeOneAndConfirm(WidgetTester tester) async {
+      await _reachPlacement(tester);
+      await tester.tapAt(tester.getCenter(find.byKey(scanOverlayKey)));
+      await tester.pump();
+      await tester.ensureVisible(find.byKey(scanConfirmKey));
+      await tester.tap(find.byKey(scanConfirmKey));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the disclosure shows once on the first scan', (tester) async {
+      await _open(
+        tester,
+        source: FakeImageSourceService(),
+        disclosureShown: false,
+      );
+
+      expect(find.byKey(contributionDisclosureKey), findsOneWidget);
+      await tester.tap(find.byKey(contributionDisclosureAcceptKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(contributionDisclosureKey), findsNothing);
+    });
+
+    testWidgets('a signed-in shooter contributes the confirmed scan', (
+      tester,
+    ) async {
+      final contribution = FakeContributionService();
+      await _open(
+        tester,
+        source: FakeImageSourceService(
+          result: ImagePicked(PickedImage(bytes: _pngBytes)),
+        ),
+        contribution: contribution,
+        auth: signedIn,
+      );
+
+      await placeOneAndConfirm(tester);
+
+      expect(contribution.contributions, hasLength(1));
+      final sample = contribution.contributions.single;
+      expect(sample.holes, hasLength(1));
+      expect(sample.holes.single.source, TrainingHoleSource.manual);
+    });
+
+    testWidgets('a signed-out shooter contributes nothing', (tester) async {
+      final contribution = FakeContributionService();
+      await _open(
+        tester,
+        source: FakeImageSourceService(
+          result: ImagePicked(PickedImage(bytes: _pngBytes)),
+        ),
+        contribution: contribution,
+      );
+
+      await placeOneAndConfirm(tester);
+
+      expect(contribution.contributions, isEmpty);
+    });
+
+    testWidgets('consent off contributes nothing', (tester) async {
+      final contribution = FakeContributionService();
+      await _open(
+        tester,
+        source: FakeImageSourceService(
+          result: ImagePicked(PickedImage(bytes: _pngBytes)),
+        ),
+        contribution: contribution,
+        auth: signedIn,
+        contributionEnabled: false,
+      );
+
+      await placeOneAndConfirm(tester);
+
+      expect(contribution.contributions, isEmpty);
     });
   });
 }
