@@ -14,6 +14,7 @@ import 'package:treffpunkt/features/competitions/domain/competition_result.dart'
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/domain/scoreboard.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
@@ -774,6 +775,15 @@ class _ResultRow extends StatelessWidget {
         style: Theme.of(
           context,
         ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+      ),
+      // Tap a shooter to see their full scorecard — every stage and series —
+      // rebuilt from the result payload (spec 0037).
+      onTap: () => unawaited(
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => CompetitionResultScreen(result: result),
+          ),
+        ),
       ),
     );
   }
