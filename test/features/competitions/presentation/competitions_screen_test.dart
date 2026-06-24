@@ -391,7 +391,10 @@ void main() {
 
     // The setup step for the competition's fixed program is shown.
     expect(find.byType(SessionSetupScreen), findsOneWidget);
-    expect(find.widgetWithText(AppBar, '10 m Air Pistol'), findsOneWidget);
+    expect(
+      find.widgetWithText(AppBar, '10 m Luftpistol 60 skudd'),
+      findsOneWidget,
+    );
   });
 }
 

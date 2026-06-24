@@ -362,7 +362,7 @@ void main() {
     expect(find.byKey(mySessionCard('pending-1')), findsOneWidget);
 
     // Program names and a score line are shown.
-    expect(find.text('10 m Air Pistol'), findsOneWidget);
+    expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
     expect(find.text('25 m Finpistol'), findsOneWidget);
     // Both programs are 60 centre shots -> 600 / 600 with 60 inner tens, one
     // score line per card.
@@ -478,7 +478,7 @@ void main() {
       // The row appears immediately — no reopen — with its pending badge.
       expect(find.byKey(noSessionsKey), findsNothing);
       expect(find.byKey(mySessionCard('fresh-1')), findsOneWidget);
-      expect(find.text('10 m Air Pistol'), findsOneWidget);
+      expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
       expect(find.text('600 / 600 · 60×X'), findsOneWidget);
       expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
       expect(find.text('Ikke synkronisert'), findsOneWidget);
@@ -534,7 +534,7 @@ void main() {
       expect(repository.listCompleted, isFalse);
       expect(find.byKey(noSessionsKey), findsNothing);
       expect(find.byKey(mySessionCard('local-1')), findsOneWidget);
-      expect(find.text('10 m Air Pistol'), findsOneWidget);
+      expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
       expect(find.text('600 / 600 · 60×X'), findsOneWidget);
       expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
       expect(find.text('Ikke synkronisert'), findsOneWidget);

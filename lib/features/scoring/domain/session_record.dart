@@ -93,7 +93,7 @@ class SessionRecord {
   /// The stable client-generated id; the upload (upsert) key (ADR-0017).
   final String id;
 
-  /// The program (discipline) name, e.g. `'10 m Air Pistol'`.
+  /// The program (discipline) name, e.g. `'10 m Luftpistol 60 skudd'`.
   final String program;
 
   /// When the session was shot, or `null` when no metadata was recorded.

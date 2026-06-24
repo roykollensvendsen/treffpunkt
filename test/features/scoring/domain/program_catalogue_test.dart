@@ -139,6 +139,10 @@ void main() {
   });
 
   test('byName resolves a known program and returns null otherwise', () {
+    // The 60-shot air pistol was renamed to Norwegian (spec 0036); its old
+    // English name still resolves via the alias, so older stored sessions and
+    // competitions keep loading.
+    expect(ProgramCatalogue.airPistol10m.name, '10 m Luftpistol 60 skudd');
     expect(
       ProgramCatalogue.byName('10 m Air Pistol'),
       same(ProgramCatalogue.airPistol10m),
