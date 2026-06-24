@@ -9,7 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
+import 'package:treffpunkt/features/competitions/domain/competition.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
+import 'package:uuid/uuid.dart';
 
 /// The app's [CompetitionRepository] (spec 0010).
 ///
@@ -53,3 +57,42 @@ class ProfileSyncNotifier extends Notifier<void> {
 final profileSyncProvider = NotifierProvider<ProfileSyncNotifier, void>(
   ProfileSyncNotifier.new,
 );
+
+/// Mints a client-side competition id (a uuid), overridable in tests for
+/// deterministic ids (mirrors `sessionIdGeneratorProvider`).
+final competitionIdGeneratorProvider = Provider<String Function()>(
+  (ref) => const Uuid().v4,
+);
+
+/// The signed-in user's id, or `null` when signed out — used to stamp a new
+/// competition's owner and to decide whether the viewer may invite (spec 0011).
+final currentUserIdProvider = Provider<String?>((ref) {
+  final status = ref.watch(authStateChangesProvider).value;
+  return status is SignedIn ? status.user.id : null;
+});
+
+/// The competitions the signed-in user owns or has joined (spec 0011).
+///
+/// A foreground read: it surfaces [CompetitionSyncException] as the provider's
+/// error so the screen can show a retry. Re-read by invalidating it when the
+/// screen opens or after a create/accept.
+final myCompetitionsProvider = FutureProvider<List<Competition>>(
+  (ref) => ref.watch(competitionRepositoryProvider).listMine(),
+);
+
+/// The signed-in user's pending invitations, each with its competition attached
+/// (spec 0011). Invalidated after accepting one.
+final myInvitationsProvider = FutureProvider<List<CompetitionInvitation>>(
+  (ref) => ref.watch(competitionRepositoryProvider).listMyInvitations(),
+);
+
+/// The participants of a competition, for its detail view (spec 0011).
+// The family's concrete type (FutureProviderFamily) is not part of Riverpod's
+// public API, so it cannot be annotated here; the generic arguments below pin
+// the value and argument types.
+// ignore: specify_nonobvious_property_types
+final competitionMembersProvider =
+    FutureProvider.family<List<CompetitionMember>, String>(
+      (ref, competitionId) =>
+          ref.watch(competitionRepositoryProvider).membersOf(competitionId),
+    );

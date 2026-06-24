@@ -1,0 +1,575 @@
+// SPDX-FileCopyrightText: 2026 Roy Kollen Svendsen
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
+import 'package:treffpunkt/features/competitions/domain/competition.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
+
+/// Key for the "Competitions" app-bar action on the program picker (spec 0011).
+const Key competitionsButtonKey = ValueKey<String>('competitionsButton');
+
+/// Key for the "new competition" action on the competitions hub.
+const Key newCompetitionButtonKey = ValueKey<String>('newCompetition');
+
+/// Key for the empty state when the shooter has no competitions or invitations.
+const Key noCompetitionsKey = ValueKey<String>('noCompetitions');
+
+/// Key for the card of the competition with the given [id] in the list.
+Key competitionCard(String id) => ValueKey<String>('competitionCard-$id');
+
+/// Key for the "accept" action on the invitation to competition [id].
+Key acceptInvitationKey(String id) => ValueKey<String>('acceptInvitation-$id');
+
+/// Key for the competition-name field on the create form.
+const Key competitionNameFieldKey = ValueKey<String>('competitionNameField');
+
+/// Key for the program dropdown on the create form.
+const Key competitionProgramFieldKey = ValueKey<String>(
+  'competitionProgramField',
+);
+
+/// Key for the public/private switch on the create form.
+const Key competitionPublicSwitchKey = ValueKey<String>(
+  'competitionPublicSwitch',
+);
+
+/// Key for the submit action on the create form.
+const Key createCompetitionSubmitKey = ValueKey<String>(
+  'createCompetitionSubmit',
+);
+
+/// Key for the invite-by-email field on the detail screen.
+const Key inviteEmailFieldKey = ValueKey<String>('inviteEmailField');
+
+/// Key for the invite submit action on the detail screen.
+const Key inviteSubmitKey = ValueKey<String>('inviteSubmit');
+
+const double _maxContentWidth = 700;
+
+/// The competitions hub (spec 0011): the shooter's pending invitations (each
+/// acceptable), the competitions they own or have joined, and a way to create a
+/// new one. Reads are foreground, so a failure shows a retry rather than a
+/// silent empty list.
+class CompetitionsScreen extends ConsumerWidget {
+  /// Creates the competitions hub.
+  const CompetitionsScreen({super.key});
+
+  Future<void> _create(BuildContext context, WidgetRef ref) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const CreateCompetitionScreen()),
+    );
+    ref.invalidate(myCompetitionsProvider);
+  }
+
+  Future<void> _accept(
+    BuildContext context,
+    WidgetRef ref,
+    String competitionId,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(competitionRepositoryProvider)
+          .acceptInvitation(
+            competitionId,
+          );
+      ref
+        ..invalidate(myInvitationsProvider)
+        ..invalidate(myCompetitionsProvider);
+    } on Object {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke godta invitasjonen.')),
+      );
+    }
+  }
+
+  void _open(BuildContext context, Competition competition) {
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => CompetitionDetailScreen(competition: competition),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final invitations = ref.watch(myInvitationsProvider);
+    final competitions = ref.watch(myCompetitionsProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Konkurranser')),
+      floatingActionButton: FloatingActionButton.extended(
+        key: newCompetitionButtonKey,
+        onPressed: () => unawaited(_create(context, ref)),
+        icon: const Icon(Icons.add),
+        label: const Text('Ny konkurranse'),
+      ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                ..._invitationsSection(context, ref, invitations),
+                ..._competitionsSection(
+                  context,
+                  ref,
+                  invitations,
+                  competitions,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _invitationsSection(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<CompetitionInvitation>> invitations,
+  ) {
+    final list = invitations.value ?? const <CompetitionInvitation>[];
+    if (list.isEmpty) return const <Widget>[];
+    return <Widget>[
+      const _SectionHeader('Invitasjoner'),
+      for (final invitation in list)
+        _InvitationCard(
+          invitation: invitation,
+          onAccept: () => unawaited(
+            _accept(context, ref, invitation.competitionId),
+          ),
+        ),
+      const SizedBox(height: 16),
+    ];
+  }
+
+  List<Widget> _competitionsSection(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<CompetitionInvitation>> invitations,
+    AsyncValue<List<Competition>> competitions,
+  ) {
+    return competitions.when(
+      loading: () => const <Widget>[
+        Padding(
+          padding: EdgeInsets.only(top: 48),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ],
+      error: (error, _) => <Widget>[
+        _ErrorRetry(
+          onRetry: () => ref.invalidate(myCompetitionsProvider),
+        ),
+      ],
+      data: (list) {
+        final invitationList =
+            invitations.value ?? const <CompetitionInvitation>[];
+        if (list.isEmpty && invitationList.isEmpty) {
+          return const <Widget>[_EmptyState()];
+        }
+        return <Widget>[
+          const _SectionHeader('Mine konkurranser'),
+          for (final competition in list)
+            Card(
+              child: ListTile(
+                key: competitionCard(competition.id),
+                title: Text(competition.name),
+                subtitle: Text(_subtitle(competition)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _open(context, competition),
+              ),
+            ),
+          if (list.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Ingen konkurranser ennå.'),
+            ),
+        ];
+      },
+    );
+  }
+}
+
+String _subtitle(Competition competition) {
+  final visibility = competition.isPublic ? 'Åpen' : 'Privat';
+  return '${competition.program} · $visibility';
+}
+
+class _InvitationCard extends StatelessWidget {
+  const _InvitationCard({required this.invitation, required this.onAccept});
+
+  final CompetitionInvitation invitation;
+  final VoidCallback onAccept;
+
+  @override
+  Widget build(BuildContext context) {
+    final competition = invitation.competition;
+    final title = competition?.name ?? 'Konkurranse';
+    final subtitle = competition == null ? null : _subtitle(competition);
+    return Card(
+      color: Theme.of(context).colorScheme.secondaryContainer,
+      child: ListTile(
+        leading: const Icon(Icons.mail_outline),
+        title: Text(title),
+        subtitle: subtitle == null ? null : Text(subtitle),
+        trailing: FilledButton(
+          key: acceptInvitationKey(invitation.competitionId),
+          onPressed: onAccept,
+          child: const Text('Godta'),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        label,
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 64),
+      child: Column(
+        children: [
+          Icon(
+            Icons.emoji_events_outlined,
+            size: 56,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Ingen konkurranser ennå',
+            key: noCompetitionsKey,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Lag en konkurranse, eller godta en invitasjon.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorRetry extends StatelessWidget {
+  const _ErrorRetry({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 48),
+      child: Column(
+        children: [
+          const Text('Kunne ikke hente konkurransene.'),
+          const SizedBox(height: 8),
+          OutlinedButton(onPressed: onRetry, child: const Text('Prøv igjen')),
+        ],
+      ),
+    );
+  }
+}
+
+/// The create-competition form (spec 0011): a name, the program it fixes, and
+/// whether it is public. Submitting mints a client id and creates it.
+class CreateCompetitionScreen extends ConsumerStatefulWidget {
+  /// Creates the form.
+  const CreateCompetitionScreen({super.key});
+
+  @override
+  ConsumerState<CreateCompetitionScreen> createState() =>
+      _CreateCompetitionScreenState();
+}
+
+class _CreateCompetitionScreenState
+    extends ConsumerState<CreateCompetitionScreen> {
+  final TextEditingController _name = TextEditingController();
+  String _program = ProgramCatalogue.all.first.name;
+  bool _isPublic = false;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final name = _name.text.trim();
+    if (name.isEmpty || _saving) return;
+    setState(() => _saving = true);
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final competition = Competition(
+      id: ref.read(competitionIdGeneratorProvider)(),
+      name: name,
+      program: _program,
+      ownerId: ref.read(currentUserIdProvider) ?? '',
+      isPublic: _isPublic,
+    );
+    try {
+      await ref
+          .read(competitionRepositoryProvider)
+          .createCompetition(
+            competition,
+          );
+      navigator.pop();
+    } on CompetitionSyncException {
+      if (mounted) setState(() => _saving = false);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke opprette konkurransen.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ny konkurranse')),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                TextField(
+                  key: competitionNameFieldKey,
+                  controller: _name,
+                  decoration: const InputDecoration(
+                    labelText: 'Navn',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  key: competitionProgramFieldKey,
+                  initialValue: _program,
+                  decoration: const InputDecoration(
+                    labelText: 'Program',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: <DropdownMenuItem<String>>[
+                    for (final program in ProgramCatalogue.all)
+                      DropdownMenuItem<String>(
+                        value: program.name,
+                        child: Text(program.name),
+                      ),
+                  ],
+                  onChanged: (value) =>
+                      setState(() => _program = value ?? _program),
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  key: competitionPublicSwitchKey,
+                  value: _isPublic,
+                  onChanged: (value) => setState(() => _isPublic = value),
+                  title: const Text('Åpen konkurranse'),
+                  subtitle: const Text(
+                    'Alle innloggede kan se den. Av = kun inviterte.',
+                  ),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  key: createCompetitionSubmitKey,
+                  onPressed: _saving ? null : () => unawaited(_submit()),
+                  icon: const Icon(Icons.check),
+                  label: const Text('Opprett'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A competition's detail (spec 0011): its program, its participants, and — for
+/// the owner — an invite-by-email control.
+class CompetitionDetailScreen extends ConsumerStatefulWidget {
+  /// Creates the detail view for [competition].
+  const CompetitionDetailScreen({required this.competition, super.key});
+
+  /// The competition being shown.
+  final Competition competition;
+
+  @override
+  ConsumerState<CompetitionDetailScreen> createState() =>
+      _CompetitionDetailScreenState();
+}
+
+class _CompetitionDetailScreenState
+    extends ConsumerState<CompetitionDetailScreen> {
+  final TextEditingController _email = TextEditingController();
+  bool _inviting = false;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    super.dispose();
+  }
+
+  Future<void> _invite() async {
+    final email = _email.text.trim();
+    if (email.isEmpty || _inviting) return;
+    setState(() => _inviting = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(competitionRepositoryProvider)
+          .invite(
+            widget.competition.id,
+            email,
+          );
+      _email.clear();
+      messenger.showSnackBar(SnackBar(content: Text('Invitert $email.')));
+    } on CompetitionSyncException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke invitere.')),
+      );
+    } finally {
+      if (mounted) setState(() => _inviting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final competition = widget.competition;
+    final members = ref.watch(competitionMembersProvider(competition.id));
+    final isOwner = ref.watch(currentUserIdProvider) == competition.ownerId;
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(title: Text(competition.name)),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(_subtitle(competition), style: theme.textTheme.bodyMedium),
+                const SizedBox(height: 16),
+                if (isOwner) ...[
+                  _InviteRow(
+                    controller: _email,
+                    inviting: _inviting,
+                    onInvite: () => unawaited(_invite()),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                const _SectionHeader('Deltakere'),
+                ...members.when(
+                  loading: () => const <Widget>[
+                    Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  ],
+                  error: (error, _) => <Widget>[
+                    _ErrorRetry(
+                      onRetry: () => ref.invalidate(
+                        competitionMembersProvider(competition.id),
+                      ),
+                    ),
+                  ],
+                  data: (list) => <Widget>[
+                    for (final member in list)
+                      ListTile(
+                        leading: const Icon(Icons.person_outline),
+                        title: Text(
+                          member.profile?.displayName ?? 'Ukjent skytter',
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InviteRow extends StatelessWidget {
+  const _InviteRow({
+    required this.controller,
+    required this.inviting,
+    required this.onInvite,
+  });
+
+  final TextEditingController controller;
+  final bool inviting;
+  final VoidCallback onInvite;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: TextField(
+            key: inviteEmailFieldKey,
+            controller: controller,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              labelText: 'Inviter på e-post',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: FilledButton(
+            key: inviteSubmitKey,
+            onPressed: inviting ? null : onInvite,
+            child: const Text('Inviter'),
+          ),
+        ),
+      ],
+    );
+  }
+}
