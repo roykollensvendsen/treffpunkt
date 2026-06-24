@@ -52,6 +52,13 @@ abstract interface class CompetitionRepository {
   /// Throws [CompetitionSyncException] on a failed read.
   Future<List<Competition>> listMine();
 
+  /// Deletes the competition [competitionId] (owner only, spec 0034).
+  ///
+  /// Cascades to its members, invitations and results (the database `on delete
+  /// cascade`). Throws [CompetitionSyncException] on failure — the user is
+  /// waiting on it; Row-Level Security rejects a non-owner.
+  Future<void> deleteCompetition(String competitionId);
+
   /// Invites [email] to the competition [competitionId] (owner only).
   ///
   /// Throws [CompetitionSyncException] on failure.
@@ -188,6 +195,16 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     _competitions[competition.id] = competition;
     // Mirror the owner-auto-membership trigger.
     (_members[competition.id] ??= <String>{}).add(competition.ownerId);
+  }
+
+  @override
+  Future<void> deleteCompetition(String competitionId) async {
+    // Mirror the database cascade: drop the competition and everything that
+    // references it (members, invitations, results).
+    _competitions.remove(competitionId);
+    _members.remove(competitionId);
+    _results.remove(competitionId);
+    _invitations.removeWhere((i) => i.competitionId == competitionId);
   }
 
   @override

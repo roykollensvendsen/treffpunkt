@@ -129,6 +129,29 @@ void main() {
     );
   });
 
+  test(
+    'deleteCompetition removes it, members, invitations and results',
+    () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      final bob = alice.asUser(userId: 'bob', email: 'bob@example.com');
+      await bob.upsertOwnProfile(const Profile(id: 'bob', displayName: 'Bob'));
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+      await alice.inviteUser('c1', 'bob'); // a pending invitation for Bob
+      await alice.submitResult(_result('r1', competitionId: 'c1', total: 500));
+      expect(await bob.listMyInvitations(), isNotEmpty);
+
+      await alice.deleteCompetition('c1');
+
+      expect(await alice.listMine(), isEmpty);
+      expect(await alice.membersOf('c1'), isEmpty);
+      expect(await alice.resultsOf('c1'), isEmpty);
+      expect(await bob.listMyInvitations(), isEmpty);
+    },
+  );
+
   test('accepting without a pending invitation throws', () async {
     final repo = InMemoryCompetitionRepository(
       currentUserId: 'bob',

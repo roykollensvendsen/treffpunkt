@@ -83,6 +83,9 @@ class _SpyCompetitionRepository implements CompetitionRepository {
   @override
   Future<List<Competition>> listMine() async => throw UnimplementedError();
   @override
+  Future<void> deleteCompetition(String competitionId) async =>
+      throw UnimplementedError();
+  @override
   Future<void> invite(String competitionId, String email) async =>
       throw UnimplementedError();
   @override

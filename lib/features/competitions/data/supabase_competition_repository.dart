@@ -59,6 +59,17 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   }
 
   @override
+  Future<void> deleteCompetition(String competitionId) async {
+    try {
+      // RLS ("Competitions are deletable by their owner") gates this; the
+      // schema `on delete cascade` removes members, invitations and results.
+      await _client.from('competitions').delete().eq('id', competitionId);
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
   Future<List<Competition>> listMine() async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return const <Competition>[];
