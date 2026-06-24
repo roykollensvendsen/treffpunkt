@@ -118,6 +118,10 @@ The shooter records a complete session on-device, with no network needed
       that shooter's per-stage/per-series card, rebuilt from the result payload
       already on the client (RLS already allows participants to read it). No
       backend change.
+- [x] 0038 — Calendar view of "Mine økter": an app-bar toggle switches the list
+      for a Monday-first month calendar with days that have sessions marked; tap a
+      day to see its sessions, page between months. Pure presentation over the
+      session date; no backend.
 - [ ] 0014 — Fair cross-competition ranking (public top-score list).
 - [ ] 0015 — Browse own & published results.
 

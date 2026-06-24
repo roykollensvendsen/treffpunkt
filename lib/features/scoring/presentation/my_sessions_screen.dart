@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/scoring/domain/month_calendar.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
@@ -30,6 +31,29 @@ const Key notSyncedBadgeKey = ValueKey<String>('notSyncedBadge');
 
 /// Key for the empty-state message when no session is saved, used by tests.
 const Key noSessionsKey = ValueKey<String>('noSessions');
+
+/// Key for the list/calendar toggle in the app bar (spec 0038).
+const Key calendarToggleKey = ValueKey<String>('calendarToggle');
+
+/// Key for the previous-month chevron on the calendar (spec 0038).
+const Key calendarPrevMonthKey = ValueKey<String>('calendarPrevMonth');
+
+/// Key for the next-month chevron on the calendar (spec 0038).
+const Key calendarNextMonthKey = ValueKey<String>('calendarNextMonth');
+
+/// Key for the month/year label on the calendar (spec 0038).
+const Key calendarMonthLabelKey = ValueKey<String>('calendarMonthLabel');
+
+/// Key for the "no sessions on this day" hint under the calendar (spec 0038).
+const Key noSessionsOnDayKey = ValueKey<String>('noSessionsOnDay');
+
+/// Key for the calendar cell of [date] (date-only), used by tests (spec 0038).
+Key calendarDayKey(DateTime date) =>
+    ValueKey<String>('calendarDay-${date.year}-${date.month}-${date.day}');
+
+/// Key for the "has sessions" dot on the calendar cell of [date] (spec 0038).
+Key calendarDayDotKey(DateTime date) =>
+    ValueKey<String>('calendarDayDot-${date.year}-${date.month}-${date.day}');
 
 /// Key for the non-blocking banner shown when the cloud read fails, used by
 /// tests (spec 0029).
@@ -64,12 +88,25 @@ const double _maxContentWidth = 700;
 /// contributes `const []` until ready (and stays best-effort), so the local
 /// sessions always render at once and the screen never sits on a spinner
 /// waiting on the network.
-class MySessionsScreen extends ConsumerWidget {
+class MySessionsScreen extends ConsumerStatefulWidget {
   /// Creates the "My sessions" screen.
   const MySessionsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MySessionsScreen> createState() => _MySessionsScreenState();
+}
+
+class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
+  /// Whether the calendar view is shown instead of the flat list (spec 0038).
+  bool _calendar = false;
+
+  /// The visible month (first-of-month) and selected day; `null` until the user
+  /// navigates, so the calendar opens on the newest session's month/day.
+  DateTime? _month;
+  DateTime? _selectedDay;
+
+  @override
+  Widget build(BuildContext context) {
     // Pending (local) sessions render immediately: the live queue is the
     // just-completed session's instant home, and the durable store is the
     // belt-and-suspenders fallback. The synced (cloud) read is layered on top
@@ -86,7 +123,21 @@ class MySessionsScreen extends ConsumerWidget {
     final entries = mergeMySessions(synced: synced, pending: pending);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mine økter')),
+      appBar: AppBar(
+        title: const Text('Mine økter'),
+        actions: [
+          IconButton(
+            key: calendarToggleKey,
+            tooltip: _calendar ? 'Vis liste' : 'Vis kalender',
+            icon: Icon(
+              _calendar
+                  ? Icons.view_list_outlined
+                  : Icons.calendar_month_outlined,
+            ),
+            onPressed: () => setState(() => _calendar = !_calendar),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -94,7 +145,11 @@ class MySessionsScreen extends ConsumerWidget {
             child: Column(
               children: [
                 if (syncFailed) const _SyncErrorBanner(),
-                Expanded(child: _SessionsList(entries: entries)),
+                Expanded(
+                  child: _calendar
+                      ? _calendarView(entries)
+                      : _SessionsList(entries: entries),
+                ),
               ],
             ),
           ),
@@ -103,17 +158,69 @@ class MySessionsScreen extends ConsumerWidget {
     );
   }
 
-  /// Unions the [sources] of pending records, deduplicated by id; a later
-  /// source wins a tie, so passing `[stored, live]` keeps the freshest copy.
-  static List<SessionRecord> _unionById(List<List<SessionRecord>> sources) {
-    final byId = <String, SessionRecord>{};
-    for (final source in sources) {
-      for (final record in source) {
-        byId[record.id] = record;
-      }
+  /// The calendar: a month grid with the days that have sessions marked, and
+  /// the selected day's sessions below it (spec 0038). Sessions with no stored
+  /// date are not placed on the calendar (they stay in the list view).
+  Widget _calendarView(List<MySessionEntry> entries) {
+    final byDay = <DateTime, List<MySessionEntry>>{};
+    for (final entry in entries) {
+      final at = entry.record.capturedAt;
+      if (at == null) continue;
+      byDay.putIfAbsent(dateKey(at), () => <MySessionEntry>[]).add(entry);
     }
-    return byId.values.toList();
+    // Entries are sorted newest-first, so the first dated one anchors the
+    // default month/day; with no dated sessions, fall back to today.
+    final dated = entries.where((e) => e.record.capturedAt != null);
+    final anchor = dated.isEmpty
+        ? dateKey(DateTime.now())
+        : dateKey(dated.first.record.capturedAt!);
+    final selectedDay = _selectedDay ?? anchor;
+    final month = _month ?? firstOfMonth(selectedDay);
+    final dayEntries = byDay[selectedDay] ?? const <MySessionEntry>[];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SessionCalendar(
+            month: month,
+            selectedDay: selectedDay,
+            daysWithSessions: byDay.keys.toSet(),
+            onSelectDay: (day) => setState(() => _selectedDay = day),
+            onPrevMonth: () =>
+                setState(() => _month = DateTime(month.year, month.month - 1)),
+            onNextMonth: () =>
+                setState(() => _month = DateTime(month.year, month.month + 1)),
+          ),
+          const SizedBox(height: 8),
+          if (dayEntries.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Ingen økter denne dagen',
+                key: noSessionsOnDayKey,
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            for (final entry in dayEntries) _SessionCard(entry: entry),
+        ],
+      ),
+    );
   }
+}
+
+/// Unions the [sources] of pending records, deduplicated by id; a later source
+/// wins a tie, so passing `[stored, live]` keeps the freshest copy.
+List<SessionRecord> _unionById(List<List<SessionRecord>> sources) {
+  final byId = <String, SessionRecord>{};
+  for (final source in sources) {
+    for (final record in source) {
+      byId[record.id] = record;
+    }
+  }
+  return byId.values.toList();
 }
 
 /// The loaded list of saved sessions, or the empty state when there are none.
@@ -429,6 +536,166 @@ String _scoreSpoken(SessionRecord record) {
     suffix = ', $innerTens $noun';
   }
   return '${record.total} av ${record.maxTotal}$suffix';
+}
+
+/// Norwegian weekday headers (Monday-first) and month names for the calendar.
+const List<String> _weekdayLabels = <String>[
+  'Man',
+  'Tir',
+  'Ons',
+  'Tor',
+  'Fre',
+  'Lør',
+  'Søn',
+];
+const List<String> _monthNames = <String>[
+  'januar',
+  'februar',
+  'mars',
+  'april',
+  'mai',
+  'juni',
+  'juli',
+  'august',
+  'september',
+  'oktober',
+  'november',
+  'desember',
+];
+
+/// A month calendar for "Mine økter" (spec 0038): a Monday-first 6-week grid
+/// with a dot on days that have sessions and the selected day highlighted.
+class _SessionCalendar extends StatelessWidget {
+  const _SessionCalendar({
+    required this.month,
+    required this.selectedDay,
+    required this.daysWithSessions,
+    required this.onSelectDay,
+    required this.onPrevMonth,
+    required this.onNextMonth,
+  });
+
+  final DateTime month;
+  final DateTime selectedDay;
+  final Set<DateTime> daysWithSessions;
+  final ValueChanged<DateTime> onSelectDay;
+  final VoidCallback onPrevMonth;
+  final VoidCallback onNextMonth;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final grid = monthGrid(month);
+    final name = _monthNames[month.month - 1];
+    final label = '${name[0].toUpperCase()}${name.substring(1)} ${month.year}';
+    return Column(
+      children: [
+        Row(
+          children: [
+            IconButton(
+              key: calendarPrevMonthKey,
+              onPressed: onPrevMonth,
+              icon: const Icon(Icons.chevron_left),
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  label,
+                  key: calendarMonthLabelKey,
+                  style: theme.textTheme.titleMedium,
+                ),
+              ),
+            ),
+            IconButton(
+              key: calendarNextMonthKey,
+              onPressed: onNextMonth,
+              icon: const Icon(Icons.chevron_right),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            for (final w in _weekdayLabels)
+              Expanded(
+                child: Center(
+                  child: Text(
+                    w,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        for (var week = 0; week < 6; week++)
+          Row(
+            children: [
+              for (var d = 0; d < 7; d++) _dayCell(context, grid[week * 7 + d]),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _dayCell(BuildContext context, DateTime date) {
+    final theme = Theme.of(context);
+    final inMonth = date.month == month.month;
+    final isSelected = date == selectedDay;
+    final hasSessions = daysWithSessions.contains(date);
+    final fg = isSelected
+        ? theme.colorScheme.onPrimary
+        : inMonth
+        ? theme.colorScheme.onSurface
+        : theme.colorScheme.onSurfaceVariant;
+    return Expanded(
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Padding(
+          padding: const EdgeInsets.all(2),
+          child: InkWell(
+            key: calendarDayKey(date),
+            onTap: () => onSelectDay(date),
+            borderRadius: BorderRadius.circular(8),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: isSelected ? theme.colorScheme.primary : null,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${date.day}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: fg,
+                      fontWeight: isSelected ? FontWeight.bold : null,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  if (hasSessions)
+                    Container(
+                      key: calendarDayDotKey(date),
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected
+                            ? theme.colorScheme.onPrimary
+                            : theme.colorScheme.primary,
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 6),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// The "not synced yet" badge shown on a pending session's card (spec 0026).
