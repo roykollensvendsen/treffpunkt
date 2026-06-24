@@ -20,9 +20,10 @@ paper target** and mark the hits on the photo. The app scores them just the same
    **＋ handle** onto the centre of the bull and the **⤢ handle** out onto the
    outermost ring, until the drawn rings sit on the printed ones. Then tap **Ser
    bra ut**.
-4. **Mark each hit.** Tap every bullet hole in the photo. Each tap shows its
-   score; hold a marker to drag it if it's off, or tap **Angre** to remove the
-   last one.
+4. **Mark each hit.** Tap **Finn treff automatisk** to let the app find the
+   holes for you, then check the result. Or mark them yourself: tap every bullet
+   hole in the photo. Each tap shows its score; hold a marker to drag it if it's
+   off, or tap **Angre** to remove the last one.
 5. Tap **Bruk skudd** to add the marked shots to your series.
 
 The shots appear in the series, scored and ready to seal — exactly as if you had
@@ -34,6 +35,6 @@ tapped them on the live target.
   If the rings don't line up, tap **Ta nytt bilde** and shoot it straighter.
 - A tap outside all the rings counts as a miss (0), just like on paper.
 - A scan fills the **current** series only; scan again for the next one.
-
-> Automatic hole detection — letting the app find the hits for you — is planned as
-> a later step; for now you mark them yourself.
+- **Finn treff automatisk** is a helper, not magic: it works best on a sharp,
+  straight-on, well-lit photo, and it may miss a hole or add a stray one — always
+  glance over the result and fix it with a tap or **Angre** before you confirm.

@@ -11,6 +11,7 @@ import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
+import 'package:treffpunkt/features/scoring/data/target_scanner.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/series.dart';
@@ -124,6 +125,15 @@ final locationServiceProvider = Provider<LocationService>(
 /// overrides it. Tests inject a fake.
 final imageSourceServiceProvider = Provider<ImageSourceService>(
   (ref) => const UnavailableImageSourceService(),
+);
+
+/// The app's [TargetScanner] for auto-detecting holes in a scan (spec 0040).
+///
+/// Defaults to one that can never analyse a photo, so auto-detect degrades to
+/// manual placement until the real `image`-backed scanner is wired; `main()`
+/// overrides it. Tests inject a fake.
+final targetScannerProvider = Provider<TargetScanner>(
+  (ref) => const UnavailableTargetScanner(),
 );
 
 /// The in-progress session together with the current (unsealed) series and its

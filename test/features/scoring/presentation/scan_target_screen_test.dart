@@ -20,6 +20,7 @@ import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
 import '../fake_image_source_service.dart';
+import '../fake_target_scanner.dart';
 
 /// A 1×1 transparent PNG, so `Image.memory` has valid bytes to decode.
 final Uint8List _pngBytes = base64Decode(
@@ -40,12 +41,16 @@ const TargetGeometry _geometry = TargetGeometry.airRifle10m();
 Future<_Host> _open(
   WidgetTester tester, {
   required FakeImageSourceService source,
+  FakeTargetScanner? scanner,
   int maxShots = 10,
 }) async {
   final host = _Host();
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [imageSourceServiceProvider.overrideWithValue(source)],
+      overrides: [
+        imageSourceServiceProvider.overrideWithValue(source),
+        if (scanner != null) targetScannerProvider.overrideWithValue(scanner),
+      ],
       child: MaterialApp(
         home: Builder(
           builder: (context) => Scaffold(
@@ -163,6 +168,7 @@ void main() {
 
     await tester.tapAt(tester.getCenter(find.byKey(scanOverlayKey)));
     await tester.pump();
+    await tester.ensureVisible(find.byKey(scanConfirmKey));
     await tester.tap(find.byKey(scanConfirmKey));
     await tester.pumpAndSettle();
 
@@ -170,5 +176,79 @@ void main() {
     expect(host.popped, hasLength(1));
     // The centre tap is at (0,0) mm.
     expect(host.popped!.single.distanceMm, closeTo(0, 0.5));
+  });
+
+  group('auto-detect (spec 0040)', () {
+    Future<void> reach(WidgetTester tester) => _reachPlacement(tester);
+
+    testWidgets('detect is only available once calibrated', (tester) async {
+      final source = FakeImageSourceService(
+        result: ImagePicked(PickedImage(bytes: _pngBytes)),
+      );
+      await _open(tester, source: source, scanner: FakeTargetScanner());
+
+      await tester.tap(find.byKey(scanCameraButtonKey));
+      await tester.pumpAndSettle();
+      // Still calibrating — no detect button yet.
+      expect(find.byKey(scanDetectKey), findsNothing);
+
+      await tester.tap(find.byKey(scanCalibrateConfirmKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(scanDetectKey), findsOneWidget);
+    });
+
+    testWidgets('detected holes are appended as scored shots', (tester) async {
+      final source = FakeImageSourceService(
+        result: ImagePicked(PickedImage(bytes: _pngBytes)),
+      );
+      final scanner = FakeTargetScanner(
+        result: const <Shot>[Shot(dxMm: 0, dyMm: 0), Shot(dxMm: 30, dyMm: 0)],
+      );
+      await _open(tester, source: source, scanner: scanner);
+      await reach(tester);
+
+      await tester.tap(find.byKey(scanDetectKey));
+      await tester.pumpAndSettle();
+
+      expect(scanner.scanCount, 1);
+      expect(find.text('2 av 10 plassert'), findsOneWidget);
+    });
+
+    testWidgets('detection respects the remaining capacity', (tester) async {
+      final source = FakeImageSourceService(
+        result: ImagePicked(PickedImage(bytes: _pngBytes)),
+      );
+      final scanner = FakeTargetScanner(
+        result: const <Shot>[
+          Shot(dxMm: 0, dyMm: 0),
+          Shot(dxMm: 20, dyMm: 0),
+          Shot(dxMm: -20, dyMm: 0),
+        ],
+      );
+      await _open(tester, source: source, scanner: scanner, maxShots: 2);
+      await reach(tester);
+
+      await tester.tap(find.byKey(scanDetectKey));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 av 2 plassert'), findsOneWidget);
+    });
+
+    testWidgets('a null result keeps manual placement', (tester) async {
+      final source = FakeImageSourceService(
+        result: ImagePicked(PickedImage(bytes: _pngBytes)),
+      );
+      await _open(tester, source: source, scanner: FakeTargetScanner());
+      await reach(tester);
+
+      await tester.tap(find.byKey(scanDetectKey));
+      await tester.pumpAndSettle();
+
+      expect(find.text('0 av 10 plassert'), findsOneWidget);
+      expect(
+        find.text('Kunne ikke analysere bildet — merk treffene manuelt.'),
+        findsOneWidget,
+      );
+    });
   });
 }

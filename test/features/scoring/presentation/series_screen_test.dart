@@ -658,6 +658,7 @@ void main() {
       // A tap on the overlay centre is a ten; confirm returns it to the series.
       await tester.tapAt(tester.getCenter(find.byKey(scanOverlayKey)));
       await tester.pump();
+      await tester.ensureVisible(find.byKey(scanConfirmKey));
       await tester.tap(find.byKey(scanConfirmKey));
       await tester.pumpAndSettle();
 

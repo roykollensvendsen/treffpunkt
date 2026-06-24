@@ -134,6 +134,13 @@ The shooter records a complete session on-device, with no network needed
       foundation a later automatic hole-detection step (classical CV or a trained
       model on a labelled NSF-target dataset) would pre-fill. Closes the domain
       expert's "photo of the shot target" wish.
+- [x] 0040 — Auto-detect bullet holes: a "Finn treff automatisk" action runs a
+      pure-Dart heuristic detector (integral-image local contrast + connected
+      components + the calibration's priors) on a background isolate and
+      pre-fills the detected holes as editable shots — deduped, capped, and
+      degrading to the manual flow on any failure (ADR-0022). Assistive (the
+      shooter reviews); web + mobile, one new pure-Dart dependency (`image`)
+      behind a `TargetScanner` seam. The ML route stays gated on a dataset.
 - [ ] 0016 — Responsive/adaptive polish; PWA install; store builds.
 - [ ] 0020+ — More programs/disciplines (further pistol programs, field, …).
 

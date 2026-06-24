@@ -15,6 +15,7 @@ import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
+import 'package:treffpunkt/features/scoring/data/target_scanner.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/settings/data/theme_mode_store.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
@@ -36,6 +37,9 @@ import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 /// gallery for the "Skann skive" scan (spec 0039): `main()` passes the
 /// `image_picker`-backed one; omitting it keeps the always-unavailable default,
 /// so tests and the integration harness never touch a real camera.
+/// [targetScanner] auto-detects holes in a scanned photo (spec 0040): `main()`
+/// passes the `image`-backed one; omitting it keeps the always-unavailable
+/// default, so tests never decode an image.
 ///
 /// [initialWeapons] seeds the personal-weapons list at launch — `main()` loads
 /// it from the [weaponStore] before this call so the notifier starts populated
@@ -64,6 +68,7 @@ void runTreffpunkt(
   List<Weapon>? initialWeapons,
   LocationService? locationService,
   ImageSourceService? imageSourceService,
+  TargetScanner? targetScanner,
   ThemeModeStore? themeModeStore,
   ThemeMode? initialThemeMode,
   CompetitionRepository? competitionRepository,
@@ -86,6 +91,8 @@ void runTreffpunkt(
           locationServiceProvider.overrideWithValue(locationService),
         if (imageSourceService != null)
           imageSourceServiceProvider.overrideWithValue(imageSourceService),
+        if (targetScanner != null)
+          targetScannerProvider.overrideWithValue(targetScanner),
         if (themeModeStore != null)
           themeModeStoreProvider.overrideWithValue(themeModeStore),
         if (initialThemeMode != null)
