@@ -42,9 +42,11 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="Record and score shots on NSF/ISSF targets across competitions.">
 
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- iOS icons. Deliberately NOT "*-web-app-capable": that would make iOS
+       "Add to Home Screen" launch a standalone webview without Safari's
+       user-agent, which Google's OAuth blocks ("disallowed_useragent",
+       spec 0042). Without it the home-screen icon opens in real Safari, where
+       Google sign-in works. -->
   <meta name="apple-mobile-web-app-title" content="treffpunkt">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 

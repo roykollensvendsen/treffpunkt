@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/bootstrap.dart';
 import 'package:treffpunkt/config/app_config.dart';
+import 'package:treffpunkt/core/platform/browser_environment.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
 import 'package:treffpunkt/features/competitions/data/supabase_competition_repository.dart';
 import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
@@ -68,5 +69,6 @@ Future<void> main() async {
     competitionRepository: SupabaseCompetitionRepository(
       Supabase.instance.client,
     ),
+    browserEnvironment: readBrowserEnvironment(),
   );
 }
