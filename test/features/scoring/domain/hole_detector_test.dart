@@ -163,4 +163,28 @@ void main() {
 
     expect(run(canvas.build()), hasLength(1));
   });
+
+  test('ignores a hole beyond the scoring radius (a miss)', () {
+    // On the rapid face the whole target is black; a hole just inside the
+    // outermost (5) ring scores and is found, but one just beyond it is a miss
+    // (0) — auto-placing it adds nothing and, on a real photo, would usually be
+    // a paper-margin artefact — so it is dropped.
+    const rapid = TargetGeometry.pistol25mRapid();
+    const c = PixelPoint(290, 290);
+    const ppm = 1.0; // 1 px/mm: scoring radius ≈ 252.8 px, bull edge 250 px.
+    final canvas = _Canvas(600, 600, 220)
+      ..disc(290, 35, 3, 30) // r = 255 px > 252.8 → a miss
+      ..disc(50, 290, 3, 30); // r = 240 px < 252.8, clear of the bull edge
+
+    final found = const HoleDetector().detect(
+      canvas.build(),
+      centre: c,
+      pixelsPerMm: ppm,
+      geometry: rapid,
+      maxHoles: 10,
+    );
+
+    expect(found, hasLength(1));
+    expect(found.single, predicate<PixelPoint>((p) => _near(p, 50, 290)));
+  });
 }
