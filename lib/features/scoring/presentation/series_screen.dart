@@ -738,13 +738,6 @@ class _SeriesTotalCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
-                    ' / ${score.maxTotal}',
-                    style: TextStyle(
-                      color: onColor.withValues(alpha: 0.8),
-                      fontSize: 16,
-                    ),
-                  ),
                 ],
               ),
             ],
@@ -779,7 +772,7 @@ class _SessionProgress extends StatelessWidget {
       ),
       child: ExcludeSemantics(
         child: Text(
-          'Session so far: $total / $maxTotal$suffix',
+          'Session so far: $total$suffix',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -940,7 +933,7 @@ class _StageScoreRow extends StatelessWidget {
                 children: [
                   Text(name, style: theme.textTheme.titleMedium),
                   Text(
-                    '${score.total} / ${score.maxTotal}$suffix',
+                    '${score.total}$suffix',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -1000,7 +993,7 @@ class _SeriesResultRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(label, style: style),
-              Text('${score.total} / ${score.maxTotal}$suffix', style: style),
+              Text('${score.total}$suffix', style: style),
             ],
           ),
         ),
@@ -1064,13 +1057,6 @@ class _GrandTotalCard extends StatelessWidget {
                       color: onColor,
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    ' / ${score.maxTotal}',
-                    style: TextStyle(
-                      color: onColor.withValues(alpha: 0.8),
-                      fontSize: 16,
                     ),
                   ),
                 ],

@@ -517,11 +517,11 @@ String? _metaLine(SessionRecord record) {
   return date;
 }
 
-/// The score line `total / maxTotal`, with a `· N×X` suffix when there are any
-/// inner tens.
+/// The score line: the total, with a `· N×X` suffix when there are any inner
+/// tens. The maximum is omitted — it is fixed by the program and known.
 String _scoreLine(SessionRecord record) {
   final suffix = record.innerTens > 0 ? ' · ${record.innerTens}×X' : '';
-  return '${record.total} / ${record.maxTotal}$suffix';
+  return '${record.total}$suffix';
 }
 
 /// The score spoken in words for a screen reader (e.g. "90 av 100, 2 indre
