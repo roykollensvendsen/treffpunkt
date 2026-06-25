@@ -55,6 +55,15 @@ const Key scanConfirmKey = ValueKey<String>('scanConfirm');
 /// Key for the "auto-detect holes" action on the placement step (spec 0040).
 const Key scanDetectKey = ValueKey<String>('scanDetect');
 
+/// Key for the photo zoom-in button on the placement step (spec 0045).
+const Key scanZoomInKey = ValueKey<String>('scanZoomIn');
+
+/// Key for the photo zoom-out button on the placement step.
+const Key scanZoomOutKey = ValueKey<String>('scanZoomOut');
+
+/// Key for the photo zoom-reset button on the placement step.
+const Key scanZoomResetKey = ValueKey<String>('scanZoomReset');
+
 /// The steps of the scan flow.
 enum _ScanMode { capture, calibrate, place }
 
@@ -66,6 +75,50 @@ class _Candidate {
   Shot shot;
   final TrainingHoleSource source;
   bool edited = false;
+}
+
+/// The ＋ / reset / − zoom buttons overlaid on the scan photo (spec 0045).
+class _ScanZoomControls extends StatelessWidget {
+  const _ScanZoomControls({
+    required this.onZoomIn,
+    required this.onZoomOut,
+    required this.onReset,
+  });
+
+  final VoidCallback onZoomIn;
+  final VoidCallback onZoomOut;
+  final VoidCallback onReset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: const StadiumBorder(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            key: scanZoomInKey,
+            icon: const Icon(Icons.add),
+            tooltip: 'Zoom inn',
+            onPressed: onZoomIn,
+          ),
+          IconButton(
+            key: scanZoomResetKey,
+            icon: const Icon(Icons.center_focus_strong),
+            tooltip: 'Nullstill zoom',
+            onPressed: onReset,
+          ),
+          IconButton(
+            key: scanZoomOutKey,
+            icon: const Icon(Icons.remove),
+            tooltip: 'Zoom ut',
+            onPressed: onZoomOut,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Camera-assisted shot placement (spec 0039): photograph the paper target,
@@ -104,6 +157,9 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
   /// Visual radius (logical px) of a calibration handle.
   static const double _handleRadius = 18;
 
+  static const double _minScale = 1;
+  static const double _maxScale = 6;
+
   _ScanMode _mode = _ScanMode.capture;
   Uint8List? _imageBytes;
   PixelPoint? _centre;
@@ -113,10 +169,34 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
   final List<_Candidate> _candidates = <_Candidate>[];
   int? _draggingIndex;
 
+  /// Pan/zoom of the photo while placing shots, so a hole can be marked
+  /// precisely. Pointer coordinates reach the overlay already mapped back into
+  /// the photo's own space, so the calibration is unaffected by the zoom.
+  final TransformationController _transform = TransformationController();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowDisclosure());
+  }
+
+  @override
+  void dispose() {
+    _transform.dispose();
+    super.dispose();
+  }
+
+  double get _currentScale => _transform.value.getMaxScaleOnAxis();
+
+  /// Sets a centred zoom level on the photo, clamped to [_minScale].._maxScale.
+  void _zoomTo(double target, double side) {
+    final clamped = target.clamp(_minScale, _maxScale);
+    final translate = (side / 2) * (1 - clamped);
+    _transform.value = Matrix4.identity()
+      ..setEntry(0, 0, clamped)
+      ..setEntry(1, 1, clamped)
+      ..setEntry(0, 3, translate)
+      ..setEntry(1, 3, translate);
   }
 
   /// Shows the one-time training-data disclosure on the first scan (spec 0041).
@@ -152,6 +232,7 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
     if (!mounted) return;
     switch (result) {
       case ImagePicked(:final image):
+        _transform.value = Matrix4.identity();
         setState(() {
           _imageBytes = image.bytes;
           _centre = null;
@@ -337,10 +418,13 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
               key: scanRetakeKey,
               icon: const Icon(Icons.restart_alt),
               tooltip: 'Ta nytt bilde',
-              onPressed: () => setState(() {
-                _imageBytes = null;
-                _mode = _ScanMode.capture;
-              }),
+              onPressed: () {
+                _transform.value = Matrix4.identity();
+                setState(() {
+                  _imageBytes = null;
+                  _mode = _ScanMode.capture;
+                });
+              },
             ),
         ],
       ),
@@ -425,52 +509,83 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
       child: Stack(
         children: [
           Positioned.fill(
-            child: Image.memory(_imageBytes!, fit: BoxFit.contain),
-          ),
-          Positioned.fill(
-            child: GestureDetector(
-              key: scanOverlayKey,
-              behavior: HitTestBehavior.opaque,
-              onTapUp: calibrating ? null : (d) => _placeAt(d.localPosition),
-              onLongPressStart: calibrating
-                  ? null
-                  : (d) => _pickUp(d.localPosition),
-              onLongPressMoveUpdate: calibrating
-                  ? null
-                  : (d) => _dragTo(d.localPosition),
-              onLongPressEnd: calibrating
-                  ? null
-                  : (_) => setState(() => _draggingIndex = null),
-              child: CustomPaint(
-                size: Size.square(side),
-                painter: ScanOverlayPainter(
-                  geometry: widget.geometry,
-                  calibration: calibration,
-                  shots: <Shot>[for (final c in _candidates) c.shot],
-                ),
+            // Zoom + pan while placing shots (not while calibrating, where the
+            // two handles are dragged directly). A single-finger drag pans, a
+            // pinch (or the on-photo buttons / trackpad scroll) zooms; the
+            // overlay's pointer coordinates are mapped back to the photo's own
+            // space, so the calibration and scoring are unaffected.
+            child: InteractiveViewer(
+              transformationController: _transform,
+              minScale: _minScale,
+              maxScale: _maxScale,
+              trackpadScrollCausesScale: true,
+              panEnabled: !calibrating,
+              scaleEnabled: !calibrating,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image.memory(_imageBytes!, fit: BoxFit.contain),
+                  ),
+                  Positioned.fill(
+                    child: GestureDetector(
+                      key: scanOverlayKey,
+                      behavior: HitTestBehavior.opaque,
+                      onTapUp: calibrating
+                          ? null
+                          : (d) => _placeAt(d.localPosition),
+                      onLongPressStart: calibrating
+                          ? null
+                          : (d) => _pickUp(d.localPosition),
+                      onLongPressMoveUpdate: calibrating
+                          ? null
+                          : (d) => _dragTo(d.localPosition),
+                      onLongPressEnd: calibrating
+                          ? null
+                          : (_) => setState(() => _draggingIndex = null),
+                      child: CustomPaint(
+                        size: Size.square(side),
+                        painter: ScanOverlayPainter(
+                          geometry: widget.geometry,
+                          calibration: calibration,
+                          shots: <Shot>[for (final c in _candidates) c.shot],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (calibrating) ...[
+                    _handle(scanCentreHandleKey, _centre!, Icons.add, (delta) {
+                      setState(() {
+                        _centre = PixelPoint(
+                          _centre!.x + delta.dx,
+                          _centre!.y + delta.dy,
+                        );
+                      });
+                    }),
+                    _handle(scanScaleHandleKey, _scale!, Icons.open_in_full, (
+                      delta,
+                    ) {
+                      setState(() {
+                        _scale = PixelPoint(
+                          _scale!.x + delta.dx,
+                          _scale!.y + delta.dy,
+                        );
+                      });
+                    }),
+                  ],
+                ],
               ),
             ),
           ),
-          if (calibrating) ...[
-            _handle(scanCentreHandleKey, _centre!, Icons.add, (delta) {
-              setState(() {
-                _centre = PixelPoint(
-                  _centre!.x + delta.dx,
-                  _centre!.y + delta.dy,
-                );
-              });
-            }),
-            _handle(scanScaleHandleKey, _scale!, Icons.open_in_full, (
-              delta,
-            ) {
-              setState(() {
-                _scale = PixelPoint(
-                  _scale!.x + delta.dx,
-                  _scale!.y + delta.dy,
-                );
-              });
-            }),
-          ],
+          if (!calibrating)
+            Positioned(
+              right: 8,
+              bottom: 8,
+              child: _ScanZoomControls(
+                onZoomIn: () => _zoomTo(_currentScale * 1.6, side),
+                onZoomOut: () => _zoomTo(_currentScale / 1.6, side),
+                onReset: () => _zoomTo(1, side),
+              ),
+            ),
         ],
       ),
     );

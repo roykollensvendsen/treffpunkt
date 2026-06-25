@@ -153,6 +153,9 @@ The shooter records a complete session on-device, with no network needed
       works) instead of a webview that Google blocks ("403 disallowed_useragent");
       plus a sign-in notice that detects in-app/standalone webviews and guides the
       user to open in Safari/Chrome with a copy-link (ADR-0024).
+- [x] 0045 — Zoom & pan the scan photo while placing shots, so hits can be
+      marked precisely (InteractiveViewer + ＋/−/reset, mirroring the live
+      target); calibration stays at 1×.
 - [ ] 0016 — Responsive/adaptive polish; PWA install; store builds.
 - [x] 0043 — Storluft: the corona-era home air-pistol program (40 shots / 4×10),
       offered in two variants — on the larger Sprintluft / luftduell face at 10 m,
