@@ -34,14 +34,9 @@ const Key scanRetakeKey = ValueKey<String>('scanRetake');
 /// Key for the "looks aligned" button that leaves calibration for placement.
 const Key scanCalibrateConfirmKey = ValueKey<String>('scanCalibrateConfirm');
 
-/// Key for the tappable photo overlay (rings + markers) shots are placed on.
+/// Key for the photo overlay (rings + markers): tap to place, drag/pinch to
+/// calibrate.
 const Key scanOverlayKey = ValueKey<String>('scanOverlay');
-
-/// Key for the draggable centre calibration handle.
-const Key scanCentreHandleKey = ValueKey<String>('scanCentreHandle');
-
-/// Key for the draggable scale (outer-ring) calibration handle.
-const Key scanScaleHandleKey = ValueKey<String>('scanScaleHandle');
 
 /// Key for the live score read-out of the most recently placed shot.
 const Key scanLiveScoreKey = ValueKey<String>('scanLiveScore');
@@ -66,6 +61,30 @@ const Key scanZoomResetKey = ValueKey<String>('scanZoomReset');
 
 /// The steps of the scan flow.
 enum _ScanMode { capture, calibrate, place }
+
+/// The calibration after a pan-pinch gesture on the ring overlay (spec 0046):
+/// pure so the maths is unit-testable.
+///
+/// [scale] is the cumulative pinch factor since the gesture started ([focal] is
+/// the current finger focal point, [startFocal] the one at the start). A
+/// one-finger drag has `scale == 1`, so the overlay just follows the finger; a
+/// pinch resizes it about the focal point, which stays put under the fingers.
+@visibleForTesting
+({PixelPoint centre, double pixelsPerMm}) calibrationAfterGesture({
+  required PixelPoint startCentre,
+  required double startPixelsPerMm,
+  required PixelPoint startFocal,
+  required PixelPoint focal,
+  required double scale,
+}) {
+  return (
+    centre: PixelPoint(
+      focal.x + scale * (startCentre.x - startFocal.x),
+      focal.y + scale * (startCentre.y - startFocal.y),
+    ),
+    pixelsPerMm: startPixelsPerMm * scale,
+  );
+}
 
 /// A placed shot together with its training-label provenance (spec 0041): the
 /// [source] that placed it and whether it was [edited] (dragged) afterwards.
@@ -154,20 +173,22 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
   /// How close (logical px) a long-press must be to a marker to pick it up.
   static const double _pickRadiusPx = 28;
 
-  /// Visual radius (logical px) of a calibration handle.
-  static const double _handleRadius = 18;
-
   static const double _minScale = 1;
   static const double _maxScale = 6;
 
   _ScanMode _mode = _ScanMode.capture;
   Uint8List? _imageBytes;
   PixelPoint? _centre;
-  PixelPoint? _scale;
+  double? _pixelsPerMm;
   double _boxSide = 0;
   bool _analysing = false;
   final List<_Candidate> _candidates = <_Candidate>[];
   int? _draggingIndex;
+
+  // The calibration centre / scale at the start of a pan-pinch gesture.
+  PixelPoint? _gestureStartCentre;
+  double? _gestureStartPixelsPerMm;
+  PixelPoint? _gestureStartFocal;
 
   /// Pan/zoom of the photo while placing shots, so a hole can be marked
   /// precisely. Pointer coordinates reach the overlay already mapped back into
@@ -212,11 +233,41 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
     );
   }
 
-  TargetCalibration get _calibration => TargetCalibration.fromHandles(
-    centre: _centre!,
-    scale: _scale!,
-    referenceRadiusMm: widget.geometry.maxScoringRadiusMm,
-  );
+  TargetCalibration get _calibration =>
+      TargetCalibration(centre: _centre!, pixelsPerMm: _pixelsPerMm!);
+
+  /// Records the calibration at the start of a pan-pinch gesture (calibrate).
+  void _calibrateStart(ScaleStartDetails details) {
+    _gestureStartCentre = _centre;
+    _gestureStartPixelsPerMm = _pixelsPerMm;
+    _gestureStartFocal = PixelPoint(
+      details.localFocalPoint.dx,
+      details.localFocalPoint.dy,
+    );
+  }
+
+  /// Moves (pan) and scales (pinch) the ring overlay to fit the photographed
+  /// target: a one-finger drag moves the centre, a pinch resizes about the
+  /// fingers (spec 0046).
+  void _calibrateUpdate(ScaleUpdateDetails details) {
+    final startCentre = _gestureStartCentre;
+    final startPixelsPerMm = _gestureStartPixelsPerMm;
+    final startFocal = _gestureStartFocal;
+    if (startCentre == null || startPixelsPerMm == null || startFocal == null) {
+      return;
+    }
+    final next = calibrationAfterGesture(
+      startCentre: startCentre,
+      startPixelsPerMm: startPixelsPerMm,
+      startFocal: startFocal,
+      focal: PixelPoint(details.localFocalPoint.dx, details.localFocalPoint.dy),
+      scale: details.scale,
+    );
+    setState(() {
+      _centre = next.centre;
+      _pixelsPerMm = next.pixelsPerMm;
+    });
+  }
 
   Future<void> _capture() async {
     final result = await ref.read(imageSourceServiceProvider).capturePhoto();
@@ -236,7 +287,7 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
         setState(() {
           _imageBytes = image.bytes;
           _centre = null;
-          _scale = null;
+          _pixelsPerMm = null;
           _candidates.clear();
           _draggingIndex = null;
           _mode = _ScanMode.calibrate;
@@ -256,13 +307,13 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  /// Seeds the two handles from the photo box [side] the first time the photo
-  /// is shown, so the overlay is visible and usable before any drag: the centre
-  /// at the box middle, the scale handle a third of the way out to the right.
-  void _seedHandles(double side) {
+  /// Seeds the calibration from the photo box [side] the first time the photo
+  /// is shown, so the ring overlay is visible before any adjustment: centred,
+  /// with its outer ring about a third of the box across.
+  void _seedCalibration(double side) {
     _boxSide = side;
     _centre ??= PixelPoint(side / 2, side / 2);
-    _scale ??= PixelPoint(side / 2 + side * 0.3, side / 2);
+    _pixelsPerMm ??= (side * 0.3) / widget.geometry.maxScoringRadiusMm;
   }
 
   /// Auto-detects holes in the photo and appends them as editable shots (spec
@@ -483,7 +534,7 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
           0,
           math.min(available, constraints.maxWidth),
         );
-        _seedHandles(side);
+        _seedCalibration(side);
         return Column(
           children: [
             Center(child: _photoStack(side, calibrating: calibrating)),
@@ -530,6 +581,11 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
                     child: GestureDetector(
                       key: scanOverlayKey,
                       behavior: HitTestBehavior.opaque,
+                      // Calibrating: drag to move and pinch to scale the ring
+                      // overlay onto the target. Placing: tap to place a shot,
+                      // long-press to drag one.
+                      onScaleStart: calibrating ? _calibrateStart : null,
+                      onScaleUpdate: calibrating ? _calibrateUpdate : null,
                       onTapUp: calibrating
                           ? null
                           : (d) => _placeAt(d.localPosition),
@@ -552,26 +608,6 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
                       ),
                     ),
                   ),
-                  if (calibrating) ...[
-                    _handle(scanCentreHandleKey, _centre!, Icons.add, (delta) {
-                      setState(() {
-                        _centre = PixelPoint(
-                          _centre!.x + delta.dx,
-                          _centre!.y + delta.dy,
-                        );
-                      });
-                    }),
-                    _handle(scanScaleHandleKey, _scale!, Icons.open_in_full, (
-                      delta,
-                    ) {
-                      setState(() {
-                        _scale = PixelPoint(
-                          _scale!.x + delta.dx,
-                          _scale!.y + delta.dy,
-                        );
-                      });
-                    }),
-                  ],
                 ],
               ),
             ),
@@ -591,39 +627,13 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
     );
   }
 
-  Widget _handle(
-    Key key,
-    PixelPoint at,
-    IconData icon,
-    void Function(Offset delta) onDrag,
-  ) {
-    return Positioned(
-      left: at.x - _handleRadius,
-      top: at.y - _handleRadius,
-      child: GestureDetector(
-        key: key,
-        onPanUpdate: (d) => onDrag(d.delta),
-        child: Container(
-          width: _handleRadius * 2,
-          height: _handleRadius * 2,
-          decoration: BoxDecoration(
-            color: Colors.lightGreenAccent.withValues(alpha: 0.5),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.black87, width: 2),
-          ),
-          child: Icon(icon, size: 18, color: Colors.black87),
-        ),
-      ),
-    );
-  }
-
   Widget _calibrateControls(TargetCalibration calibration) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Dra det ene merket til midten av skiva og det andre ut på den '
-          'ytterste ringen, til ringene over bildet passer.',
+          'Dra for å flytte ringene og knip for å skalere dem, til de ligger '
+          'oppå skiva på bildet.',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
