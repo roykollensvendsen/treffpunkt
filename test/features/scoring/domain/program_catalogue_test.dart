@@ -110,8 +110,26 @@ void main() {
     expect(ProgramCatalogue.byName('Sprintluft'), same(sprint));
   });
 
+  test(
+    'Silhuettpistol 12,5 m: 30 shots in 6x5 on the reduced silhouette face',
+    () {
+      const program = ProgramCatalogue.silhuettpistol12_5m;
+      expect(program.name, 'Silhuettpistol 12,5 m');
+      expect(program.discipline, Discipline.pistol);
+      expect(program.totalShots, 30);
+      expect(program.stages.single.seriesCount, 6);
+      expect(program.stages.single.shotsPerSeries, 5);
+      // The reduced ⌀ 200 mm silhouette face (rings 5–10), air calibre.
+      expect(program.stages.single.geometry.lowestRingValue, 5);
+      expect(program.stages.single.geometry.outerDiameterMm(5), 200);
+      expect(program.stages.single.geometry.caliberMm, 4.5);
+      expect(ProgramCatalogue.all, contains(program));
+      expect(ProgramCatalogue.byName('Silhuettpistol 12,5 m'), same(program));
+    },
+  );
+
   test('the catalogue seeds the real pistol programs', () {
-    expect(ProgramCatalogue.all.length, 13);
+    expect(ProgramCatalogue.all.length, 14);
     expect(
       ProgramCatalogue.all.every((p) => p.discipline == Discipline.pistol),
       isTrue,

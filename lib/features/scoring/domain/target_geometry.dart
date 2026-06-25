@@ -69,6 +69,18 @@ class TargetGeometry {
       innerTenDiameterMm = 11.5,
       lowestRingValue = 5;
 
+  /// The "Siluett 12,5 m" silhouette-pistol face: rings 5–10 on a whole-black
+  /// reduced target ⌀ 200 mm (it prints on A4) — the 25 m rapid ring
+  /// proportions scaled to 0.4 (step 32 mm, 10-ring ⌀ 40 mm, inner ten
+  /// ⌀ 20 mm). Shot with an air pistol (4.5 mm) at 12.5 m. See spec 0047.
+  const TargetGeometry.silhuett12_5m()
+    : name = '12,5 m Silhuett',
+      caliberMm = 4.5,
+      ringOuterDiametersMm = _silhuett12_5mRingDiametersMm,
+      blackBullDiameterMm = 200,
+      innerTenDiameterMm = 20,
+      lowestRingValue = 5;
+
   /// Human-readable discipline name, e.g. `'10 m Air Rifle'`.
   final String name;
 
@@ -198,4 +210,16 @@ const List<double> _airDuel10mRingDiametersMm = <double>[
   76, // ring 8
   49.5, // ring 9
   23, // ring 10 (innermost)
+];
+
+// The "Siluett 12,5 m" reduced silhouette face: rings 5–10, the 25 m rapid ring
+// proportions scaled to 0.4 — step 32 mm, 10-ring ⌀ 40 mm, ring 5 ⌀ 200 mm (so
+// it fits an A4 sheet).
+const List<double> _silhuett12_5mRingDiametersMm = <double>[
+  200, // ring 5 (outermost)
+  168, // ring 6
+  136, // ring 7
+  104, // ring 8
+  72, // ring 9
+  40, // ring 10 (innermost)
 ];
