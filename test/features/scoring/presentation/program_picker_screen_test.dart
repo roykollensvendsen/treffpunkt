@@ -33,20 +33,24 @@ void main() {
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
-    expect(find.text('25 m Finpistol'), findsOneWidget);
     expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
     // Air rifle is the spec-0001 reference / fixture but is not offered.
     expect(find.text('10 m Air Rifle'), findsNothing);
 
-    // Tap a program at the top of the list (always on-screen) to navigate.
-    await tester.tap(
-      find.byKey(const ValueKey<String>('program-10 m Luftpistol 60 skudd')),
+    // Tap a pistol program further down the list, scrolled into view, to
+    // navigate — also proving the list scrolls past the first screenful.
+    final program = find.byKey(
+      const ValueKey<String>('program-25 m Finpistol'),
     );
+    await tester.scrollUntilVisible(program, 80);
+    await tester.ensureVisible(program);
+    await tester.pumpAndSettle();
+    await tester.tap(program);
     await tester.pumpAndSettle();
 
     // Navigated to the session setup step (date/time + place) for the program.
     expect(find.byKey(sessionConfirmKey), findsOneWidget);
-    expect(find.text('10 m Luftpistol 60 skudd'), findsWidgets);
+    expect(find.text('25 m Finpistol'), findsWidgets);
   });
 
   testWidgets('labels each program tile as a button for screen readers', (
