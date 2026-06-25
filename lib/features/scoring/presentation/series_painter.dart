@@ -85,10 +85,12 @@ class SeriesPainter extends CustomPainter {
         ..drawCircle(
           markerCentre,
           radius,
+          // The marker edge matches the marker fill, so there is no contrasting
+          // black ring around each shot.
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5
-            ..color = Colors.black,
+            ..color = fill,
         );
       if (highlighted) {
         // The latest shot is emphasised by a halo ring, at the same marker
