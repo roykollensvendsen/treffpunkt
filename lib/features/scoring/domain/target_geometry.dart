@@ -58,6 +58,17 @@ class TargetGeometry {
       innerTenDiameterMm = 50,
       lowestRingValue = 5;
 
+  /// The NSF 10 m air sprint / duel ("Sprintluft") face: rings 5–10 on a face
+  /// larger than the standard air-pistol target (10-ring ⌀ 23 mm), inner ten
+  /// 11.5 mm. Used by Storluft (spec 0043). Air calibre 4.5 mm.
+  const TargetGeometry.airDuel10m()
+    : name = '10 m Luftduell',
+      caliberMm = 4.5,
+      ringOuterDiametersMm = _airDuel10mRingDiametersMm,
+      blackBullDiameterMm = 155.5,
+      innerTenDiameterMm = 11.5,
+      lowestRingValue = 5;
+
   /// Human-readable discipline name, e.g. `'10 m Air Rifle'`.
   final String name;
 
@@ -176,4 +187,15 @@ const List<double> _pistol25mRapidRingDiametersMm = <double>[
   260, // ring 8
   180, // ring 9
   100, // ring 10 (innermost)
+];
+
+// The 10 m air sprint / duel face: rings 5–10, 10-ring ⌀ 23 mm, step +26.5 mm
+// outward to ring 5 ⌀ 155.5 mm (NSF Sprintluft target).
+const List<double> _airDuel10mRingDiametersMm = <double>[
+  155.5, // ring 5 (outermost)
+  129, // ring 6
+  102.5, // ring 7
+  76, // ring 8
+  49.5, // ring 9
+  23, // ring 10 (innermost)
 ];

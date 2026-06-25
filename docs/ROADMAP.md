@@ -154,6 +154,10 @@ The shooter records a complete session on-device, with no network needed
       plus a sign-in notice that detects in-app/standalone webviews and guides the
       user to open in Safari/Chrome with a copy-link (ADR-0024).
 - [ ] 0016 — Responsive/adaptive polish; PWA install; store builds.
+- [x] 0043 — Storluft: the corona-era home air-pistol program (40 shots / 4×10),
+      offered in two variants — on the larger Sprintluft / luftduell face at 10 m,
+      and on the standard air-pistol face at the reduced 5.5 m home distance
+      (FSU 2020 source). Added a new `airDuel10m` target face.
 - [ ] 0020+ — More programs/disciplines (further pistol programs, field, …).
 
 ## Requirements added 2026-06-22 → where each lives
