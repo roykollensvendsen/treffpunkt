@@ -55,7 +55,7 @@ centre-fire **pistol** (grovpistol).
 | Hurtigpistol fin/grov | national | 25 m | .22 / c-f | rapid/duel face; (prøve) + 4×5 @10 s + 4×5 @8 s + 4×5 @6 s | 60 | integer + X | H |
 | NAIS fin/grov | national | 25 m | .22–.32 / .38–.45 | rapid/duel face; 2×5 @150 s + 2×5 duell + 1×5 @20 s + 1×5 @10 s | 30 | integer + X | H |
 | Fripistol (2A) | 50 m Pistol | 50 m | .22 | precision/50 m face; 6×10, 2 h | 60 | integer + X (X scored) | H |
-| Sprintluft (3D) | national | 10 m | air 4.5 mm | air-duel face; 30 in 15 min | 30 | integer + X | H |
+| Sprintluft | national (rekrutt) | 10 m | air 4.5 mm | air-duel face; 3×10, 15 min | 30 | integer + X | H |
 | Storluft (luftduell-skive) | national (korona) | 10 m | air 4.5 mm | air-duel face; 4×10 | 40 | integer + X | M |
 | Storluft (5,5 m) | national (korona) | 5.5 m | air 4.5 mm | std air-pistol face; 4×10 | 40 | integer + X | M |
 

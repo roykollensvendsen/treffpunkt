@@ -38,14 +38,15 @@ void main() {
     // Air rifle is the spec-0001 reference / fixture but is not offered.
     expect(find.text('10 m Air Rifle'), findsNothing);
 
+    // Tap a program at the top of the list (always on-screen) to navigate.
     await tester.tap(
-      find.byKey(const ValueKey<String>('program-25 m Finpistol')),
+      find.byKey(const ValueKey<String>('program-10 m Luftpistol 60 skudd')),
     );
     await tester.pumpAndSettle();
 
     // Navigated to the session setup step (date/time + place) for the program.
     expect(find.byKey(sessionConfirmKey), findsOneWidget);
-    expect(find.text('25 m Finpistol'), findsWidgets);
+    expect(find.text('10 m Luftpistol 60 skudd'), findsWidgets);
   });
 
   testWidgets('labels each program tile as a button for screen readers', (

@@ -158,6 +158,8 @@ The shooter records a complete session on-device, with no network needed
       offered in two variants — on the larger Sprintluft / luftduell face at 10 m,
       and on the standard air-pistol face at the reduced 5.5 m home distance
       (FSU 2020 source). Added a new `airDuel10m` target face.
+- [x] 0044 — Sprintluft: the NSF recruit air-pistol program (30 shots / 3×10,
+      15 min) on the same air-duel face, offered in the picker.
 - [ ] 0020+ — More programs/disciplines (further pistol programs, field, …).
 
 ## Requirements added 2026-06-22 → where each lives
