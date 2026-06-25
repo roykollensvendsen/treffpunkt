@@ -92,8 +92,26 @@ void main() {
     );
   });
 
+  test('Sprintluft: 30 shots in 3x10 on the duel face', () {
+    // NSF recruit program: 30 shots / 15 min on the air-duel face, integer + X.
+    const sprint = ProgramCatalogue.sprintluft;
+    expect(sprint.name, 'Sprintluft');
+    expect(sprint.discipline, Discipline.pistol);
+    expect(sprint.totalShots, 30);
+    expect(sprint.stages.single.seriesCount, 3);
+    expect(sprint.stages.single.shotsPerSeries, 10);
+    // The larger sprintluft / luftduell face (rings 5–10) — same as Storluft.
+    expect(sprint.stages.single.geometry.lowestRingValue, 5);
+    expect(
+      sprint.stages.single.geometry.name,
+      ProgramCatalogue.storluftDuel.stages.single.geometry.name,
+    );
+    expect(ProgramCatalogue.all, contains(sprint));
+    expect(ProgramCatalogue.byName('Sprintluft'), same(sprint));
+  });
+
   test('the catalogue seeds the real pistol programs', () {
-    expect(ProgramCatalogue.all.length, 12);
+    expect(ProgramCatalogue.all.length, 13);
     expect(
       ProgramCatalogue.all.every((p) => p.discipline == Discipline.pistol),
       isTrue,

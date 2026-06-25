@@ -67,6 +67,25 @@ abstract final class ProgramCatalogue {
     ],
   );
 
+  /// Sprintluft: the NSF recruit air-pistol program — 30 shots in three 10-shot
+  /// series on the larger Sprintluft / luftduell face (rings 5–10), 15 min for
+  /// the match (plus 5 sighters, not modelled). Resembles 10 m air pistol but
+  /// shorter and easier (NSF *Nasjonalt regelverk*). The "sprint" counterpart
+  /// to [storluftDuel].
+  static const ProgramDefinition sprintluft = ProgramDefinition(
+    name: 'Sprintluft',
+    discipline: Discipline.pistol,
+    weaponClasses: <String>['Air 4.5 mm'],
+    stages: <StageDefinition>[
+      StageDefinition(
+        name: 'Match',
+        geometry: TargetGeometry.airDuel10m(),
+        shotsPerSeries: 10,
+        seriesCount: 3,
+      ),
+    ],
+  );
+
   /// Storluft (luftduell-skive): the corona-era home air-pistol program — 40
   /// shots in four 10-shot series on the larger Sprintluft / luftduell face
   /// (rings 5–10) at 10 m. The "big" counterpart to Sprintluft (40 shots /
@@ -339,6 +358,7 @@ abstract final class ProgramCatalogue {
   static const List<ProgramDefinition> all = <ProgramDefinition>[
     airPistol10m,
     airPistol10m40,
+    sprintluft,
     storluftDuel,
     storluft55m,
     standardPistol25m,
