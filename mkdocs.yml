@@ -72,6 +72,7 @@ nav:
       - "0039 — Skann skive (camera scan)": specs/0039-scan-target.md
       - "0040 — Auto-detect bullet holes": specs/0040-auto-detect-holes.md
       - "0041 — Training-image collection": specs/0041-training-image-collection.md
+      - "0042 — iOS sign-in webview fix": specs/0042-ios-signin-webview-fix.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
@@ -96,6 +97,7 @@ nav:
       - ADR-0021 Target scan calibration: adr/0021-target-scan-calibration-and-image-source.md
       - ADR-0022 Pure-Dart hole detection: adr/0022-pure-dart-hole-detection.md
       - ADR-0023 Consented training data: adr/0023-consented-training-data.md
+      - ADR-0024 No PWA standalone (OAuth): adr/0024-no-pwa-standalone-for-oauth.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md

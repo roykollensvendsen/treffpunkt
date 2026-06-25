@@ -148,6 +148,11 @@ The shooter records a complete session on-device, with no network needed
       fire-and-forget; labels are image-pixel + self-describing geometry, each
       hole tagged auto/manual/edited (ADR-0023). Fast-follows: self-serve erasure,
       the dataset export + review + model-training pipeline.
+- [x] 0042 — Fix Google sign-in on iOS: dropped the PWA `standalone` display so
+      an iOS "Add to Home Screen" launch opens in real Safari (where Google OAuth
+      works) instead of a webview that Google blocks ("403 disallowed_useragent");
+      plus a sign-in notice that detects in-app/standalone webviews and guides the
+      user to open in Safari/Chrome with a copy-link (ADR-0024).
 - [ ] 0016 — Responsive/adaptive polish; PWA install; store builds.
 - [ ] 0020+ — More programs/disciplines (further pistol programs, field, …).
 

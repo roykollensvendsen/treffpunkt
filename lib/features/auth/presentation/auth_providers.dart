@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/platform/browser_environment.dart';
 import 'package:treffpunkt/features/auth/domain/auth_repository.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 
@@ -37,6 +38,16 @@ class AuthStatusNotifier extends Notifier<AsyncValue<AuthStatus>> {
     return AsyncData(repository.currentStatus);
   }
 }
+
+/// The browser context the app runs in (spec 0042).
+///
+/// Defaults to the empty environment so tests and non-web platforms never warn;
+/// `main()` overrides it with the real read so the sign-in screen can detect an
+/// in-app / standalone webview (where Google blocks OAuth) and guide the user to
+/// a real browser.
+final browserEnvironmentProvider = Provider<BrowserEnvironment>(
+  (ref) => const BrowserEnvironment.empty(),
+);
 
 /// The current authentication status as an [AsyncValue].
 final authStateChangesProvider =
