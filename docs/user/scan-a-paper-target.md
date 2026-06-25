@@ -23,7 +23,8 @@ paper target** and mark the hits on the photo. The app scores them just the same
 4. **Mark each hit.** Tap **Finn treff automatisk** to let the app find the
    holes for you, then check the result. Or mark them yourself: tap every bullet
    hole in the photo. Each tap shows its score; hold a marker to drag it if it's
-   off, or tap **Angre** to remove the last one.
+   off, or tap **Angre** to remove the last one. **Pinch to zoom** (or use the
+   **＋ / −** buttons) and drag to pan, so you can place each hit precisely.
 5. Tap **Bruk skudd** to add the marked shots to your series.
 
 The shots appear in the series, scored and ready to seal — exactly as if you had

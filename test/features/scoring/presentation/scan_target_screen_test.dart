@@ -351,4 +351,44 @@ void main() {
       expect(contribution.contributions, isEmpty);
     });
   });
+
+  group('zoom while placing (spec 0045)', () {
+    testWidgets('the zoom controls appear only in place mode', (tester) async {
+      final source = FakeImageSourceService(
+        result: ImagePicked(PickedImage(bytes: _pngBytes)),
+      );
+      await _open(tester, source: source);
+
+      await tester.tap(find.byKey(scanCameraButtonKey));
+      await tester.pumpAndSettle();
+      // Calibrating: handles drag directly, so no zoom controls.
+      expect(find.byKey(scanZoomInKey), findsNothing);
+
+      await tester.tap(find.byKey(scanCalibrateConfirmKey));
+      await tester.pumpAndSettle();
+      // Placing: zoom in / reset / out are available.
+      expect(find.byKey(scanZoomInKey), findsOneWidget);
+      expect(find.byKey(scanZoomResetKey), findsOneWidget);
+      expect(find.byKey(scanZoomOutKey), findsOneWidget);
+    });
+
+    testWidgets('a centre tap still scores a ten after zooming in', (
+      tester,
+    ) async {
+      final source = FakeImageSourceService(
+        result: ImagePicked(PickedImage(bytes: _pngBytes)),
+      );
+      await _open(tester, source: source);
+      await _reachPlacement(tester);
+
+      // Zoom in (centred), then tap the photo centre — the overlay maps the
+      // tap back through the zoom, so the centre is still a ten.
+      await tester.tap(find.byKey(scanZoomInKey));
+      await tester.pump();
+      await tester.tapAt(tester.getCenter(find.byKey(scanOverlayKey)));
+      await tester.pump();
+
+      expect(tester.widget<Text>(find.byKey(scanLiveScoreKey)).data, '10');
+    });
+  });
 }
