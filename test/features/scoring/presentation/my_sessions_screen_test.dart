@@ -366,7 +366,7 @@ void main() {
     expect(find.text('25 m Finpistol'), findsOneWidget);
     // Both programs are 60 centre shots -> 600 / 600 with 60 inner tens, one
     // score line per card.
-    expect(find.text('600 / 600 · 60×X'), findsNWidgets(2));
+    expect(find.text('600 · 60×X'), findsNWidgets(2));
     // The weapon name appears for the synced entry that has one.
     expect(find.text('My pistol'), findsOneWidget);
   });
@@ -479,7 +479,7 @@ void main() {
       expect(find.byKey(noSessionsKey), findsNothing);
       expect(find.byKey(mySessionCard('fresh-1')), findsOneWidget);
       expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
-      expect(find.text('600 / 600 · 60×X'), findsOneWidget);
+      expect(find.text('600 · 60×X'), findsOneWidget);
       expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
       expect(find.text('Ikke synkronisert'), findsOneWidget);
     },
@@ -535,7 +535,7 @@ void main() {
       expect(find.byKey(noSessionsKey), findsNothing);
       expect(find.byKey(mySessionCard('local-1')), findsOneWidget);
       expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
-      expect(find.text('600 / 600 · 60×X'), findsOneWidget);
+      expect(find.text('600 · 60×X'), findsOneWidget);
       expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
       expect(find.text('Ikke synkronisert'), findsOneWidget);
 

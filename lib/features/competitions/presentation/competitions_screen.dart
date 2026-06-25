@@ -771,7 +771,7 @@ class _ResultRow extends StatelessWidget {
       leading: CircleAvatar(radius: 14, child: Text('$rank')),
       title: Text(result.profile?.displayName ?? 'Ukjent skytter'),
       trailing: Text(
-        '${result.total} / ${result.maxTotal}$suffix',
+        '${result.total}$suffix',
         style: Theme.of(
           context,
         ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),

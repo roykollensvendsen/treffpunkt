@@ -337,7 +337,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('580 / 600'), findsOneWidget);
+    expect(find.text('580'), findsOneWidget);
     // Best first: Alice's row sits above Me's.
     final aliceTop = tester.getTopLeft(find.byKey(resultRowKey('r-alice'))).dy;
     final meTop = tester.getTopLeft(find.byKey(resultRowKey('r-me'))).dy;
