@@ -34,7 +34,7 @@ plus the step repeated outward.
 | 25 m precision / 50 m pistol | 1–10 | 50 | +50 → 500 | 25 | 200 | integer + inner-ten | H |
 | 25 m rapid / silhouette | 5–10 | 100 | +80 → 500 | 50 | 500 (whole) | integer + inner-ten | H |
 | Colt (Fripistol-B, NSF) | 1–10 | 25 | +25 → 250 | 12.5 | — | integer + inner-ten | H |
-| 10 m air-duel (NSF) | 5–10 | 23 | +26.5 → 155.5 | 11.5 | — | integer + inner-ten | H |
+| 10 m air-duel / Sprintluft (NSF) | 5–10 | 23 | +26.5 → 155.5 | 11.5 | (whole) | integer + inner-ten | H |
 | 200 m rifle (NSF, scaled) | 1–10 | 64 | +66.67 → 664 | 30.67 | 397 | integer + inner-ten | H |
 | 15 m / luftsprint (NSF) | 1–10 | 2 | +9 → 83 | — | 38 / 29 | integer | H |
 
@@ -56,6 +56,8 @@ centre-fire **pistol** (grovpistol).
 | NAIS fin/grov | national | 25 m | .22–.32 / .38–.45 | rapid/duel face; 2×5 @150 s + 2×5 duell + 1×5 @20 s + 1×5 @10 s | 30 | integer + X | H |
 | Fripistol (2A) | 50 m Pistol | 50 m | .22 | precision/50 m face; 6×10, 2 h | 60 | integer + X (X scored) | H |
 | Sprintluft (3D) | national | 10 m | air 4.5 mm | air-duel face; 30 in 15 min | 30 | integer + X | H |
+| Storluft (luftduell-skive) | national (korona) | 10 m | air 4.5 mm | air-duel face; 4×10 | 40 | integer + X | M |
+| Storluft (5,5 m) | national (korona) | 5.5 m | air 4.5 mm | std air-pistol face; 4×10 | 40 | integer + X | M |
 
 (NAIS, fripistol-B, 15 m rifle and 10 m luftsprint are documented in the sources;
 seeded as confirmed.)
@@ -72,6 +74,10 @@ competitions stored under it still load.
 - **Fripistol** modelling: true 50 m (precision face) vs national Fripistol-B 25 m
   (Colt face) — or both.
 - Class reductions for women / juniors / veterans.
+- **Storluft** (spec 0043): the 4×10 series split and the luftduell-face
+  black-bull (cosmetic) — the FSU 2020 source gives only "40 skudd … på
+  Sprintluft-skive (eller vanlig skive på 5,5 meter)". It was a corona-era
+  home program (shootable unapproved), not a standing NSF program.
 
 NAIS and hurtigpistol fin/grov are now **confirmed and seeded** (spec 0031) from
 the NSF *Skyteprogrammer – Pistol* (§8.26 hurtig, §8.29 NAIS) and the NSF

@@ -63,8 +63,37 @@ void main() {
     expect(ProgramCatalogue.byName('10 m Luftpistol 40 skudd'), same(forty));
   });
 
+  test('Storluft: 40 shots in 4x10, on the duel face and the 5,5 m face', () {
+    // The corona-era home program (FSU 2020): "40 skudd ... på Sprintluft-skive
+    // (eller vanlig skive på 5,5 meter)", four 10-shot series, integer + X.
+    const duel = ProgramCatalogue.storluftDuel;
+    expect(duel.name, 'Storluft (luftduell-skive)');
+    expect(duel.discipline, Discipline.pistol);
+    expect(duel.totalShots, 40);
+    expect(duel.stages.single.seriesCount, 4);
+    expect(duel.stages.single.shotsPerSeries, 10);
+    // The larger sprintluft / luftduell face (rings 5–10), inner ten 11.5 mm.
+    expect(duel.stages.single.geometry.lowestRingValue, 5);
+    expect(duel.stages.single.geometry.innerTenDiameterMm, 11.5);
+
+    const reduced = ProgramCatalogue.storluft55m;
+    expect(reduced.name, 'Storluft (5,5 m)');
+    expect(reduced.totalShots, 40);
+    // The standard air-pistol face (rings 1–10), shot at 5.5 m.
+    expect(reduced.stages.single.geometry.lowestRingValue, 1);
+    expect(
+      reduced.stages.single.geometry.name,
+      ProgramCatalogue.airPistol10m.stages.single.geometry.name,
+    );
+
+    expect(
+      ProgramCatalogue.all,
+      containsAll(<ProgramDefinition>[duel, reduced]),
+    );
+  });
+
   test('the catalogue seeds the real pistol programs', () {
-    expect(ProgramCatalogue.all.length, 10);
+    expect(ProgramCatalogue.all.length, 12);
     expect(
       ProgramCatalogue.all.every((p) => p.discipline == Discipline.pistol),
       isTrue,

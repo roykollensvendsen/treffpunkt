@@ -67,6 +67,42 @@ abstract final class ProgramCatalogue {
     ],
   );
 
+  /// Storluft (luftduell-skive): the corona-era home air-pistol program — 40
+  /// shots in four 10-shot series on the larger Sprintluft / luftduell face
+  /// (rings 5–10) at 10 m. The "big" counterpart to Sprintluft (40 shots /
+  /// 50 min vs 30 / 15 min); documented on the FSU 2020 ranking page as a
+  /// program that could be shot unapproved, also at home (spec 0043).
+  static const ProgramDefinition storluftDuel = ProgramDefinition(
+    name: 'Storluft (luftduell-skive)',
+    discipline: Discipline.pistol,
+    weaponClasses: <String>['Air 4.5 mm'],
+    stages: <StageDefinition>[
+      StageDefinition(
+        name: 'Match',
+        geometry: TargetGeometry.airDuel10m(),
+        shotsPerSeries: 10,
+        seriesCount: 4,
+      ),
+    ],
+  );
+
+  /// Storluft (5,5 m): the same 40-shot program shot on the standard 10 m
+  /// air-pistol face (rings 1–10) at the reduced home distance of 5.5 m — the
+  /// alternative target from the same rule note (spec 0043).
+  static const ProgramDefinition storluft55m = ProgramDefinition(
+    name: 'Storluft (5,5 m)',
+    discipline: Discipline.pistol,
+    weaponClasses: <String>['Air 4.5 mm'],
+    stages: <StageDefinition>[
+      StageDefinition(
+        name: 'Match',
+        geometry: TargetGeometry.airPistol10m(),
+        shotsPerSeries: 10,
+        seriesCount: 4,
+      ),
+    ],
+  );
+
   /// 25 m standard pistol: 12 series of 5 on the precision face across three
   /// timed stages (150 s / 20 s / 10 s).
   static const ProgramDefinition standardPistol25m = ProgramDefinition(
@@ -303,6 +339,8 @@ abstract final class ProgramCatalogue {
   static const List<ProgramDefinition> all = <ProgramDefinition>[
     airPistol10m,
     airPistol10m40,
+    storluftDuel,
+    storluft55m,
     standardPistol25m,
     finpistol25m,
     grovpistol25m,
