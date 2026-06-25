@@ -53,7 +53,9 @@ position are known — strong priors that make a simple detector workable.
   bull hole, robust to lighting gradients) with a **peak-contrast gate** (a real
   hole has a strong core; the faint self-halo of a blob does not); **connected
   components** filtered by area, **compactness** and aspect (rejecting thin ring
-  lines); a **radial band at the bull edge** (its strong circular edge); then
+  lines); a **radial band at the bull edge** (its strong circular edge); a
+  **scoring-radius cap** (a centroid beyond the outermost ring is a miss, so it
+  scores nothing and on a photo is almost always a paper-margin artefact); then
   de-duplication and ranking by contrast strength. Ring *lines* are left to the
   shape filter — the inner rings are too densely spaced for per-ring radial
   rejection.
@@ -90,7 +92,8 @@ session) keeps detection additive and correctable.
   hole in a large black region → found (two-sided); a thin line → rejected; a
   blob on the bull-edge band → rejected, off-band → kept; holes over a luminance
   gradient → still found; low-contrast noise → none; a hole outside the ROI →
-  ignored; the `maxHoles` cap; overlapping holes → one.
+  ignored; a hole beyond the outermost scoring ring (a miss) → ignored; the
+  `maxHoles` cap; overlapping holes → one.
 - `target_scan_test.dart`: `PhotoFit` letterbox round-trip with hand-computed
   values; `shotsFromField` maps a centre hole to a ten and an offset hole to the
   matching millimetres; an unusable calibration → none.

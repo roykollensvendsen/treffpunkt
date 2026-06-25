@@ -67,6 +67,7 @@ class HoleDetector {
     final w = field.width;
     final h = field.height;
     final roiR = geometry.maxScoringRadiusMm * pixelsPerMm * 1.1;
+    final scoringR = geometry.maxScoringRadiusMm * pixelsPerMm;
     // A generous background window keeps a hole a small fraction of the local
     // mean, so the mean is barely pulled toward the hole and the surrounding
     // paper stays well under [contrastThreshold].
@@ -98,6 +99,10 @@ class HoleDetector {
         (cx - centre.x) * (cx - centre.x) + (cy - centre.y) * (cy - centre.y),
       );
       if ((r - bullRadiusPx).abs() < bandPx) continue;
+      // Beyond the outermost scoring ring a hole is a miss (0), so auto-placing
+      // it adds no score and, on a photo, is almost always a paper-margin or
+      // background artefact rather than a real shot — drop it.
+      if (r > scoringR) continue;
       kept.add(
         _Candidate(PixelPoint(cx, cy), blob.sumDev / blob.area),
       );
