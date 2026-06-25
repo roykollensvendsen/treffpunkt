@@ -156,6 +156,9 @@ The shooter records a complete session on-device, with no network needed
 - [x] 0045 — Zoom & pan the scan photo while placing shots, so hits can be
       marked precisely (InteractiveViewer + ＋/−/reset, mirroring the live
       target); calibration stays at 1×.
+- [x] 0046 — Calibrate the scan overlay by drag-to-move + pinch-to-scale,
+      replacing the two fiddly handles, so the ring overlay is fitted to the
+      photographed target naturally.
 - [ ] 0016 — Responsive/adaptive polish; PWA install; store builds.
 - [x] 0043 — Storluft: the corona-era home air-pistol program (40 shots / 4×10),
       offered in two variants — on the larger Sprintluft / luftduell face at 10 m,

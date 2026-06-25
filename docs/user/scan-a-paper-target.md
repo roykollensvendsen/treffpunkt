@@ -16,10 +16,9 @@ paper target** and mark the hits on the photo. The app scores them just the same
 2. Choose **Ta bilde** to use the camera, or **Velg bilde** to pick a photo you
    already took. Photograph the target **straight on** and fill the frame with
    it.
-3. **Line up the rings.** The app draws its target rings over your photo. Drag the
-   **＋ handle** onto the centre of the bull and the **⤢ handle** out onto the
-   outermost ring, until the drawn rings sit on the printed ones. Then tap **Ser
-   bra ut**.
+3. **Line up the rings.** The app draws its target rings over your photo.
+   **Drag to move** them and **pinch to resize** them until the drawn rings sit
+   on the printed ones. Then tap **Ser bra ut**.
 4. **Mark each hit.** Tap **Finn treff automatisk** to let the app find the
    holes for you, then check the result. Or mark them yourself: tap every bullet
    hole in the photo. Each tap shows its score; hold a marker to drag it if it's

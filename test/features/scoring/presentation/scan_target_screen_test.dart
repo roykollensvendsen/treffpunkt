@@ -121,7 +121,7 @@ void main() {
     expect(find.byKey(scanGalleryButtonKey), findsOneWidget);
   });
 
-  testWidgets('picking a photo moves to calibration with the handles', (
+  testWidgets('picking a photo moves to calibration with the overlay', (
     tester,
   ) async {
     final source = FakeImageSourceService(
@@ -132,9 +132,28 @@ void main() {
     await tester.tap(find.byKey(scanCameraButtonKey));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(scanCentreHandleKey), findsOneWidget);
-    expect(find.byKey(scanScaleHandleKey), findsOneWidget);
+    // The ring overlay (drag/pinch to align) and the confirm button are shown;
+    // the zoom controls belong to placement, not calibration.
+    expect(find.byKey(scanOverlayKey), findsOneWidget);
     expect(find.byKey(scanCalibrateConfirmKey), findsOneWidget);
+    expect(find.byKey(scanZoomInKey), findsNothing);
+  });
+
+  testWidgets('dragging in calibration keeps the flow working', (tester) async {
+    final source = FakeImageSourceService(
+      result: ImagePicked(PickedImage(bytes: _pngBytes)),
+    );
+    await _open(tester, source: source);
+
+    await tester.tap(find.byKey(scanCameraButtonKey));
+    await tester.pumpAndSettle();
+    // A one-finger drag moves the ring overlay; the flow still reaches place.
+    await tester.drag(find.byKey(scanOverlayKey), const Offset(20, -15));
+    await tester.pump();
+    await tester.tap(find.byKey(scanCalibrateConfirmKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(scanDetectKey), findsOneWidget);
   });
 
   testWidgets('tapping the centre scores a ten, a far tap scores zero', (
