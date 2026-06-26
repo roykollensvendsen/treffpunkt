@@ -106,6 +106,15 @@ final competitionMembersProvider =
           ref.watch(competitionRepositoryProvider).membersOf(competitionId),
     );
 
+/// The user ids already invited (pending) to a competition, so the owner's
+/// invite picker marks them "Invitert" across sessions (spec 0032). Owner-only
+/// server-side; a non-owner reads an empty list. Invalidated after inviting.
+// ignore: specify_nonobvious_property_types
+final competitionInviteesProvider = FutureProvider.family<List<String>, String>(
+  (ref, competitionId) =>
+      ref.watch(competitionRepositoryProvider).pendingInviteeIds(competitionId),
+);
+
 /// The live scoreboard for a competition (spec 0013): its results, re-emitted
 /// whenever a participant submits (Supabase Realtime). The screen ranks the
 /// emitted results best-per-shooter for display.

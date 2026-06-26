@@ -83,6 +83,14 @@ abstract interface class CompetitionRepository {
   /// Throws [CompetitionSyncException] on a failed read.
   Future<List<CompetitionInvitation>> listMyInvitations();
 
+  /// The user ids of [competitionId]'s registered shooters with a pending
+  /// invitation — so the owner's invite picker can mark them already invited.
+  ///
+  /// Owner-only: a non-owner gets an empty list. Resolves the email-keyed
+  /// invitations to user ids server-side, so no email reaches the client
+  /// (spec 0032). Throws [CompetitionSyncException] on a failed read.
+  Future<List<String>> pendingInviteeIds(String competitionId);
+
   /// Accepts the invitation to [competitionId], joining the caller as a member.
   ///
   /// Throws [CompetitionSyncException] when there is no pending invitation for
@@ -258,6 +266,26 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
           ),
         )
         .toList();
+  }
+
+  @override
+  Future<List<String>> pendingInviteeIds(String competitionId) async {
+    // Owner-only, mirroring the RPC's owner gate.
+    final competition = _competitions[competitionId];
+    if (competition == null || competition.ownerId != currentUserId) {
+      return const <String>[];
+    }
+    final pendingEmails = _invitations
+        .where(
+          (i) => i.competitionId == competitionId && i.status == 'pending',
+        )
+        .map((i) => i.invitedEmail)
+        .toSet();
+    // Resolve the email-keyed invitations back to the registered user ids.
+    return <String>[
+      for (final entry in _emailByUserId.entries)
+        if (pendingEmails.contains(entry.value.toLowerCase())) entry.key,
+    ];
   }
 
   @override

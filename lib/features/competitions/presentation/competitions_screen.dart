@@ -527,6 +527,9 @@ class _CompetitionDetailScreenState
           .inviteUser(widget.competition.id, shooter.id);
       if (mounted) {
         setState(() => _invitedShooterIds.add(shooter.id));
+        // Refresh the server-side invitee list so the marker is authoritative
+        // and survives a reopen.
+        ref.invalidate(competitionInviteesProvider(widget.competition.id));
       }
       messenger.showSnackBar(SnackBar(content: Text('Invitert $label.')));
     } on CompetitionSyncException {
@@ -602,6 +605,12 @@ class _CompetitionDetailScreenState
   List<Widget> _shooterPicker(List<CompetitionMember>? members) {
     final shooters = ref.watch(shootersProvider);
     final uid = ref.watch(currentUserIdProvider);
+    // Shooters with a pending invitation from an earlier visit (owner-only,
+    // server-resolved) — merged with this visit's invites so the marker
+    // persists across reopen.
+    final invitees =
+        ref.watch(competitionInviteesProvider(widget.competition.id)).value ??
+        const <String>[];
     final excluded = <String>{
       ?uid,
       ...?members?.map((m) => m.userId),
@@ -622,7 +631,9 @@ class _CompetitionDetailScreenState
                 _ShooterTile(
                   shooter: shooter,
                   inviting: _invitingShooterId == shooter.id,
-                  invited: _invitedShooterIds.contains(shooter.id),
+                  invited:
+                      _invitedShooterIds.contains(shooter.id) ||
+                      invitees.contains(shooter.id),
                   onInvite: () => unawaited(_inviteUser(shooter)),
                 ),
             ],

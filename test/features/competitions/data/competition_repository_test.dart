@@ -116,6 +116,33 @@ void main() {
     expect(members.map((m) => m.userId).toSet(), <String>{'alice', 'bob'});
   });
 
+  test(
+    'pendingInviteeIds lists invited shooters, owner-only, until accepted',
+    () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      final bob = alice.asUser(userId: 'bob', email: 'bob@example.com');
+      await bob.upsertOwnProfile(const Profile(id: 'bob', displayName: 'Bob'));
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+
+      // No invitation yet.
+      expect(await alice.pendingInviteeIds('c1'), isEmpty);
+
+      // After inviting Bob, the owner sees his id as pending.
+      await alice.inviteUser('c1', 'bob');
+      expect(await alice.pendingInviteeIds('c1'), <String>['bob']);
+
+      // A non-owner gets nothing (mirrors the RPC's owner gate).
+      expect(await bob.pendingInviteeIds('c1'), isEmpty);
+
+      // Once Bob accepts, he is a member, not a pending invitee.
+      await bob.acceptInvitation('c1');
+      expect(await alice.pendingInviteeIds('c1'), isEmpty);
+    },
+  );
+
   test('inviteUser throws for a shooter with no known email', () async {
     final alice = InMemoryCompetitionRepository(
       currentUserId: 'alice',

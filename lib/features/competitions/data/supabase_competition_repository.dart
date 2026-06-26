@@ -148,6 +148,24 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   }
 
   @override
+  Future<List<String>> pendingInviteeIds(String competitionId) async {
+    try {
+      // The RPC resolves email-keyed invitations to user ids server-side and
+      // enforces owner-only; a non-owner gets an empty set.
+      final rows = await _client.rpc<List<dynamic>>(
+        'pending_invitee_ids',
+        params: <String, dynamic>{'cid': competitionId},
+      );
+      return <String>[
+        for (final row in rows)
+          (row as Map<String, dynamic>)['user_id'] as String,
+      ];
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
   Future<void> acceptInvitation(String competitionId) async {
     try {
       await _client.rpc<void>(

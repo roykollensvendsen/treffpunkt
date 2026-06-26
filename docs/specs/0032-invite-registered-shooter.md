@@ -42,7 +42,8 @@ email-keyed invitation **without ever exposing emails to the client**.
    not registered yet.
 7. **Settled state.** Once invited, the shooter's *Inviter* action becomes a
    disabled *Invitert* marker, so the owner can't fire a second (no-op) invite.
-   Session-scoped — see *Known limitations*.
+   It **persists across reopen**: a shooter with a pending invitation from an
+   earlier visit also loads as *Invitert*.
 
 ## Design
 
@@ -53,16 +54,28 @@ email-keyed invitation **without ever exposing emails to the client**.
   (`on conflict do nothing`). No schema change to any table — it reuses
   `competition_invitations` and the existing `accept_invitation` RPC. See
   ADR-0020.
+- **Second SECURITY DEFINER RPC** `pending_invitee_ids(cid)`
+  (`supabase/migrations/<ts>_pending_invitee_ids.sql`): the owner-facing
+  complement that powers the persistent *Invitert* marker (req. 7). It returns
+  the **user ids** of registered shooters with a pending invitation, resolving
+  the email-keyed invitations to ids server-side (`auth.users`) so no email
+  reaches the client — the same privacy property as the invite RPC. Owner-only: a
+  non-owner gets an empty set. Email-only invitees with no account are not
+  returned (they are not in the picker either).
 - **Repository seam** (`CompetitionRepository`): `listShooters()` returns the
   registered profiles (name + avatar only); `inviteUser(competitionId, userId)`
-  invites a chosen shooter. The Supabase impl reads `profiles` and calls the RPC;
+  invites a chosen shooter; `pendingInviteeIds(competitionId)` lists the already
+  invited (owner-only). The Supabase impl reads `profiles` and calls the RPCs;
   the in-memory fake mirrors the observable behaviour (it resolves the email from
   the user's own profile sync, then reuses its `invite` path), so widget/unit
   tests exercise the same flow.
 - **UI** (`CompetitionDetailScreen`, owner section): a *Velg skytter* list driven
   by `shootersProvider`, each shooter a tile with an *Inviter* button, filtered to
   exclude self and current members (`competitionMembersProvider`). A shooter with
-  no display name shows a neutral fallback label — never their email.
+  no display name shows a neutral fallback label — never their email. A shooter in
+  `competitionInviteesProvider` (or invited this visit) renders a disabled
+  *Invitert* marker instead of the button; a successful invite invalidates that
+  provider so the marker is authoritative.
 
 ## Rationale
 
@@ -87,6 +100,11 @@ unchanged. Owner enforcement lives in the function (not just the UI), matching t
   invitee has a pending invitation.
 - *an invited shooter settles to a disabled "Invitert"* — after the invite, the
   tile's button is disabled and labelled *Invitert*, so a second tap can't fire.
+- *a shooter invited in an earlier visit loads as "Invitert"* — the
+  pending-invitee lookup (not session state) marks them on open.
+- *`pendingInviteeIds` lists invited shooters, owner-only, until accepted* — the
+  owner sees a picked shooter's id while pending; a non-owner gets an empty list;
+  it clears once the shooter accepts.
 - *the email field still works* (spec 0011 behaviour unchanged).
 
 ### RLS (local Supabase, `psql`, two users)
@@ -94,6 +112,8 @@ unchanged. Owner enforcement lives in the function (not just the UI), matching t
   email; the target then has a pending invitation and can accept.
 - a **non-owner** calling the RPC is rejected.
 - an unknown / email-less target raises.
+- owner → `pending_invitee_ids(cid)` returns the invited shooter's id; a
+  **non-owner** gets an empty set; the id drops out once the shooter accepts.
 - `profiles` remains readable by any authenticated user (re-confirm spec 0010).
 
 ### Manual (hosted, after `supabase db push`)
@@ -104,11 +124,9 @@ get an invite control. No email is ever shown in the list.
 ## Known limitations / next increment
 
 The list shows all registered shooters (no search/paging yet — fine at club
-scale); large directories can follow. The "already invited" marker (req. 7) is
-**session-scoped**: it reflects invites sent in the current visit, but a shooter
-invited in an earlier visit reappears with an active *Inviter* button (a repeat
-invite is a harmless no-op, req. 5). Persisting it across reopen needs an
-owner-facing lookup of a competition's *pending invitees by user id*, which the
-email-keyed, email-private invitation model (spec 0010) doesn't expose to the
-client — a server RPC for the next increment. Cross-competition ranking (0014) and
-browsing published results (0015) are unchanged by this spec.
+scale); large directories can follow. The *Invitert* marker (req. 7) now persists
+across reopen via `pending_invitee_ids`; it relies on a per-screen read, so an
+invitation sent from *another* device while the screen is open shows only after a
+reopen (acceptable — a repeat invite stays a harmless no-op, req. 5).
+Cross-competition ranking (0014) and browsing published results (0015) are
+unchanged by this spec.
