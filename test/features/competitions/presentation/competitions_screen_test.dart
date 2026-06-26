@@ -215,6 +215,38 @@ void main() {
     );
   });
 
+  testWidgets('a shooter invited in an earlier visit loads as "Invitert"', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '25 m NAIS fin',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+    await repo.upsertOwnProfile(const Profile(id: 'me', displayName: 'Me'));
+    final bob = repo.asUser(userId: 'bob', email: 'bob@example.com');
+    await bob.upsertOwnProfile(const Profile(id: 'bob', displayName: 'Bob'));
+    // Bob was invited before this screen opened (a previous visit) — the
+    // pending-invitee lookup, not session state, must mark him.
+    await repo.inviteUser('c1', 'bob');
+
+    await tester.pumpWidget(
+      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+    );
+    await tester.pumpAndSettle();
+
+    // Settled on load, with no tap this visit.
+    final tile = find.byKey(inviteShooterButtonKey('bob'));
+    expect(
+      find.descendant(of: tile, matching: find.text('Invitert')),
+      findsOneWidget,
+    );
+    expect(tester.widget<TextButton>(tile).onPressed, isNull);
+  });
+
   testWidgets('inviting one shooter does not disable the others', (
     tester,
   ) async {
@@ -535,6 +567,9 @@ class _GatedInviteRepository implements CompetitionRepository {
   @override
   Future<List<CompetitionInvitation>> listMyInvitations() =>
       _inner.listMyInvitations();
+  @override
+  Future<List<String>> pendingInviteeIds(String competitionId) =>
+      _inner.pendingInviteeIds(competitionId);
   @override
   Future<void> acceptInvitation(String competitionId) =>
       _inner.acceptInvitation(competitionId);
