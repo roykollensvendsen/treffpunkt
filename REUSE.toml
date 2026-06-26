@@ -9,7 +9,7 @@ path = [
   ".idea/**",
   "**/*.iml",
   ".metadata",
-  ".gitignore",
+  "**/.gitignore",
   "pubspec.lock",
   ".fvmrc",
   "config/env.example.json",
