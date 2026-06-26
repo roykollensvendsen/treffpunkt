@@ -94,6 +94,12 @@ session) keeps detection additive and correctable.
   gradient → still found; low-contrast noise → none; a hole outside the ROI →
   ignored; a hole beyond the outermost scoring ring (a miss) → ignored; the
   `maxHoles` cap; overlapping holes → one.
+- `hole_detector_web_test.dart` (`@TestOn('browser')`, run in CI via `flutter
+  test --platform chrome`): the detector runs in a real browser. The integral
+  image must use a web-compatible typed list — `Int64List` has no dart2js
+  implementation and throws, which silently broke every scan on the web build
+  (the scanner swallows the error and returns `null`). `flutter test` (VM) and
+  `flutter build web` both pass regardless, so this browser run is the only guard.
 - `target_scan_test.dart`: `PhotoFit` letterbox round-trip with hand-computed
   values; `shotsFromField` maps a centre hole to a ten and an offset hole to the
   matching millimetres; an unusable calibration → none.

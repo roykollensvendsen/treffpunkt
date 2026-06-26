@@ -132,7 +132,11 @@ class HoleDetector {
     final w = field.width;
     final h = field.height;
     // Integral image with a zero border: sum over [0,x]×[0,y] at (x+1,y+1).
-    final integral = Int64List((w + 1) * (h + 1));
+    // Float64List, not Int64List: dart2js has no 64-bit integer typed list, so
+    // Int64List throws "Unsupported operation" on the web — which made every
+    // scan fail there. The sums are whole and ≤ 255·W·H, far under 2^53, so a
+    // double holds them exactly.
+    final integral = Float64List((w + 1) * (h + 1));
     for (var y = 0; y < h; y++) {
       var rowSum = 0;
       for (var x = 0; x < w; x++) {
@@ -142,7 +146,7 @@ class HoleDetector {
       }
     }
 
-    int boxSum(int x0, int y0, int x1, int y1) =>
+    double boxSum(int x0, int y0, int x1, int y1) =>
         integral[(y1 + 1) * (w + 1) + (x1 + 1)] -
         integral[y0 * (w + 1) + (x1 + 1)] -
         integral[(y1 + 1) * (w + 1) + x0] +

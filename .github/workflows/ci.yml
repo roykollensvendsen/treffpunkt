@@ -61,6 +61,10 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter test
+      # Browser-only regression tests (e.g. the detector's typed lists must work
+      # under dart2js — Int64List throws on the web). Chrome is preinstalled on
+      # the runner. See spec 0040.
+      - run: flutter test --platform chrome test/features/scoring/domain/hole_detector_web_test.dart
       - run: sh tool/integration_test.sh
       - run: flutter build web
 
