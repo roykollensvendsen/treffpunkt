@@ -178,6 +178,46 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   }
 
   @override
+  Future<String?> joinToken(String competitionId) async {
+    try {
+      // RLS limits the select to the owner's row, so a non-owner reads null.
+      final row = await _client
+          .from('competition_join_tokens')
+          .select('token')
+          .eq('competition_id', competitionId)
+          .maybeSingle();
+      return row?['token'] as String?;
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
+  Future<void> joinByLink(String competitionId, String token) async {
+    try {
+      await _client.rpc<void>(
+        'join_competition',
+        params: <String, dynamic>{'cid': competitionId, 'join_token': token},
+      );
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
+  Future<String> regenerateJoinToken(String competitionId) async {
+    try {
+      final token = await _client.rpc<String>(
+        'regenerate_join_token',
+        params: <String, dynamic>{'cid': competitionId},
+      );
+      return token;
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
   Future<List<CompetitionMember>> membersOf(String competitionId) async {
     try {
       final memberRows = await _client

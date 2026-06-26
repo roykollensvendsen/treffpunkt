@@ -580,6 +580,15 @@ class _GatedInviteRepository implements CompetitionRepository {
   Future<void> acceptInvitation(String competitionId) =>
       _inner.acceptInvitation(competitionId);
   @override
+  Future<String?> joinToken(String competitionId) =>
+      _inner.joinToken(competitionId);
+  @override
+  Future<void> joinByLink(String competitionId, String token) =>
+      _inner.joinByLink(competitionId, token);
+  @override
+  Future<String> regenerateJoinToken(String competitionId) =>
+      _inner.regenerateJoinToken(competitionId);
+  @override
   Future<List<CompetitionMember>> membersOf(String competitionId) =>
       _inner.membersOf(competitionId);
   @override

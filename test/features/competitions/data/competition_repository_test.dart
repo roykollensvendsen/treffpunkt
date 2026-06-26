@@ -143,6 +143,60 @@ void main() {
     },
   );
 
+  test(
+    'join by link: owner-only token, token-gated join, regenerate',
+    () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+
+      // The owner can read the token; a non-owner cannot.
+      final token = await alice.joinToken('c1');
+      expect(token, isNotNull);
+      expect(await alice.asUser(userId: 'bob').joinToken('c1'), isNull);
+
+      // A wrong token is rejected and joins no one.
+      final carol = alice.asUser(userId: 'carol', email: 'carol@example.com');
+      await expectLater(
+        carol.joinByLink('c1', 'not-the-token'),
+        throwsA(isA<CompetitionSyncException>()),
+      );
+      expect((await alice.membersOf('c1')).map((m) => m.userId), <String>[
+        'alice',
+      ]);
+
+      // The right token joins the caller (idempotent).
+      await carol.joinByLink('c1', token!);
+      await carol.joinByLink('c1', token); // again — no-op
+      expect(
+        (await alice.membersOf('c1')).map((m) => m.userId).toSet(),
+        <String>{'alice', 'carol'},
+      );
+
+      // Regenerating invalidates the old link.
+      final fresh = await alice.regenerateJoinToken('c1');
+      expect(fresh, isNot(token));
+      final dave = alice.asUser(userId: 'dave', email: 'dave@example.com');
+      await expectLater(
+        dave.joinByLink('c1', token), // the old token
+        throwsA(isA<CompetitionSyncException>()),
+      );
+      await dave.joinByLink('c1', fresh); // the new token works
+      expect(
+        (await alice.membersOf('c1')).map((m) => m.userId),
+        contains('dave'),
+      );
+
+      // Only the owner may regenerate.
+      await expectLater(
+        carol.regenerateJoinToken('c1'),
+        throwsA(isA<CompetitionSyncException>()),
+      );
+    },
+  );
+
   test('inviteUser throws for a shooter with no known email', () async {
     final alice = InMemoryCompetitionRepository(
       currentUserId: 'alice',

@@ -98,6 +98,15 @@ class _RecordingCompetitionRepository implements CompetitionRepository {
   Future<List<String>> pendingInviteeIds(String competitionId) async =>
       throw UnimplementedError();
   @override
+  Future<String?> joinToken(String competitionId) async =>
+      throw UnimplementedError();
+  @override
+  Future<void> joinByLink(String competitionId, String token) async =>
+      throw UnimplementedError();
+  @override
+  Future<String> regenerateJoinToken(String competitionId) async =>
+      throw UnimplementedError();
+  @override
   Future<void> acceptInvitation(String competitionId) async =>
       throw UnimplementedError();
   @override

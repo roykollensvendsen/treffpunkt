@@ -97,6 +97,21 @@ abstract interface class CompetitionRepository {
   /// the caller, or on failure.
   Future<void> acceptInvitation(String competitionId);
 
+  /// The competition's current join token, for building a shareable link
+  /// (spec 0048). **Owner-only**: a non-owner read returns `null`. Throws
+  /// [CompetitionSyncException] on a failed read.
+  Future<String?> joinToken(String competitionId);
+
+  /// Joins the caller to [competitionId] using a shared-link [token]
+  /// (idempotent). Throws [CompetitionSyncException] on a bad/expired token or
+  /// on failure.
+  Future<void> joinByLink(String competitionId, String token);
+
+  /// Regenerates [competitionId]'s join token (owner only), invalidating old
+  /// links, and returns the new token. Throws [CompetitionSyncException] on
+  /// failure.
+  Future<String> regenerateJoinToken(String competitionId);
+
   /// The participants of [competitionId], each with their profile when known.
   ///
   /// Throws [CompetitionSyncException] on a failed read.
@@ -135,6 +150,8 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
       _competitions = <String, Competition>{},
       _members = <String, Set<String>>{},
       _invitations = <CompetitionInvitation>[],
+      _joinTokens = <String, String>{},
+      _tokenSeq = <int>[0],
       _results = <String, Map<String, CompetitionResult>>{},
       _resultsChanged = StreamController<String>.broadcast();
 
@@ -146,6 +163,8 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     this._competitions,
     this._members,
     this._invitations,
+    this._joinTokens,
+    this._tokenSeq,
     this._results,
     this._resultsChanged,
   );
@@ -163,6 +182,12 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
   final Map<String, Competition> _competitions;
   final Map<String, Set<String>> _members;
   final List<CompetitionInvitation> _invitations;
+  // competitionId -> current join token (spec 0048); created with the
+  // competition, owner-only on read, replaced by regenerate.
+  final Map<String, String> _joinTokens;
+  // A shared one-element counter so regenerated tokens differ; a list so the
+  // asUser() views share the same mutable holder.
+  final List<int> _tokenSeq;
   // competitionId -> (resultId -> result).
   final Map<String, Map<String, CompetitionResult>> _results;
   // Emits a competitionId whenever a new result lands there, so watchResults
@@ -181,6 +206,8 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
         _competitions,
         _members,
         _invitations,
+        _joinTokens,
+        _tokenSeq,
         _results,
         _resultsChanged,
       );
@@ -203,7 +230,11 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     _competitions[competition.id] = competition;
     // Mirror the owner-auto-membership trigger.
     (_members[competition.id] ??= <String>{}).add(competition.ownerId);
+    // Mirror the add_join_token trigger (spec 0048).
+    _joinTokens[competition.id] ??= _newToken();
   }
+
+  String _newToken() => 'jointoken-${_tokenSeq[0]++}';
 
   @override
   Future<void> deleteCompetition(String competitionId) async {
@@ -309,6 +340,34 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
       status: 'accepted',
       createdAt: accepted.createdAt,
     );
+  }
+
+  @override
+  Future<String?> joinToken(String competitionId) async {
+    // Owner-only read, mirroring the RLS select policy.
+    final competition = _competitions[competitionId];
+    if (competition == null || competition.ownerId != currentUserId) {
+      return null;
+    }
+    return _joinTokens[competitionId];
+  }
+
+  @override
+  Future<void> joinByLink(String competitionId, String token) async {
+    if (_joinTokens[competitionId] != token) {
+      throw const CompetitionSyncException('invalid or expired join link');
+    }
+    final uid = currentUserId;
+    if (uid != null) (_members[competitionId] ??= <String>{}).add(uid);
+  }
+
+  @override
+  Future<String> regenerateJoinToken(String competitionId) async {
+    final competition = _competitions[competitionId];
+    if (competition == null || competition.ownerId != currentUserId) {
+      throw const CompetitionSyncException('only the owner may regenerate');
+    }
+    return _joinTokens[competitionId] = _newToken();
   }
 
   @override
