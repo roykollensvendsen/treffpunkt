@@ -20,3 +20,20 @@ Uri competitionJoinLink(
       },
     )
     .removeFragment();
+
+/// A pending "join this competition" request parsed from a deep link.
+typedef JoinIntent = ({String competitionId, String token});
+
+/// The [JoinIntent] in [uri]'s `?join=<id>&token=<t>` query, or `null` when
+/// either is missing (spec 0048). Pure — the app passes `Uri.base` at startup.
+JoinIntent? parseJoinIntent(Uri uri) {
+  final competitionId = uri.queryParameters['join'];
+  final token = uri.queryParameters['token'];
+  if (competitionId == null ||
+      competitionId.isEmpty ||
+      token == null ||
+      token.isEmpty) {
+    return null;
+  }
+  return (competitionId: competitionId, token: token);
+}

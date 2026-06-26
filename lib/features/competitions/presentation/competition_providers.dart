@@ -13,6 +13,7 @@ import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/competitions/domain/join_link.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:uuid/uuid.dart';
 
@@ -119,6 +120,13 @@ final competitionInviteesProvider = FutureProvider.family<List<String>, String>(
 /// web this is the deployed page; tests override it. The screen appends
 /// `?join&token` via `competitionJoinLink`.
 final appBaseUrlProvider = Provider<Uri>((ref) => Uri.base);
+
+/// The pending join request from a deep link, parsed from the app's URL at
+/// startup (spec 0048), or `null` when there is none. `JoinLinkHandler` acts
+/// on it once the viewer is signed in.
+final joinIntentProvider = Provider<JoinIntent?>(
+  (ref) => parseJoinIntent(ref.watch(appBaseUrlProvider)),
+);
 
 /// A competition's current join token (owner-only), for building the shareable
 /// link (spec 0048). `null` for a non-owner; invalidate after regenerating.
