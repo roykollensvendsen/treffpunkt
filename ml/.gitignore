@@ -1,0 +1,6 @@
+# The dataset is private user data — never commit it.
+data/
+# Local Python environment.
+.venv/
+__pycache__/
+*.pyc
