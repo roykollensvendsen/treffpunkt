@@ -5,12 +5,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/platform/sharer.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/competitions/domain/join_link.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/domain/scoreboard.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
@@ -51,11 +54,14 @@ const Key createCompetitionSubmitKey = ValueKey<String>(
   'createCompetitionSubmit',
 );
 
-/// Key for the invite-by-email field on the detail screen.
-const Key inviteEmailFieldKey = ValueKey<String>('inviteEmailField');
+/// Key for the "share join link" action on the detail screen (spec 0048).
+const Key shareInviteKey = ValueKey<String>('shareInvite');
 
-/// Key for the invite submit action on the detail screen.
-const Key inviteSubmitKey = ValueKey<String>('inviteSubmit');
+/// Key for the "copy join link" action on the detail screen.
+const Key copyInviteLinkKey = ValueKey<String>('copyInviteLink');
+
+/// Key for the "regenerate join link" action on the detail screen.
+const Key regenerateLinkKey = ValueKey<String>('regenerateLink');
 
 /// Key for the registered-shooter picker on the detail screen (spec 0032).
 const Key shooterPickerKey = ValueKey<String>('shooterPicker');
@@ -474,43 +480,64 @@ class CompetitionDetailScreen extends ConsumerStatefulWidget {
 
 class _CompetitionDetailScreenState
     extends ConsumerState<CompetitionDetailScreen> {
-  final TextEditingController _email = TextEditingController();
-  bool _inviting = false;
   // The shooter whose invite is in flight, so only that tile shows the pending
   // state — not every Inviter button at once (they share this screen's state).
   String? _invitingShooterId;
-  // Shooters invited this visit: their tile shows "Invitert" instead of an
-  // active button, so the owner can't re-fire a no-op invite. Session-scoped —
-  // persisting across reopen needs a server lookup of pending invitees, which
-  // the email-keyed, e-mail-private invitation model doesn't expose here.
+  // Shooters invited this visit, merged with the server's pending invitees so
+  // their tile shows "Invitert" rather than an active button (spec 0032).
   final Set<String> _invitedShooterIds = <String>{};
 
-  @override
-  void dispose() {
-    _email.dispose();
-    super.dispose();
+  /// The competition's shareable join link, or null if the token can't be read
+  /// (only the owner can — and this section is owner-only). Spec 0048.
+  Future<Uri?> _joinLink() async {
+    final token = await ref.read(
+      competitionJoinTokenProvider(widget.competition.id).future,
+    );
+    if (token == null) return null;
+    return competitionJoinLink(
+      ref.read(appBaseUrlProvider),
+      competitionId: widget.competition.id,
+      token: token,
+    );
   }
 
-  Future<void> _invite() async {
-    final email = _email.text.trim();
-    if (email.isEmpty || _inviting) return;
-    setState(() => _inviting = true);
-    final messenger = ScaffoldMessenger.of(context);
+  /// Shares the join link through the OS share sheet (Messenger / SMS / … ).
+  Future<void> _share() async {
+    final link = await _joinLink();
+    if (link == null || !mounted) return;
+    await ref
+        .read(sharerProvider)
+        .share('Bli med i ${widget.competition.name} på Treffpunkt: $link');
+  }
+
+  /// Copies the join link — the reliable fallback where sharing is unavailable.
+  Future<void> _copyLink() async {
+    final link = await _joinLink();
+    if (link == null) return;
+    await Clipboard.setData(ClipboardData(text: link.toString()));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(const SnackBar(content: Text('Lenke kopiert.')));
+  }
+
+  /// Issues a fresh token, so old links stop working.
+  Future<void> _regenerateLink() async {
+    final messenger = ScaffoldMessenger.of(context)..clearSnackBars();
     try {
       await ref
           .read(competitionRepositoryProvider)
-          .invite(
-            widget.competition.id,
-            email,
-          );
-      _email.clear();
-      messenger.showSnackBar(SnackBar(content: Text('Invitert $email.')));
+          .regenerateJoinToken(widget.competition.id);
+      ref.invalidate(competitionJoinTokenProvider(widget.competition.id));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Ny lenke laget. Gamle lenker slutter å virke.'),
+        ),
+      );
     } on CompetitionSyncException {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke invitere.')),
+        const SnackBar(content: Text('Kunne ikke lage ny lenke.')),
       );
-    } finally {
-      if (mounted) setState(() => _inviting = false);
     }
   }
 
@@ -688,10 +715,35 @@ class _CompetitionDetailScreenState
                   const SizedBox(height: 16),
                 ],
                 if (isOwner) ...[
-                  _InviteRow(
-                    controller: _email,
-                    inviting: _inviting,
-                    onInvite: () => unawaited(_invite()),
+                  const _SectionHeader('Inviter med lenke'),
+                  Text(
+                    'Del en lenke; den som åpner den blir med.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      FilledButton.icon(
+                        key: shareInviteKey,
+                        onPressed: () => unawaited(_share()),
+                        icon: const Icon(Icons.share),
+                        label: const Text('Del lenke'),
+                      ),
+                      OutlinedButton.icon(
+                        key: copyInviteLinkKey,
+                        onPressed: () => unawaited(_copyLink()),
+                        icon: const Icon(Icons.link),
+                        label: const Text('Kopier lenke'),
+                      ),
+                      TextButton.icon(
+                        key: regenerateLinkKey,
+                        onPressed: () => unawaited(_regenerateLink()),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Lag ny lenke'),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   ..._shooterPicker(members.value),
@@ -869,47 +921,6 @@ class _ShooterTile extends StatelessWidget {
       key: inviteShooterButtonKey(shooter.id),
       onPressed: inviting ? null : onInvite,
       child: const Text('Inviter'),
-    );
-  }
-}
-
-class _InviteRow extends StatelessWidget {
-  const _InviteRow({
-    required this.controller,
-    required this.inviting,
-    required this.onInvite,
-  });
-
-  final TextEditingController controller;
-  final bool inviting;
-  final VoidCallback onInvite;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: TextField(
-            key: inviteEmailFieldKey,
-            controller: controller,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'Inviter på e-post',
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: FilledButton(
-            key: inviteSubmitKey,
-            onPressed: inviting ? null : onInvite,
-            child: const Text('Inviter'),
-          ),
-        ),
-      ],
     );
   }
 }

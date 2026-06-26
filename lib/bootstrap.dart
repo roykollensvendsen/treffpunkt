@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/app.dart';
 import 'package:treffpunkt/core/platform/browser_environment.dart';
+import 'package:treffpunkt/core/platform/sharer.dart';
 import 'package:treffpunkt/features/auth/domain/auth_repository.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
@@ -83,6 +84,7 @@ void runTreffpunkt(
   bool? initialDisclosureShown,
   CompetitionRepository? competitionRepository,
   BrowserEnvironment? browserEnvironment,
+  Sharer? sharer,
 }) {
   runApp(
     ProviderScope(
@@ -128,6 +130,7 @@ void runTreffpunkt(
           ),
         if (browserEnvironment != null)
           browserEnvironmentProvider.overrideWithValue(browserEnvironment),
+        if (sharer != null) sharerProvider.overrideWithValue(sharer),
       ],
       child: const TreffpunktApp(),
     ),
