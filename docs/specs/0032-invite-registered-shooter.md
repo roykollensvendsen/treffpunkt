@@ -40,6 +40,9 @@ email-keyed invitation **without ever exposing emails to the client**.
 5. **Idempotent.** Inviting a shooter who is already invited is a harmless no-op.
 6. **Email invite stays.** The type-an-email control remains, for people who have
    not registered yet.
+7. **Settled state.** Once invited, the shooter's *Inviter* action becomes a
+   disabled *Invitert* marker, so the owner can't fire a second (no-op) invite.
+   Session-scoped — see *Known limitations*.
 
 ## Design
 
@@ -82,6 +85,8 @@ unchanged. Owner enforcement lives in the function (not just the UI), matching t
 - *the picker hides yourself and current members*, and shows the rest.
 - *picking a shooter invites them* — tapping *Inviter* reaches the store so the
   invitee has a pending invitation.
+- *an invited shooter settles to a disabled "Invitert"* — after the invite, the
+  tile's button is disabled and labelled *Invitert*, so a second tap can't fire.
 - *the email field still works* (spec 0011 behaviour unchanged).
 
 ### RLS (local Supabase, `psql`, two users)
@@ -99,6 +104,11 @@ get an invite control. No email is ever shown in the list.
 ## Known limitations / next increment
 
 The list shows all registered shooters (no search/paging yet — fine at club
-scale); large directories and an owner-facing "already invited" marker can follow.
-Cross-competition ranking (0014) and browsing published results (0015) are
-unchanged by this spec.
+scale); large directories can follow. The "already invited" marker (req. 7) is
+**session-scoped**: it reflects invites sent in the current visit, but a shooter
+invited in an earlier visit reappears with an active *Inviter* button (a repeat
+invite is a harmless no-op, req. 5). Persisting it across reopen needs an
+owner-facing lookup of a competition's *pending invitees by user id*, which the
+email-keyed, email-private invitation model (spec 0010) doesn't expose to the
+client — a server RPC for the next increment. Cross-competition ranking (0014) and
+browsing published results (0015) are unchanged by this spec.

@@ -479,6 +479,11 @@ class _CompetitionDetailScreenState
   // The shooter whose invite is in flight, so only that tile shows the pending
   // state — not every Inviter button at once (they share this screen's state).
   String? _invitingShooterId;
+  // Shooters invited this visit: their tile shows "Invitert" instead of an
+  // active button, so the owner can't re-fire a no-op invite. Session-scoped —
+  // persisting across reopen needs a server lookup of pending invitees, which
+  // the email-keyed, e-mail-private invitation model doesn't expose here.
+  final Set<String> _invitedShooterIds = <String>{};
 
   @override
   void dispose() {
@@ -520,6 +525,9 @@ class _CompetitionDetailScreenState
       await ref
           .read(competitionRepositoryProvider)
           .inviteUser(widget.competition.id, shooter.id);
+      if (mounted) {
+        setState(() => _invitedShooterIds.add(shooter.id));
+      }
       messenger.showSnackBar(SnackBar(content: Text('Invitert $label.')));
     } on CompetitionSyncException {
       messenger.showSnackBar(
@@ -614,6 +622,7 @@ class _CompetitionDetailScreenState
                 _ShooterTile(
                   shooter: shooter,
                   inviting: _invitingShooterId == shooter.id,
+                  invited: _invitedShooterIds.contains(shooter.id),
                   onInvite: () => unawaited(_inviteUser(shooter)),
                 ),
             ],
@@ -795,11 +804,16 @@ class _ShooterTile extends StatelessWidget {
   const _ShooterTile({
     required this.shooter,
     required this.inviting,
+    required this.invited,
     required this.onInvite,
   });
 
   final Profile shooter;
   final bool inviting;
+
+  /// Whether this shooter was already invited during this visit — the tile then
+  /// shows a settled "Invitert" state instead of an active button.
+  final bool invited;
   final VoidCallback onInvite;
 
   @override
@@ -812,11 +826,20 @@ class _ShooterTile extends StatelessWidget {
         child: avatarUrl == null ? const Icon(Icons.person_outline) : null,
       ),
       title: Text(shooter.displayName ?? 'Ukjent skytter'),
-      trailing: FilledButton.tonal(
-        key: inviteShooterButtonKey(shooter.id),
-        onPressed: inviting ? null : onInvite,
-        child: const Text('Inviter'),
-      ),
+      // Once invited, a disabled "Invitert" label with a check: it reads as
+      // done and can't fire a second, no-op invite.
+      trailing: invited
+          ? TextButton.icon(
+              key: inviteShooterButtonKey(shooter.id),
+              onPressed: null,
+              icon: const Icon(Icons.check),
+              label: const Text('Invitert'),
+            )
+          : FilledButton.tonal(
+              key: inviteShooterButtonKey(shooter.id),
+              onPressed: inviting ? null : onInvite,
+              child: const Text('Inviter'),
+            ),
     );
   }
 }
