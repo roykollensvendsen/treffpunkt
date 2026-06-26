@@ -35,7 +35,10 @@ final class SupabaseAuthRepository implements AuthRepository {
   Future<void> signInWithGoogle() async {
     await _auth.signInWithOAuth(
       OAuthProvider.google,
-      redirectTo: kIsWeb ? null : _mobileRedirect,
+      // On the web, redirect back to the exact current URL so a `?join&token`
+      // deep link survives the OAuth round-trip (spec 0048). For a plain
+      // sign-in this is just the app URL, unchanged.
+      redirectTo: kIsWeb ? Uri.base.toString() : _mobileRedirect,
     );
   }
 

@@ -62,10 +62,13 @@ Share API** in the web app). So we replace the typed-email control with a
   read), `joinByLink(competitionId, token)` (the RPC), `regenerateJoinToken(
   competitionId)`. The Supabase impl reads the token table / calls the RPCs; the
   in-memory fake mirrors the owner-gated token + token-checked join.
-- **Deep link** (web): the app reads `?join=<cid>&token=<t>` at startup. Signed
-  in → call `joinByLink`, then open the competition; signed out → sign in first
-  (preserving the params), then join. A bad/stale token shows a clear notice.
-  Behind a small launch-params seam so it is testable off-web.
+- **Deep link** (web): `parseJoinIntent(Uri.base)` (via `joinIntentProvider`,
+  overridable in tests) reads `?join=<cid>&token=<t>` at startup. A
+  `JoinLinkHandler` in the **signed-in** branch of the auth gate joins once and
+  opens the competitions hub; a bad/stale token shows a notice. A signed-out
+  opener signs in first — Google sign-in passes `redirectTo: Uri.base` on the web
+  so the link survives the OAuth round-trip, then `JoinLinkHandler` runs on
+  return. (A plain sign-in redirects to the same app URL as before.)
 - **Share** (`share_plus`): **Del** builds the link from `joinToken` and shares
   `«Bli med i <navn> på Treffpunkt: <lenke>»`; web uses the Web Share API, with a
   clipboard **Kopier lenke** fallback. A **Lag ny lenke** action calls
@@ -122,3 +125,11 @@ shows the competition. Regenerating the link makes the old one stop working.
   later increment if needed.
 - Deep links use a query string (`?join=…`) so they survive GitHub Pages + Flutter
   web routing; a prettier path-based link can follow with a router change.
+- The signed-out deep-link join relies on Google sign-in redirecting back to the
+  full URL (`redirectTo: Uri.base`). The Supabase **Redirect URLs** allow-list
+  must therefore permit the app URL **with a query string** (a wildcard like
+  `…/treffpunkt/**`); a plain sign-in is unaffected. A signed-*in* opener joins
+  with no redirect at all.
+- The handler opens the **hub** (where the joined competition appears), not the
+  competition detail directly — it avoids a fetch-by-id; a direct-to-detail jump
+  can follow.
