@@ -600,8 +600,10 @@ class _CompetitionDetailScreenState
   }
 
   /// The registered shooters the owner can invite (spec 0032): everyone with a
-  /// profile, minus the owner and the current members. Hidden while loading or
-  /// on error — the email field stays as the fallback.
+  /// The registered shooters, minus the owner, each in one of three states:
+  /// not invited (an *Inviter* button), invited (a settled *Invitert*), or a
+  /// member who accepted (a settled *Deltar*). Hidden while loading or on error
+  /// — the email field stays as the fallback.
   List<Widget> _shooterPicker(List<CompetitionMember>? members) {
     final shooters = ref.watch(shootersProvider);
     final uid = ref.watch(currentUserIdProvider);
@@ -611,29 +613,26 @@ class _CompetitionDetailScreenState
     final invitees =
         ref.watch(competitionInviteesProvider(widget.competition.id)).value ??
         const <String>[];
-    final excluded = <String>{
-      ?uid,
-      ...?members?.map((m) => m.userId),
-    };
+    final memberIds = <String>{...?members?.map((m) => m.userId)};
     return shooters.maybeWhen(
       orElse: () => const <Widget>[],
       data: (all) {
-        final invitable = all
-            .where((p) => !excluded.contains(p.id))
-            .toList(growable: false);
-        if (invitable.isEmpty) return const <Widget>[];
+        // Only the owner is dropped; members stay, shown as "Deltar".
+        final listed = all.where((p) => p.id != uid).toList(growable: false);
+        if (listed.isEmpty) return const <Widget>[];
         return <Widget>[
           const _SectionHeader('Inviter en registrert skytter'),
           Column(
             key: shooterPickerKey,
             children: <Widget>[
-              for (final shooter in invitable)
+              for (final shooter in listed)
                 _ShooterTile(
                   shooter: shooter,
                   inviting: _invitingShooterId == shooter.id,
                   invited:
                       _invitedShooterIds.contains(shooter.id) ||
                       invitees.contains(shooter.id),
+                  joined: memberIds.contains(shooter.id),
                   onInvite: () => unawaited(_inviteUser(shooter)),
                 ),
             ],
@@ -816,15 +815,20 @@ class _ShooterTile extends StatelessWidget {
     required this.shooter,
     required this.inviting,
     required this.invited,
+    required this.joined,
     required this.onInvite,
   });
 
   final Profile shooter;
   final bool inviting;
 
-  /// Whether this shooter was already invited during this visit — the tile then
-  /// shows a settled "Invitert" state instead of an active button.
+  /// Whether this shooter has a pending invitation — the tile then shows a
+  /// settled "Invitert" state instead of an active button.
   final bool invited;
+
+  /// Whether this shooter accepted and is now a member — a settled "Deltar"
+  /// state that takes precedence over [invited].
+  final bool joined;
   final VoidCallback onInvite;
 
   @override
@@ -837,20 +841,34 @@ class _ShooterTile extends StatelessWidget {
         child: avatarUrl == null ? const Icon(Icons.person_outline) : null,
       ),
       title: Text(shooter.displayName ?? 'Ukjent skytter'),
-      // Once invited, a disabled "Invitert" label with a check: it reads as
-      // done and can't fire a second, no-op invite.
-      trailing: invited
-          ? TextButton.icon(
-              key: inviteShooterButtonKey(shooter.id),
-              onPressed: null,
-              icon: const Icon(Icons.check),
-              label: const Text('Invitert'),
-            )
-          : FilledButton.tonal(
-              key: inviteShooterButtonKey(shooter.id),
-              onPressed: inviting ? null : onInvite,
-              child: const Text('Inviter'),
-            ),
+      // Three settled states: a member who accepted reads "Deltar"; a pending
+      // invitee reads "Invitert"; both are disabled so no no-op invite fires.
+      // Otherwise an active "Inviter" button.
+      trailing: _trailing(),
+    );
+  }
+
+  Widget _trailing() {
+    if (joined) {
+      return TextButton.icon(
+        key: inviteShooterButtonKey(shooter.id),
+        onPressed: null,
+        icon: const Icon(Icons.how_to_reg),
+        label: const Text('Deltar'),
+      );
+    }
+    if (invited) {
+      return TextButton.icon(
+        key: inviteShooterButtonKey(shooter.id),
+        onPressed: null,
+        icon: const Icon(Icons.check),
+        label: const Text('Invitert'),
+      );
+    }
+    return FilledButton.tonal(
+      key: inviteShooterButtonKey(shooter.id),
+      onPressed: inviting ? null : onInvite,
+      child: const Text('Inviter'),
     );
   }
 }

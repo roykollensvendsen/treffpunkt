@@ -27,8 +27,8 @@ email-keyed invitation **without ever exposing emails to the client**.
 ## Requirements
 
 1. **See registered shooters.** The owner's detail screen lists the registered
-   shooters (display name + avatar), **excluding themselves and current
-   members**, each with an *Inviter* action.
+   shooters (display name + avatar), **excluding only themselves**; each
+   non-member has an *Inviter* action (members are shown settled — req. 7).
 2. **Invite by picking.** Tapping *Inviter* invites that shooter. It reuses the
    existing invitation + accept flow, so the invitee sees the invitation under
    *Invitasjoner* and accepts exactly as for an email invite.
@@ -40,10 +40,12 @@ email-keyed invitation **without ever exposing emails to the client**.
 5. **Idempotent.** Inviting a shooter who is already invited is a harmless no-op.
 6. **Email invite stays.** The type-an-email control remains, for people who have
    not registered yet.
-7. **Settled state.** Once invited, the shooter's *Inviter* action becomes a
-   disabled *Invitert* marker, so the owner can't fire a second (no-op) invite.
-   It **persists across reopen**: a shooter with a pending invitation from an
-   earlier visit also loads as *Invitert*.
+7. **Settled states.** Each shooter is in one of three states: not invited (an
+   *Inviter* button); invited (a disabled *Invitert* marker, so no second no-op
+   invite fires); or a member who accepted (a disabled *Deltar* marker, taking
+   precedence). The *Invitert* marker **persists across reopen** (a pending
+   invitation from an earlier visit loads as *Invitert*); *Deltar* follows the
+   competition's membership.
 
 ## Design
 
@@ -70,12 +72,13 @@ email-keyed invitation **without ever exposing emails to the client**.
   the user's own profile sync, then reuses its `invite` path), so widget/unit
   tests exercise the same flow.
 - **UI** (`CompetitionDetailScreen`, owner section): a *Velg skytter* list driven
-  by `shootersProvider`, each shooter a tile with an *Inviter* button, filtered to
-  exclude self and current members (`competitionMembersProvider`). A shooter with
-  no display name shows a neutral fallback label — never their email. A shooter in
-  `competitionInviteesProvider` (or invited this visit) renders a disabled
-  *Invitert* marker instead of the button; a successful invite invalidates that
-  provider so the marker is authoritative.
+  by `shootersProvider`, **excluding only the owner**. A shooter with no display
+  name shows a neutral fallback label — never their email. Each tile's trailing
+  control reflects the shooter's state: a member (`competitionMembersProvider`)
+  → disabled *Deltar*; else a pending invitee (`competitionInviteesProvider`, or
+  invited this visit) → disabled *Invitert*; else an active *Inviter* button. A
+  successful invite invalidates `competitionInviteesProvider` so the marker is
+  authoritative.
 
 ## Rationale
 
@@ -95,7 +98,8 @@ unchanged. Owner enforcement lives in the function (not just the UI), matching t
   `upsertOwnProfile`).
 - *`inviteUser` creates an invitation the target then sees* — invite user B;
   acting as B, `listMyInvitations` shows it and `acceptInvitation` joins B.
-- *the picker hides yourself and current members*, and shows the rest.
+- *the picker hides only the owner; a member reads "Deltar"* (disabled), a
+  non-member is invitable.
 - *picking a shooter invites them* — tapping *Inviter* reaches the store so the
   invitee has a pending invitation.
 - *an invited shooter settles to a disabled "Invitert"* — after the invite, the

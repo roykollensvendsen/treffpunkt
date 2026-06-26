@@ -140,8 +140,9 @@ void main() {
     expect(invitations.map((i) => i.competitionId), <String>['c1']);
   });
 
-  testWidgets('owner picks a registered shooter to invite, hiding self and '
-      'members', (tester) async {
+  testWidgets('the picker hides only the owner; a member reads "Deltar"', (
+    tester,
+  ) async {
     final repo = _meRepo();
     const competition = Competition(
       id: 'c1',
@@ -157,7 +158,7 @@ void main() {
     );
     final bob = repo.asUser(userId: 'bob', email: 'bob@example.com');
     await bob.upsertOwnProfile(const Profile(id: 'bob', displayName: 'Bob'));
-    // Alice is already a member, so she must not appear in the picker.
+    // Alice accepted her invitation, so she is now a member.
     await repo.inviteUser('c1', 'alice');
     await alice.acceptInvitation('c1');
 
@@ -166,11 +167,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Bob (registered non-member) is offered; the owner and the member are not.
+    // The owner is hidden; Bob is invitable; Alice (member) reads "Deltar".
     expect(find.byKey(shooterPickerKey), findsOneWidget);
-    expect(find.byKey(shooterTileKey('bob')), findsOneWidget);
     expect(find.byKey(shooterTileKey('me')), findsNothing);
-    expect(find.byKey(shooterTileKey('alice')), findsNothing);
+    expect(find.byKey(shooterTileKey('bob')), findsOneWidget);
+    final aliceTile = find.byKey(inviteShooterButtonKey('alice'));
+    expect(
+      find.descendant(of: aliceTile, matching: find.text('Deltar')),
+      findsOneWidget,
+    );
+    expect(tester.widget<TextButton>(aliceTile).onPressed, isNull);
 
     await tester.tap(find.byKey(inviteShooterButtonKey('bob')));
     await tester.pumpAndSettle();
