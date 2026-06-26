@@ -180,6 +180,41 @@ void main() {
     expect(invitations.map((i) => i.competitionId), <String>['c1']);
   });
 
+  testWidgets('an invited shooter settles to "Invitert" and cannot be '
+      're-invited', (tester) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '25 m NAIS fin',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+    await repo.upsertOwnProfile(const Profile(id: 'me', displayName: 'Me'));
+    final bob = repo.asUser(userId: 'bob', email: 'bob@example.com');
+    await bob.upsertOwnProfile(const Profile(id: 'bob', displayName: 'Bob'));
+
+    await tester.pumpWidget(
+      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(inviteShooterButtonKey('bob')));
+    await tester.pumpAndSettle();
+
+    // The button settles to a disabled "Invitert": a second tap can't fire.
+    final tile = find.byKey(inviteShooterButtonKey('bob'));
+    expect(
+      find.descendant(of: tile, matching: find.text('Invitert')),
+      findsOneWidget,
+    );
+    expect(tester.widget<TextButton>(tile).onPressed, isNull);
+    expect(
+      find.descendant(of: tile, matching: find.text('Inviter')),
+      findsNothing,
+    );
+  });
+
   testWidgets('inviting one shooter does not disable the others', (
     tester,
   ) async {
