@@ -78,6 +78,7 @@ nav:
       - "0045 — Zoom the scan photo": specs/0045-scan-zoom.md
       - "0046 — Calibrate by drag & pinch": specs/0046-calibrate-pan-pinch.md
       - "0047 — Silhuettpistol 12,5 m": specs/0047-silhuettpistol-12_5m.md
+      - "0048 — Share a join link": specs/0048-share-join-link.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
@@ -103,6 +104,7 @@ nav:
       - ADR-0022 Pure-Dart hole detection: adr/0022-pure-dart-hole-detection.md
       - ADR-0023 Consented training data: adr/0023-consented-training-data.md
       - ADR-0024 No PWA standalone (OAuth): adr/0024-no-pwa-standalone-for-oauth.md
+      - ADR-0025 Share a join link: adr/0025-share-join-link.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md
