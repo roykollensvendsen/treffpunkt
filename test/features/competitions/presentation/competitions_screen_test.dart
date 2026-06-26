@@ -8,8 +8,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/core/platform/sharer.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
@@ -54,6 +56,13 @@ InMemoryCompetitionRepository _meRepo() => InMemoryCompetitionRepository(
   currentUserId: 'me',
   currentEmail: 'me@example.com',
 );
+
+/// Records shared text instead of opening the real OS share sheet.
+class _RecordingSharer implements Sharer {
+  final List<String> shared = <String>[];
+  @override
+  Future<void> share(String text) async => shared.add(text);
+}
 
 void main() {
   testWidgets('shows the empty state with no competitions', (tester) async {
@@ -112,7 +121,7 @@ void main() {
     expect(find.text('Alice Cup'), findsOneWidget);
   });
 
-  testWidgets('the owner can invite someone by email', (tester) async {
+  testWidgets('the owner shares and copies a join link', (tester) async {
     final repo = _meRepo();
     const competition = Competition(
       id: 'c1',
@@ -121,23 +130,55 @@ void main() {
       ownerId: 'me',
     );
     await repo.createCompetition(competition);
+    final sharer = _RecordingSharer();
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String?;
+        }
+        return null;
+      },
+    );
 
     await tester.pumpWidget(
-      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(initial: const SignedIn(_me)),
+          ),
+          competitionRepositoryProvider.overrideWithValue(repo),
+          sharerProvider.overrideWithValue(sharer),
+          appBaseUrlProvider.overrideWithValue(
+            Uri.parse('https://app.example/treffpunkt/'),
+          ),
+        ],
+        child: const MaterialApp(
+          home: CompetitionDetailScreen(competition: competition),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(inviteEmailFieldKey),
-      'bob@example.com',
-    );
-    await tester.tap(find.byKey(inviteSubmitKey));
+    // Share opens the OS sheet with a link carrying the competition + token.
+    await tester.tap(find.byKey(shareInviteKey));
     await tester.pumpAndSettle();
+    expect(sharer.shared, hasLength(1));
+    expect(sharer.shared.single, contains('https://app.example/treffpunkt/'));
+    expect(sharer.shared.single, contains('join=c1'));
+    expect(sharer.shared.single, contains('token='));
 
-    // The invitation reached the store: Bob now has a pending invitation.
-    final bob = repo.asUser(userId: 'bob', email: 'bob@example.com');
-    final invitations = await bob.listMyInvitations();
-    expect(invitations.map((i) => i.competitionId), <String>['c1']);
+    // Copy is the reliable fallback — the same link reaches the clipboard.
+    await tester.tap(find.byKey(copyInviteLinkKey));
+    await tester.pumpAndSettle();
+    expect(copied, contains('join=c1'));
+    expect(find.text('Lenke kopiert.'), findsOneWidget);
+
+    // Regenerating issues a fresh link.
+    await tester.tap(find.byKey(regenerateLinkKey));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Ny lenke'), findsOneWidget);
   });
 
   testWidgets('the picker hides only the owner; a member reads "Deltar"', (
@@ -319,7 +360,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(shooterPickerKey), findsNothing);
-    expect(find.byKey(inviteEmailFieldKey), findsNothing);
+    expect(find.byKey(shareInviteKey), findsNothing);
     expect(find.byKey(deleteCompetitionButtonKey), findsNothing);
   });
 

@@ -115,6 +115,11 @@ final competitionInviteesProvider = FutureProvider.family<List<String>, String>(
       ref.watch(competitionRepositoryProvider).pendingInviteeIds(competitionId),
 );
 
+/// The app's base URL, for building the shareable join link (spec 0048). On the
+/// web this is the deployed page; tests override it. The screen appends
+/// `?join&token` via `competitionJoinLink`.
+final appBaseUrlProvider = Provider<Uri>((ref) => Uri.base);
+
 /// A competition's current join token (owner-only), for building the shareable
 /// link (spec 0048). `null` for a non-owner; invalidate after regenerating.
 // ignore: specify_nonobvious_property_types
