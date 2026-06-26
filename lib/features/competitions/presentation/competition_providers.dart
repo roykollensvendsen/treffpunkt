@@ -115,6 +115,14 @@ final competitionInviteesProvider = FutureProvider.family<List<String>, String>(
       ref.watch(competitionRepositoryProvider).pendingInviteeIds(competitionId),
 );
 
+/// A competition's current join token (owner-only), for building the shareable
+/// link (spec 0048). `null` for a non-owner; invalidate after regenerating.
+// ignore: specify_nonobvious_property_types
+final competitionJoinTokenProvider = FutureProvider.family<String?, String>(
+  (ref, competitionId) =>
+      ref.watch(competitionRepositoryProvider).joinToken(competitionId),
+);
+
 /// The live scoreboard for a competition (spec 0013): its results, re-emitted
 /// whenever a participant submits (Supabase Realtime). The screen ranks the
 /// emitted results best-per-shooter for display.
