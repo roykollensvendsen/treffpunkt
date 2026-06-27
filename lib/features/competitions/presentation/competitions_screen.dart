@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/sharer.dart';
+import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
@@ -836,13 +837,14 @@ class _ResultRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final suffix = result.innerTens > 0 ? ' · ${result.innerTens}×X' : '';
     return ListTile(
       key: resultRowKey(result.id),
       leading: CircleAvatar(radius: 14, child: Text('$rank')),
       title: Text(result.profile?.displayName ?? 'Ukjent skytter'),
-      trailing: Text(
-        '${result.total}$suffix',
+      trailing: innerTenScoreText(
+        context: context,
+        lead: '${result.total}',
+        innerTens: result.innerTens,
         style: Theme.of(
           context,
         ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),

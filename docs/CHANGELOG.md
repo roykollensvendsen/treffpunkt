@@ -144,7 +144,17 @@ All notable changes to this project are documented here. The format is based on
   scoring (per-shot ring, inner-ten count, running total and maximum), with an
   optional inner-ten ring on the target geometry (spec 0004).
 
+### Changed
+- The inner-ten count on a scorecard is now shown with a **ringed X** — the way
+  an innertier is marked on a paper target — instead of "×X". So "600 · 60×X"
+  now reads "600 · 60 Ⓧ", which no longer looks like a multiplication. The badge
+  is drawn (not a font character), so it looks the same on web, Android and iOS
+  (spec 0023).
+
 ### Removed
+- The "Silhuettpistol 12,5 m" home-practice program is no longer offered. It was
+  a made-up training format rather than a real NSF program, so it is dropped from
+  the program list (the catalogue is back to 13 programs).
 - The 10 m air rifle is no longer offered in the program list. At the NSF domain
   expert's request, air rifle is dropped from the program picker (and its now
   orphaned air-rifle weapon class is removed). The scoring foundation it

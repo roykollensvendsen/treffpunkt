@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/features/scoring/domain/month_calendar.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
@@ -399,8 +400,10 @@ class _SessionCard extends ConsumerWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                      Text(
-                        _scoreLine(record),
+                      innerTenScoreText(
+                        context: context,
+                        lead: '${record.total}',
+                        innerTens: record.innerTens,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -515,13 +518,6 @@ String? _metaLine(SessionRecord record) {
   final place = record.placeLabel;
   if (place != null && place.isNotEmpty) return '$date · $place';
   return date;
-}
-
-/// The score line: the total, with a `· N×X` suffix when there are any inner
-/// tens. The maximum is omitted — it is fixed by the program and known.
-String _scoreLine(SessionRecord record) {
-  final suffix = record.innerTens > 0 ? ' · ${record.innerTens}×X' : '';
-  return '${record.total}$suffix';
 }
 
 /// The score spoken in words for a screen reader (e.g. "90 av 100, 2 indre

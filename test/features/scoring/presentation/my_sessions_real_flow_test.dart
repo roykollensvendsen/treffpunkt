@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/bootstrap.dart';
+import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
@@ -110,7 +111,11 @@ void main() {
       // Exactly one saved-session card (keyed by the recording's own id).
       expect(find.byKey(mySessionCard(_onlySessionId(tester))), findsOneWidget);
       expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
-      expect(find.text('600 · 60×X'), findsOneWidget);
+      expect(
+        find.textContaining('600 · 60', findRichText: true),
+        findsOneWidget,
+      );
+      expect(find.byType(InnerTenX), findsOneWidget);
       expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
       expect(find.text('Ikke synkronisert'), findsOneWidget);
     },

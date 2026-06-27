@@ -12,6 +12,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
@@ -365,8 +366,12 @@ void main() {
     expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
     expect(find.text('25 m Finpistol'), findsOneWidget);
     // Both programs are 60 centre shots -> 600 / 600 with 60 inner tens, one
-    // score line per card.
-    expect(find.text('600 · 60×X'), findsNWidgets(2));
+    // score line per card, the inner-ten count shown with a ringed X.
+    expect(
+      find.textContaining('600 · 60', findRichText: true),
+      findsNWidgets(2),
+    );
+    expect(find.byType(InnerTenX), findsNWidgets(2));
     // The weapon name appears for the synced entry that has one.
     expect(find.text('My pistol'), findsOneWidget);
   });
@@ -479,7 +484,11 @@ void main() {
       expect(find.byKey(noSessionsKey), findsNothing);
       expect(find.byKey(mySessionCard('fresh-1')), findsOneWidget);
       expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
-      expect(find.text('600 · 60×X'), findsOneWidget);
+      expect(
+        find.textContaining('600 · 60', findRichText: true),
+        findsOneWidget,
+      );
+      expect(find.byType(InnerTenX), findsOneWidget);
       expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
       expect(find.text('Ikke synkronisert'), findsOneWidget);
     },
@@ -535,7 +544,11 @@ void main() {
       expect(find.byKey(noSessionsKey), findsNothing);
       expect(find.byKey(mySessionCard('local-1')), findsOneWidget);
       expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
-      expect(find.text('600 · 60×X'), findsOneWidget);
+      expect(
+        find.textContaining('600 · 60', findRichText: true),
+        findsOneWidget,
+      );
+      expect(find.byType(InnerTenX), findsOneWidget);
       expect(find.byKey(notSyncedBadgeKey), findsOneWidget);
       expect(find.text('Ikke synkronisert'), findsOneWidget);
 

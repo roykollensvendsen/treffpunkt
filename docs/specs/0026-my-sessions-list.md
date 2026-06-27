@@ -69,7 +69,8 @@ per-series (skive) breakdown shown when the session was first completed (spec
    network):
    - **Data**: a list of cards, one per entry, each showing the program name, the
      date/time and place when present, the score `total / maxTotal` (appending
-     `· N×X` when `innerTens > 0`), and the weapon name when present. A **pending**
+     `· N Ⓧ`, a ringed X, when `innerTens > 0`), and the weapon name when
+     present. A **pending**
      entry carries a clear **"Ikke synkronisert"** badge; a synced entry does
      not. Rows and badges carry findable `Key`s for tests.
    - **Empty**: a friendly empty state — an icon, the line **"Ingen lagrede
