@@ -77,7 +77,6 @@ nav:
       - "0044 — Sprintluft": specs/0044-sprintluft.md
       - "0045 — Zoom the scan photo": specs/0045-scan-zoom.md
       - "0046 — Calibrate by drag & pinch": specs/0046-calibrate-pan-pinch.md
-      - "0047 — Silhuettpistol 12,5 m": specs/0047-silhuettpistol-12_5m.md
       - "0048 — Share a join link": specs/0048-share-join-link.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
