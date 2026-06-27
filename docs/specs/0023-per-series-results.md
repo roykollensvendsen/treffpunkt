@@ -24,7 +24,8 @@ the grand total.
    contains, in firing order, each with its own result.
 2. A series row shows a label (`Serie 1`, `Serie 2`, …) and the series' ring
    total over its maximum (`total / maxTotal`), appending the inner-ten count
-   (`· N×X`) when the series has any.
+   (`· N Ⓧ`, the count followed by a **ringed X** — the way an innertier is
+   marked on a target, not a multiplication `×X`) when the series has any.
 3. The series rows are visually subordinate to the stage subtotal (e.g.
    indented and smaller), which is kept, as is the grand total.
 4. A single-series stage shows exactly one such row — every skive is shown.
@@ -66,7 +67,10 @@ Presentation (`lib/features/scoring/presentation/series_screen.dart`):
 
 - `_StageScoreRow` renders, below the stage subtotal row, one subordinate row
   per `score.series` entry: a `Serie N` label and `total / maxTotal` with a
-  `· N×X` suffix when `innerTens > 0`, indented and in a smaller style.
+  `· N Ⓧ` suffix when `innerTens > 0`, indented and in a smaller style. The
+  suffix is built by `innerTenScoreText`
+  (`lib/core/presentation/inner_ten_x.dart`), which draws the X inside a ring
+  (`InnerTenX`) so it renders identically on every platform.
 - Each series row is wrapped in `Semantics` with a `_scoreSemanticsLabel`
   ("Serie 1: 48 av 50, 2 indre tiere") and carries a `seriesResultRowKey` so a
   widget test can find the rows.

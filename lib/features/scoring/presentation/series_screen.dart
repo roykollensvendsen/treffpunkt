@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/series.dart';
@@ -720,8 +721,10 @@ class _SeriesTotalCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    score.innerTens > 0 ? 'Sum · ${score.innerTens}×X' : 'Sum',
+                  innerTenScoreText(
+                    context: context,
+                    lead: 'Sum',
+                    innerTens: score.innerTens,
                     style: TextStyle(color: onColor, fontSize: 18),
                   ),
                 ],
@@ -762,7 +765,6 @@ class _SessionProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final suffix = innerTens > 0 ? ' · $innerTens×X' : '';
     return Semantics(
       label: _scoreSemanticsLabel(
         prefix: 'Økt så langt',
@@ -771,8 +773,10 @@ class _SessionProgress extends StatelessWidget {
         innerTens: innerTens,
       ),
       child: ExcludeSemantics(
-        child: Text(
-          'Session so far: $total$suffix',
+        child: innerTenScoreText(
+          context: context,
+          lead: 'Session so far: $total',
+          innerTens: innerTens,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -914,7 +918,6 @@ class _StageScoreRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final suffix = score.innerTens > 0 ? '  ·  ${score.innerTens}×X' : '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -932,8 +935,11 @@ class _StageScoreRow extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(name, style: theme.textTheme.titleMedium),
-                  Text(
-                    '${score.total}$suffix',
+                  innerTenScoreText(
+                    context: context,
+                    lead: '${score.total}',
+                    innerTens: score.innerTens,
+                    separator: '  ·  ',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -958,7 +964,7 @@ class _StageScoreRow extends StatelessWidget {
 
 /// One series (skive) result on the scorecard, subordinate to its stage
 /// subtotal: a `Serie N` label and the series total over its maximum, with a
-/// `· N×X` inner-ten suffix when present (spec 0023).
+/// `· N Ⓧ` inner-ten suffix (a ringed X) when present (spec 0023).
 class _SeriesResultRow extends StatelessWidget {
   const _SeriesResultRow({
     required this.number,
@@ -974,7 +980,6 @@ class _SeriesResultRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final label = 'Serie $number';
-    final suffix = score.innerTens > 0 ? '  ·  ${score.innerTens}×X' : '';
     final style = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
@@ -993,7 +998,13 @@ class _SeriesResultRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(label, style: style),
-              Text('${score.total}$suffix', style: style),
+              innerTenScoreText(
+                context: context,
+                lead: '${score.total}',
+                innerTens: score.innerTens,
+                separator: '  ·  ',
+                style: style,
+              ),
             ],
           ),
         ),
@@ -1042,8 +1053,10 @@ class _GrandTotalCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    score.innerTens > 0 ? 'Sum · ${score.innerTens}×X' : 'Sum',
+                  innerTenScoreText(
+                    context: context,
+                    lead: 'Sum',
+                    innerTens: score.innerTens,
                     style: TextStyle(color: onColor, fontSize: 18),
                   ),
                 ],
