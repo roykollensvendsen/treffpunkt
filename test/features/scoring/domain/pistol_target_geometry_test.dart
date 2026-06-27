@@ -133,54 +133,6 @@ void main() {
     });
   });
 
-  group('12,5 m Silhuett — reduced silhouette face (air 4.5, rings 5-10)', () {
-    const geometry = TargetGeometry.silhuett12_5m();
-    int score(double d) =>
-        scoring.integerScore(geometry, Shot(dxMm: d, dyMm: 0));
-    bool innerTen(double d) =>
-        scoring.isInnerTen(geometry, Shot(dxMm: d, dyMm: 0));
-
-    test('geometry numbers are the 25 m rapid face scaled to 0.4', () {
-      expect(geometry.caliberMm, 4.5); // air pistol
-      expect(geometry.pelletRadiusMm, closeTo(2.25, 1e-9));
-      expect(geometry.lowestRingValue, 5);
-      expect(geometry.highestRing, 10);
-      expect(geometry.outerDiameterMm(10), 40);
-      expect(geometry.outerDiameterMm(5), 200);
-      expect(geometry.blackBullDiameterMm, 200);
-      expect(geometry.innerTenDiameterMm, 20);
-      expect(geometry.hasUniformRings, isTrue); // even 32 mm step
-      expect(geometry.maxScoringRadiusMm, closeTo(102.25, 1e-9));
-    });
-
-    // Centre-distance thresholds (air, pellet radius 2.25 mm):
-    // 10 -> 22.25, 9 -> 38.25, 8 -> 54.25, 7 -> 70.25, 6 -> 86.25, 5 -> 102.25.
-    test('integer score across every ring', () {
-      const vectors = <(double, int)>[
-        (0, 10),
-        (22.24, 10),
-        (22.26, 9),
-        (38.24, 9),
-        (38.26, 8),
-        (54.26, 7),
-        (70.26, 6),
-        (86.26, 5),
-        (102.24, 5),
-        (102.26, 0), // outside the 5-ring is a miss (no rings 1-4)
-        (150, 0),
-      ];
-      for (final (d, ring) in vectors) {
-        expect(score(d), ring, reason: 'd=$d mm should score $ring');
-      }
-    });
-
-    test('inner ten on either side of the 20 mm ring', () {
-      expect(innerTen(12.24), isTrue); // inside the 12.25 mm scoring radius
-      expect(innerTen(12.26), isFalse);
-      expect(score(12.26), 10); // still a ten, just not an inner ten
-    });
-  });
-
   group('gauge / calibre edge rule', () {
     test('centre-fire 9.65 mm gauge scores wider than a .22', () {
       // The inward-edge gauge rule means a larger calibre reaches one ring

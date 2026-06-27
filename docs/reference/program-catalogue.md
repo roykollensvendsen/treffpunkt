@@ -59,7 +59,6 @@ centre-fire **pistol** (grovpistol).
 | Sprintluft | national (rekrutt) | 10 m | air 4.5 mm | air-duel face; 3×10, 15 min | 30 | integer + X | H |
 | Storluft (luftduell-skive) | national (korona) | 10 m | air 4.5 mm | air-duel face; 4×10 | 40 | integer + X | M |
 | Storluft (5,5 m) | national (korona) | 5.5 m | air 4.5 mm | std air-pistol face; 4×10 | 40 | integer + X | M |
-| Silhuettpistol 12,5 m | — (home practice) | 12.5 m | air 4.5 mm | reduced ⌀ 200 mm silhouette face; 6×5 | 30 | integer + X | M |
 
 (NAIS, fripistol-B, 15 m rifle and 10 m luftsprint are documented in the sources;
 seeded as confirmed.)
@@ -80,12 +79,6 @@ competitions stored under it still load.
   black-bull (cosmetic) — the FSU 2020 source gives only "40 skudd … på
   Sprintluft-skive (eller vanlig skive på 5,5 meter)". It was a corona-era
   home program (shootable unapproved), not a standing NSF program.
-- **Silhuettpistol 12,5 m** (spec 0047): the ring diameters were **measured off
-  a photo** of the father's "Siluett 12,5 m" A4 printout (⌀ 200 mm 5-ring, the
-  25 m rapid proportions at ×0.4); the course of fire (air 4.5 mm, duel 6×5 = 30,
-  untimed) is the father's practice format, not a published NSF program. Confirm
-  the exact ring table and whether the duel series carries a time limit.
-
 NAIS and hurtigpistol fin/grov are now **confirmed and seeded** (spec 0031) from
 the NSF *Skyteprogrammer – Pistol* (§8.26 hurtig, §8.29 NAIS) and the NSF
 *Reglement for merkeskyting til NAIS-medaljen*: hurtig is 60 shots (12×5, timed

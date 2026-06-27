@@ -122,24 +122,6 @@ abstract final class ProgramCatalogue {
     ],
   );
 
-  /// Silhuettpistol 12,5 m: 30 shots in six 5-shot duel series on the reduced
-  /// "Siluett 12,5 m" silhouette face (rings 5–10, ⌀ 200 mm so it fits A4),
-  /// shot with an air pistol at 12.5 m. A short home/indoor practice program;
-  /// the face is the printout the scan feature was tuned against (spec 0047).
-  static const ProgramDefinition silhuettpistol12_5m = ProgramDefinition(
-    name: 'Silhuettpistol 12,5 m',
-    discipline: Discipline.pistol,
-    weaponClasses: <String>['Air 4.5 mm'],
-    stages: <StageDefinition>[
-      StageDefinition(
-        name: 'Duell',
-        geometry: TargetGeometry.silhuett12_5m(),
-        shotsPerSeries: 5,
-        seriesCount: 6,
-      ),
-    ],
-  );
-
   /// 25 m standard pistol: 12 series of 5 on the precision face across three
   /// timed stages (150 s / 20 s / 10 s).
   static const ProgramDefinition standardPistol25m = ProgramDefinition(
@@ -379,7 +361,6 @@ abstract final class ProgramCatalogue {
     sprintluft,
     storluftDuel,
     storluft55m,
-    silhuettpistol12_5m,
     standardPistol25m,
     finpistol25m,
     grovpistol25m,
