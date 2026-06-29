@@ -10,8 +10,10 @@ A chat is friendlier when you can react quickly without writing a reply. We add
 again to take it back, and see everyone's reactions live.
 
 ## Requirements
-1. A participant can react to any chat message with an emoji from a small
-   palette, and **toggle** it off by reacting with the same emoji again.
+1. A participant can react to **another shooter's** chat message with an emoji
+   from a small palette, and **toggle** it off by reacting with the same emoji
+   again. You cannot react to **your own** message (no add-reaction affordance,
+   and existing chips on your own message are display-only).
 2. A message shows its reactions as **emoji + count** chips; a chip the viewer
    contributed is highlighted. Tapping a chip toggles the viewer's reaction.
 3. Reactions update **live** for everyone (Realtime), like the messages.

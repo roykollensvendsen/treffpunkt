@@ -60,8 +60,9 @@ newest at the bottom, with the sender's name.
 - Type in the box at the bottom and tap **send**.
 - **Attach a picture**: tap the **image** button to the left of the box, pick a
   photo, and it posts to the chat. Images are private to the competition.
-- **React** to a message: tap the **emoji** button under it and pick one. Tap a
-  reaction again to take it back. Everyone sees reactions update live.
+- **React** to **another shooter's** message: tap the **emoji** button under it
+  and pick one (you don't react to your own). Tap a reaction again to take it
+  back. Everyone sees reactions update live.
 - **Long-press** a message to delete it: you can remove your own, and the
   competition's **owner** can remove any message (light moderation).
 

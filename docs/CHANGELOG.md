@@ -196,6 +196,10 @@ All notable changes to this project are documented here. The format is based on
   50 m / 300 m rifle structure.
 
 ### Fixed
+- You can no longer react with an emoji to **your own** messages — in a
+  competition chat or in the forum (threads and replies). Reacting to your own
+  post didn't make sense, so the add-reaction button is hidden there and the
+  reaction chips on your own posts are display-only (specs 0052, 0055).
 - A session you just finished now shows in "Mine økter" immediately, even when
   the connection to your saved sessions is slow or unavailable. Previously the
   list waited to read your account before showing anything, so on the real app a

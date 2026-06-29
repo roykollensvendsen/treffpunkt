@@ -372,6 +372,8 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
           ),
+          // You react to OTHER people's messages, not your own: on your own
+          // message the chips are display-only and there is no add button.
           Wrap(
             spacing: 4,
             children: <Widget>[
@@ -381,16 +383,17 @@ class _MessageBubble extends StatelessWidget {
                   emoji: entry.key,
                   count: entry.value,
                   mine: mineEmojis.contains(entry.key),
-                  onTap: () => onReact(entry.key),
+                  onTap: mine ? null : () => onReact(entry.key),
                 ),
-              IconButton(
-                key: chatAddReactionKey(message.id),
-                visualDensity: VisualDensity.compact,
-                iconSize: 18,
-                tooltip: 'Reager',
-                onPressed: () => unawaited(_openPalette(context)),
-                icon: const Icon(Icons.add_reaction_outlined),
-              ),
+              if (!mine)
+                IconButton(
+                  key: chatAddReactionKey(message.id),
+                  visualDensity: VisualDensity.compact,
+                  iconSize: 18,
+                  tooltip: 'Reager',
+                  onPressed: () => unawaited(_openPalette(context)),
+                  icon: const Icon(Icons.add_reaction_outlined),
+                ),
             ],
           ),
         ],
@@ -411,7 +414,7 @@ class _ReactionChip extends StatelessWidget {
   final String emoji;
   final int count;
   final bool mine;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

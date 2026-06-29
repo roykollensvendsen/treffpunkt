@@ -32,9 +32,10 @@ the list. New threads and replies appear **live**.
 Open a thread to read the opening message and everyone's replies. Type in the
 box at the bottom and tap **send** to add yours.
 
-**React** to the opening post or any reply: tap the **emoji** button under it and
-pick one — a quick way to "vote" 👍 on a bug or idea. Tap a reaction again to
-take it back. Reactions update live for everyone.
+**React** to **someone else's** opening post or reply: tap the **emoji** button
+under it and pick one — a quick way to "vote" 👍 on a bug or idea (you don't
+react to your own). Tap a reaction again to take it back. Reactions update live
+for everyone.
 
 You can also attach a **picture** to a reply (the image button by the reply box).
 
