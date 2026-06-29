@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/features/competitions/domain/message_reaction.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
 /// One chat message in a competition (spec 0051): who said it ([userId]), the
@@ -21,6 +22,7 @@ class CompetitionMessage {
     this.userId,
     this.createdAt,
     this.profile,
+    this.reactions = const <MessageReaction>[],
   });
 
   /// Reads a message from a `competition_messages` row (snake_case columns).
@@ -56,6 +58,10 @@ class CompetitionMessage {
   /// The author's profile (name/avatar), or `null` when not loaded.
   final Profile? profile;
 
+  /// The emoji reactions on this message (spec 0052); empty when none or not
+  /// loaded. Attached by the repository alongside the message.
+  final List<MessageReaction> reactions;
+
   /// The columns sent on insert; `user_id` and `created_at` default
   /// server-side (`auth.uid()` / `now()`), so they are omitted.
   Map<String, dynamic> toInsertJson() => <String, dynamic>{
@@ -72,6 +78,7 @@ class CompetitionMessage {
     body: body,
     createdAt: createdAt,
     profile: profile,
+    reactions: reactions,
   );
 
   /// A copy with [userId] set (used by the in-memory fake to default the
@@ -83,7 +90,20 @@ class CompetitionMessage {
     body: body,
     createdAt: createdAt,
     profile: profile,
+    reactions: reactions,
   );
+
+  /// A copy with [reactions] attached (spec 0052).
+  CompetitionMessage withReactions(List<MessageReaction> reactions) =>
+      CompetitionMessage(
+        id: id,
+        competitionId: competitionId,
+        userId: userId,
+        body: body,
+        createdAt: createdAt,
+        profile: profile,
+        reactions: reactions,
+      );
 
   @override
   bool operator ==(Object other) =>
@@ -93,9 +113,28 @@ class CompetitionMessage {
       other.userId == userId &&
       other.body == body &&
       other.createdAt == createdAt &&
-      other.profile == profile;
+      other.profile == profile &&
+      _reactionsEqual(other.reactions, reactions);
 
   @override
-  int get hashCode =>
-      Object.hash(id, competitionId, userId, body, createdAt, profile);
+  int get hashCode => Object.hash(
+    id,
+    competitionId,
+    userId,
+    body,
+    createdAt,
+    profile,
+    Object.hashAll(reactions),
+  );
+}
+
+/// Order-sensitive equality for two reaction lists — the repository always
+/// reads them in a stable order, so a reaction added or removed makes the
+/// message compare unequal and the chat rebuilds (spec 0052).
+bool _reactionsEqual(List<MessageReaction> a, List<MessageReaction> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }

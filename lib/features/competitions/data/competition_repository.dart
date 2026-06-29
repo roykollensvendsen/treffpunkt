@@ -9,6 +9,7 @@ import 'package:treffpunkt/features/competitions/domain/competition_invitation.d
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/competitions/domain/message_reaction.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
 /// Thrown when a competition read fails, or a foreground write the user is
@@ -170,6 +171,14 @@ abstract interface class CompetitionRepository {
   /// moderation); anyone else is rejected. Throws [CompetitionSyncException] on
   /// failure.
   Future<void> deleteMessage(String messageId);
+
+  /// Toggles the caller's [emoji] reaction on message [messageId] (spec 0052):
+  /// adds it when absent, removes it when present.
+  ///
+  /// Only a participant may react (Row-Level Security enforces it). The change
+  /// is delivered live through [watchMessages]. Throws
+  /// [CompetitionSyncException] on failure.
+  Future<void> toggleReaction(String messageId, String emoji);
 }
 
 /// A [CompetitionRepository] that keeps everything in memory only.
@@ -192,6 +201,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
       _resultsChanged = StreamController<String>.broadcast(),
       _messages = <String, CompetitionMessage>{},
       _messageSeq = <int>[0],
+      _reactions = <String, List<MessageReaction>>{},
       _messagesChanged = StreamController<String>.broadcast();
 
   InMemoryCompetitionRepository._shared(
@@ -209,6 +219,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     this._resultsChanged,
     this._messages,
     this._messageSeq,
+    this._reactions,
     this._messagesChanged,
   );
 
@@ -245,6 +256,8 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
   // A shared monotonic counter that stamps each message's createdAt, so the
   // order is deterministic without a wall clock.
   final List<int> _messageSeq;
+  // messageId -> its reactions, in insertion order (spec 0052).
+  final Map<String, List<MessageReaction>> _reactions;
   // Emits a competitionId whenever its chat changes, so watchMessages re-reads.
   final StreamController<String> _messagesChanged;
 
@@ -267,6 +280,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
         _resultsChanged,
         _messages,
         _messageSeq,
+        _reactions,
         _messagesChanged,
       );
 
@@ -509,7 +523,13 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
       <CompetitionMessage>[
         for (final message in _messages.values)
           if (message.competitionId == competitionId)
-            message.withProfile(_profiles[message.userId]),
+            message
+                .withProfile(_profiles[message.userId])
+                .withReactions(
+                  List<MessageReaction>.unmodifiable(
+                    _reactions[message.id] ?? const <MessageReaction>[],
+                  ),
+                ),
       ];
 
   @override
@@ -549,6 +569,31 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     final allowed = message.userId == uid || (competition?.ownerId == uid);
     if (!allowed) return;
     _messages.remove(messageId);
+    _reactions.remove(messageId);
+    if (_messagesChanged.hasListener) {
+      _messagesChanged.add(message.competitionId);
+    }
+  }
+
+  @override
+  Future<void> toggleReaction(String messageId, String emoji) async {
+    final message = _messages[messageId];
+    if (message == null) return;
+    // Mirror the RLS insert check: only a participant may react.
+    if (!_participates(message.competitionId)) {
+      throw const CompetitionSyncException('not a participant');
+    }
+    final uid = currentUserId;
+    final mine = MessageReaction(
+      messageId: messageId,
+      userId: uid ?? '',
+      emoji: emoji,
+    );
+    final list = _reactions.putIfAbsent(messageId, () => <MessageReaction>[]);
+    // Toggle: remove the caller's own reaction with this emoji if present, else
+    // add it.
+    final removed = list.remove(mine);
+    if (!removed) list.add(mine);
     if (_messagesChanged.hasListener) {
       _messagesChanged.add(message.competitionId);
     }

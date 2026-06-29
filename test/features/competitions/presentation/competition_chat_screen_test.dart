@@ -111,4 +111,31 @@ void main() {
 
     expect(find.text('slett meg'), findsNothing);
   });
+
+  testWidgets('reacting adds a chip, reacting again removes it (spec 0052)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    await repo.postMessage(
+      const CompetitionMessage(id: 'm1', competitionId: 'c1', body: 'hei'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    // Open the palette and pick 👍.
+    await tester.tap(find.byKey(chatAddReactionKey('m1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(chatPaletteEmojiKey('👍')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(chatReactionKey('m1', '👍')), findsOneWidget);
+    expect(find.text('👍 1'), findsOneWidget);
+
+    // Tapping the chip toggles my reaction off again.
+    await tester.tap(find.byKey(chatReactionKey('m1', '👍')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(chatReactionKey('m1', '👍')), findsNothing);
+  });
 }

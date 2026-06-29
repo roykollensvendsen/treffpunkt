@@ -12,6 +12,7 @@ import 'package:treffpunkt/features/competitions/domain/competition_invitation.d
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/competitions/domain/message_reaction.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
 /// [CompetitionRepository] backed by Supabase (spec 0010).
@@ -424,8 +425,27 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
     final byId = <String, Profile>{
       for (final row in profileRows) row['id'] as String: Profile.fromJson(row),
     };
+    // Reactions for these messages (spec 0052), grouped by message id.
+    final messageIds = messages.map((m) => m.id).toList();
+    final reactionRows = await _client
+        .from('competition_message_reactions')
+        .select()
+        .inFilter('message_id', messageIds)
+        .order('created_at', ascending: true);
+    final reactionsByMessage = <String, List<MessageReaction>>{};
+    for (final row in reactionRows) {
+      final reaction = MessageReaction.fromJson(row);
+      (reactionsByMessage[reaction.messageId] ??= <MessageReaction>[]).add(
+        reaction,
+      );
+    }
     return <CompetitionMessage>[
-      for (final m in messages) m.withProfile(byId[m.userId]),
+      for (final m in messages)
+        m
+            .withProfile(byId[m.userId])
+            .withReactions(
+              reactionsByMessage[m.id] ?? const <MessageReaction>[],
+            ),
     ];
   }
 
@@ -464,6 +484,15 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
               ),
               callback: (_) => unawaited(emit()),
             )
+            // Reactions have no competition_id to filter on, so listen to all
+            // reaction changes — RLS still limits delivery to readable rows —
+            // and re-read the chat (spec 0052).
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'competition_message_reactions',
+              callback: (_) => unawaited(emit()),
+            )
             .subscribe();
         unawaited(emit());
       }
@@ -481,6 +510,28 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
       // RLS allows the author or the competition owner; for anyone else the
       // delete matches no row (a no-op).
       await _client.from('competition_messages').delete().eq('id', messageId);
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
+  Future<void> toggleReaction(String messageId, String emoji) async {
+    try {
+      // Toggle: delete the caller's own reaction with this emoji (RLS limits
+      // the delete to it); if there was none, insert it. user_id defaults to
+      // auth.uid() on insert (spec 0052).
+      final removed = await _client
+          .from('competition_message_reactions')
+          .delete()
+          .eq('message_id', messageId)
+          .eq('emoji', emoji)
+          .select();
+      if ((removed as List<dynamic>).isEmpty) {
+        await _client.from('competition_message_reactions').insert(
+          <String, dynamic>{'message_id': messageId, 'emoji': emoji},
+        );
+      }
     } on Object catch (error) {
       throw CompetitionSyncException(error);
     }

@@ -27,6 +27,29 @@ const Key chatEmptyKey = ValueKey<String>('chatEmpty');
 /// Key for the chat bubble of the message with the given [id].
 Key chatMessageKey(String id) => ValueKey<String>('chatMessage-$id');
 
+/// Key for the "add reaction" action on the message with the given [id].
+Key chatAddReactionKey(String id) => ValueKey<String>('chatAddReaction-$id');
+
+/// Key for the [emoji] choice in the reaction palette.
+Key chatPaletteEmojiKey(String emoji) =>
+    ValueKey<String>('chatPaletteEmoji-$emoji');
+
+/// Key for the reaction chip of [emoji] on the message with the given [id].
+Key chatReactionKey(String id, String emoji) =>
+    ValueKey<String>('chatReaction-$id-$emoji');
+
+/// The emoji offered in the reaction palette (spec 0052).
+const List<String> chatReactionPalette = <String>[
+  '👍',
+  '🎯',
+  '🔥',
+  '😂',
+  '❤️',
+  '👏',
+  '😮',
+  '😢',
+];
+
 /// The live chat for one competition (spec 0051): everyone who can see the
 /// competition reads it; participants can post. Messages stream in via
 /// Realtime; you can delete your own, and the owner can delete any.
@@ -105,6 +128,19 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
     }
   }
 
+  Future<void> _toggleReaction(String messageId, String emoji) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(competitionRepositoryProvider)
+          .toggleReaction(messageId, emoji);
+    } on CompetitionSyncException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke reagere.')),
+      );
+    }
+  }
+
   void _scrollToBottomSoon() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) {
@@ -160,8 +196,11 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
                           return _MessageBubble(
                             message: message,
                             mine: mine,
+                            myUserId: uid,
                             canDelete: mine || isOwner,
                             onDelete: () => unawaited(_confirmDelete(message)),
+                            onReact: (emoji) =>
+                                unawaited(_toggleReaction(message.id, emoji)),
                           );
                         },
                       );
@@ -187,14 +226,42 @@ class _MessageBubble extends StatelessWidget {
   const _MessageBubble({
     required this.message,
     required this.mine,
+    required this.myUserId,
     required this.canDelete,
     required this.onDelete,
+    required this.onReact,
   });
 
   final CompetitionMessage message;
   final bool mine;
+  final String? myUserId;
   final bool canDelete;
   final VoidCallback onDelete;
+  final void Function(String emoji) onReact;
+
+  Future<void> _openPalette(BuildContext context) async {
+    final emoji = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              for (final emoji in chatReactionPalette)
+                IconButton(
+                  key: chatPaletteEmojiKey(emoji),
+                  onPressed: () => Navigator.of(sheetContext).pop(emoji),
+                  icon: Text(emoji, style: const TextStyle(fontSize: 24)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (emoji != null) onReact(emoji);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -203,34 +270,104 @@ class _MessageBubble extends StatelessWidget {
     final colour = mine
         ? theme.colorScheme.primaryContainer
         : theme.colorScheme.surfaceContainerHighest;
+    // Aggregate reactions: count per emoji, and which ones I gave.
+    final counts = <String, int>{};
+    final mineEmojis = <String>{};
+    for (final reaction in message.reactions) {
+      counts.update(reaction.emoji, (n) => n + 1, ifAbsent: () => 1);
+      if (reaction.userId == myUserId) mineEmojis.add(reaction.emoji);
+    }
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-      child: GestureDetector(
-        key: chatMessageKey(message.id),
-        onLongPress: canDelete ? onDelete : null,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          constraints: const BoxConstraints(maxWidth: 460),
-          decoration: BoxDecoration(
-            color: colour,
-            borderRadius: BorderRadius.circular(12),
+      child: Column(
+        crossAxisAlignment: mine
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: <Widget>[
+          GestureDetector(
+            key: chatMessageKey(message.id),
+            onLongPress: canDelete ? onDelete : null,
+            child: Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              constraints: const BoxConstraints(maxWidth: 460),
+              decoration: BoxDecoration(
+                color: colour,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (!mine)
+                    Text(
+                      author,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  Text(message.body, style: theme.textTheme.bodyMedium),
+                ],
+              ),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Wrap(
+            spacing: 4,
             children: <Widget>[
-              if (!mine)
-                Text(
-                  author,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+              for (final entry in counts.entries)
+                _ReactionChip(
+                  key: chatReactionKey(message.id, entry.key),
+                  emoji: entry.key,
+                  count: entry.value,
+                  mine: mineEmojis.contains(entry.key),
+                  onTap: () => onReact(entry.key),
                 ),
-              Text(message.body, style: theme.textTheme.bodyMedium),
+              IconButton(
+                key: chatAddReactionKey(message.id),
+                visualDensity: VisualDensity.compact,
+                iconSize: 18,
+                tooltip: 'Reager',
+                onPressed: () => unawaited(_openPalette(context)),
+                icon: const Icon(Icons.add_reaction_outlined),
+              ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReactionChip extends StatelessWidget {
+  const _ReactionChip({
+    required this.emoji,
+    required this.count,
+    required this.mine,
+    required this.onTap,
+    super.key,
+  });
+
+  final String emoji;
+  final int count;
+  final bool mine;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: mine
+              ? theme.colorScheme.primaryContainer
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+          border: mine ? Border.all(color: theme.colorScheme.primary) : null,
         ),
+        child: Text('$emoji $count', style: theme.textTheme.labelMedium),
       ),
     );
   }

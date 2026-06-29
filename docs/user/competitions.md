@@ -58,6 +58,8 @@ read it; if you have joined, you can post. Messages appear **live** for everyone
 newest at the bottom, with the sender's name.
 
 - Type in the box at the bottom and tap **send**.
+- **React** to a message: tap the **emoji** button under it and pick one. Tap a
+  reaction again to take it back. Everyone sees reactions update live.
 - **Long-press** a message to delete it: you can remove your own, and the
   competition's **owner** can remove any message (light moderation).
 

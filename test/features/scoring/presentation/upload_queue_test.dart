@@ -139,6 +139,9 @@ class _SpyCompetitionRepository implements CompetitionRepository {
   @override
   Future<void> deleteMessage(String messageId) async =>
       throw UnimplementedError();
+  @override
+  Future<void> toggleReaction(String messageId, String emoji) async =>
+      throw UnimplementedError();
 }
 
 /// A repository whose [upload] always throws, to prove the queue keeps the

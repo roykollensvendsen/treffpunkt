@@ -168,6 +168,9 @@ class _RecordingCompetitionRepository implements CompetitionRepository {
   @override
   Future<void> deleteMessage(String messageId) async =>
       throw UnimplementedError();
+  @override
+  Future<void> toggleReaction(String messageId, String emoji) async =>
+      throw UnimplementedError();
 }
 
 /// A repository whose profile upsert always fails (a misconfigured backend).
