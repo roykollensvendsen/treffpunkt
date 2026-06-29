@@ -18,6 +18,8 @@ class ForumPost {
     this.authorName,
     this.createdAt,
     this.reactions = const <ForumReaction>[],
+    this.imagePath,
+    this.imageUrl,
   });
 
   /// Reads a reply from a `forum_posts` row.
@@ -29,6 +31,7 @@ class ForumPost {
       authorId: json['author_id'] as String?,
       body: json['body'] as String,
       createdAt: createdAt == null ? null : DateTime.parse(createdAt),
+      imagePath: json['image_path'] as String?,
     );
   }
 
@@ -53,12 +56,20 @@ class ForumPost {
   /// The emoji reactions on this reply (spec 0055), attached by the repository.
   final List<ForumReaction> reactions;
 
+  /// The attached image's object path in `forum-images`, or `null` (spec 0056).
+  final String? imagePath;
+
+  /// A displayable (signed) URL for [imagePath], attached by the repo, or
+  /// `null`. Not persisted.
+  final String? imageUrl;
+
   /// The columns sent on insert; `author_id` and `created_at` default
   /// server-side.
   Map<String, dynamic> toInsertJson() => <String, dynamic>{
     'id': id,
     'thread_id': threadId,
     'body': body,
+    if (imagePath != null) 'image_path': imagePath,
   };
 
   /// A copy with [authorName] attached.
@@ -70,6 +81,8 @@ class ForumPost {
     authorName: authorName,
     createdAt: createdAt,
     reactions: reactions,
+    imagePath: imagePath,
+    imageUrl: imageUrl,
   );
 
   /// A copy with [reactions] attached (spec 0055).
@@ -81,6 +94,21 @@ class ForumPost {
     authorName: authorName,
     createdAt: createdAt,
     reactions: reactions,
+    imagePath: imagePath,
+    imageUrl: imageUrl,
+  );
+
+  /// A copy with a displayable [imageUrl] attached (spec 0056).
+  ForumPost withImageUrl(String? imageUrl) => ForumPost(
+    id: id,
+    threadId: threadId,
+    body: body,
+    authorId: authorId,
+    authorName: authorName,
+    createdAt: createdAt,
+    reactions: reactions,
+    imagePath: imagePath,
+    imageUrl: imageUrl,
   );
 
   @override
@@ -92,6 +120,8 @@ class ForumPost {
       other.body == body &&
       other.authorName == authorName &&
       other.createdAt == createdAt &&
+      other.imagePath == imagePath &&
+      other.imageUrl == imageUrl &&
       forumReactionsEqual(other.reactions, reactions);
 
   @override
@@ -102,6 +132,8 @@ class ForumPost {
     body,
     authorName,
     createdAt,
+    imagePath,
+    imageUrl,
     Object.hashAll(reactions),
   );
 }

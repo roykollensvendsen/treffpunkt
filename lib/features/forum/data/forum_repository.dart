@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
 import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
@@ -56,6 +57,10 @@ abstract interface class ForumRepository {
     required String targetId,
     required String emoji,
   });
+
+  /// Uploads [bytes] as a forum image and returns its storage path, to set as a
+  /// thread's or reply's `imagePath` (spec 0056). Throws [ForumException].
+  Future<String> uploadForumImage(Uint8List bytes, {String fileExtension});
 }
 
 /// A [ForumRepository] kept entirely in memory — the default binding and the
@@ -126,13 +131,16 @@ class InMemoryForumRepository implements ForumRepository {
         _reactions['$type:$id'] ?? const <ForumReaction>[],
       );
 
+  String? _imageUrl(String? path) => path == null ? null : 'memory://$path';
+
   List<ForumThread> _threadList() {
     final list =
         _threads.values
             .map(
               (t) => t
                   .withAuthorName(_names[t.authorId])
-                  .withReactions(_reactionsFor('thread', t.id)),
+                  .withReactions(_reactionsFor('thread', t.id))
+                  .withImageUrl(_imageUrl(t.imagePath)),
             )
             .toList()
           ..sort((a, b) {
@@ -149,7 +157,8 @@ class InMemoryForumRepository implements ForumRepository {
         .map(
           (p) => p
               .withAuthorName(_names[p.authorId])
-              .withReactions(_reactionsFor('post', p.id)),
+              .withReactions(_reactionsFor('post', p.id))
+              .withImageUrl(_imageUrl(p.imagePath)),
         )
         .toList()
       ..sort((a, b) {
@@ -176,6 +185,7 @@ class InMemoryForumRepository implements ForumRepository {
       body: thread.body,
       authorId: thread.authorId ?? currentUserId,
       createdAt: _stamp(),
+      imagePath: thread.imagePath,
     );
     _emit();
   }
@@ -207,6 +217,7 @@ class InMemoryForumRepository implements ForumRepository {
       body: post.body,
       authorId: post.authorId ?? currentUserId,
       createdAt: _stamp(),
+      imagePath: post.imagePath,
     );
     _emit();
   }
@@ -240,6 +251,12 @@ class InMemoryForumRepository implements ForumRepository {
     if (!list.remove(mine)) list.add(mine);
     _emit();
   }
+
+  @override
+  Future<String> uploadForumImage(
+    Uint8List bytes, {
+    String fileExtension = 'jpg',
+  }) async => 'forum/${_seq[0]++}.$fileExtension';
 
   bool get _isAdmin => currentUserId != null && _admins.contains(currentUserId);
 }

@@ -3,12 +3,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
 import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
 import 'package:treffpunkt/features/forum/domain/forum_thread.dart';
+import 'package:uuid/uuid.dart';
 
 /// [ForumRepository] backed by Supabase (spec 0054).
 ///
@@ -56,6 +58,23 @@ final class SupabaseForumRepository implements ForumRepository {
     return byTarget;
   }
 
+  /// Signed URLs for the given object paths in the private `forum-images`
+  /// bucket (spec 0056); a missing/unreadable path is simply skipped.
+  Future<Map<String, String>> _signedUrls(Iterable<String?> paths) async {
+    final unique = paths.whereType<String>().toSet();
+    final byPath = <String, String>{};
+    for (final path in unique) {
+      try {
+        byPath[path] = await _client.storage
+            .from('forum-images')
+            .createSignedUrl(path, 3600);
+      } on Object {
+        // Skip a missing image.
+      }
+    }
+    return byPath;
+  }
+
   Future<List<ForumThread>> _threadsOf() async {
     final rows = await _client
         .from('forum_threads')
@@ -70,13 +89,13 @@ final class SupabaseForumRepository implements ForumRepository {
       'thread',
       threads.map((t) => t.id).toList(),
     );
+    final urls = await _signedUrls(threads.map((t) => t.imagePath));
     return <ForumThread>[
       for (final t in threads)
         t
             .withAuthorName(names[t.authorId])
-            .withReactions(
-              reactions[t.id] ?? const <ForumReaction>[],
-            ),
+            .withReactions(reactions[t.id] ?? const <ForumReaction>[])
+            .withImageUrl(t.imagePath == null ? null : urls[t.imagePath]),
     ];
   }
 
@@ -93,13 +112,13 @@ final class SupabaseForumRepository implements ForumRepository {
       'post',
       posts.map((p) => p.id).toList(),
     );
+    final urls = await _signedUrls(posts.map((p) => p.imagePath));
     return <ForumPost>[
       for (final p in posts)
         p
             .withAuthorName(names[p.authorId])
-            .withReactions(
-              reactions[p.id] ?? const <ForumReaction>[],
-            ),
+            .withReactions(reactions[p.id] ?? const <ForumReaction>[])
+            .withImageUrl(p.imagePath == null ? null : urls[p.imagePath]),
     ];
   }
 
@@ -245,6 +264,27 @@ final class SupabaseForumRepository implements ForumRepository {
           'emoji': emoji,
         });
       }
+    } on Object catch (error) {
+      throw ForumException(error);
+    }
+  }
+
+  @override
+  Future<String> uploadForumImage(
+    Uint8List bytes, {
+    String fileExtension = 'jpg',
+  }) async {
+    try {
+      final path = '${const Uuid().v4()}.$fileExtension';
+      final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
+      await _client.storage
+          .from('forum-images')
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: FileOptions(contentType: contentType),
+          );
+      return path;
     } on Object catch (error) {
       throw ForumException(error);
     }

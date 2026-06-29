@@ -5,9 +5,12 @@
 // Widget tests for the forum (spec 0054): the empty state; creating a thread
 // shows it in the list; opening a thread shows its body and a posted reply;
 // only the author or an admin sees the delete-thread action.
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
@@ -166,5 +169,70 @@ void main() {
     await tester.tap(find.byKey(forumReactionKey('thread:t1', '👍')));
     await tester.pumpAndSettle();
     expect(find.byKey(forumReactionKey('thread:t1', '👍')), findsNothing);
+  });
+
+  testWidgets('a thread with an image shows the picture (spec 0056)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    final path = await repo.uploadForumImage(
+      Uint8List.fromList(<int>[1, 2, 3]),
+    );
+    await repo.createThread(
+      ForumThread(
+        id: 't1',
+        category: ForumCategory.bug,
+        title: 'Med bilde',
+        imagePath: path,
+      ),
+    );
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(forumImageKey('t1')), findsOneWidget);
+  });
+
+  testWidgets('attaching an image to a reply posts it (spec 0056)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+    final picked = XFile.fromData(
+      Uint8List.fromList(<int>[1, 2, 3]),
+      name: 'x.jpg',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(initial: const SignedIn(_me)),
+          ),
+          forumRepositoryProvider.overrideWithValue(repo),
+          forumImagePickerProvider.overrideWithValue(() async => picked),
+        ],
+        child: const MaterialApp(
+          home: ForumThreadScreen(
+            thread: ForumThread(
+              id: 't1',
+              category: ForumCategory.bug,
+              title: 'T',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(forumReplyAttachKey));
+    await tester.pump();
+
+    final posts = await repo.watchPosts('t1').first;
+    expect(posts, hasLength(1));
+    expect(posts.single.imagePath, isNotNull);
   });
 }

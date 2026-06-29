@@ -47,6 +47,8 @@ class ForumThread {
     this.authorName,
     this.createdAt,
     this.reactions = const <ForumReaction>[],
+    this.imagePath,
+    this.imageUrl,
   });
 
   /// Reads a thread from a `forum_threads` row.
@@ -59,6 +61,7 @@ class ForumThread {
       title: json['title'] as String,
       body: (json['body'] as String?) ?? '',
       createdAt: createdAt == null ? null : DateTime.parse(createdAt),
+      imagePath: json['image_path'] as String?,
     );
   }
 
@@ -86,6 +89,13 @@ class ForumThread {
   /// The emoji reactions on this thread (spec 0055), attached by the repo.
   final List<ForumReaction> reactions;
 
+  /// The opening image's object path in `forum-images`, or `null` (spec 0056).
+  final String? imagePath;
+
+  /// A displayable (signed) URL for [imagePath], attached by the repo, or
+  /// `null`. Not persisted.
+  final String? imageUrl;
+
   /// The columns sent on insert; `author_id` and `created_at` default
   /// server-side (`auth.uid()` / `now()`).
   Map<String, dynamic> toInsertJson() => <String, dynamic>{
@@ -93,6 +103,7 @@ class ForumThread {
     'category': category.wire,
     'title': title,
     'body': body,
+    if (imagePath != null) 'image_path': imagePath,
   };
 
   /// A copy with [authorName] attached.
@@ -105,6 +116,8 @@ class ForumThread {
     authorName: authorName,
     createdAt: createdAt,
     reactions: reactions,
+    imagePath: imagePath,
+    imageUrl: imageUrl,
   );
 
   /// A copy with [reactions] attached (spec 0055).
@@ -117,6 +130,22 @@ class ForumThread {
     authorName: authorName,
     createdAt: createdAt,
     reactions: reactions,
+    imagePath: imagePath,
+    imageUrl: imageUrl,
+  );
+
+  /// A copy with a displayable [imageUrl] attached (spec 0056).
+  ForumThread withImageUrl(String? imageUrl) => ForumThread(
+    id: id,
+    category: category,
+    title: title,
+    body: body,
+    authorId: authorId,
+    authorName: authorName,
+    createdAt: createdAt,
+    reactions: reactions,
+    imagePath: imagePath,
+    imageUrl: imageUrl,
   );
 
   @override
@@ -129,6 +158,8 @@ class ForumThread {
       other.body == body &&
       other.authorName == authorName &&
       other.createdAt == createdAt &&
+      other.imagePath == imagePath &&
+      other.imageUrl == imageUrl &&
       forumReactionsEqual(other.reactions, reactions);
 
   @override
@@ -140,6 +171,8 @@ class ForumThread {
     body,
     authorName,
     createdAt,
+    imagePath,
+    imageUrl,
     Object.hashAll(reactions),
   );
 }
