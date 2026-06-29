@@ -13,7 +13,9 @@ without maintaining a second copy of the text.
 
 ## Requirements
 1. A **Brukerveiledning** (user manual) is reachable from the app: a help
-   action in the program picker's top bar opens it.
+   action opens it both when **signed in** (the program picker's top bar) and
+   when **signed out** (the sign-in screen) — so a user who needs help signing
+   in can still read the guide.
 2. It lists the manual's pages and opens each one **rendered** (headings, lists,
    bold, links), reading the **same `docs/user/*.md` files** the published guide
    uses — one source of truth, no duplicated prose.
@@ -51,7 +53,8 @@ with canned text, so widget tests do not depend on real asset bundling.
   page or showing the "web only" notice). A leading HTML licence comment is
   stripped before rendering.
 - `docs/user/` is declared as an asset directory in `pubspec.yaml`; the help
-  action (`helpButtonKey`, a `?` icon) sits in the program picker's app bar.
+  action (`helpButtonKey`, a `?` icon) sits in the program picker's app bar and,
+  for signed-out users, in the sign-in screen's top-left corner.
 
 ## Verification
 ### Unit tests
@@ -63,7 +66,8 @@ with canned text, so widget tests do not depend on real asset bundling.
 
 ### System tests
 - The program picker shows the help action; tapping it opens `HelpScreen` listing
-  every manual title.
+  every manual title. The sign-in screen also opens the manual (signed-out
+  access).
 - Tapping a page opens it and renders the (injected) Markdown content.
 - The help screen's loader seam is overridden, so the test needs no real assets.
 

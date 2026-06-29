@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/features/auth/domain/embedded_browser.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_mode_button.dart';
 
 /// Key for the Google sign-in button (used by widget and system tests).
@@ -83,6 +84,24 @@ class SignInScreen extends ConsumerWidget {
                       ),
                     ),
                 ],
+              ),
+            ),
+            // The user manual, reachable before signing in too (spec 0050) —
+            // e.g. to read how to sign in.
+            Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: IconButton(
+                  key: helpButtonKey,
+                  icon: const Icon(Icons.help_outline),
+                  tooltip: 'Brukerveiledning',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const HelpScreen(),
+                    ),
+                  ),
+                ),
               ),
             ),
             // The theme switcher, reachable before signing in too (spec 0030).
