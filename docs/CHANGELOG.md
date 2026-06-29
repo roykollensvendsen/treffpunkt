@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- The scorecard now shows **each series' target with your shots** marked. So
+  when you open a saved session (in "Mine økter"), or finish one, you can see
+  exactly where every shot landed — not just the numbers (spec 0058).
 - Competitions can now have a **date**, and the competitions list has a
   **calendar** (the calendar button in the top bar) to filter by it: set an
   optional date when creating a competition, then tap a day to see that day's
@@ -182,6 +185,9 @@ All notable changes to this project are documented here. The format is based on
   (spec 0023).
 
 ### Removed
+- The user guide's air-rifle scoring page is gone (in the app and on the
+  website). Air rifle is not an offered program, so the guide now covers only
+  what you can actually shoot.
 - The "Silhuettpistol 12,5 m" home-practice program is no longer offered. It was
   a made-up training format rather than a real NSF program, so it is dropped from
   the program list (the catalogue is back to 13 programs).

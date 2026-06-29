@@ -1,7 +1,7 @@
 # Getting started
 
-Treffpunkt runs in your web browser and on Android and iOS. Today it supports
-the 10 m air-rifle target.
+Treffpunkt runs in your web browser and on Android and iOS. It scores the
+official Norwegian Shooting Federation pistol programs.
 
 You can open this guide any time **from inside the app**: tap the **?** (help)
 button — in the top bar of the program picker once you are signed in, or in the

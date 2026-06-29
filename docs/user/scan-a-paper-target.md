@@ -29,6 +29,11 @@ paper target** and mark the hits on the photo. The app scores them just the same
 The shots appear in the series, scored and ready to seal — exactly as if you had
 tapped them on the live target.
 
+## Reviewing it later
+Every series is saved with the exact shot positions. When you open the session
+again from **Mine økter**, its scorecard shows each series' **target with your
+shots** marked, so you can see where every shot landed.
+
 ## Tips
 
 - A photo taken at an angle turns the rings into an oval the overlay can't match.
