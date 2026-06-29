@@ -127,9 +127,10 @@ class InMemoryForumRepository implements ForumRepository {
   }
 
   List<ForumReaction> _reactionsFor(String type, String id) =>
-      List<ForumReaction>.unmodifiable(
-        _reactions['$type:$id'] ?? const <ForumReaction>[],
-      );
+      List<ForumReaction>.unmodifiable(<ForumReaction>[
+        for (final r in _reactions['$type:$id'] ?? const <ForumReaction>[])
+          r.withUserName(_names[r.userId]),
+      ]);
 
   String? _imageUrl(String? path) => path == null ? null : 'memory://$path';
 

@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
@@ -172,6 +173,43 @@ void main() {
     await tester.tap(find.byKey(forumReactionKey('thread:t1', '👍')));
     await tester.pumpAndSettle();
     expect(find.byKey(forumReactionKey('thread:t1', '👍')), findsNothing);
+  });
+
+  testWidgets('holding a reaction shows who reacted (spec 0059)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    final other = repo.asUser(userId: 'other')..setDisplayName('other', 'Kari');
+    await other.createThread(
+      const ForumThread(
+        id: 't1',
+        category: ForumCategory.idea,
+        title: 'Mørk modus',
+        body: 'Ja takk',
+        authorId: 'other',
+      ),
+    );
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(forumAddReactionKey('thread:t1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumPaletteEmojiKey('👍')));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.byKey(forumReactionKey('thread:t1', '👍')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(reactorsSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(reactorsSheetKey),
+        matching: find.text('Me'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('you cannot react to your own thread (spec 0055)', (

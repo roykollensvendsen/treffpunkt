@@ -405,6 +405,23 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
     }
   }
 
+  /// Maps the given user ids to display names from `profiles` (spec 0059).
+  Future<Map<String, String>> _displayNamesFor(
+    Iterable<String?> userIds,
+  ) async {
+    final ids = userIds.whereType<String>().toSet().toList();
+    if (ids.isEmpty) return const <String, String>{};
+    final rows = await _client
+        .from('profiles')
+        .select('id, display_name')
+        .inFilter('id', ids);
+    return <String, String>{
+      for (final row in rows)
+        if (row['display_name'] != null)
+          row['id'] as String: row['display_name'] as String,
+    };
+  }
+
   /// Reads a competition's chat (oldest first) with the authors' profiles
   /// attached — there is no foreign key from messages to profiles to embed, so
   /// the profiles are read separately, like [resultsOf] / [membersOf].
@@ -426,18 +443,22 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
     final byId = <String, Profile>{
       for (final row in profileRows) row['id'] as String: Profile.fromJson(row),
     };
-    // Reactions for these messages (spec 0052), grouped by message id.
+    // Reactions for these messages (spec 0052), grouped by message id, each
+    // with the reactor's name attached for the "who reacted" list (spec 0059).
     final messageIds = messages.map((m) => m.id).toList();
     final reactionRows = await _client
         .from('competition_message_reactions')
         .select()
         .inFilter('message_id', messageIds)
         .order('created_at', ascending: true);
+    final reactionNames = await _displayNamesFor(
+      reactionRows.map((r) => r['user_id'] as String?),
+    );
     final reactionsByMessage = <String, List<MessageReaction>>{};
     for (final row in reactionRows) {
       final reaction = MessageReaction.fromJson(row);
       (reactionsByMessage[reaction.messageId] ??= <MessageReaction>[]).add(
-        reaction,
+        reaction.withUserName(reactionNames[reaction.userId]),
       );
     }
     // Signed URLs for any attached images (the bucket is private, spec 0053).

@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
@@ -144,6 +145,41 @@ void main() {
     await tester.tap(find.byKey(chatReactionKey('m1', '👍')));
     await tester.pumpAndSettle();
     expect(find.byKey(chatReactionKey('m1', '👍')), findsNothing);
+  });
+
+  testWidgets('holding a reaction shows who reacted (spec 0059)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.upsertOwnProfile(const Profile(id: 'me', displayName: 'Me'));
+    await repo.createCompetition(_competition);
+    final other = repo.asUser(userId: 'other', email: 'other@example.com');
+    await repo.invite('c1', 'other@example.com');
+    await other.acceptInvitation('c1');
+    await other.postMessage(
+      const CompetitionMessage(id: 'm1', competitionId: 'c1', body: 'hei'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    // React, then hold the chip to open the "who reacted" sheet.
+    await tester.tap(find.byKey(chatAddReactionKey('m1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(chatPaletteEmojiKey('👍')));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.byKey(chatReactionKey('m1', '👍')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(reactorsSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(reactorsSheetKey),
+        matching: find.text('Me'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('you cannot react to your own message (spec 0052)', (

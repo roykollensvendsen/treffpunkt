@@ -124,6 +124,28 @@ void main() {
     expect(posts.single.reactions.single.userId, 'alice');
   });
 
+  test('a reaction carries the reactor display name (spec 0059)', () async {
+    final alice = InMemoryForumRepository(currentUserId: 'alice')
+      ..setDisplayName('alice', 'Alice')
+      ..setDisplayName('bob', 'Bob');
+    final bob = alice.asUser(userId: 'bob');
+    await alice.createThread(_thread('t1', authorId: 'alice'));
+
+    await alice.toggleReaction(
+      targetType: 'thread',
+      targetId: 't1',
+      emoji: '👍',
+    );
+    await bob.toggleReaction(targetType: 'thread', targetId: 't1', emoji: '👍');
+    final threads = await alice.watchThreads().first;
+    expect(
+      <String, String?>{
+        for (final r in threads.single.reactions) r.userId: r.userName,
+      },
+      <String, String?>{'alice': 'Alice', 'bob': 'Bob'},
+    );
+  });
+
   test(
     'images upload and ride along with a thread and a reply (spec 0056)',
     () async {

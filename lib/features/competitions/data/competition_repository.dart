@@ -539,9 +539,11 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
             message
                 .withProfile(_profiles[message.userId])
                 .withReactions(
-                  List<MessageReaction>.unmodifiable(
-                    _reactions[message.id] ?? const <MessageReaction>[],
-                  ),
+                  List<MessageReaction>.unmodifiable(<MessageReaction>[
+                    for (final r
+                        in _reactions[message.id] ?? const <MessageReaction>[])
+                      r.withUserName(_profiles[r.userId]?.displayName),
+                  ]),
                 )
                 // Stand in for a signed URL so the bubble renders an image.
                 .withImageUrl(

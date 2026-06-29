@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
@@ -384,6 +385,16 @@ class _MessageBubble extends StatelessWidget {
                   count: entry.value,
                   mine: mineEmojis.contains(entry.key),
                   onTap: mine ? null : () => onReact(entry.key),
+                  // Hold a reaction to see who reacted with it (spec 0059).
+                  onLongPress: () => showReactors(
+                    context,
+                    entry.key,
+                    <String>[
+                      for (final r in message.reactions)
+                        if (r.emoji == entry.key)
+                          r.userName ?? 'Ukjent skytter',
+                    ],
+                  ),
                 ),
               if (!mine)
                 IconButton(
@@ -408,6 +419,7 @@ class _ReactionChip extends StatelessWidget {
     required this.count,
     required this.mine,
     required this.onTap,
+    required this.onLongPress,
     super.key,
   });
 
@@ -415,12 +427,14 @@ class _ReactionChip extends StatelessWidget {
   final int count;
   final bool mine;
   final VoidCallback? onTap;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

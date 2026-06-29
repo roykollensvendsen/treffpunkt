@@ -69,7 +69,8 @@ newest at the bottom, with the sender's name.
   photo, and it posts to the chat. Images are private to the competition.
 - **React** to **another shooter's** message: tap the **emoji** button under it
   and pick one (you don't react to your own). Tap a reaction again to take it
-  back. Everyone sees reactions update live.
+  back. Everyone sees reactions update live. **Hold** a reaction to see **who
+  reacted** with it.
 - **Long-press** a message to delete it: you can remove your own, and the
   competition's **owner** can remove any message (light moderation).
 

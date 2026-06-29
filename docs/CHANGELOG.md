@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- You can now **see who reacted**: hold (long-press) a reaction on a chat
+  message, a forum thread or a forum reply to open a list of everyone who
+  reacted with that emoji (spec 0059).
 - The scorecard now shows **each series' target with your shots** marked. So
   when you open a saved session (in "Mine økter"), or finish one, you can see
   exactly where every shot landed — not just the numbers (spec 0058).
