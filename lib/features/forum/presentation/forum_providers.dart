@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
@@ -36,4 +37,16 @@ final forumThreadsProvider = StreamProvider<List<ForumThread>>(
 // ignore: specify_nonobvious_property_types
 final forumPostsProvider = StreamProvider.family<List<ForumPost>, String>(
   (ref, threadId) => ref.watch(forumRepositoryProvider).watchPosts(threadId),
+);
+
+/// Picks one image for a forum attachment, or `null` when cancelled (spec
+/// 0056).
+typedef ForumImagePicker = Future<XFile?> Function();
+
+/// The image picker for a forum attachment — a seam so a widget test can inject
+/// a canned file instead of the OS gallery (spec 0056).
+final forumImagePickerProvider = Provider<ForumImagePicker>(
+  (ref) =>
+      () =>
+          ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1600),
 );

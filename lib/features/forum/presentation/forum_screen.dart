@@ -40,6 +40,18 @@ Key threadCategoryKey(String wire) => ValueKey<String>('threadCategory-$wire');
 /// Key for the new-thread submit action.
 const Key createThreadSubmitKey = ValueKey<String>('createThreadSubmit');
 
+/// Key for the "attach image" action on the new-thread form (spec 0056).
+const Key threadImageAttachKey = ValueKey<String>('threadImageAttach');
+
+/// Key for the "image attached" indicator on the new-thread form.
+const Key threadImageAttachedKey = ValueKey<String>('threadImageAttached');
+
+/// Key for the "attach image" action in a thread's reply composer.
+const Key forumReplyAttachKey = ValueKey<String>('forumReplyAttach');
+
+/// Key for the attached image on thread or reply [id].
+Key forumImageKey(String id) => ValueKey<String>('forumImage-$id');
+
 /// Key for a thread's reply composer.
 const Key forumReplyFieldKey = ValueKey<String>('forumReply');
 
@@ -232,12 +244,34 @@ class _NewThreadScreenState extends ConsumerState<NewThreadScreen> {
   final TextEditingController _body = TextEditingController();
   ForumCategory _category = ForumCategory.bug;
   bool _saving = false;
+  String? _imagePath;
 
   @override
   void dispose() {
     _title.dispose();
     _body.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final picked = await ref.read(forumImagePickerProvider)();
+    if (picked == null) return;
+    setState(() => _saving = true);
+    try {
+      final bytes = await picked.readAsBytes();
+      final isPng = picked.name.toLowerCase().endsWith('.png');
+      final path = await ref
+          .read(forumRepositoryProvider)
+          .uploadForumImage(bytes, fileExtension: isPng ? 'png' : 'jpg');
+      setState(() => _imagePath = path);
+    } on ForumException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke laste opp bildet.')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   Future<void> _submit() async {
@@ -256,6 +290,7 @@ class _NewThreadScreenState extends ConsumerState<NewThreadScreen> {
               title: title,
               body: _body.text.trim(),
               authorId: ref.read(forumCurrentUserIdProvider),
+              imagePath: _imagePath,
             ),
           );
       navigator.pop();
@@ -310,6 +345,26 @@ class _NewThreadScreenState extends ConsumerState<NewThreadScreen> {
                     border: OutlineInputBorder(),
                     alignLabelWithHint: true,
                   ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: <Widget>[
+                    OutlinedButton.icon(
+                      key: threadImageAttachKey,
+                      onPressed: _saving ? null : () => unawaited(_pickImage()),
+                      icon: const Icon(Icons.image_outlined),
+                      label: const Text('Legg ved bilde'),
+                    ),
+                    if (_imagePath != null)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 12),
+                        child: Icon(
+                          Icons.check_circle,
+                          key: threadImageAttachedKey,
+                          color: Colors.green,
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 FilledButton(
@@ -369,6 +424,39 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     } on ForumException {
       messenger.showSnackBar(
         const SnackBar(content: Text('Kunne ikke sende svaret.')),
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _pickAndSendImage() async {
+    if (_sending) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final picked = await ref.read(forumImagePickerProvider)();
+    if (picked == null) return;
+    setState(() => _sending = true);
+    try {
+      final bytes = await picked.readAsBytes();
+      final isPng = picked.name.toLowerCase().endsWith('.png');
+      final repo = ref.read(forumRepositoryProvider);
+      final path = await repo.uploadForumImage(
+        bytes,
+        fileExtension: isPng ? 'png' : 'jpg',
+      );
+      await repo.postReply(
+        ForumPost(
+          id: const Uuid().v4(),
+          threadId: widget.thread.id,
+          body: _reply.text.trim(),
+          authorId: ref.read(forumCurrentUserIdProvider),
+          imagePath: path,
+        ),
+      );
+      _reply.clear();
+    } on ForumException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke laste opp bildet.')),
       );
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -471,6 +559,10 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                                   style: theme.textTheme.bodyMedium,
                                 ),
                               ],
+                              if (thread.imageUrl case final url?) ...[
+                                const SizedBox(height: 8),
+                                _ForumImage(id: thread.id, url: url),
+                              ],
                               _ForumReactionBar(
                                 target: 'thread:${thread.id}',
                                 reactions: thread.reactions,
@@ -518,6 +610,14 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                   padding: const EdgeInsets.all(8),
                   child: Row(
                     children: <Widget>[
+                      IconButton(
+                        key: forumReplyAttachKey,
+                        tooltip: 'Legg ved bilde',
+                        onPressed: _sending
+                            ? null
+                            : () => unawaited(_pickAndSendImage()),
+                        icon: const Icon(Icons.image_outlined),
+                      ),
                       Expanded(
                         child: TextField(
                           key: forumReplyFieldKey,
@@ -585,7 +685,12 @@ class _ReplyTile extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            Text(post.body, style: theme.textTheme.bodyMedium),
+            if (post.body.isNotEmpty)
+              Text(post.body, style: theme.textTheme.bodyMedium),
+            if (post.imageUrl case final url?) ...[
+              const SizedBox(height: 4),
+              _ForumImage(id: post.id, url: url),
+            ],
             _ForumReactionBar(
               target: 'post:${post.id}',
               reactions: post.reactions,
@@ -593,6 +698,31 @@ class _ReplyTile extends StatelessWidget {
               onReact: onReact,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// An attached forum image rendered from its signed URL (spec 0056).
+class _ForumImage extends StatelessWidget {
+  const _ForumImage({required this.id, required this.url});
+
+  final String id;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        url,
+        key: forumImageKey(id),
+        height: 180,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const SizedBox(
+          height: 180,
+          child: Center(child: Icon(Icons.broken_image)),
         ),
       ),
     );

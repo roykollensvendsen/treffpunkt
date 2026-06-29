@@ -6,6 +6,8 @@
 // first with author names; replies stream oldest first; the author deletes
 // their own, an admin moderates anyone's, others cannot; isAdmin reflects the
 // admin set. The cross-user flow uses one shared store via asUser().
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
@@ -121,4 +123,37 @@ void main() {
     expect(posts.single.reactions.single.emoji, '🎯');
     expect(posts.single.reactions.single.userId, 'alice');
   });
+
+  test(
+    'images upload and ride along with a thread and a reply (spec 0056)',
+    () async {
+      final alice = InMemoryForumRepository(currentUserId: 'alice');
+
+      final threadImage = await alice.uploadForumImage(
+        Uint8List.fromList(<int>[1, 2, 3]),
+      );
+      expect(threadImage, isNotEmpty);
+      await alice.createThread(
+        ForumThread(
+          id: 't1',
+          category: ForumCategory.bug,
+          title: 'Med bilde',
+          imagePath: threadImage,
+        ),
+      );
+      final threads = await alice.watchThreads().first;
+      expect(threads.single.imagePath, threadImage);
+      expect(threads.single.imageUrl, isNotNull);
+
+      final replyImage = await alice.uploadForumImage(
+        Uint8List.fromList(<int>[4, 5]),
+      );
+      await alice.postReply(
+        ForumPost(id: 'p1', threadId: 't1', body: '', imagePath: replyImage),
+      );
+      final posts = await alice.watchPosts('t1').first;
+      expect(posts.single.imagePath, replyImage);
+      expect(posts.single.imageUrl, isNotNull);
+    },
+  );
 }

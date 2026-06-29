@@ -87,6 +87,7 @@ nav:
       - "0053 — Chat image attachments": specs/0053-chat-image-attachments.md
       - "0054 — Community forum": specs/0054-community-forum.md
       - "0055 — Forum reactions": specs/0055-forum-reactions.md
+      - "0056 — Forum image attachments": specs/0056-forum-image-attachments.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
