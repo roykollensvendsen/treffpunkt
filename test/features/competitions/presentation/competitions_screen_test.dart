@@ -575,6 +575,95 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('archiving from the list moves it to the Arkiverte section', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(
+      const Competition(
+        id: 'c1',
+        name: 'Vårcup',
+        program: '25 m NAIS fin',
+        ownerId: 'me',
+      ),
+    );
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    // It starts active: no archived section, an archive action present.
+    expect(find.byKey(archivedSectionKey), findsNothing);
+    expect(find.byKey(archiveCompetitionKey('c1')), findsOneWidget);
+
+    await tester.tap(find.byKey(archiveCompetitionKey('c1')));
+    await tester.pumpAndSettle();
+
+    // It is now under "Arkiverte" with a restore action; archive is gone.
+    expect(find.byKey(archivedSectionKey), findsOneWidget);
+    expect(find.byKey(unarchiveCompetitionKey('c1')), findsOneWidget);
+    expect(find.byKey(archiveCompetitionKey('c1')), findsNothing);
+    expect(await repo.archivedCompetitionIds(), <String>{'c1'});
+  });
+
+  testWidgets('restoring returns an archived competition to the active list', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(
+      const Competition(
+        id: 'c1',
+        name: 'Vårcup',
+        program: '25 m NAIS fin',
+        ownerId: 'me',
+      ),
+    );
+    await repo.archiveCompetition('c1');
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(archivedSectionKey), findsOneWidget);
+    await tester.tap(find.byKey(unarchiveCompetitionKey('c1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(archivedSectionKey), findsNothing);
+    expect(find.byKey(archiveCompetitionKey('c1')), findsOneWidget);
+    expect(await repo.archivedCompetitionIds(), isEmpty);
+  });
+
+  testWidgets('a joined competition you do not own is archivable from detail', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    // A competition owned by someone else that "me" joins via invite + accept.
+    final other = repo.asUser(userId: 'other', email: 'other@example.com');
+    await other.createCompetition(
+      const Competition(
+        id: 'c1',
+        name: 'Klubbmesterskap',
+        program: '25 m NAIS fin',
+        ownerId: 'other',
+      ),
+    );
+    await other.invite('c1', 'me@example.com');
+    await repo.acceptInvitation('c1');
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(competitionCard('c1')));
+    await tester.pumpAndSettle();
+
+    // A non-owner has no delete action, but can archive.
+    expect(find.byKey(deleteCompetitionButtonKey), findsNothing);
+    await tester.ensureVisible(find.byKey(toggleArchiveButtonKey));
+    await tester.tap(find.byKey(toggleArchiveButtonKey));
+    await tester.pumpAndSettle();
+
+    // Popped back to the list; it now sits under "Arkiverte".
+    expect(await repo.archivedCompetitionIds(), <String>{'c1'});
+    expect(find.byKey(archivedSectionKey), findsOneWidget);
+    expect(find.byKey(unarchiveCompetitionKey('c1')), findsOneWidget);
+  });
 }
 
 bool _inviteEnabled(WidgetTester tester, Key key) =>
@@ -606,6 +695,15 @@ class _GatedInviteRepository implements CompetitionRepository {
   @override
   Future<void> deleteCompetition(String competitionId) =>
       _inner.deleteCompetition(competitionId);
+  @override
+  Future<Set<String>> archivedCompetitionIds() =>
+      _inner.archivedCompetitionIds();
+  @override
+  Future<void> archiveCompetition(String competitionId) =>
+      _inner.archiveCompetition(competitionId);
+  @override
+  Future<void> unarchiveCompetition(String competitionId) =>
+      _inner.unarchiveCompetition(competitionId);
   @override
   Future<void> invite(String competitionId, String email) =>
       _inner.invite(competitionId, email);

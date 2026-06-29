@@ -66,6 +66,34 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(container.read(authStateChangesProvider).value, isA<SignedIn>());
   });
+
+  test(
+    'archivedCompetitionIdsProvider reflects the repository (spec 0049)',
+    () async {
+      final repo = InMemoryCompetitionRepository(
+        currentUserId: 'u1',
+        currentEmail: 'u1@example.com',
+      );
+      await repo.createCompetition(
+        const Competition(
+          id: 'c1',
+          name: 'Cup',
+          program: '25 m NAIS fin',
+          ownerId: 'u1',
+        ),
+      );
+      await repo.archiveCompetition('c1');
+      final container = ProviderContainer(
+        overrides: [competitionRepositoryProvider.overrideWithValue(repo)],
+      );
+      addTearDown(container.dispose);
+
+      expect(
+        await container.read(archivedCompetitionIdsProvider.future),
+        <String>{'c1'},
+      );
+    },
+  );
 }
 
 /// Records the profiles passed to [upsertOwnProfile]; other methods are unused.
@@ -82,6 +110,15 @@ class _RecordingCompetitionRepository implements CompetitionRepository {
   Future<List<Competition>> listMine() async => throw UnimplementedError();
   @override
   Future<void> deleteCompetition(String competitionId) async =>
+      throw UnimplementedError();
+  @override
+  Future<Set<String>> archivedCompetitionIds() async =>
+      throw UnimplementedError();
+  @override
+  Future<void> archiveCompetition(String competitionId) async =>
+      throw UnimplementedError();
+  @override
+  Future<void> unarchiveCompetition(String competitionId) async =>
       throw UnimplementedError();
   @override
   Future<void> invite(String competitionId, String email) async =>

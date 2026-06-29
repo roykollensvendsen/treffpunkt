@@ -82,6 +82,15 @@ final myCompetitionsProvider = FutureProvider<List<Competition>>(
   (ref) => ref.watch(competitionRepositoryProvider).listMine(),
 );
 
+/// The competition ids the signed-in user has archived (spec 0049).
+///
+/// Per-user view state: the screen partitions [myCompetitionsProvider] by this
+/// set into the active list and the "Arkiverte" section. Invalidated after
+/// archiving or restoring a competition.
+final archivedCompetitionIdsProvider = FutureProvider<Set<String>>(
+  (ref) => ref.watch(competitionRepositoryProvider).archivedCompetitionIds(),
+);
+
 /// The signed-in user's pending invitations, each with its competition attached
 /// (spec 0011). Invalidated after accepting one.
 final myInvitationsProvider = FutureProvider<List<CompetitionInvitation>>(
