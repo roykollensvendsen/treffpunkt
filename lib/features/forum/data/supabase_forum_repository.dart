@@ -49,10 +49,13 @@ final class SupabaseForumRepository implements ForumRepository {
         .eq('target_type', targetType)
         .inFilter('target_id', ids)
         .order('created_at', ascending: true);
+    // Attach each reactor's name for the "who reacted" list (spec 0059).
+    final names = await _namesFor(rows.map((r) => r['user_id'] as String?));
     final byTarget = <String, List<ForumReaction>>{};
     for (final row in rows) {
+      final reaction = ForumReaction.fromJson(row);
       (byTarget[row['target_id'] as String] ??= <ForumReaction>[]).add(
-        ForumReaction.fromJson(row),
+        reaction.withUserName(names[reaction.userId]),
       );
     }
     return byTarget;

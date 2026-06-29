@@ -17,6 +17,7 @@ class MessageReaction {
     required this.messageId,
     required this.userId,
     required this.emoji,
+    this.userName,
   });
 
   /// Reads a reaction from a `competition_message_reactions` row.
@@ -35,6 +36,19 @@ class MessageReaction {
 
   /// The emoji they reacted with.
   final String emoji;
+
+  /// The reactor's display name, attached by the repository for the "who
+  /// reacted" list, or `null` when not loaded (spec 0059). Excluded from
+  /// equality (it is display metadata).
+  final String? userName;
+
+  /// A copy with [userName] attached.
+  MessageReaction withUserName(String? userName) => MessageReaction(
+    messageId: messageId,
+    userId: userId,
+    emoji: emoji,
+    userName: userName,
+  );
 
   @override
   bool operator ==(Object other) =>

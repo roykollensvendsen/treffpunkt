@@ -10,7 +10,11 @@ import 'package:meta/meta.dart';
 @immutable
 class ForumReaction {
   /// Creates a reaction.
-  const ForumReaction({required this.userId, required this.emoji});
+  const ForumReaction({
+    required this.userId,
+    required this.emoji,
+    this.userName,
+  });
 
   /// Reads a reaction from a `forum_reactions` row.
   factory ForumReaction.fromJson(Map<String, dynamic> json) => ForumReaction(
@@ -23,6 +27,15 @@ class ForumReaction {
 
   /// The emoji they reacted with.
   final String emoji;
+
+  /// The reactor's display name, attached by the repository for the "who
+  /// reacted" list, or `null` when not loaded (spec 0059). Excluded from
+  /// equality (it is display metadata).
+  final String? userName;
+
+  /// A copy with [userName] attached.
+  ForumReaction withUserName(String? userName) =>
+      ForumReaction(userId: userId, emoji: emoji, userName: userName);
 
   @override
   bool operator ==(Object other) =>

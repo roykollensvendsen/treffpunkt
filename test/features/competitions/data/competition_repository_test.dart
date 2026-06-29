@@ -516,6 +516,32 @@ void main() {
         throwsA(isA<CompetitionSyncException>()),
       );
     });
+
+    test('a reaction carries the reactor display name (spec 0059)', () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      final bob = alice.asUser(userId: 'bob', email: 'bob@example.com');
+      await alice.upsertOwnProfile(
+        const Profile(id: 'alice', displayName: 'Alice'),
+      );
+      await bob.upsertOwnProfile(const Profile(id: 'bob', displayName: 'Bob'));
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+      await alice.invite('c1', 'bob@example.com');
+      await bob.acceptInvitation('c1');
+      await alice.postMessage(_msg('m1', 'c1', 'hei'));
+
+      await alice.toggleReaction('m1', '👍');
+      await bob.toggleReaction('m1', '👍');
+      final chat = await alice.watchMessages('c1').first;
+      expect(
+        <String, String?>{
+          for (final r in chat.single.reactions) r.userId: r.userName,
+        },
+        <String, String?>{'alice': 'Alice', 'bob': 'Bob'},
+      );
+    });
   });
 
   group('image attachments (spec 0053)', () {

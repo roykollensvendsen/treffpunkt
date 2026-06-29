@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
 import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
@@ -794,6 +795,15 @@ class _ForumReactionBar extends StatelessWidget {
           InkWell(
             key: forumReactionKey(target, entry.key),
             onTap: mine ? null : () => onReact(entry.key),
+            // Hold a reaction to see who reacted with it (spec 0059).
+            onLongPress: () => showReactors(
+              context,
+              entry.key,
+              <String>[
+                for (final r in reactions)
+                  if (r.emoji == entry.key) r.userName ?? 'Ukjent',
+              ],
+            ),
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

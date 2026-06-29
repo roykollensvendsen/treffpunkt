@@ -35,7 +35,7 @@ box at the bottom and tap **send** to add yours.
 **React** to **someone else's** opening post or reply: tap the **emoji** button
 under it and pick one — a quick way to "vote" 👍 on a bug or idea (you don't
 react to your own). Tap a reaction again to take it back. Reactions update live
-for everyone.
+for everyone. **Hold** a reaction to see **who reacted** with it.
 
 You can also attach a **picture** to a reply (the image button by the reply box).
 
