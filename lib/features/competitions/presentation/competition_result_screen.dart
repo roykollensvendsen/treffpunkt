@@ -54,6 +54,7 @@ class CompetitionResultScreen extends StatelessWidget {
       score: _scoring.scoreSession(session),
       metadata: session.metadata,
       weapon: session.weapon,
+      seriesByStage: session.sealedSeriesByStage,
     );
   }
 }

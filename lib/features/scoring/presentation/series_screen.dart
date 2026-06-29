@@ -14,6 +14,7 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/session_score.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/series_painter.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
@@ -44,6 +45,11 @@ const Key seriesResultRowKey = ValueKey<String>('seriesResultRow');
 /// stage [stageIndex] (0-based) on the scorecard, used by tests (spec 0023).
 Key seriesResultRow(int stageIndex, int seriesIndex) =>
     ValueKey<String>('seriesResultRow-$stageIndex-$seriesIndex');
+
+/// Key for the read-only target showing a series' shots on the scorecard
+/// (spec 0058), for series [seriesIndex] (0-based) under stage [stageIndex].
+Key seriesReviewTargetKey(int stageIndex, int seriesIndex) =>
+    ValueKey<String>('seriesReviewTarget-$stageIndex-$seriesIndex');
 
 /// Key for the shots-list row of the most recently placed shot, used by tests.
 ///
@@ -219,6 +225,7 @@ class SessionView extends ConsumerWidget {
         score: _scoring.scoreSession(recording.session),
         metadata: recording.session.metadata,
         weapon: recording.session.weapon,
+        seriesByStage: recording.session.sealedSeriesByStage,
         actions: actions,
       );
     }
@@ -830,6 +837,7 @@ class SessionScorecard extends StatelessWidget {
     this.weapon,
     this.actions,
     this.title,
+    this.seriesByStage,
     super.key,
   });
 
@@ -851,6 +859,11 @@ class SessionScorecard extends StatelessWidget {
   /// App-bar title; defaults to the program name. Set it to show whose card
   /// this is — e.g. another shooter's name on a competition result (spec 0037).
   final String? title;
+
+  /// The sealed series grouped by stage (the session's
+  /// `sealedSeriesByStage`), or `null` to omit the per-series targets. When
+  /// given, each series shows the target with its shots (spec 0058).
+  final List<List<Series>>? seriesByStage;
 
   @override
   Widget build(BuildContext context) {
@@ -891,6 +904,9 @@ class SessionScorecard extends StatelessWidget {
                     stageIndex: i,
                     name: program.stages[i].name,
                     score: score.stages[i],
+                    series: seriesByStage == null || i >= seriesByStage!.length
+                        ? null
+                        : seriesByStage![i],
                   ),
                 const SizedBox(height: 16),
                 _GrandTotalCard(score: score),
@@ -908,12 +924,16 @@ class _StageScoreRow extends StatelessWidget {
     required this.stageIndex,
     required this.name,
     required this.score,
+    this.series,
   });
 
   /// 0-based index of the stage, used to key its per-series rows.
   final int stageIndex;
   final String name;
   final StageScore score;
+
+  /// The sealed series of this stage, or `null` to omit the per-series targets.
+  final List<Series>? series;
 
   @override
   Widget build(BuildContext context) {
@@ -954,8 +974,10 @@ class _StageScoreRow extends StatelessWidget {
         for (var i = 0; i < score.series.length; i++)
           _SeriesResultRow(
             key: seriesResultRow(stageIndex, i),
+            stageIndex: stageIndex,
             number: i + 1,
             score: score.series[i],
+            series: series == null || i >= series!.length ? null : series![i],
           ),
       ],
     );
@@ -967,14 +989,22 @@ class _StageScoreRow extends StatelessWidget {
 /// `· N Ⓧ` inner-ten suffix (a ringed X) when present (spec 0023).
 class _SeriesResultRow extends StatelessWidget {
   const _SeriesResultRow({
+    required this.stageIndex,
     required this.number,
     required this.score,
+    this.series,
     super.key,
   });
+
+  /// 0-based index of the stage this series belongs to.
+  final int stageIndex;
 
   /// 1-based series number within its stage (the skive number).
   final int number;
   final SeriesScore score;
+
+  /// The series' shots + geometry, or `null` to omit the target (spec 0058).
+  final Series? series;
 
   @override
   Widget build(BuildContext context) {
@@ -983,6 +1013,7 @@ class _SeriesResultRow extends StatelessWidget {
     final style = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
+    final shotSeries = series;
     return Semantics(
       label: _scoreSemanticsLabel(
         prefix: label,
@@ -994,17 +1025,48 @@ class _SeriesResultRow extends StatelessWidget {
         child: Padding(
           // Indented from the left so the skive rows sit under the stage row.
           padding: const EdgeInsets.only(left: 16, top: 2, bottom: 2),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(label, style: style),
-              innerTenScoreText(
-                context: context,
-                lead: '${score.total}',
-                innerTens: score.innerTens,
-                separator: '  ·  ',
-                style: style,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(label, style: style),
+                  innerTenScoreText(
+                    context: context,
+                    lead: '${score.total}',
+                    innerTens: score.innerTens,
+                    separator: '  ·  ',
+                    style: style,
+                  ),
+                ],
               ),
+              // The target with this series' shots, so you can review where
+              // every shot landed (spec 0058).
+              if (shotSeries != null && shotSeries.shots.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6, bottom: 6),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: 240,
+                        maxHeight: 240,
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: CustomPaint(
+                          key: seriesReviewTargetKey(stageIndex, number - 1),
+                          painter: SeriesPainter(
+                            geometry: shotSeries.geometry,
+                            shots: shotSeries.shots,
+                            draggingIndex: null,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

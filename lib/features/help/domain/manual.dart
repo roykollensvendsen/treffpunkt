@@ -32,10 +32,6 @@ class ManualPage {
 const List<ManualPage> manualPages = <ManualPage>[
   ManualPage(file: 'getting-started.md', title: 'Kom i gang'),
   ManualPage(file: 'signing-in.md', title: 'Logg inn'),
-  ManualPage(
-    file: 'score-a-10m-air-rifle-target.md',
-    title: 'Poengsetting på 10 m luftrifle',
-  ),
   ManualPage(file: 'scan-a-paper-target.md', title: 'Skann en papirblink'),
   ManualPage(file: 'competitions.md', title: 'Konkurranser'),
   ManualPage(file: 'forum.md', title: 'Forum'),

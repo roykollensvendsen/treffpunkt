@@ -587,6 +587,9 @@ void main() {
       find.bySemanticsLabel('Serie 1: 50 av 50, 5 indre tiere'),
       findsWidgets,
     );
+    // The series' target with its shots is shown, so you can review where each
+    // shot landed (spec 0058).
+    expect(find.byKey(seriesReviewTargetKey(0, 0)), findsOneWidget);
 
     handle.dispose();
   });

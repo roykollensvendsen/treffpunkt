@@ -474,6 +474,9 @@ void main() {
         find.bySemanticsLabel('Serie 1: 100 av 100'),
         findsOneWidget,
       );
+      // The series' target — showing where the shots landed — is rendered for
+      // review (spec 0058).
+      expect(find.byKey(seriesReviewTargetKey(0, 0)), findsOneWidget);
 
       handle.dispose();
     });
