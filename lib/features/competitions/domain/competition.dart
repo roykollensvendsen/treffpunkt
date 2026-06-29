@@ -20,11 +20,13 @@ class Competition {
     required this.ownerId,
     this.isPublic = false,
     this.createdAt,
+    this.eventDate,
   });
 
   /// Reads a competition from a `competitions` row (snake_case columns).
   factory Competition.fromJson(Map<String, dynamic> json) {
     final createdAt = json['created_at'] as String?;
+    final eventDate = json['event_date'] as String?;
     return Competition(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -32,6 +34,7 @@ class Competition {
       ownerId: json['owner_id'] as String,
       isPublic: (json['is_public'] as bool?) ?? false,
       createdAt: createdAt == null ? null : DateTime.parse(createdAt),
+      eventDate: eventDate == null ? null : DateTime.parse(eventDate),
     );
   }
 
@@ -53,6 +56,10 @@ class Competition {
   /// When the row was created server-side, or `null` before it is read back.
   final DateTime? createdAt;
 
+  /// The date the competition is held (date-only), or `null` when none is set.
+  /// Used to browse/filter the list by a calendar (spec 0057).
+  final DateTime? eventDate;
+
   /// The columns a client sets when creating a competition.
   ///
   /// `owner_id` is intentionally omitted — it defaults to `auth.uid()` in the
@@ -62,6 +69,7 @@ class Competition {
     'name': name,
     'program': program,
     'is_public': isPublic,
+    if (eventDate != null) 'event_date': _formatDate(eventDate!),
   };
 
   @override
@@ -72,9 +80,17 @@ class Competition {
       other.program == program &&
       other.ownerId == ownerId &&
       other.isPublic == isPublic &&
-      other.createdAt == createdAt;
+      other.createdAt == createdAt &&
+      other.eventDate == eventDate;
 
   @override
   int get hashCode =>
-      Object.hash(id, name, program, ownerId, isPublic, createdAt);
+      Object.hash(id, name, program, ownerId, isPublic, createdAt, eventDate);
+}
+
+/// Formats a date-only [date] as `YYYY-MM-DD` for a Postgres `date` column.
+String _formatDate(DateTime date) {
+  String two(int v) => v.toString().padLeft(2, '0');
+  return '${date.year.toString().padLeft(4, '0')}-'
+      '${two(date.month)}-${two(date.day)}';
 }

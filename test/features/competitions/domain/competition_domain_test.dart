@@ -46,12 +46,14 @@ void main() {
         'owner_id': 'u1',
         'is_public': true,
         'created_at': '2026-06-23T10:00:00Z',
+        'event_date': '2026-07-01',
       });
       expect(c.id, 'c1');
       expect(c.program, '25 m NAIS fin');
       expect(c.ownerId, 'u1');
       expect(c.isPublic, isTrue);
       expect(c.createdAt, DateTime.utc(2026, 6, 23, 10));
+      expect(c.eventDate, DateTime(2026, 7)); // 2026-07-01, date-only
 
       final noFlag = Competition.fromJson(const <String, dynamic>{
         'id': 'c2',
@@ -61,9 +63,10 @@ void main() {
       });
       expect(noFlag.isPublic, isFalse);
       expect(noFlag.createdAt, isNull);
+      expect(noFlag.eventDate, isNull);
     });
 
-    test('toInsertJson omits owner_id (defaulted by the database)', () {
+    test('toInsertJson omits owner_id and the date when none', () {
       const c = Competition(
         id: 'c1',
         name: 'Cup',
@@ -79,7 +82,22 @@ void main() {
         'is_public': true,
       });
       expect(json.containsKey('owner_id'), isFalse);
+      expect(json.containsKey('event_date'), isFalse);
     });
+
+    test(
+      'toInsertJson includes event_date as YYYY-MM-DD when set (spec 0057)',
+      () {
+        final c = Competition(
+          id: 'c1',
+          name: 'Cup',
+          program: 'x',
+          ownerId: 'u1',
+          eventDate: DateTime(2026, 7, 2),
+        );
+        expect(c.toInsertJson()['event_date'], '2026-07-02');
+      },
+    );
   });
 
   group('CompetitionMember', () {
