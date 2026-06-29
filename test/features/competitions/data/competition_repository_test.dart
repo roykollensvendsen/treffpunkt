@@ -469,6 +469,52 @@ void main() {
       await expectation;
     });
   });
+
+  group('reactions (spec 0052)', () {
+    test('toggle on/off, per-user, ride along with the message', () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      final bob = alice.asUser(userId: 'bob', email: 'bob@example.com');
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+      await alice.invite('c1', 'bob@example.com');
+      await bob.acceptInvitation('c1');
+      await alice.postMessage(_msg('m1', 'c1', 'hei'));
+
+      // Both react with the same emoji → two reactions on the message.
+      await alice.toggleReaction('m1', '👍');
+      await bob.toggleReaction('m1', '👍');
+      var chat = await alice.watchMessages('c1').first;
+      expect(chat.single.reactions, hasLength(2));
+      expect(
+        chat.single.reactions.map((r) => r.userId).toSet(),
+        <String>{'alice', 'bob'},
+      );
+
+      // Alice toggles hers off → only Bob's remains.
+      await alice.toggleReaction('m1', '👍');
+      chat = await alice.watchMessages('c1').first;
+      expect(chat.single.reactions, hasLength(1));
+      expect(chat.single.reactions.single.userId, 'bob');
+      expect(chat.single.reactions.single.emoji, '👍');
+    });
+
+    test('a non-participant cannot react', () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      final carol = alice.asUser(userId: 'carol', email: 'carol@example.com');
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+      await alice.postMessage(_msg('m1', 'c1', 'hei'));
+
+      expect(
+        () => carol.toggleReaction('m1', '👍'),
+        throwsA(isA<CompetitionSyncException>()),
+      );
+    });
+  });
 }
 
 CompetitionMessage _msg(String id, String competitionId, String body) =>
