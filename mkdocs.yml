@@ -88,6 +88,7 @@ nav:
       - "0054 — Community forum": specs/0054-community-forum.md
       - "0055 — Forum reactions": specs/0055-forum-reactions.md
       - "0056 — Forum image attachments": specs/0056-forum-image-attachments.md
+      - "0057 — Browse competitions by calendar": specs/0057-competition-calendar.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

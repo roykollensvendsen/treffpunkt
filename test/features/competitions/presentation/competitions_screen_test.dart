@@ -83,6 +83,8 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(competitionNameFieldKey), 'Klubbmatch');
+    // An optional event-date field is offered (spec 0057).
+    expect(find.byKey(competitionDateFieldKey), findsOneWidget);
     await tester.tap(find.byKey(createCompetitionSubmitKey));
     await tester.pumpAndSettle();
 
@@ -587,6 +589,56 @@ void main() {
       find.widgetWithText(AppBar, '10 m Luftpistol 60 skudd'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('the calendar filters competitions by event date (spec 0057)', (
+    tester,
+  ) async {
+    // A tall viewport so the open calendar and the competition cards all build.
+    tester.view.physicalSize = const Size(900, 1700);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final repo = _meRepo();
+    final now = DateTime.now();
+    final day = DateTime(now.year, now.month, 15); // mid this month
+    await repo.createCompetition(
+      Competition(
+        id: 'dated',
+        name: 'Sommercup',
+        program: '25 m NAIS fin',
+        ownerId: 'me',
+        eventDate: day,
+      ),
+    );
+    await repo.createCompetition(
+      const Competition(
+        id: 'undated',
+        name: 'Løpende cup',
+        program: '25 m NAIS fin',
+        ownerId: 'me',
+      ),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    // Both are shown before filtering.
+    expect(find.byKey(competitionCard('dated')), findsOneWidget);
+    expect(find.byKey(competitionCard('undated')), findsOneWidget);
+
+    // Open the calendar and pick the 15th → only that day's competition.
+    await tester.tap(find.byKey(competitionCalendarToggleKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(competitionCalendarDayKey(day)));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(competitionCard('dated')), findsOneWidget);
+    expect(find.byKey(competitionCard('undated')), findsNothing);
+
+    // "Vis alle" clears the filter.
+    await tester.tap(find.byKey(competitionCalendarClearKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(competitionCard('undated')), findsOneWidget);
   });
 
   testWidgets('the detail opens the competition chat (spec 0051)', (

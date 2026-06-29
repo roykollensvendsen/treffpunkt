@@ -7,6 +7,10 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Competitions can now have a **date**, and the competitions list has a
+  **calendar** (the calendar button in the top bar) to filter by it: set an
+  optional date when creating a competition, then tap a day to see that day's
+  competitions. Days with a competition are marked (spec 0057).
 - A **community forum** (the speech-bubble button in the top bar) where anyone
   signed in can report **bugs**, suggest **features/ideas** and discuss them.
   Start a categorised thread (Bug / Ønske / Generelt), reply, and filter by

@@ -20,6 +20,7 @@ import 'package:treffpunkt/features/competitions/domain/scoreboard.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_chat_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
+import 'package:treffpunkt/features/scoring/domain/month_calendar.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
@@ -66,10 +67,47 @@ const Key competitionPublicSwitchKey = ValueKey<String>(
   'competitionPublicSwitch',
 );
 
+/// Key for the optional event-date picker on the create form (spec 0057).
+const Key competitionDateFieldKey = ValueKey<String>('competitionDate');
+
+/// Key for the clear-date action on the create form.
+const Key competitionDateClearKey = ValueKey<String>('competitionDateClear');
+
 /// Key for the submit action on the create form.
 const Key createCompetitionSubmitKey = ValueKey<String>(
   'createCompetitionSubmit',
 );
+
+/// Key for the calendar toggle in the competitions list app bar (spec 0057).
+const Key competitionCalendarToggleKey = ValueKey<String>(
+  'competitionCalendarToggle',
+);
+
+/// Key for the "clear date filter" action (show all competitions).
+const Key competitionCalendarClearKey = ValueKey<String>(
+  'competitionCalendarClear',
+);
+
+/// Key for the previous / next month actions in the competitions calendar.
+const Key competitionCalendarPrevKey = ValueKey<String>(
+  'competitionCalendarPrev',
+);
+
+/// Key for the next-month action in the competitions calendar.
+const Key competitionCalendarNextKey = ValueKey<String>(
+  'competitionCalendarNext',
+);
+
+/// Key for the calendar day cell for [date] in the competitions calendar.
+Key competitionCalendarDayKey(DateTime date) => ValueKey<String>(
+  'competitionCalDay-${date.year}-${date.month}-${date.day}',
+);
+
+/// Formats [date] as Norwegian `DD.MM.YYYY`.
+String _formatNorDate(DateTime date) {
+  String two(int v) => v.toString().padLeft(2, '0');
+  return '${two(date.day)}.${two(date.month)}.${date.year}';
+}
 
 /// Key for the "share join link" action on the detail screen (spec 0048).
 const Key shareInviteKey = ValueKey<String>('shareInvite');
@@ -113,9 +151,20 @@ const double _maxContentWidth = 700;
 /// acceptable), the competitions they own or have joined, and a way to create a
 /// new one. Reads are foreground, so a failure shows a retry rather than a
 /// silent empty list.
-class CompetitionsScreen extends ConsumerWidget {
+class CompetitionsScreen extends ConsumerStatefulWidget {
   /// Creates the competitions hub.
   const CompetitionsScreen({super.key});
+
+  @override
+  ConsumerState<CompetitionsScreen> createState() => _CompetitionsScreenState();
+}
+
+class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
+  // Calendar filter (spec 0057): the selected day (null = show all), the month
+  // the calendar shows, and whether the calendar is open.
+  DateTime? _filterDay;
+  DateTime? _calendarMonth;
+  bool _calendarOpen = false;
 
   Future<void> _create(BuildContext context, WidgetRef ref) async {
     await Navigator.of(context).push(
@@ -197,15 +246,41 @@ class CompetitionsScreen extends ConsumerWidget {
     }
   }
 
+  void _selectDay(DateTime day) {
+    setState(() {
+      // Tapping the selected day again clears the filter (show all).
+      _filterDay = (_filterDay == day) ? null : day;
+    });
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final invitations = ref.watch(myInvitationsProvider);
     final competitions = ref.watch(myCompetitionsProvider);
     final archivedIds =
         ref.watch(archivedCompetitionIdsProvider).value ?? const <String>{};
 
+    final comps = competitions.value ?? const <Competition>[];
+    final daysWithComps = <DateTime>{
+      for (final c in comps)
+        if (c.eventDate != null) dateKey(c.eventDate!),
+    };
+    final month = _calendarMonth ?? firstOfMonth(_filterDay ?? DateTime.now());
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Konkurranser')),
+      appBar: AppBar(
+        title: const Text('Konkurranser'),
+        actions: <Widget>[
+          IconButton(
+            key: competitionCalendarToggleKey,
+            tooltip: 'Kalender',
+            isSelected: _calendarOpen || _filterDay != null,
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
+            onPressed: () => setState(() => _calendarOpen = !_calendarOpen),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: newCompetitionButtonKey,
         onPressed: () => unawaited(_create(context, ref)),
@@ -219,6 +294,47 @@ class CompetitionsScreen extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                if (_calendarOpen) ...[
+                  _CompetitionCalendar(
+                    month: month,
+                    selectedDay: _filterDay,
+                    daysWithCompetitions: daysWithComps,
+                    onSelectDay: _selectDay,
+                    onPrevMonth: () => setState(
+                      () => _calendarMonth = DateTime(
+                        month.year,
+                        month.month - 1,
+                      ),
+                    ),
+                    onNextMonth: () => setState(
+                      () => _calendarMonth = DateTime(
+                        month.year,
+                        month.month + 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                if (_filterDay case final day?)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: <Widget>[
+                        Chip(
+                          avatar: const Icon(Icons.event, size: 18),
+                          label: Text('Viser ${_formatNorDate(day)}'),
+                          onDeleted: () => setState(() => _filterDay = null),
+                          deleteButtonTooltipMessage: 'Vis alle',
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          key: competitionCalendarClearKey,
+                          onPressed: () => setState(() => _filterDay = null),
+                          child: const Text('Vis alle'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ..._invitationsSection(context, ref, invitations),
                 ..._competitionsSection(
                   context,
@@ -278,9 +394,15 @@ class CompetitionsScreen extends ConsumerWidget {
         final invitationList =
             invitations.value ?? const <CompetitionInvitation>[];
         // Partition into the active list and the archived ones (spec 0049).
+        // When a calendar day is selected, the active list is filtered to that
+        // day's competitions (spec 0057).
         final active = <Competition>[
           for (final c in list)
-            if (!archivedIds.contains(c.id)) c,
+            if (!archivedIds.contains(c.id) &&
+                (_filterDay == null ||
+                    (c.eventDate != null &&
+                        dateKey(c.eventDate!) == _filterDay)))
+              c,
         ];
         final archived = <Competition>[
           for (final c in list)
@@ -308,9 +430,13 @@ class CompetitionsScreen extends ConsumerWidget {
               ),
             ),
           if (active.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Ingen aktive konkurranser.'),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                _filterDay == null
+                    ? 'Ingen aktive konkurranser.'
+                    : 'Ingen konkurranser på denne datoen.',
+              ),
             ),
           if (archived.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -352,6 +478,168 @@ class CompetitionsScreen extends ConsumerWidget {
 String _subtitle(Competition competition) {
   final visibility = competition.isPublic ? 'Åpen' : 'Privat';
   return '${competition.program} · $visibility';
+}
+
+const List<String> _monthNames = <String>[
+  'januar',
+  'februar',
+  'mars',
+  'april',
+  'mai',
+  'juni',
+  'juli',
+  'august',
+  'september',
+  'oktober',
+  'november',
+  'desember',
+];
+
+const List<String> _weekdayLabels = <String>[
+  'Ma',
+  'Ti',
+  'On',
+  'To',
+  'Fr',
+  'Lø',
+  'Sø',
+];
+
+/// A month calendar to filter the competitions list by event date (spec 0057):
+/// days with a competition get a dot; tapping a day selects it (tapping again
+/// clears). Mirrors the "Mine økter" calendar, reusing the pure date helpers.
+class _CompetitionCalendar extends StatelessWidget {
+  const _CompetitionCalendar({
+    required this.month,
+    required this.selectedDay,
+    required this.daysWithCompetitions,
+    required this.onSelectDay,
+    required this.onPrevMonth,
+    required this.onNextMonth,
+  });
+
+  final DateTime month;
+  final DateTime? selectedDay;
+  final Set<DateTime> daysWithCompetitions;
+  final ValueChanged<DateTime> onSelectDay;
+  final VoidCallback onPrevMonth;
+  final VoidCallback onNextMonth;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final grid = monthGrid(month);
+    final name = _monthNames[month.month - 1];
+    final label = '${name[0].toUpperCase()}${name.substring(1)} ${month.year}';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                IconButton(
+                  key: competitionCalendarPrevKey,
+                  onPressed: onPrevMonth,
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(label, style: theme.textTheme.titleMedium),
+                  ),
+                ),
+                IconButton(
+                  key: competitionCalendarNextKey,
+                  onPressed: onNextMonth,
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+            Row(
+              children: <Widget>[
+                for (final w in _weekdayLabels)
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        w,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            for (var week = 0; week < 6; week++)
+              Row(
+                children: <Widget>[
+                  for (var d = 0; d < 7; d++)
+                    _dayCell(context, grid[week * 7 + d]),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dayCell(BuildContext context, DateTime date) {
+    final theme = Theme.of(context);
+    final inMonth = date.month == month.month;
+    final isSelected = date == selectedDay;
+    final hasComps = daysWithCompetitions.contains(date);
+    final fg = isSelected
+        ? theme.colorScheme.onPrimary
+        : inMonth
+        ? theme.colorScheme.onSurface
+        : theme.colorScheme.onSurfaceVariant;
+    return Expanded(
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Padding(
+          padding: const EdgeInsets.all(2),
+          child: InkWell(
+            key: competitionCalendarDayKey(date),
+            onTap: () => onSelectDay(date),
+            borderRadius: BorderRadius.circular(8),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: isSelected ? theme.colorScheme.primary : null,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    '${date.day}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: fg,
+                      fontWeight: isSelected ? FontWeight.bold : null,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  if (hasComps)
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected
+                            ? theme.colorScheme.onPrimary
+                            : theme.colorScheme.primary,
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 6),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _InvitationCard extends StatelessWidget {
@@ -474,11 +762,23 @@ class _CreateCompetitionScreenState
   String _program = ProgramCatalogue.all.first.name;
   bool _isPublic = false;
   bool _saving = false;
+  DateTime? _eventDate;
 
   @override
   void dispose() {
     _name.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _eventDate ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (picked != null) setState(() => _eventDate = picked);
   }
 
   Future<void> _submit() async {
@@ -493,6 +793,7 @@ class _CreateCompetitionScreenState
       program: _program,
       ownerId: ref.read(currentUserIdProvider) ?? '',
       isPublic: _isPublic,
+      eventDate: _eventDate,
     );
     try {
       await ref
@@ -555,6 +856,25 @@ class _CreateCompetitionScreenState
                   subtitle: const Text(
                     'Alle innloggede kan se den. Av = kun inviterte.',
                   ),
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  key: competitionDateFieldKey,
+                  leading: const Icon(Icons.event_outlined),
+                  title: Text(
+                    _eventDate == null
+                        ? 'Velg dato (valgfritt)'
+                        : 'Dato: ${_formatNorDate(_eventDate!)}',
+                  ),
+                  trailing: _eventDate == null
+                      ? null
+                      : IconButton(
+                          key: competitionDateClearKey,
+                          icon: const Icon(Icons.clear),
+                          tooltip: 'Fjern dato',
+                          onPressed: () => setState(() => _eventDate = null),
+                        ),
+                  onTap: () => unawaited(_pickDate()),
                 ),
                 const SizedBox(height: 24),
                 FilledButton.icon(

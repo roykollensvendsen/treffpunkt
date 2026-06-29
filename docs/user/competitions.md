@@ -22,7 +22,14 @@ joined, and a **Ny konkurranse** button to create one.
 2. Give it a **name**, pick the **program** it runs (this is fixed for everyone
    who takes part), and choose **Åpen** (anyone with the link can join) or
    **Privat**.
-3. Tap to create it. You are added as the first participant.
+3. Optionally set a **date** (when it is held) — this lets you find it on the
+   calendar later.
+4. Tap to create it. You are added as the first participant.
+
+## Browse by date
+Tap the **calendar** button in the top bar to filter the list by date. Days with
+a competition are marked with a dot; tap a day to show only that day's
+competitions, and tap **Vis alle** (or the same day again) to show them all.
 
 ## Invite people
 Open the competition (you must be its owner) and use **Inviter med lenke**:
