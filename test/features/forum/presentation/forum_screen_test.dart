@@ -136,4 +136,35 @@ void main() {
     expect(find.byKey(forumThreadCardKey('t1')), findsNothing);
     expect(find.byKey(forumEmptyKey), findsOneWidget);
   });
+
+  testWidgets('reacting to the opening post adds a chip (spec 0055)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(
+        id: 't1',
+        category: ForumCategory.idea,
+        title: 'Mørk modus',
+        body: 'Ja takk',
+      ),
+    );
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(forumAddReactionKey('thread:t1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumPaletteEmojiKey('👍')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(forumReactionKey('thread:t1', '👍')), findsOneWidget);
+    expect(find.text('👍 1'), findsOneWidget);
+
+    // Tapping the chip toggles it off.
+    await tester.tap(find.byKey(forumReactionKey('thread:t1', '👍')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(forumReactionKey('thread:t1', '👍')), findsNothing);
+  });
 }

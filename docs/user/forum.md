@@ -27,9 +27,13 @@ the list. New threads and replies appear **live**.
 2. Give it a **title**, pick a **category**, and write your **message**.
 3. Tap **Opprett**. It appears at the top of the list.
 
-## Reply
+## Reply and react
 Open a thread to read the opening message and everyone's replies. Type in the
 box at the bottom and tap **send** to add yours.
+
+**React** to the opening post or any reply: tap the **emoji** button under it and
+pick one — a quick way to "vote" 👍 on a bug or idea. Tap a reaction again to
+take it back. Reactions update live for everyone.
 
 ## Deleting
 You can delete **your own** thread or reply (long-press a reply to delete it; a

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
+import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
 import 'package:treffpunkt/features/forum/domain/forum_thread.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_providers.dart';
 import 'package:uuid/uuid.dart';
@@ -50,6 +51,31 @@ const Key deleteThreadButtonKey = ValueKey<String>('deleteThread');
 
 /// Key for the post [id] in a thread.
 Key forumPostKey(String id) => ValueKey<String>('forumPost-$id');
+
+/// Key for the "add reaction" action on a forum [target] (`thread:<id>` or
+/// `post:<id>`).
+Key forumAddReactionKey(String target) =>
+    ValueKey<String>('forumAddReaction-$target');
+
+/// Key for the [emoji] choice in the forum reaction palette.
+Key forumPaletteEmojiKey(String emoji) =>
+    ValueKey<String>('forumPaletteEmoji-$emoji');
+
+/// Key for the reaction chip of [emoji] on a forum [target].
+Key forumReactionKey(String target, String emoji) =>
+    ValueKey<String>('forumReaction-$target-$emoji');
+
+/// The emoji offered in the forum reaction palette (spec 0055).
+const List<String> forumReactionPalette = <String>[
+  '👍',
+  '🎯',
+  '🔥',
+  '😂',
+  '❤️',
+  '👏',
+  '😮',
+  '😢',
+];
 
 const double _maxWidth = 700;
 
@@ -359,9 +385,41 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     await ref.read(forumRepositoryProvider).deletePost(postId);
   }
 
+  Future<void> _toggleReaction(
+    String targetType,
+    String targetId,
+    String emoji,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(forumRepositoryProvider)
+          .toggleReaction(
+            targetType: targetType,
+            targetId: targetId,
+            emoji: emoji,
+          );
+    } on ForumException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke reagere.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final thread = widget.thread;
+    // Prefer the live thread (for live reaction updates on the opening post),
+    // falling back to the one we navigated with.
+    var thread = widget.thread;
+    final allThreads = ref.watch(forumThreadsProvider).value;
+    if (allThreads != null) {
+      for (final t in allThreads) {
+        if (t.id == widget.thread.id) {
+          thread = t;
+          break;
+        }
+      }
+    }
     final posts = ref.watch(forumPostsProvider(thread.id));
     final uid = ref.watch(forumCurrentUserIdProvider);
     final isAdmin = ref.watch(forumIsAdminProvider).value ?? false;
@@ -413,6 +471,14 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                                   style: theme.textTheme.bodyMedium,
                                 ),
                               ],
+                              _ForumReactionBar(
+                                target: 'thread:${thread.id}',
+                                reactions: thread.reactions,
+                                myUserId: uid,
+                                onReact: (emoji) => unawaited(
+                                  _toggleReaction('thread', thread.id, emoji),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -435,8 +501,12 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                           for (final post in replies)
                             _ReplyTile(
                               post: post,
+                              myUserId: uid,
                               canDelete: post.authorId == uid || isAdmin,
                               onDelete: () => unawaited(_deletePost(post.id)),
+                              onReact: (emoji) => unawaited(
+                                _toggleReaction('post', post.id, emoji),
+                              ),
                             ),
                         ],
                       ),
@@ -485,13 +555,17 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
 class _ReplyTile extends StatelessWidget {
   const _ReplyTile({
     required this.post,
+    required this.myUserId,
     required this.canDelete,
     required this.onDelete,
+    required this.onReact,
   });
 
   final ForumPost post;
+  final String? myUserId;
   final bool canDelete;
   final VoidCallback onDelete;
+  final void Function(String emoji) onReact;
 
   @override
   Widget build(BuildContext context) {
@@ -512,9 +586,102 @@ class _ReplyTile extends StatelessWidget {
               ),
             ),
             Text(post.body, style: theme.textTheme.bodyMedium),
+            _ForumReactionBar(
+              target: 'post:${post.id}',
+              reactions: post.reactions,
+              myUserId: myUserId,
+              onReact: onReact,
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The reaction chips on a thread or reply plus an add-reaction button
+/// (spec 0055). [target] is `thread:<id>` or `post:<id>`, used only for keys.
+class _ForumReactionBar extends StatelessWidget {
+  const _ForumReactionBar({
+    required this.target,
+    required this.reactions,
+    required this.myUserId,
+    required this.onReact,
+  });
+
+  final String target;
+  final List<ForumReaction> reactions;
+  final String? myUserId;
+  final void Function(String emoji) onReact;
+
+  Future<void> _openPalette(BuildContext context) async {
+    final emoji = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              for (final emoji in forumReactionPalette)
+                IconButton(
+                  key: forumPaletteEmojiKey(emoji),
+                  onPressed: () => Navigator.of(sheetContext).pop(emoji),
+                  icon: Text(emoji, style: const TextStyle(fontSize: 24)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (emoji != null) onReact(emoji);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final counts = <String, int>{};
+    final mine = <String>{};
+    for (final reaction in reactions) {
+      counts.update(reaction.emoji, (n) => n + 1, ifAbsent: () => 1);
+      if (reaction.userId == myUserId) mine.add(reaction.emoji);
+    }
+    final theme = Theme.of(context);
+    return Wrap(
+      spacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: <Widget>[
+        for (final entry in counts.entries)
+          InkWell(
+            key: forumReactionKey(target, entry.key),
+            onTap: () => onReact(entry.key),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: mine.contains(entry.key)
+                    ? theme.colorScheme.primaryContainer
+                    : theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: mine.contains(entry.key)
+                    ? Border.all(color: theme.colorScheme.primary)
+                    : null,
+              ),
+              child: Text(
+                '${entry.key} ${entry.value}',
+                style: theme.textTheme.labelMedium,
+              ),
+            ),
+          ),
+        IconButton(
+          key: forumAddReactionKey(target),
+          visualDensity: VisualDensity.compact,
+          iconSize: 18,
+          tooltip: 'Reager',
+          onPressed: () => unawaited(_openPalette(context)),
+          icon: const Icon(Icons.add_reaction_outlined),
+        ),
+      ],
     );
   }
 }
