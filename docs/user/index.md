@@ -8,3 +8,4 @@ your score instantly.
 - [Score a 10 m air-rifle target](score-a-10m-air-rifle-target.md)
 - [Scan a paper target](scan-a-paper-target.md)
 - [Competitions](competitions.md)
+- [Forum](forum.md)

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
+import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
 import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
@@ -52,6 +53,19 @@ void main() {
     // Navigated to the session setup step (date/time + place) for the program.
     expect(find.byKey(sessionConfirmKey), findsOneWidget);
     expect(find.text('25 m Finpistol'), findsWidgets);
+  });
+
+  testWidgets('opens the forum from the forum action (spec 0054)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(forumButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ForumScreen), findsOneWidget);
+    expect(find.text('Forum'), findsWidgets);
   });
 
   testWidgets('opens the user manual from the help action', (tester) async {
