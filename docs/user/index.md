@@ -6,3 +6,5 @@ your score instantly.
 - [Getting started](getting-started.md)
 - [Signing in](signing-in.md)
 - [Score a 10 m air-rifle target](score-a-10m-air-rifle-target.md)
+- [Scan a paper target](scan-a-paper-target.md)
+- [Competitions](competitions.md)

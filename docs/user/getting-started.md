@@ -36,5 +36,6 @@ To override it, tap the theme button (the brightness icon) in the top bar and
 choose **System**, **Lyst** (light) or **Mørkt** (dark). Your choice is
 remembered the next time you open the app.
 
-Signing in, competitions and scoreboards are on the way — see the
-[Roadmap](../ROADMAP.md).
+Signed in, you can also shoot against others: see
+[Competitions](competitions.md) to create or join one and share a live
+scoreboard. For what is still planned, see the [Roadmap](../ROADMAP.md).

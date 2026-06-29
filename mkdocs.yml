@@ -28,6 +28,7 @@ nav:
       - Signing in: user/signing-in.md
       - Score a 10 m air-rifle target: user/score-a-10m-air-rifle-target.md
       - Scan a paper target: user/scan-a-paper-target.md
+      - Competitions: user/competitions.md
       - Treningsbilder og personvern: user/personvern-treningsbilder.md
   - Developer Guide:
       - Overview: dev/index.md
