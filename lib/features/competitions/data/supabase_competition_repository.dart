@@ -70,6 +70,53 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   }
 
   @override
+  Future<Set<String>> archivedCompetitionIds() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const <String>{};
+    try {
+      // RLS confines the select to the caller's own archive rows.
+      final rows = await _client
+          .from('competition_archives')
+          .select('competition_id');
+      return <String>{
+        for (final row in rows) row['competition_id'] as String,
+      };
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
+  Future<void> archiveCompetition(String competitionId) async {
+    try {
+      // Idempotent: DO NOTHING on the (competition_id, user_id) primary key, so
+      // archiving twice is a no-op. user_id defaults to auth.uid() server-side.
+      await _client
+          .from('competition_archives')
+          .upsert(
+            <String, dynamic>{'competition_id': competitionId},
+            onConflict: 'competition_id,user_id',
+            ignoreDuplicates: true,
+          );
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
+  Future<void> unarchiveCompetition(String competitionId) async {
+    try {
+      // RLS scopes the delete to the caller's own row.
+      await _client
+          .from('competition_archives')
+          .delete()
+          .eq('competition_id', competitionId);
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
   Future<List<Competition>> listMine() async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return const <Competition>[];

@@ -59,6 +59,22 @@ abstract interface class CompetitionRepository {
   /// waiting on it; Row-Level Security rejects a non-owner.
   Future<void> deleteCompetition(String competitionId);
 
+  /// The competition ids the caller has archived (spec 0049).
+  ///
+  /// Archiving is per-user view state, so this returns only the caller's own
+  /// archive rows. Throws [CompetitionSyncException] on a failed read.
+  Future<Set<String>> archivedCompetitionIds();
+
+  /// Archives [competitionId] for the caller, hiding it from their active list
+  /// without deleting it (spec 0049). Works for a joined competition the caller
+  /// does not own. Idempotent. Throws [CompetitionSyncException] on failure.
+  Future<void> archiveCompetition(String competitionId);
+
+  /// Restores (un-archives) [competitionId] for the caller (spec 0049).
+  ///
+  /// Idempotent. Throws [CompetitionSyncException] on failure.
+  Future<void> unarchiveCompetition(String competitionId);
+
   /// Invites [email] to the competition [competitionId] (owner only).
   ///
   /// Throws [CompetitionSyncException] on failure.
@@ -152,6 +168,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
       _invitations = <CompetitionInvitation>[],
       _joinTokens = <String, String>{},
       _tokenSeq = <int>[0],
+      _archives = <String, Set<String>>{},
       _results = <String, Map<String, CompetitionResult>>{},
       _resultsChanged = StreamController<String>.broadcast();
 
@@ -165,6 +182,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     this._invitations,
     this._joinTokens,
     this._tokenSeq,
+    this._archives,
     this._results,
     this._resultsChanged,
   );
@@ -188,6 +206,9 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
   // A shared one-element counter so regenerated tokens differ; a list so the
   // asUser() views share the same mutable holder.
   final List<int> _tokenSeq;
+  // userId -> the competition ids that user has archived (spec 0049). Per-user,
+  // so a shared holder lets a cross-user test prove archives do not leak.
+  final Map<String, Set<String>> _archives;
   // competitionId -> (resultId -> result).
   final Map<String, Map<String, CompetitionResult>> _results;
   // Emits a competitionId whenever a new result lands there, so watchResults
@@ -208,6 +229,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
         _invitations,
         _joinTokens,
         _tokenSeq,
+        _archives,
         _results,
         _resultsChanged,
       );
@@ -244,6 +266,26 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     _members.remove(competitionId);
     _results.remove(competitionId);
     _invitations.removeWhere((i) => i.competitionId == competitionId);
+    // Mirror the archive cascade: every user's archive row for it goes away.
+    for (final archived in _archives.values) {
+      archived.remove(competitionId);
+    }
+  }
+
+  @override
+  Future<Set<String>> archivedCompetitionIds() async => <String>{
+    ...?_archives[currentUserId],
+  };
+
+  @override
+  Future<void> archiveCompetition(String competitionId) async {
+    final uid = currentUserId;
+    if (uid != null) (_archives[uid] ??= <String>{}).add(competitionId);
+  }
+
+  @override
+  Future<void> unarchiveCompetition(String competitionId) async {
+    _archives[currentUserId]?.remove(competitionId);
   }
 
   @override

@@ -324,6 +324,63 @@ void main() {
     await repo.submitResult(_result('s1', competitionId: 'c1', total: 580));
     await expectation;
   });
+
+  group('archiving (spec 0049)', () {
+    test('archive is idempotent, listed, and restorable', () async {
+      final repo = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      await repo.createCompetition(_comp('c1', ownerId: 'alice'));
+
+      expect(await repo.archivedCompetitionIds(), isEmpty);
+      await repo.archiveCompetition('c1');
+      await repo.archiveCompetition('c1'); // again — idempotent
+      expect(await repo.archivedCompetitionIds(), <String>{'c1'});
+      // Archiving is a view filter: it never drops membership.
+      expect((await repo.listMine()).map((c) => c.id), contains('c1'));
+
+      await repo.unarchiveCompetition('c1');
+      expect(await repo.archivedCompetitionIds(), isEmpty);
+    });
+
+    test(
+      'is per-user, and a non-owner can archive a joined competition',
+      () async {
+        final alice = InMemoryCompetitionRepository(
+          currentUserId: 'alice',
+          currentEmail: 'alice@example.com',
+        );
+        final bob = alice.asUser(userId: 'bob', email: 'bob@example.com');
+        await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+        await alice.invite('c1', 'bob@example.com');
+        await bob.acceptInvitation('c1');
+
+        // Bob (a non-owner member) archives it for himself only.
+        await bob.archiveCompetition('c1');
+        expect(await bob.archivedCompetitionIds(), <String>{'c1'});
+        // Alice is unaffected, and both are still members.
+        expect(await alice.archivedCompetitionIds(), isEmpty);
+        expect((await alice.listMine()).map((c) => c.id), contains('c1'));
+        expect((await bob.listMine()).map((c) => c.id), contains('c1'));
+      },
+    );
+
+    test("deleting a competition clears every user's archive of it", () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      final bob = alice.asUser(userId: 'bob', email: 'bob@example.com');
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+      await alice.invite('c1', 'bob@example.com');
+      await bob.acceptInvitation('c1');
+      await bob.archiveCompetition('c1');
+
+      await alice.deleteCompetition('c1');
+      expect(await bob.archivedCompetitionIds(), isEmpty);
+    });
+  });
 }
 
 CompetitionResult _result(

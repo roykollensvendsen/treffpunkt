@@ -34,6 +34,21 @@ const Key noCompetitionsKey = ValueKey<String>('noCompetitions');
 /// Key for the card of the competition with the given [id] in the list.
 Key competitionCard(String id) => ValueKey<String>('competitionCard-$id');
 
+/// Key for the per-card "archive" action on competition [id] (spec 0049).
+Key archiveCompetitionKey(String id) =>
+    ValueKey<String>('archiveCompetition-$id');
+
+/// Key for the per-card "restore" action on archived competition [id].
+Key unarchiveCompetitionKey(String id) =>
+    ValueKey<String>('unarchiveCompetition-$id');
+
+/// Key for the "Arkiverte" section header, shown only when something is
+/// archived (spec 0049).
+const Key archivedSectionKey = ValueKey<String>('archivedSection');
+
+/// Key for the archive / restore toggle on the competition detail screen.
+const Key toggleArchiveButtonKey = ValueKey<String>('toggleArchive');
+
 /// Key for the "accept" action on the invitation to competition [id].
 Key acceptInvitationKey(String id) => ValueKey<String>('acceptInvitation-$id');
 
@@ -140,10 +155,53 @@ class CompetitionsScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _archive(
+    BuildContext context,
+    WidgetRef ref,
+    Competition competition,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(competitionRepositoryProvider)
+          .archiveCompetition(competition.id);
+      ref.invalidate(archivedCompetitionIdsProvider);
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('«${competition.name}» arkivert'),
+            action: SnackBarAction(
+              label: 'Angre',
+              onPressed: () => unawaited(_restore(ref, competition.id)),
+            ),
+          ),
+        );
+    } on Object {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke arkivere konkurransen.')),
+      );
+    }
+  }
+
+  Future<void> _restore(WidgetRef ref, String competitionId) async {
+    try {
+      await ref
+          .read(competitionRepositoryProvider)
+          .unarchiveCompetition(competitionId);
+      ref.invalidate(archivedCompetitionIdsProvider);
+    } on Object {
+      // Best-effort restore (e.g. an Angre tap); on failure the list is
+      // unchanged.
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final invitations = ref.watch(myInvitationsProvider);
     final competitions = ref.watch(myCompetitionsProvider);
+    final archivedIds =
+        ref.watch(archivedCompetitionIdsProvider).value ?? const <String>{};
 
     return Scaffold(
       appBar: AppBar(title: const Text('Konkurranser')),
@@ -166,6 +224,7 @@ class CompetitionsScreen extends ConsumerWidget {
                   ref,
                   invitations,
                   competitions,
+                  archivedIds,
                 ),
               ],
             ),
@@ -200,6 +259,7 @@ class CompetitionsScreen extends ConsumerWidget {
     WidgetRef ref,
     AsyncValue<List<CompetitionInvitation>> invitations,
     AsyncValue<List<Competition>> competitions,
+    Set<String> archivedIds,
   ) {
     return competitions.when(
       loading: () => const <Widget>[
@@ -216,26 +276,61 @@ class CompetitionsScreen extends ConsumerWidget {
       data: (list) {
         final invitationList =
             invitations.value ?? const <CompetitionInvitation>[];
+        // Partition into the active list and the archived ones (spec 0049).
+        final active = <Competition>[
+          for (final c in list)
+            if (!archivedIds.contains(c.id)) c,
+        ];
+        final archived = <Competition>[
+          for (final c in list)
+            if (archivedIds.contains(c.id)) c,
+        ];
         if (list.isEmpty && invitationList.isEmpty) {
           return const <Widget>[_EmptyState()];
         }
         return <Widget>[
           const _SectionHeader('Mine konkurranser'),
-          for (final competition in list)
+          for (final competition in active)
             Card(
               child: ListTile(
                 key: competitionCard(competition.id),
                 title: Text(competition.name),
                 subtitle: Text(_subtitle(competition)),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: IconButton(
+                  key: archiveCompetitionKey(competition.id),
+                  icon: const Icon(Icons.archive_outlined),
+                  tooltip: 'Arkiver',
+                  onPressed: () =>
+                      unawaited(_archive(context, ref, competition)),
+                ),
                 onTap: () => _open(context, competition),
               ),
             ),
-          if (list.isEmpty)
+          if (active.isEmpty)
             const Padding(
               padding: EdgeInsets.all(16),
-              child: Text('Ingen konkurranser ennå.'),
+              child: Text('Ingen aktive konkurranser.'),
             ),
+          if (archived.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const _SectionHeader('Arkiverte', key: archivedSectionKey),
+            for (final competition in archived)
+              Card(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: ListTile(
+                  key: competitionCard(competition.id),
+                  title: Text(competition.name),
+                  subtitle: Text(_subtitle(competition)),
+                  trailing: IconButton(
+                    key: unarchiveCompetitionKey(competition.id),
+                    icon: const Icon(Icons.unarchive_outlined),
+                    tooltip: 'Gjenopprett',
+                    onPressed: () => unawaited(_restore(ref, competition.id)),
+                  ),
+                  onTap: () => _open(context, competition),
+                ),
+              ),
+          ],
         ];
       },
     );
@@ -275,7 +370,7 @@ class _InvitationCard extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.label);
+  const _SectionHeader(this.label, {super.key});
 
   final String label;
 
@@ -611,6 +706,34 @@ class _CompetitionDetailScreenState
     }
   }
 
+  /// Archives or restores this competition for the viewer (spec 0049) — open to
+  /// everyone, owner or not, since archiving is personal view state. On success
+  /// it pops back to the list, which re-partitions on the refreshed archives.
+  Future<void> _toggleArchive({required bool archived}) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final repository = ref.read(competitionRepositoryProvider);
+    try {
+      if (archived) {
+        await repository.unarchiveCompetition(widget.competition.id);
+      } else {
+        await repository.archiveCompetition(widget.competition.id);
+      }
+      ref.invalidate(archivedCompetitionIdsProvider);
+      navigator.pop();
+    } on CompetitionSyncException {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            archived
+                ? 'Kunne ikke gjenopprette konkurransen.'
+                : 'Kunne ikke arkivere konkurransen.',
+          ),
+        ),
+      );
+    }
+  }
+
   /// Starts the competition's fixed program; the result auto-submits on
   /// completion (spec 0012). On return, the scoreboard is refreshed.
   Future<void> _shoot() async {
@@ -678,6 +801,14 @@ class _CompetitionDetailScreenState
     final results = ref.watch(competitionScoreboardProvider(competition.id));
     final uid = ref.watch(currentUserIdProvider);
     final isOwner = uid == competition.ownerId;
+    final isArchived =
+        ref
+            .watch(archivedCompetitionIdsProvider)
+            .value
+            ?.contains(
+              competition.id,
+            ) ??
+        false;
     // Only a participant may shoot for the competition (the insert policy gates
     // it too); today the detail is reached only as a participant.
     final isParticipant =
@@ -818,6 +949,24 @@ class _CompetitionDetailScreenState
                         ),
                       ),
                   ],
+                ),
+                const SizedBox(height: 24),
+                // Archiving is personal view state, so it is open to everyone —
+                // including a non-owner who cannot delete (spec 0049).
+                OutlinedButton.icon(
+                  key: toggleArchiveButtonKey,
+                  onPressed: () =>
+                      unawaited(_toggleArchive(archived: isArchived)),
+                  icon: Icon(
+                    isArchived
+                        ? Icons.unarchive_outlined
+                        : Icons.archive_outlined,
+                  ),
+                  label: Text(
+                    isArchived
+                        ? 'Gjenopprett konkurranse'
+                        : 'Arkiver konkurranse',
+                  ),
                 ),
               ],
             ),
