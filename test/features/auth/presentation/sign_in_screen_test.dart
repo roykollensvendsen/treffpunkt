@@ -10,6 +10,7 @@ import 'package:treffpunkt/core/platform/browser_environment.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/auth/presentation/sign_in_screen.dart';
+import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 
 import '../fake_auth_repository.dart';
 
@@ -55,6 +56,21 @@ void main() {
 
     expect(find.byKey(buildVersionKey), findsOneWidget);
     expect(find.textContaining('build '), findsOneWidget);
+  });
+
+  testWidgets('opens the user manual before signing in (spec 0050)', (
+    tester,
+  ) async {
+    final fake = FakeAuthRepository();
+    addTearDown(fake.dispose);
+    await tester.pumpWidget(_screen(fake));
+
+    await tester.tap(find.byKey(helpButtonKey));
+    await tester.pumpAndSettle();
+
+    // The manual's contents screen, reachable without signing in.
+    expect(find.text('Brukerveiledning'), findsOneWidget);
+    expect(find.byKey(manualPageTileKey('signing-in.md')), findsOneWidget);
   });
 
   group('blocked browser warning (spec 0042)', () {

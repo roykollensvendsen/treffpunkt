@@ -4,7 +4,8 @@ Treffpunkt runs in your web browser and on Android and iOS. Today it supports
 the 10 m air-rifle target.
 
 You can open this guide any time **from inside the app**: tap the **?** (help)
-button in the top bar of the program picker. It works offline.
+button — in the top bar of the program picker once you are signed in, or in the
+corner of the sign-in screen before you sign in. It works offline.
 
 ## Open the app
 - **Web:** open the Treffpunkt URL in any modern browser.
