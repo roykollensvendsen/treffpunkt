@@ -567,6 +567,7 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                                 target: 'thread:${thread.id}',
                                 reactions: thread.reactions,
                                 myUserId: uid,
+                                mine: thread.authorId == uid,
                                 onReact: (emoji) => unawaited(
                                   _toggleReaction('thread', thread.id, emoji),
                                 ),
@@ -695,6 +696,7 @@ class _ReplyTile extends StatelessWidget {
               target: 'post:${post.id}',
               reactions: post.reactions,
               myUserId: myUserId,
+              mine: post.authorId == myUserId,
               onReact: onReact,
             ),
           ],
@@ -736,12 +738,17 @@ class _ForumReactionBar extends StatelessWidget {
     required this.target,
     required this.reactions,
     required this.myUserId,
+    required this.mine,
     required this.onReact,
   });
 
   final String target;
   final List<ForumReaction> reactions;
   final String? myUserId;
+
+  /// Whether the current user authored this thread/reply — you react to other
+  /// people's posts, not your own (spec 0055).
+  final bool mine;
   final void Function(String emoji) onReact;
 
   Future<void> _openPalette(BuildContext context) async {
@@ -771,12 +778,14 @@ class _ForumReactionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final counts = <String, int>{};
-    final mine = <String>{};
+    final mineEmojis = <String>{};
     for (final reaction in reactions) {
       counts.update(reaction.emoji, (n) => n + 1, ifAbsent: () => 1);
-      if (reaction.userId == myUserId) mine.add(reaction.emoji);
+      if (reaction.userId == myUserId) mineEmojis.add(reaction.emoji);
     }
     final theme = Theme.of(context);
+    // You react to OTHER people's posts, not your own: on your own thread/reply
+    // the chips are display-only and there is no add button (spec 0055).
     return Wrap(
       spacing: 4,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -784,16 +793,16 @@ class _ForumReactionBar extends StatelessWidget {
         for (final entry in counts.entries)
           InkWell(
             key: forumReactionKey(target, entry.key),
-            onTap: () => onReact(entry.key),
+            onTap: mine ? null : () => onReact(entry.key),
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: mine.contains(entry.key)
+                color: mineEmojis.contains(entry.key)
                     ? theme.colorScheme.primaryContainer
                     : theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
-                border: mine.contains(entry.key)
+                border: mineEmojis.contains(entry.key)
                     ? Border.all(color: theme.colorScheme.primary)
                     : null,
               ),
@@ -803,14 +812,15 @@ class _ForumReactionBar extends StatelessWidget {
               ),
             ),
           ),
-        IconButton(
-          key: forumAddReactionKey(target),
-          visualDensity: VisualDensity.compact,
-          iconSize: 18,
-          tooltip: 'Reager',
-          onPressed: () => unawaited(_openPalette(context)),
-          icon: const Icon(Icons.add_reaction_outlined),
-        ),
+        if (!mine)
+          IconButton(
+            key: forumAddReactionKey(target),
+            visualDensity: VisualDensity.compact,
+            iconSize: 18,
+            tooltip: 'Reager',
+            onPressed: () => unawaited(_openPalette(context)),
+            icon: const Icon(Icons.add_reaction_outlined),
+          ),
       ],
     );
   }

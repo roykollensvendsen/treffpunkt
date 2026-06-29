@@ -140,16 +140,19 @@ void main() {
     expect(find.byKey(forumEmptyKey), findsOneWidget);
   });
 
-  testWidgets('reacting to the opening post adds a chip (spec 0055)', (
+  testWidgets("reacting to another's thread adds a chip (spec 0055)", (
     tester,
   ) async {
     final repo = _meRepo();
-    await repo.createThread(
+    // A thread by someone else — you react to others', not your own.
+    final other = repo.asUser(userId: 'other')..setDisplayName('other', 'Kari');
+    await other.createThread(
       const ForumThread(
         id: 't1',
         category: ForumCategory.idea,
         title: 'Mørk modus',
         body: 'Ja takk',
+        authorId: 'other',
       ),
     );
     await tester.pumpWidget(_app(repo));
@@ -169,6 +172,27 @@ void main() {
     await tester.tap(find.byKey(forumReactionKey('thread:t1', '👍')));
     await tester.pumpAndSettle();
     expect(find.byKey(forumReactionKey('thread:t1', '👍')), findsNothing);
+  });
+
+  testWidgets('you cannot react to your own thread (spec 0055)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(
+        id: 't1',
+        category: ForumCategory.idea,
+        title: 'Min egen tråd',
+        body: 'Hei',
+      ),
+    );
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    // No "add reaction" affordance on your own opening post.
+    expect(find.byKey(forumAddReactionKey('thread:t1')), findsNothing);
   });
 
   testWidgets('a thread with an image shows the picture (spec 0056)', (

@@ -9,8 +9,10 @@ without writing a reply. We add emoji reactions to forum **threads** (the
 opening bug/idea) and **replies**, updating live.
 
 ## Requirements
-1. Any signed-in user can react to a thread or a reply with an emoji from a
-   palette, and **toggle** it off by reacting again with the same emoji.
+1. Any signed-in user can react to **someone else's** thread or reply with an
+   emoji from a palette, and **toggle** it off by reacting again with the same
+   emoji. You cannot react to **your own** thread/reply (no add-reaction
+   affordance; existing chips on your own post are display-only).
 2. A thread/reply shows its reactions as **emoji + count** chips; the viewer's
    own are highlighted; tapping a chip toggles.
 3. Reactions update **live** (Realtime).

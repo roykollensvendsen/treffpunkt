@@ -115,12 +115,16 @@ void main() {
     expect(find.text('slett meg'), findsNothing);
   });
 
-  testWidgets('reacting adds a chip, reacting again removes it (spec 0052)', (
+  testWidgets('reacting to another shooter adds a chip, then removes it', (
     tester,
   ) async {
     final repo = _meRepo();
     await repo.createCompetition(_competition);
-    await repo.postMessage(
+    // A message from ANOTHER participant — you react to others', not your own.
+    final other = repo.asUser(userId: 'other', email: 'other@example.com');
+    await repo.invite('c1', 'other@example.com');
+    await other.acceptInvitation('c1');
+    await other.postMessage(
       const CompetitionMessage(id: 'm1', competitionId: 'c1', body: 'hei'),
     );
 
@@ -140,6 +144,26 @@ void main() {
     await tester.tap(find.byKey(chatReactionKey('m1', '👍')));
     await tester.pumpAndSettle();
     expect(find.byKey(chatReactionKey('m1', '👍')), findsNothing);
+  });
+
+  testWidgets('you cannot react to your own message (spec 0052)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    await repo.postMessage(
+      const CompetitionMessage(
+        id: 'm1',
+        competitionId: 'c1',
+        body: 'mi melding',
+      ),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    // No "add reaction" affordance on your own message.
+    expect(find.byKey(chatAddReactionKey('m1')), findsNothing);
   });
 
   testWidgets('an image message renders the picture (spec 0053)', (
