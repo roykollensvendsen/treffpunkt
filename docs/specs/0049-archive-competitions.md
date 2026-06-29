@@ -24,8 +24,9 @@ competitions you cannot delete because they are not yours.
 3. A non-owner can archive a competition they joined even though they cannot
    delete it.
 4. The competition list shows **active** competitions by default; archived ones
-   move to a separate, secondary **"Arkiverte"** section (shown only when the
-   user has archived at least one).
+   move into a separate **"Arkiverte (N)"** tile that is **collapsed by
+   default** (shown only when the user has archived at least one), so they stay
+   tucked away until the user expands it.
 5. Archiving and restoring are reachable from the list (a per-card action) and
    from the competition detail screen, and take effect without reopening the
    screen.
@@ -90,10 +91,12 @@ to the caller's row).
 - `archivedCompetitionIdsProvider` (`FutureProvider<Set<String>>`), invalidated
   after archive/restore.
 - The list partitions `myCompetitionsProvider` by the archived set: active under
-  "Mine konkurranser", archived under an "Arkiverte" header (only when
-  non-empty). Each active card carries an **archive** icon
-  (`archiveCompetitionKey(id)`); each archived card a **restore** icon
-  (`unarchiveCompetitionKey(id)`). Archiving shows a snackbar with **Angre**.
+  "Mine konkurranser", archived inside a collapsed-by-default `ExpansionTile`
+  ("Arkiverte (N)", only when non-empty), so archived competitions are hidden
+  until the tile is expanded. Each active card carries an **archive** icon
+  (`archiveCompetitionKey(id)`); each archived row (revealed on expand) a
+  **restore** icon (`unarchiveCompetitionKey(id)`). Archiving shows a snackbar
+  with **Angre**.
 - The detail screen shows an **Arkiver** / **Gjenopprett** button available to
   every viewer (owner and non-owner alike), beside the owner-only delete.
 
@@ -109,9 +112,10 @@ to the caller's row).
 
 ### System tests
 - The screen lists a competition under "Mine konkurranser"; tapping its archive
-  icon moves it to the "Arkiverte" section (and out of the active list) without
-  reopening; the restore icon moves it back.
-- The "Arkiverte" section is absent when nothing is archived.
+  icon moves it out of the active list into the collapsed "Arkiverte" tile
+  (the archived row is hidden until the tile is expanded); expanding and tapping
+  restore moves it back.
+- The "Arkiverte" tile is absent when nothing is archived.
 - A joined (non-owned) competition can be archived from the detail screen.
 
 ## Open questions

@@ -9,7 +9,8 @@ All notable changes to this project are documented here. The format is based on
 ### Added
 - You can now **archive** old competitions to tidy your list. Each competition
   has an archive button (on its card and inside its detail), and archived ones
-  move to a separate "Arkiverte" section you can restore from. Archiving only
+  move into a collapsed "Arkiverte" section (tap to expand) you can restore
+  from. Archiving only
   affects *your* view — it never deletes the competition or changes what other
   participants see — so it also works for competitions **created by someone
   else**, which you cannot delete (spec 0049).

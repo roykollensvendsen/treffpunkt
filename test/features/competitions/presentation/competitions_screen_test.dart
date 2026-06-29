@@ -598,11 +598,17 @@ void main() {
     await tester.tap(find.byKey(archiveCompetitionKey('c1')));
     await tester.pumpAndSettle();
 
-    // It is now under "Arkiverte" with a restore action; archive is gone.
+    // The collapsed "Arkiverte" tile appears; the archive action is gone, and
+    // the archived competition stays tucked away until the tile is expanded.
     expect(find.byKey(archivedSectionKey), findsOneWidget);
-    expect(find.byKey(unarchiveCompetitionKey('c1')), findsOneWidget);
     expect(find.byKey(archiveCompetitionKey('c1')), findsNothing);
+    expect(find.byKey(unarchiveCompetitionKey('c1')), findsNothing);
     expect(await repo.archivedCompetitionIds(), <String>{'c1'});
+
+    // Expanding it reveals the archived competition with a restore action.
+    await tester.tap(find.byKey(archivedSectionKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(unarchiveCompetitionKey('c1')), findsOneWidget);
   });
 
   testWidgets('restoring returns an archived competition to the active list', (
@@ -621,7 +627,10 @@ void main() {
     await tester.pumpWidget(_app(repo));
     await tester.pumpAndSettle();
 
+    // Expand the collapsed "Arkiverte" tile to reach the restore action.
     expect(find.byKey(archivedSectionKey), findsOneWidget);
+    await tester.tap(find.byKey(archivedSectionKey));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(unarchiveCompetitionKey('c1')));
     await tester.pumpAndSettle();
 
@@ -659,9 +668,12 @@ void main() {
     await tester.tap(find.byKey(toggleArchiveButtonKey));
     await tester.pumpAndSettle();
 
-    // Popped back to the list; it now sits under "Arkiverte".
+    // Popped back to the list; it now sits under the collapsed "Arkiverte"
+    // tile, revealed on expand.
     expect(await repo.archivedCompetitionIds(), <String>{'c1'});
     expect(find.byKey(archivedSectionKey), findsOneWidget);
+    await tester.tap(find.byKey(archivedSectionKey));
+    await tester.pumpAndSettle();
     expect(find.byKey(unarchiveCompetitionKey('c1')), findsOneWidget);
   });
 }

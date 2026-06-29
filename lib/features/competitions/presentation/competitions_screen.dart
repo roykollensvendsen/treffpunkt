@@ -42,8 +42,8 @@ Key archiveCompetitionKey(String id) =>
 Key unarchiveCompetitionKey(String id) =>
     ValueKey<String>('unarchiveCompetition-$id');
 
-/// Key for the "Arkiverte" section header, shown only when something is
-/// archived (spec 0049).
+/// Key for the collapsible "Arkiverte" tile, shown (collapsed) only when
+/// something is archived (spec 0049).
 const Key archivedSectionKey = ValueKey<String>('archivedSection');
 
 /// Key for the archive / restore toggle on the competition detail screen.
@@ -313,23 +313,34 @@ class CompetitionsScreen extends ConsumerWidget {
             ),
           if (archived.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const _SectionHeader('Arkiverte', key: archivedSectionKey),
-            for (final competition in archived)
-              Card(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: ListTile(
-                  key: competitionCard(competition.id),
-                  title: Text(competition.name),
-                  subtitle: Text(_subtitle(competition)),
-                  trailing: IconButton(
-                    key: unarchiveCompetitionKey(competition.id),
-                    icon: const Icon(Icons.unarchive_outlined),
-                    tooltip: 'Gjenopprett',
-                    onPressed: () => unawaited(_restore(ref, competition.id)),
-                  ),
-                  onTap: () => _open(context, competition),
-                ),
+            // Tucked away and collapsed by default, so they stay out of the way
+            // until you ask for them (spec 0049).
+            Card(
+              clipBehavior: Clip.antiAlias,
+              child: ExpansionTile(
+                key: archivedSectionKey,
+                leading: const Icon(Icons.inventory_2_outlined),
+                title: Text('Arkiverte (${archived.length})'),
+                shape: const Border(),
+                collapsedShape: const Border(),
+                children: <Widget>[
+                  for (final competition in archived)
+                    ListTile(
+                      key: competitionCard(competition.id),
+                      title: Text(competition.name),
+                      subtitle: Text(_subtitle(competition)),
+                      trailing: IconButton(
+                        key: unarchiveCompetitionKey(competition.id),
+                        icon: const Icon(Icons.unarchive_outlined),
+                        tooltip: 'Gjenopprett',
+                        onPressed: () =>
+                            unawaited(_restore(ref, competition.id)),
+                      ),
+                      onTap: () => _open(context, competition),
+                    ),
+                ],
               ),
+            ),
           ],
         ];
       },
@@ -370,7 +381,7 @@ class _InvitationCard extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.label, {super.key});
+  const _SectionHeader(this.label);
 
   final String label;
 
