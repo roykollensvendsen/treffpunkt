@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
@@ -179,6 +180,18 @@ abstract interface class CompetitionRepository {
   /// is delivered live through [watchMessages]. Throws
   /// [CompetitionSyncException] on failure.
   Future<void> toggleReaction(String messageId, String emoji);
+
+  /// Uploads [bytes] as a chat image for [competitionId] and returns its
+  /// storage path, to set as a message's `imagePath` (spec 0053).
+  ///
+  /// Only a participant may upload (Storage Row-Level Security enforces it).
+  /// [fileExtension] (e.g. `jpg`, `png`) names the object. Throws
+  /// [CompetitionSyncException] on failure.
+  Future<String> uploadChatImage(
+    String competitionId,
+    Uint8List bytes, {
+    String fileExtension,
+  });
 }
 
 /// A [CompetitionRepository] that keeps everything in memory only.
@@ -529,6 +542,12 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
                   List<MessageReaction>.unmodifiable(
                     _reactions[message.id] ?? const <MessageReaction>[],
                   ),
+                )
+                // Stand in for a signed URL so the bubble renders an image.
+                .withImageUrl(
+                  message.imagePath == null
+                      ? null
+                      : 'memory://${message.imagePath}',
                 ),
       ];
 
@@ -544,6 +563,7 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
       userId: message.userId ?? currentUserId,
       body: message.body,
       createdAt: DateTime.fromMillisecondsSinceEpoch(_messageSeq[0]++),
+      imagePath: message.imagePath,
     );
     if (_messagesChanged.hasListener) {
       _messagesChanged.add(message.competitionId);
@@ -597,5 +617,18 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     if (_messagesChanged.hasListener) {
       _messagesChanged.add(message.competitionId);
     }
+  }
+
+  @override
+  Future<String> uploadChatImage(
+    String competitionId,
+    Uint8List bytes, {
+    String fileExtension = 'jpg',
+  }) async {
+    if (!_participates(competitionId)) {
+      throw const CompetitionSyncException('not a participant');
+    }
+    // No real storage in the fake — just mint a plausible object path.
+    return '$competitionId/${_messageSeq[0]++}.$fileExtension';
   }
 }

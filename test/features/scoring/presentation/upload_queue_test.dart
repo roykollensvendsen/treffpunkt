@@ -8,6 +8,7 @@
 // repository keeps the record queued; the same id dedups to one; on app start
 // a queue loaded with pending records flushes them.
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -142,6 +143,12 @@ class _SpyCompetitionRepository implements CompetitionRepository {
   @override
   Future<void> toggleReaction(String messageId, String emoji) async =>
       throw UnimplementedError();
+  @override
+  Future<String> uploadChatImage(
+    String competitionId,
+    Uint8List bytes, {
+    String fileExtension = 'jpg',
+  }) async => throw UnimplementedError();
 }
 
 /// A repository whose [upload] always throws, to prove the queue keeps the

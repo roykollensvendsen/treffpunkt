@@ -21,6 +21,12 @@ const Key chatComposerFieldKey = ValueKey<String>('chatComposer');
 /// Key for the chat send action.
 const Key chatSendButtonKey = ValueKey<String>('chatSend');
 
+/// Key for the "attach image" action in the composer (spec 0053).
+const Key chatAttachImageKey = ValueKey<String>('chatAttachImage');
+
+/// Key for the attached image on the message with the given [id].
+Key chatImageKey(String id) => ValueKey<String>('chatImage-$id');
+
 /// Key for the empty-chat state.
 const Key chatEmptyKey = ValueKey<String>('chatEmpty');
 
@@ -94,6 +100,40 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
     } on CompetitionSyncException {
       messenger.showSnackBar(
         const SnackBar(content: Text('Kunne ikke sende meldingen.')),
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _pickAndSendImage() async {
+    if (_sending) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final picked = await ref.read(imagePickerProvider)();
+    if (picked == null) return;
+    setState(() => _sending = true);
+    try {
+      final bytes = await picked.readAsBytes();
+      final isPng = picked.name.toLowerCase().endsWith('.png');
+      final repo = ref.read(competitionRepositoryProvider);
+      final path = await repo.uploadChatImage(
+        widget.competition.id,
+        bytes,
+        fileExtension: isPng ? 'png' : 'jpg',
+      );
+      await repo.postMessage(
+        CompetitionMessage(
+          id: const Uuid().v4(),
+          competitionId: widget.competition.id,
+          body: _composer.text.trim(),
+          userId: ref.read(currentUserIdProvider),
+          imagePath: path,
+        ),
+      );
+      _composer.clear();
+    } on CompetitionSyncException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke laste opp bildet.')),
       );
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -212,6 +252,7 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
                   controller: _composer,
                   sending: _sending,
                   onSend: () => unawaited(_send()),
+                  onAttach: () => unawaited(_pickAndSendImage()),
                 ),
               ],
             ),
@@ -306,7 +347,27 @@ class _MessageBubble extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                  Text(message.body, style: theme.textTheme.bodyMedium),
+                  if (message.imageUrl case final url?)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: message.body.isEmpty ? 0 : 6,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          url,
+                          key: chatImageKey(message.id),
+                          height: 180,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => const SizedBox(
+                            height: 180,
+                            child: Center(child: Icon(Icons.broken_image)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (message.body.isNotEmpty)
+                    Text(message.body, style: theme.textTheme.bodyMedium),
                 ],
               ),
             ),
@@ -378,11 +439,13 @@ class _Composer extends StatelessWidget {
     required this.controller,
     required this.sending,
     required this.onSend,
+    required this.onAttach,
   });
 
   final TextEditingController controller;
   final bool sending;
   final VoidCallback onSend;
+  final VoidCallback onAttach;
 
   @override
   Widget build(BuildContext context) {
@@ -390,6 +453,12 @@ class _Composer extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       child: Row(
         children: <Widget>[
+          IconButton(
+            key: chatAttachImageKey,
+            onPressed: sending ? null : onAttach,
+            icon: const Icon(Icons.image_outlined),
+            tooltip: 'Legg ved bilde',
+          ),
           Expanded(
             child: TextField(
               key: chatComposerFieldKey,

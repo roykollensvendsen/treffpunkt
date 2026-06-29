@@ -5,6 +5,8 @@
 // Tests for the on-sign-in profile upsert (spec 0010): when the user is signed
 // in, profileSyncProvider upserts their profile once; a repository that fails
 // must never break sign-in.
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
@@ -171,6 +173,12 @@ class _RecordingCompetitionRepository implements CompetitionRepository {
   @override
   Future<void> toggleReaction(String messageId, String emoji) async =>
       throw UnimplementedError();
+  @override
+  Future<String> uploadChatImage(
+    String competitionId,
+    Uint8List bytes, {
+    String fileExtension = 'jpg',
+  }) async => throw UnimplementedError();
 }
 
 /// A repository whose profile upsert always fails (a misconfigured backend).

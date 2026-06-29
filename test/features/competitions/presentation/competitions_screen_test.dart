@@ -800,6 +800,16 @@ class _GatedInviteRepository implements CompetitionRepository {
   @override
   Future<void> toggleReaction(String messageId, String emoji) =>
       _inner.toggleReaction(messageId, emoji);
+  @override
+  Future<String> uploadChatImage(
+    String competitionId,
+    Uint8List bytes, {
+    String fileExtension = 'jpg',
+  }) => _inner.uploadChatImage(
+    competitionId,
+    bytes,
+    fileExtension: fileExtension,
+  );
 }
 
 CompetitionResult _res(

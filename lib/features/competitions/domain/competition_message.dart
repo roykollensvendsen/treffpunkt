@@ -23,6 +23,8 @@ class CompetitionMessage {
     this.createdAt,
     this.profile,
     this.reactions = const <MessageReaction>[],
+    this.imagePath,
+    this.imageUrl,
   });
 
   /// Reads a message from a `competition_messages` row (snake_case columns).
@@ -37,6 +39,7 @@ class CompetitionMessage {
       userId: json['user_id'] as String?,
       body: json['body'] as String,
       createdAt: createdAt == null ? null : DateTime.parse(createdAt),
+      imagePath: json['image_path'] as String?,
     );
   }
 
@@ -62,12 +65,22 @@ class CompetitionMessage {
   /// loaded. Attached by the repository alongside the message.
   final List<MessageReaction> reactions;
 
+  /// The attached image's object path in the `chat-images` bucket, or `null`
+  /// when the message has no image (spec 0053).
+  final String? imagePath;
+
+  /// A displayable (signed) URL for [imagePath], attached by the repository, or
+  /// `null` when there is no image. Not persisted.
+  final String? imageUrl;
+
   /// The columns sent on insert; `user_id` and `created_at` default
-  /// server-side (`auth.uid()` / `now()`), so they are omitted.
+  /// server-side (`auth.uid()` / `now()`), so they are omitted. `image_path` is
+  /// only sent when the message carries an image (spec 0053).
   Map<String, dynamic> toInsertJson() => <String, dynamic>{
     'id': id,
     'competition_id': competitionId,
     'body': body,
+    if (imagePath != null) 'image_path': imagePath,
   };
 
   /// A copy with [profile] attached.
@@ -79,6 +92,8 @@ class CompetitionMessage {
     createdAt: createdAt,
     profile: profile,
     reactions: reactions,
+    imagePath: imagePath,
+    imageUrl: imageUrl,
   );
 
   /// A copy with [userId] set (used by the in-memory fake to default the
@@ -91,6 +106,8 @@ class CompetitionMessage {
     createdAt: createdAt,
     profile: profile,
     reactions: reactions,
+    imagePath: imagePath,
+    imageUrl: imageUrl,
   );
 
   /// A copy with [reactions] attached (spec 0052).
@@ -103,7 +120,22 @@ class CompetitionMessage {
         createdAt: createdAt,
         profile: profile,
         reactions: reactions,
+        imagePath: imagePath,
+        imageUrl: imageUrl,
       );
+
+  /// A copy with a displayable [imageUrl] attached (spec 0053).
+  CompetitionMessage withImageUrl(String? imageUrl) => CompetitionMessage(
+    id: id,
+    competitionId: competitionId,
+    userId: userId,
+    body: body,
+    createdAt: createdAt,
+    profile: profile,
+    reactions: reactions,
+    imagePath: imagePath,
+    imageUrl: imageUrl,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -114,6 +146,8 @@ class CompetitionMessage {
       other.body == body &&
       other.createdAt == createdAt &&
       other.profile == profile &&
+      other.imagePath == imagePath &&
+      other.imageUrl == imageUrl &&
       _reactionsEqual(other.reactions, reactions);
 
   @override
@@ -124,6 +158,8 @@ class CompetitionMessage {
     body,
     createdAt,
     profile,
+    imagePath,
+    imageUrl,
     Object.hashAll(reactions),
   );
 }
