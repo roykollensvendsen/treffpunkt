@@ -12,6 +12,8 @@ import 'package:treffpunkt/features/auth/domain/auth_repository.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/forum/data/forum_repository.dart';
+import 'package:treffpunkt/features/forum/presentation/forum_providers.dart';
 import 'package:treffpunkt/features/scoring/data/contribution_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
@@ -83,6 +85,7 @@ void runTreffpunkt(
   bool? initialContributionEnabled,
   bool? initialDisclosureShown,
   CompetitionRepository? competitionRepository,
+  ForumRepository? forumRepository,
   BrowserEnvironment? browserEnvironment,
   Sharer? sharer,
 }) {
@@ -128,6 +131,8 @@ void runTreffpunkt(
           competitionRepositoryProvider.overrideWithValue(
             competitionRepository,
           ),
+        if (forumRepository != null)
+          forumRepositoryProvider.overrideWithValue(forumRepository),
         if (browserEnvironment != null)
           browserEnvironmentProvider.overrideWithValue(browserEnvironment),
         if (sharer != null) sharerProvider.overrideWithValue(sharer),

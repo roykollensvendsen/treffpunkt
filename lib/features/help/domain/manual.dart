@@ -38,6 +38,7 @@ const List<ManualPage> manualPages = <ManualPage>[
   ),
   ManualPage(file: 'scan-a-paper-target.md', title: 'Skann en papirblink'),
   ManualPage(file: 'competitions.md', title: 'Konkurranser'),
+  ManualPage(file: 'forum.md', title: 'Forum'),
   ManualPage(
     file: 'personvern-treningsbilder.md',
     title: 'Treningsbilder og personvern',

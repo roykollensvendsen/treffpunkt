@@ -29,6 +29,7 @@ nav:
       - Score a 10 m air-rifle target: user/score-a-10m-air-rifle-target.md
       - Scan a paper target: user/scan-a-paper-target.md
       - Competitions: user/competitions.md
+      - Forum: user/forum.md
       - Treningsbilder og personvern: user/personvern-treningsbilder.md
   - Developer Guide:
       - Overview: dev/index.md
@@ -84,6 +85,7 @@ nav:
       - "0051 — Competition chat": specs/0051-competition-chat.md
       - "0052 — Message reactions": specs/0052-message-reactions.md
       - "0053 — Chat image attachments": specs/0053-chat-image-attachments.md
+      - "0054 — Community forum": specs/0054-community-forum.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
