@@ -12,6 +12,7 @@ import 'package:treffpunkt/features/competitions/data/competition_repository.dar
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/join_link.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
@@ -153,4 +154,13 @@ final competitionScoreboardProvider =
     StreamProvider.family<List<CompetitionResult>, String>(
       (ref, competitionId) =>
           ref.watch(competitionRepositoryProvider).watchResults(competitionId),
+    );
+
+/// The live chat for a competition (spec 0051): its messages oldest-first,
+/// re-emitted whenever one is posted or deleted (Supabase Realtime).
+// ignore: specify_nonobvious_property_types
+final competitionChatProvider =
+    StreamProvider.family<List<CompetitionMessage>, String>(
+      (ref, competitionId) =>
+          ref.watch(competitionRepositoryProvider).watchMessages(competitionId),
     );

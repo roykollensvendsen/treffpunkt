@@ -10,6 +10,7 @@ import 'package:treffpunkt/features/competitions/data/competition_repository.dar
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
@@ -391,5 +392,97 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
         await controller.close();
       };
     return controller.stream;
+  }
+
+  @override
+  Future<void> postMessage(CompetitionMessage message) async {
+    try {
+      await _client.from('competition_messages').insert(message.toInsertJson());
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  /// Reads a competition's chat (oldest first) with the authors' profiles
+  /// attached — there is no foreign key from messages to profiles to embed, so
+  /// the profiles are read separately, like [resultsOf] / [membersOf].
+  Future<List<CompetitionMessage>> _messagesOf(String competitionId) async {
+    final rows = await _client
+        .from('competition_messages')
+        .select()
+        .eq('competition_id', competitionId)
+        .order('created_at', ascending: true);
+    final messages = <CompetitionMessage>[
+      for (final row in rows) CompetitionMessage.fromJson(row),
+    ];
+    if (messages.isEmpty) return messages;
+    final ids = messages.map((m) => m.userId).whereType<String>().toList();
+    final profileRows = await _client
+        .from('profiles')
+        .select()
+        .inFilter('id', ids);
+    final byId = <String, Profile>{
+      for (final row in profileRows) row['id'] as String: Profile.fromJson(row),
+    };
+    return <CompetitionMessage>[
+      for (final m in messages) m.withProfile(byId[m.userId]),
+    ];
+  }
+
+  @override
+  Stream<List<CompetitionMessage>> watchMessages(String competitionId) {
+    final controller = StreamController<List<CompetitionMessage>>();
+    RealtimeChannel? channel;
+
+    Future<void> emit() async {
+      try {
+        if (!controller.isClosed) {
+          controller.add(await _messagesOf(competitionId));
+        }
+      } on Object catch (error) {
+        if (!controller.isClosed) {
+          controller.addError(CompetitionSyncException(error));
+        }
+      }
+    }
+
+    controller
+      ..onListen = () {
+        // Inserts/deletes for this competition's chat; RLS limits delivery to
+        // rows the user may read. Re-read the chat on any change (and on the
+        // initial subscribe).
+        channel = _client
+            .channel('competition_messages:$competitionId')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'competition_messages',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'competition_id',
+                value: competitionId,
+              ),
+              callback: (_) => unawaited(emit()),
+            )
+            .subscribe();
+        unawaited(emit());
+      }
+      ..onCancel = () async {
+        final open = channel;
+        if (open != null) await _client.removeChannel(open);
+        await controller.close();
+      };
+    return controller.stream;
+  }
+
+  @override
+  Future<void> deleteMessage(String messageId) async {
+    try {
+      // RLS allows the author or the competition owner; for anyone else the
+      // delete matches no row (a no-op).
+      await _client.from('competition_messages').delete().eq('id', messageId);
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
   }
 }

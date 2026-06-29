@@ -10,6 +10,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
@@ -381,7 +382,97 @@ void main() {
       expect(await bob.archivedCompetitionIds(), isEmpty);
     });
   });
+
+  group('chat (spec 0051)', () {
+    test(
+      'participants post; both read it oldest-first, with profiles',
+      () async {
+        final alice = InMemoryCompetitionRepository(
+          currentUserId: 'alice',
+          currentEmail: 'alice@example.com',
+        );
+        final bob = alice.asUser(userId: 'bob', email: 'bob@example.com');
+        await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+        await alice.upsertOwnProfile(
+          const Profile(id: 'alice', displayName: 'Alice'),
+        );
+        await alice.invite('c1', 'bob@example.com');
+        await bob.acceptInvitation('c1');
+
+        await alice.postMessage(_msg('m1', 'c1', 'Hei!'));
+        await bob.postMessage(_msg('m2', 'c1', 'Hallo'));
+
+        final chat = await bob.watchMessages('c1').first;
+        expect(chat.map((m) => m.body), <String>['Hei!', 'Hallo']);
+        expect(chat.first.userId, 'alice');
+        expect(chat.first.profile?.displayName, 'Alice');
+      },
+    );
+
+    test('a non-participant cannot post', () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      final carol = alice.asUser(userId: 'carol', email: 'carol@example.com');
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+
+      expect(
+        () => carol.postMessage(_msg('m1', 'c1', 'hei')),
+        throwsA(isA<CompetitionSyncException>()),
+      );
+    });
+
+    test(
+      'the author deletes own; the owner moderates; others cannot',
+      () async {
+        final alice = InMemoryCompetitionRepository(
+          currentUserId: 'alice',
+          currentEmail: 'alice@example.com',
+        );
+        final bob = alice.asUser(userId: 'bob', email: 'bob@example.com');
+        await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+        await alice.invite('c1', 'bob@example.com');
+        await bob.acceptInvitation('c1');
+        await bob.postMessage(_msg('m1', 'c1', 'bob-melding'));
+
+        // A non-author, non-owner delete matches no row — a silent no-op.
+        final carol = alice.asUser(userId: 'carol', email: 'carol@example.com');
+        await carol.deleteMessage('m1');
+        expect(await alice.watchMessages('c1').first, hasLength(1));
+
+        // The owner moderates: alice deletes bob's message.
+        await alice.deleteMessage('m1');
+        expect(await alice.watchMessages('c1').first, isEmpty);
+      },
+    );
+
+    test('watchMessages re-emits when a message is posted', () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+
+      final expectation = expectLater(
+        alice.watchMessages('c1'),
+        emitsInOrder(<dynamic>[
+          isEmpty,
+          predicate<List<CompetitionMessage>>(
+            (l) => l.length == 1 && l.single.body == 'hi',
+            'one message "hi"',
+          ),
+        ]),
+      );
+      await Future<void>.delayed(Duration.zero);
+      await alice.postMessage(_msg('m1', 'c1', 'hi'));
+      await expectation;
+    });
+  });
 }
+
+CompetitionMessage _msg(String id, String competitionId, String body) =>
+    CompetitionMessage(id: id, competitionId: competitionId, body: body);
 
 CompetitionResult _result(
   String id, {

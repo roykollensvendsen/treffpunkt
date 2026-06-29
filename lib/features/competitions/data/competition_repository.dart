@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
@@ -151,6 +152,24 @@ abstract interface class CompetitionRepository {
   /// backend is driven by Supabase Realtime; each emission is the full re-read
   /// of [resultsOf].
   Stream<List<CompetitionResult>> watchResults(String competitionId);
+
+  /// Posts [message] to its competition's chat (spec 0051).
+  ///
+  /// Only a participant may post, and only as themselves (Row-Level Security
+  /// enforces both). Throws [CompetitionSyncException] on failure.
+  Future<void> postMessage(CompetitionMessage message);
+
+  /// A live stream of [competitionId]'s chat (spec 0051): it emits the current
+  /// messages (oldest first), then re-emits whenever one is posted or deleted,
+  /// each with the author's profile attached. Driven by Supabase Realtime.
+  Stream<List<CompetitionMessage>> watchMessages(String competitionId);
+
+  /// Deletes the chat message [messageId] (spec 0051).
+  ///
+  /// Row-Level Security allows the **author** or the **competition owner** (for
+  /// moderation); anyone else is rejected. Throws [CompetitionSyncException] on
+  /// failure.
+  Future<void> deleteMessage(String messageId);
 }
 
 /// A [CompetitionRepository] that keeps everything in memory only.
@@ -170,7 +189,10 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
       _tokenSeq = <int>[0],
       _archives = <String, Set<String>>{},
       _results = <String, Map<String, CompetitionResult>>{},
-      _resultsChanged = StreamController<String>.broadcast();
+      _resultsChanged = StreamController<String>.broadcast(),
+      _messages = <String, CompetitionMessage>{},
+      _messageSeq = <int>[0],
+      _messagesChanged = StreamController<String>.broadcast();
 
   InMemoryCompetitionRepository._shared(
     this.currentUserId,
@@ -185,6 +207,9 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     this._archives,
     this._results,
     this._resultsChanged,
+    this._messages,
+    this._messageSeq,
+    this._messagesChanged,
   );
 
   /// The acting user's id (owner/member checks), or `null` if signed out.
@@ -214,6 +239,14 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
   // Emits a competitionId whenever a new result lands there, so watchResults
   // re-reads the scoreboard (the in-memory stand-in for Supabase Realtime).
   final StreamController<String> _resultsChanged;
+  // messageId -> message (insertion order is chronological). Shared so a
+  // cross-user test can drive a two-person chat (spec 0051).
+  final Map<String, CompetitionMessage> _messages;
+  // A shared monotonic counter that stamps each message's createdAt, so the
+  // order is deterministic without a wall clock.
+  final List<int> _messageSeq;
+  // Emits a competitionId whenever its chat changes, so watchMessages re-reads.
+  final StreamController<String> _messagesChanged;
 
   /// A view of the **same** store acting as a different user — for tests that
   /// drive a multi-user flow (one user invites, another accepts) against one
@@ -232,6 +265,9 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
         _archives,
         _results,
         _resultsChanged,
+        _messages,
+        _messageSeq,
+        _messagesChanged,
       );
 
   String get _email => (currentEmail ?? '').toLowerCase();
@@ -458,6 +494,63 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     yield await resultsOf(competitionId);
     await for (final changed in _resultsChanged.stream) {
       if (changed == competitionId) yield await resultsOf(competitionId);
+    }
+  }
+
+  bool _participates(String competitionId) {
+    final competition = _competitions[competitionId];
+    final uid = currentUserId;
+    return competition != null &&
+        (competition.ownerId == uid ||
+            (_members[competitionId]?.contains(uid) ?? false));
+  }
+
+  List<CompetitionMessage> _chatOf(String competitionId) =>
+      <CompetitionMessage>[
+        for (final message in _messages.values)
+          if (message.competitionId == competitionId)
+            message.withProfile(_profiles[message.userId]),
+      ];
+
+  @override
+  Future<void> postMessage(CompetitionMessage message) async {
+    // Mirror the RLS insert check: only a participant may post.
+    if (!_participates(message.competitionId)) {
+      throw const CompetitionSyncException('not a participant');
+    }
+    _messages[message.id] = CompetitionMessage(
+      id: message.id,
+      competitionId: message.competitionId,
+      userId: message.userId ?? currentUserId,
+      body: message.body,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(_messageSeq[0]++),
+    );
+    if (_messagesChanged.hasListener) {
+      _messagesChanged.add(message.competitionId);
+    }
+  }
+
+  @override
+  Stream<List<CompetitionMessage>> watchMessages(String competitionId) async* {
+    yield _chatOf(competitionId);
+    await for (final changed in _messagesChanged.stream) {
+      if (changed == competitionId) yield _chatOf(competitionId);
+    }
+  }
+
+  @override
+  Future<void> deleteMessage(String messageId) async {
+    final message = _messages[messageId];
+    if (message == null) return;
+    final competition = _competitions[message.competitionId];
+    final uid = currentUserId;
+    // RLS allows the author or the competition owner; for anyone else the
+    // delete matches no row (a silent no-op), so mirror that.
+    final allowed = message.userId == uid || (competition?.ownerId == uid);
+    if (!allowed) return;
+    _messages.remove(messageId);
+    if (_messagesChanged.hasListener) {
+      _messagesChanged.add(message.competitionId);
     }
   }
 }

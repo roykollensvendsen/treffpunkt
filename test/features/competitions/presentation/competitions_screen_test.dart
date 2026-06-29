@@ -19,8 +19,10 @@ import 'package:treffpunkt/features/competitions/data/competition_repository.dar
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_chat_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
@@ -418,6 +420,11 @@ void main() {
   });
 
   testWidgets('the detail shows the scoreboard, best first', (tester) async {
+    // A tall viewport so the whole detail (chat button, scoreboard, members)
+    // builds — the scoreboard rows sit below a short screen's build extent.
+    tester.view.physicalSize = const Size(1400, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     final repo = _meRepo();
     const competition = Competition(
       id: 'c1',
@@ -459,6 +466,9 @@ void main() {
   });
 
   testWidgets('tapping a shooter opens their full scorecard', (tester) async {
+    tester.view.physicalSize = const Size(1400, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     final repo = _meRepo();
     const competition = Competition(
       id: 'c1',
@@ -490,6 +500,9 @@ void main() {
   testWidgets('a result with an unreadable payload shows a message', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(1400, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     final repo = _meRepo();
     const competition = Competition(
       id: 'c1',
@@ -574,6 +587,30 @@ void main() {
       find.widgetWithText(AppBar, '10 m Luftpistol 60 skudd'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('the detail opens the competition chat (spec 0051)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'Vårcup',
+      program: '25 m NAIS fin',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+
+    await tester.pumpWidget(
+      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(competitionChatButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CompetitionChatScreen), findsOneWidget);
+    expect(find.byKey(chatComposerFieldKey), findsOneWidget);
   });
 
   testWidgets('archiving from the list moves it to the Arkiverte section', (
@@ -751,6 +788,15 @@ class _GatedInviteRepository implements CompetitionRepository {
   @override
   Stream<List<CompetitionResult>> watchResults(String competitionId) =>
       _inner.watchResults(competitionId);
+  @override
+  Future<void> postMessage(CompetitionMessage message) =>
+      _inner.postMessage(message);
+  @override
+  Stream<List<CompetitionMessage>> watchMessages(String competitionId) =>
+      _inner.watchMessages(competitionId);
+  @override
+  Future<void> deleteMessage(String messageId) =>
+      _inner.deleteMessage(messageId);
 }
 
 CompetitionResult _res(

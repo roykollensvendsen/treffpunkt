@@ -51,6 +51,16 @@ program; when you finish, your result is submitted on its own. Under
 **Resultater** the scoreboard lists every shooter, **best first**, and updates
 live as people submit. **Deltakere** lists who has joined.
 
+## Chat with the others
+Every competition has a **chat** — a shared back-channel for the people in it.
+Open the competition and tap **Chat**. Everyone who can see the competition can
+read it; if you have joined, you can post. Messages appear **live** for everyone,
+newest at the bottom, with the sender's name.
+
+- Type in the box at the bottom and tap **send**.
+- **Long-press** a message to delete it: you can remove your own, and the
+  competition's **owner** can remove any message (light moderation).
+
 ## Archive old competitions
 When a competition is over and you want it out of the way, **archive** it.
 Archiving only changes **your own** view — it never deletes the competition and
