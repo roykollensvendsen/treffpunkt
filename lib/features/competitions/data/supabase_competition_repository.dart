@@ -14,6 +14,7 @@ import 'package:treffpunkt/features/competitions/domain/competition_message.dart
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/message_reaction.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
+import 'package:uuid/uuid.dart';
 
 /// [CompetitionRepository] backed by Supabase (spec 0010).
 ///
@@ -439,12 +440,30 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
         reaction,
       );
     }
+    // Signed URLs for any attached images (the bucket is private, spec 0053).
+    final imagePaths = messages
+        .map((m) => m.imagePath)
+        .whereType<String>()
+        .toSet();
+    final signedByPath = <String, String>{};
+    for (final path in imagePaths) {
+      try {
+        signedByPath[path] = await _client.storage
+            .from('chat-images')
+            .createSignedUrl(path, 3600);
+      } on Object {
+        // A missing or unreadable object just renders no image.
+      }
+    }
     return <CompetitionMessage>[
       for (final m in messages)
         m
             .withProfile(byId[m.userId])
             .withReactions(
               reactionsByMessage[m.id] ?? const <MessageReaction>[],
+            )
+            .withImageUrl(
+              m.imagePath == null ? null : signedByPath[m.imagePath],
             ),
     ];
   }
@@ -532,6 +551,30 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
           <String, dynamic>{'message_id': messageId, 'emoji': emoji},
         );
       }
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
+  Future<String> uploadChatImage(
+    String competitionId,
+    Uint8List bytes, {
+    String fileExtension = 'jpg',
+  }) async {
+    try {
+      // Path's first segment is the competition id — Storage RLS reads it to
+      // gate the upload to a participant (spec 0053).
+      final path = '$competitionId/${const Uuid().v4()}.$fileExtension';
+      final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
+      await _client.storage
+          .from('chat-images')
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: FileOptions(contentType: contentType),
+          );
+      return path;
     } on Object catch (error) {
       throw CompetitionSyncException(error);
     }

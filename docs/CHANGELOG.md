@@ -13,6 +13,8 @@ All notable changes to this project are documented here. The format is based on
   post. You can delete your own messages, and the owner can moderate (spec 0051).
   You can also **react** to a message with an emoji (tap the emoji button under
   it; tap a reaction again to take it back) — reactions update live (spec 0052).
+  And you can **attach a picture** to the chat (the image button by the message
+  box); chat images are private to the competition (spec 0053).
 - The **user guide is now inside the app**. Tap the **?** button — in the top
   bar when signed in, or on the sign-in screen before you sign in — to open
   "Brukerveiledning". It is the same guide pages as the website, bundled so they

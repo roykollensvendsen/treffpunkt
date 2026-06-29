@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
@@ -130,6 +131,19 @@ final competitionInviteesProvider = FutureProvider.family<List<String>, String>(
 /// web this is the deployed page; tests override it. The screen appends
 /// `?join&token` via `competitionJoinLink`.
 final appBaseUrlProvider = Provider<Uri>((ref) => Uri.base);
+
+/// Picks one image from the gallery for a chat attachment, or `null` when the
+/// user cancels (spec 0053).
+typedef ChatImagePicker = Future<XFile?> Function();
+
+/// The image picker for attaching a chat image (spec 0053). A seam so a widget
+/// test can inject a fake that returns a canned file instead of opening the OS
+/// gallery.
+final imagePickerProvider = Provider<ChatImagePicker>(
+  (ref) =>
+      () =>
+          ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1600),
+);
 
 /// The pending join request from a deep link, parsed from the app's URL at
 /// startup (spec 0048), or `null` when there is none. `JoinLinkHandler` acts

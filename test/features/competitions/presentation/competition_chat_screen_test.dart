@@ -6,9 +6,12 @@
 // message; an incoming message from another shooter appears with their name;
 // deleting your own message removes it. Driven by the in-memory repository's
 // Realtime stand-in (watchMessages).
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
@@ -137,5 +140,64 @@ void main() {
     await tester.tap(find.byKey(chatReactionKey('m1', '👍')));
     await tester.pumpAndSettle();
     expect(find.byKey(chatReactionKey('m1', '👍')), findsNothing);
+  });
+
+  testWidgets('an image message renders the picture (spec 0053)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    final path = await repo.uploadChatImage(
+      'c1',
+      Uint8List.fromList(<int>[1, 2, 3]),
+    );
+    await repo.postMessage(
+      CompetitionMessage(
+        id: 'm1',
+        competitionId: 'c1',
+        body: '',
+        imagePath: path,
+      ),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pump();
+
+    expect(find.byKey(chatImageKey('m1')), findsOneWidget);
+  });
+
+  testWidgets('attaching an image uploads and posts it (spec 0053)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    final picked = XFile.fromData(
+      Uint8List.fromList(<int>[1, 2, 3]),
+      name: 'shot.jpg',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(initial: const SignedIn(_me)),
+          ),
+          competitionRepositoryProvider.overrideWithValue(repo),
+          imagePickerProvider.overrideWithValue(() async => picked),
+        ],
+        child: const MaterialApp(
+          home: CompetitionChatScreen(competition: _competition),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(chatAttachImageKey));
+    await tester.pump();
+
+    // The picked image was uploaded and posted as a message.
+    final chat = await repo.watchMessages('c1').first;
+    expect(chat, hasLength(1));
+    expect(chat.single.imagePath, isNotNull);
   });
 }

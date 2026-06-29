@@ -7,6 +7,8 @@
 // joined and excludes others'; invite + accept route a user into a competition;
 // membersOf attaches profiles. The cross-user flow uses one shared store
 // via asUser().
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
@@ -511,6 +513,51 @@ void main() {
 
       expect(
         () => carol.toggleReaction('m1', '👍'),
+        throwsA(isA<CompetitionSyncException>()),
+      );
+    });
+  });
+
+  group('image attachments (spec 0053)', () {
+    test(
+      'a participant uploads, and the image rides along with the message',
+      () async {
+        final alice = InMemoryCompetitionRepository(
+          currentUserId: 'alice',
+          currentEmail: 'alice@example.com',
+        );
+        await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+
+        final path = await alice.uploadChatImage(
+          'c1',
+          Uint8List.fromList(<int>[1, 2, 3]),
+        );
+        expect(path, startsWith('c1/'));
+
+        await alice.postMessage(
+          CompetitionMessage(
+            id: 'm1',
+            competitionId: 'c1',
+            body: '',
+            imagePath: path,
+          ),
+        );
+        final chat = await alice.watchMessages('c1').first;
+        expect(chat.single.imagePath, path);
+        expect(chat.single.imageUrl, isNotNull);
+      },
+    );
+
+    test('a non-participant cannot upload', () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      final carol = alice.asUser(userId: 'carol', email: 'carol@example.com');
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+
+      expect(
+        () => carol.uploadChatImage('c1', Uint8List.fromList(<int>[1])),
         throwsA(isA<CompetitionSyncException>()),
       );
     });
