@@ -18,6 +18,7 @@ import 'package:treffpunkt/features/competitions/data/competition_repository.dar
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
@@ -128,6 +129,15 @@ class _SpyCompetitionRepository implements CompetitionRepository {
       throw UnimplementedError();
   @override
   Stream<List<CompetitionResult>> watchResults(String competitionId) =>
+      throw UnimplementedError();
+  @override
+  Future<void> postMessage(CompetitionMessage message) async =>
+      throw UnimplementedError();
+  @override
+  Stream<List<CompetitionMessage>> watchMessages(String competitionId) =>
+      throw UnimplementedError();
+  @override
+  Future<void> deleteMessage(String messageId) async =>
       throw UnimplementedError();
 }
 

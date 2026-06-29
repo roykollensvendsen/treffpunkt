@@ -17,6 +17,7 @@ import 'package:treffpunkt/features/competitions/domain/competition_result.dart'
 import 'package:treffpunkt/features/competitions/domain/join_link.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/domain/scoreboard.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_chat_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
@@ -837,6 +838,22 @@ class _CompetitionDetailScreenState
               padding: const EdgeInsets.all(16),
               children: [
                 Text(_subtitle(competition), style: theme.textTheme.bodyMedium),
+                const SizedBox(height: 16),
+                // The competition's chat — the shared back-channel for the
+                // people in it (spec 0051).
+                OutlinedButton.icon(
+                  key: competitionChatButtonKey,
+                  onPressed: () => unawaited(
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            CompetitionChatScreen(competition: competition),
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.forum_outlined),
+                  label: const Text('Chat'),
+                ),
                 const SizedBox(height: 16),
                 if (isParticipant) ...[
                   FilledButton.icon(

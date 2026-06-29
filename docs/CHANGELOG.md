@@ -7,6 +7,10 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Each competition now has a **chat**. Open a competition and tap **Chat** to
+  talk with the others in it — messages appear live for everyone, with the
+  sender's name. Anyone who can see the competition can read it; participants can
+  post. You can delete your own messages, and the owner can moderate (spec 0051).
 - The **user guide is now inside the app**. Tap the **?** button — in the top
   bar when signed in, or on the sign-in screen before you sign in — to open
   "Brukerveiledning". It is the same guide pages as the website, bundled so they
