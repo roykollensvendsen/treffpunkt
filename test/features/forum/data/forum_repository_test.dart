@@ -78,4 +78,47 @@ void main() {
     alice.addAdmin('alice');
     expect(await alice.isAdmin(), isTrue);
   });
+
+  test(
+    'reactions toggle on a thread, per-user, and ride along (spec 0055)',
+    () async {
+      final alice = InMemoryForumRepository(currentUserId: 'alice');
+      final bob = alice.asUser(userId: 'bob');
+      await alice.createThread(_thread('t1', authorId: 'alice'));
+
+      await alice.toggleReaction(
+        targetType: 'thread',
+        targetId: 't1',
+        emoji: '👍',
+      );
+      await bob.toggleReaction(
+        targetType: 'thread',
+        targetId: 't1',
+        emoji: '👍',
+      );
+      var threads = await alice.watchThreads().first;
+      expect(threads.single.reactions, hasLength(2));
+
+      // Alice toggles hers off → only Bob's remains.
+      await alice.toggleReaction(
+        targetType: 'thread',
+        targetId: 't1',
+        emoji: '👍',
+      );
+      threads = await alice.watchThreads().first;
+      expect(threads.single.reactions, hasLength(1));
+      expect(threads.single.reactions.single.userId, 'bob');
+    },
+  );
+
+  test('reactions toggle on a reply (spec 0055)', () async {
+    final alice = InMemoryForumRepository(currentUserId: 'alice');
+    await alice.createThread(_thread('t1'));
+    await alice.postReply(_post('p1', 't1', 'hei'));
+
+    await alice.toggleReaction(targetType: 'post', targetId: 'p1', emoji: '🎯');
+    final posts = await alice.watchPosts('t1').first;
+    expect(posts.single.reactions.single.emoji, '🎯');
+    expect(posts.single.reactions.single.userId, 'alice');
+  });
 }

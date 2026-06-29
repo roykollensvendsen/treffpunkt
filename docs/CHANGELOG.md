@@ -11,7 +11,9 @@ All notable changes to this project are documented here. The format is based on
   signed in can report **bugs**, suggest **features/ideas** and discuss them.
   Start a categorised thread (Bug / Ønske / Generelt), reply, and filter by
   category — threads and replies update live. You can delete your own; a
-  moderator can tidy up anyone's (spec 0054).
+  moderator can tidy up anyone's (spec 0054). You can also **react** with an
+  emoji to a thread or reply — a quick way to "vote" 👍 on a bug or idea
+  (spec 0055).
 - Each competition now has a **chat**. Open a competition and tap **Chat** to
   talk with the others in it — messages appear live for everyone, with the
   sender's name. Anyone who can see the competition can read it; participants can

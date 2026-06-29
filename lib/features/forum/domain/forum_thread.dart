@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
 
 /// What a forum thread is about (spec 0054).
 enum ForumCategory {
@@ -45,6 +46,7 @@ class ForumThread {
     this.authorId,
     this.authorName,
     this.createdAt,
+    this.reactions = const <ForumReaction>[],
   });
 
   /// Reads a thread from a `forum_threads` row.
@@ -81,6 +83,9 @@ class ForumThread {
   /// When it was started, or `null` before it is read back.
   final DateTime? createdAt;
 
+  /// The emoji reactions on this thread (spec 0055), attached by the repo.
+  final List<ForumReaction> reactions;
+
   /// The columns sent on insert; `author_id` and `created_at` default
   /// server-side (`auth.uid()` / `now()`).
   Map<String, dynamic> toInsertJson() => <String, dynamic>{
@@ -99,6 +104,19 @@ class ForumThread {
     authorId: authorId,
     authorName: authorName,
     createdAt: createdAt,
+    reactions: reactions,
+  );
+
+  /// A copy with [reactions] attached (spec 0055).
+  ForumThread withReactions(List<ForumReaction> reactions) => ForumThread(
+    id: id,
+    category: category,
+    title: title,
+    body: body,
+    authorId: authorId,
+    authorName: authorName,
+    createdAt: createdAt,
+    reactions: reactions,
   );
 
   @override
@@ -110,7 +128,8 @@ class ForumThread {
       other.title == title &&
       other.body == body &&
       other.authorName == authorName &&
-      other.createdAt == createdAt;
+      other.createdAt == createdAt &&
+      forumReactionsEqual(other.reactions, reactions);
 
   @override
   int get hashCode => Object.hash(
@@ -121,5 +140,6 @@ class ForumThread {
     body,
     authorName,
     createdAt,
+    Object.hashAll(reactions),
   );
 }

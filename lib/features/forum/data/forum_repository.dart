@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
+import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
 import 'package:treffpunkt/features/forum/domain/forum_thread.dart';
 
 /// Thrown when a forum read or a write the user is waiting on fails
@@ -46,6 +47,15 @@ abstract interface class ForumRepository {
 
   /// Whether the caller is a moderator (may delete others' threads/replies).
   Future<bool> isAdmin();
+
+  /// Toggles the caller's [emoji] reaction on a forum [targetType] (`thread` or
+  /// `post`) identified by [targetId] (spec 0055): adds it when absent, removes
+  /// it when present. Delivered live through [watchThreads] / [watchPosts].
+  Future<void> toggleReaction({
+    required String targetType,
+    required String targetId,
+    required String emoji,
+  });
 }
 
 /// A [ForumRepository] kept entirely in memory — the default binding and the
@@ -58,6 +68,7 @@ class InMemoryForumRepository implements ForumRepository {
       _posts = <String, ForumPost>{},
       _names = <String, String>{},
       _admins = <String>{},
+      _reactions = <String, List<ForumReaction>>{},
       _seq = <int>[0],
       _changed = StreamController<void>.broadcast();
 
@@ -67,6 +78,7 @@ class InMemoryForumRepository implements ForumRepository {
     this._posts,
     this._names,
     this._admins,
+    this._reactions,
     this._seq,
     this._changed,
   );
@@ -78,6 +90,8 @@ class InMemoryForumRepository implements ForumRepository {
   final Map<String, ForumPost> _posts;
   final Map<String, String> _names; // userId -> display name
   final Set<String> _admins; // moderator user ids
+  // '<type>:<id>' -> reactions, in insertion order (spec 0055).
+  final Map<String, List<ForumReaction>> _reactions;
   final List<int> _seq; // monotonic createdAt stamp
   final StreamController<void> _changed;
 
@@ -89,6 +103,7 @@ class InMemoryForumRepository implements ForumRepository {
         _posts,
         _names,
         _admins,
+        _reactions,
         _seq,
         _changed,
       );
@@ -106,10 +121,19 @@ class InMemoryForumRepository implements ForumRepository {
     if (_changed.hasListener) _changed.add(null);
   }
 
+  List<ForumReaction> _reactionsFor(String type, String id) =>
+      List<ForumReaction>.unmodifiable(
+        _reactions['$type:$id'] ?? const <ForumReaction>[],
+      );
+
   List<ForumThread> _threadList() {
     final list =
         _threads.values
-            .map((t) => t.withAuthorName(_names[t.authorId]))
+            .map(
+              (t) => t
+                  .withAuthorName(_names[t.authorId])
+                  .withReactions(_reactionsFor('thread', t.id)),
+            )
             .toList()
           ..sort((a, b) {
             final at = a.createdAt ?? DateTime(0);
@@ -122,7 +146,11 @@ class InMemoryForumRepository implements ForumRepository {
   List<ForumPost> _postsOf(String threadId) {
     return _posts.values
         .where((p) => p.threadId == threadId)
-        .map((p) => p.withAuthorName(_names[p.authorId]))
+        .map(
+          (p) => p
+              .withAuthorName(_names[p.authorId])
+              .withReactions(_reactionsFor('post', p.id)),
+        )
         .toList()
       ..sort((a, b) {
         final at = a.createdAt ?? DateTime(0);
@@ -195,6 +223,23 @@ class InMemoryForumRepository implements ForumRepository {
 
   @override
   Future<bool> isAdmin() async => _isAdmin;
+
+  @override
+  Future<void> toggleReaction({
+    required String targetType,
+    required String targetId,
+    required String emoji,
+  }) async {
+    final uid = currentUserId;
+    if (uid == null) return;
+    final list = _reactions.putIfAbsent(
+      '$targetType:$targetId',
+      () => <ForumReaction>[],
+    );
+    final mine = ForumReaction(userId: uid, emoji: emoji);
+    if (!list.remove(mine)) list.add(mine);
+    _emit();
+  }
 
   bool get _isAdmin => currentUserId != null && _admins.contains(currentUserId);
 }

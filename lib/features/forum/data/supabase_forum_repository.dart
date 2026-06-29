@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
+import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
 import 'package:treffpunkt/features/forum/domain/forum_thread.dart';
 
 /// [ForumRepository] backed by Supabase (spec 0054).
@@ -35,6 +36,26 @@ final class SupabaseForumRepository implements ForumRepository {
     };
   }
 
+  Future<Map<String, List<ForumReaction>>> _reactionsByTarget(
+    String targetType,
+    List<String> ids,
+  ) async {
+    if (ids.isEmpty) return const <String, List<ForumReaction>>{};
+    final rows = await _client
+        .from('forum_reactions')
+        .select('target_id, user_id, emoji')
+        .eq('target_type', targetType)
+        .inFilter('target_id', ids)
+        .order('created_at', ascending: true);
+    final byTarget = <String, List<ForumReaction>>{};
+    for (final row in rows) {
+      (byTarget[row['target_id'] as String] ??= <ForumReaction>[]).add(
+        ForumReaction.fromJson(row),
+      );
+    }
+    return byTarget;
+  }
+
   Future<List<ForumThread>> _threadsOf() async {
     final rows = await _client
         .from('forum_threads')
@@ -45,8 +66,17 @@ final class SupabaseForumRepository implements ForumRepository {
     ];
     if (threads.isEmpty) return threads;
     final names = await _namesFor(threads.map((t) => t.authorId));
+    final reactions = await _reactionsByTarget(
+      'thread',
+      threads.map((t) => t.id).toList(),
+    );
     return <ForumThread>[
-      for (final t in threads) t.withAuthorName(names[t.authorId]),
+      for (final t in threads)
+        t
+            .withAuthorName(names[t.authorId])
+            .withReactions(
+              reactions[t.id] ?? const <ForumReaction>[],
+            ),
     ];
   }
 
@@ -59,15 +89,23 @@ final class SupabaseForumRepository implements ForumRepository {
     final posts = <ForumPost>[for (final row in rows) ForumPost.fromJson(row)];
     if (posts.isEmpty) return posts;
     final names = await _namesFor(posts.map((p) => p.authorId));
+    final reactions = await _reactionsByTarget(
+      'post',
+      posts.map((p) => p.id).toList(),
+    );
     return <ForumPost>[
-      for (final p in posts) p.withAuthorName(names[p.authorId]),
+      for (final p in posts)
+        p
+            .withAuthorName(names[p.authorId])
+            .withReactions(
+              reactions[p.id] ?? const <ForumReaction>[],
+            ),
     ];
   }
 
   Stream<T> _live<T>(
     String channel,
-    String table,
-    PostgresChangeFilter? filter,
+    List<({String table, PostgresChangeFilter? filter})> tables,
     Future<T> Function() read,
   ) {
     final controller = StreamController<T>();
@@ -83,16 +121,17 @@ final class SupabaseForumRepository implements ForumRepository {
 
     controller
       ..onListen = () {
-        sub = _client
-            .channel(channel)
-            .onPostgresChanges(
-              event: PostgresChangeEvent.all,
-              schema: 'public',
-              table: table,
-              filter: filter,
-              callback: (_) => unawaited(emit()),
-            )
-            .subscribe();
+        var channelBuilder = _client.channel(channel);
+        for (final t in tables) {
+          channelBuilder = channelBuilder.onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: t.table,
+            filter: t.filter,
+            callback: (_) => unawaited(emit()),
+          );
+        }
+        sub = channelBuilder.subscribe();
         unawaited(emit());
       }
       ..onCancel = () async {
@@ -104,8 +143,16 @@ final class SupabaseForumRepository implements ForumRepository {
   }
 
   @override
-  Stream<List<ForumThread>> watchThreads() =>
-      _live('forum_threads', 'forum_threads', null, _threadsOf);
+  Stream<List<ForumThread>> watchThreads() => _live(
+    'forum_threads',
+    const [
+      (table: 'forum_threads', filter: null),
+      // Reactions have no thread filter, so re-read on any reaction change;
+      // RLS still applies (spec 0055).
+      (table: 'forum_reactions', filter: null),
+    ],
+    _threadsOf,
+  );
 
   @override
   Future<void> createThread(ForumThread thread) async {
@@ -128,12 +175,17 @@ final class SupabaseForumRepository implements ForumRepository {
   @override
   Stream<List<ForumPost>> watchPosts(String threadId) => _live(
     'forum_posts:$threadId',
-    'forum_posts',
-    PostgresChangeFilter(
-      type: PostgresChangeFilterType.eq,
-      column: 'thread_id',
-      value: threadId,
-    ),
+    [
+      (
+        table: 'forum_posts',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'thread_id',
+          value: threadId,
+        ),
+      ),
+      (table: 'forum_reactions', filter: null),
+    ],
     () => _postsOf(threadId),
   );
 
@@ -165,6 +217,34 @@ final class SupabaseForumRepository implements ForumRepository {
           .select('user_id')
           .maybeSingle();
       return row != null;
+    } on Object catch (error) {
+      throw ForumException(error);
+    }
+  }
+
+  @override
+  Future<void> toggleReaction({
+    required String targetType,
+    required String targetId,
+    required String emoji,
+  }) async {
+    try {
+      // Toggle: delete the caller's own reaction (RLS limits the delete to it);
+      // if there was none, insert it (spec 0055).
+      final removed = await _client
+          .from('forum_reactions')
+          .delete()
+          .eq('target_type', targetType)
+          .eq('target_id', targetId)
+          .eq('emoji', emoji)
+          .select();
+      if ((removed as List<dynamic>).isEmpty) {
+        await _client.from('forum_reactions').insert(<String, dynamic>{
+          'target_type': targetType,
+          'target_id': targetId,
+          'emoji': emoji,
+        });
+      }
     } on Object catch (error) {
       throw ForumException(error);
     }
