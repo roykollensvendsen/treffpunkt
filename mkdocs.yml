@@ -80,6 +80,7 @@ nav:
       - "0046 — Calibrate by drag & pinch": specs/0046-calibrate-pan-pinch.md
       - "0048 — Share a join link": specs/0048-share-join-link.md
       - "0049 — Archive competitions": specs/0049-archive-competitions.md
+      - "0050 — In-app user manual": specs/0050-in-app-user-manual.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

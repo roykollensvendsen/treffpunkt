@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- The **user guide is now inside the app**. Tap the **?** button in the top bar
+  to open "Brukerveiledning" — the same guide pages as the website, bundled so
+  they work offline, with links between pages opening in place (spec 0050).
 - You can now **archive** old competitions to tidy your list. Each competition
   has an archive button (on its card and inside its detail), and archived ones
   move into a collapsed "Arkiverte" section (tap to expand) you can restore

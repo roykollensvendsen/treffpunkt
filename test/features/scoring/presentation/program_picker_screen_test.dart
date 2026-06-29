@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
+import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
@@ -51,6 +52,18 @@ void main() {
     // Navigated to the session setup step (date/time + place) for the program.
     expect(find.byKey(sessionConfirmKey), findsOneWidget);
     expect(find.text('25 m Finpistol'), findsWidgets);
+  });
+
+  testWidgets('opens the user manual from the help action', (tester) async {
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(helpButtonKey));
+    await tester.pumpAndSettle();
+
+    // The manual's contents screen, listing its pages.
+    expect(find.text('Brukerveiledning'), findsOneWidget);
+    expect(find.byKey(manualPageTileKey('competitions.md')), findsOneWidget);
   });
 
   testWidgets('labels each program tile as a button for screen readers', (

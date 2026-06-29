@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
+import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
@@ -134,6 +135,16 @@ class ProgramPickerScreen extends ConsumerWidget {
             icon: const Icon(Icons.history),
             tooltip: 'Mine økter',
             onPressed: () => unawaited(_openMySessions(context, ref)),
+          ),
+          IconButton(
+            key: helpButtonKey,
+            icon: const Icon(Icons.help_outline),
+            tooltip: 'Brukerveiledning',
+            onPressed: () => unawaited(
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const HelpScreen()),
+              ),
+            ),
           ),
           ...?actions,
         ],
