@@ -1,6 +1,7 @@
 # Spec 0060 — Push notifications for new messages and invitations
 
-- **Status:** Accepted (Increment A); Increment B planned
+- **Status:** Accepted — Increment A shipped; Increment B code landed (awaiting
+  the hosted VAPID/function/trigger configuration, see `docs/dev/deploy.md`)
 - **Related:** spec 0042 (no standalone PWA, for OAuth), spec 0051 (chat),
   spec 0010 (competitions & invitations), ADR-0026 (web push, no iOS).
 
@@ -32,9 +33,15 @@ until there is a native build; this is recorded in ADR-0026.
   service worker, `push_subscriptions` table, client subscribe/unsubscribe. No
   notification is sent yet, but subscriptions are captured and the worker is in
   place.
-- **B (follow-up):** server delivery — a Supabase Edge Function, triggered by
-  inserts on `competition_messages` / `competition_invitations`, sends the web
-  push to each recipient's subscriptions (VAPID), pruning dead ones.
+- **B (code landed):** server delivery — the `notify` Supabase Edge Function,
+  triggered by inserts on `competition_messages` / `competition_invitations`,
+  sends the web push to each recipient's subscriptions (VAPID), pruning dead
+  ones. The trigger migration is a **no-op until configured** (it reads the
+  function URL/secret from database settings), and the function is inert until
+  deployed — so the code is safe to ship ahead of the hosted setup
+  (`docs/dev/deploy.md`). Recipients: a message notifies the competition's other
+  members (not the sender); an invitation notifies the invited user (by email →
+  user; a not-yet-registered invitee has nobody to notify).
 
 ## Rationale
 **A dedicated, cache-free service worker.** The web build ships
