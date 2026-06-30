@@ -58,6 +58,10 @@ abstract interface class ForumRepository {
   /// [ForumException].
   Future<void> editPost(String postId, {required String body});
 
+  /// Sets thread [threadId]'s lifecycle [status] — moderators only (spec 0066).
+  /// Throws [ForumException].
+  Future<void> setThreadStatus(String threadId, ForumThreadStatus status);
+
   /// Whether the caller is a moderator (may delete others' threads/replies).
   Future<bool> isAdmin();
 
@@ -258,6 +262,27 @@ class InMemoryForumRepository implements ForumRepository {
       category: thread.category,
       title: title,
       body: body,
+      status: thread.status,
+      authorId: thread.authorId,
+      createdAt: thread.createdAt,
+      imagePath: thread.imagePath,
+    );
+    _emit();
+  }
+
+  @override
+  Future<void> setThreadStatus(
+    String threadId,
+    ForumThreadStatus status,
+  ) async {
+    final thread = _threads[threadId];
+    if (thread == null || !_isAdmin) return;
+    _threads[threadId] = ForumThread(
+      id: thread.id,
+      category: thread.category,
+      title: thread.title,
+      body: thread.body,
+      status: status,
       authorId: thread.authorId,
       createdAt: thread.createdAt,
       imagePath: thread.imagePath,

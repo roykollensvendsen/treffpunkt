@@ -89,6 +89,16 @@ Key forumPostKey(String id) => ValueKey<String>('forumPost-$id');
 /// Key for the timestamp on a thread or reply [id] (spec 0065).
 Key forumTimeKey(String id) => ValueKey<String>('forumTime-$id');
 
+/// Key for the status badge on thread [id] (spec 0066).
+Key forumStatusBadgeKey(String id) => ValueKey<String>('forumStatus-$id');
+
+/// Key for the moderator's "set status" menu on the thread screen (spec 0066).
+const Key forumStatusMenuKey = ValueKey<String>('forumStatusMenu');
+
+/// Key for the status choice [wire] in the moderator's menu, used by tests.
+Key forumStatusOptionKey(String wire) =>
+    ValueKey<String>('forumStatusOption-$wire');
+
 /// Key for the "add reaction" action on a forum [target] (`thread:<id>` or
 /// `post:<id>`).
 Key forumAddReactionKey(String target) =>
@@ -191,7 +201,17 @@ class _ForumScreenState extends ConsumerState<ForumScreen> {
                               subtitle: Text(
                                 _byline(thread.authorName, thread.category),
                               ),
-                              trailing: const Icon(Icons.chevron_right),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  if (thread.status != ForumThreadStatus.open)
+                                    _ThreadStatusBadge(
+                                      thread.status,
+                                      threadId: thread.id,
+                                    ),
+                                  const Icon(Icons.chevron_right),
+                                ],
+                              ),
                               onTap: () => unawaited(
                                 Navigator.of(context).push(
                                   MaterialPageRoute<void>(
@@ -551,6 +571,18 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     await ref.read(forumRepositoryProvider).deletePost(postId);
   }
 
+  /// Sets the thread's lifecycle status — moderators only (spec 0066).
+  Future<void> _setStatus(String threadId, ForumThreadStatus status) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(forumRepositoryProvider).setThreadStatus(threadId, status);
+    } on ForumException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke sette status.')),
+      );
+    }
+  }
+
   /// Opens an editor for your own thread (title + body), then saves it
   /// (spec 0063).
   Future<void> _editThread(ForumThread thread) async {
@@ -639,6 +671,22 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
       appBar: AppBar(
         title: Text(thread.title),
         actions: <Widget>[
+          if (isAdmin)
+            PopupMenuButton<ForumThreadStatus>(
+              key: forumStatusMenuKey,
+              tooltip: 'Sett status',
+              icon: const Icon(Icons.flag_outlined),
+              initialValue: thread.status,
+              onSelected: (status) => unawaited(_setStatus(thread.id, status)),
+              itemBuilder: (context) => <PopupMenuEntry<ForumThreadStatus>>[
+                for (final status in ForumThreadStatus.values)
+                  PopupMenuItem<ForumThreadStatus>(
+                    key: forumStatusOptionKey(status.wire),
+                    value: status,
+                    child: Text(status.label),
+                  ),
+              ],
+            ),
           if (thread.authorId == uid)
             IconButton(
               key: editThreadButtonKey,
@@ -673,12 +721,29 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Text(
-                                _byline(thread.authorName, thread.category),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
+                              Row(
+                                children: <Widget>[
+                                  Expanded(
+                                    child: Text(
+                                      _byline(
+                                        thread.authorName,
+                                        thread.category,
+                                      ),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ),
+                                  if (thread.status != ForumThreadStatus.open)
+                                    _ThreadStatusBadge(
+                                      thread.status,
+                                      threadId: thread.id,
+                                    ),
+                                ],
                               ),
                               if (thread.body.isNotEmpty) ...[
                                 const SizedBox(height: 6),
@@ -1177,4 +1242,49 @@ class _EditReplyDialogState extends State<_EditReplyDialog> {
       ),
     ],
   );
+}
+
+/// A small coloured badge for a thread's lifecycle status (spec 0066). Shown
+/// only for non-open statuses.
+class _ThreadStatusBadge extends StatelessWidget {
+  const _ThreadStatusBadge(this.status, {this.threadId});
+
+  final ForumThreadStatus status;
+  final String? threadId;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final (Color background, Color foreground) = switch (status) {
+      ForumThreadStatus.planned => (
+        dark ? Colors.blue.shade900 : Colors.blue.shade100,
+        dark ? Colors.blue.shade100 : Colors.blue.shade900,
+      ),
+      ForumThreadStatus.done => (
+        dark ? Colors.green.shade900 : Colors.green.shade100,
+        dark ? Colors.green.shade100 : Colors.green.shade900,
+      ),
+      ForumThreadStatus.rejected => (
+        dark ? Colors.grey.shade700 : Colors.grey.shade300,
+        dark ? Colors.grey.shade200 : Colors.grey.shade800,
+      ),
+      ForumThreadStatus.open => (Colors.transparent, Colors.transparent),
+    };
+    return Container(
+      key: threadId == null ? null : forumStatusBadgeKey(threadId!),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        status.label,
+        style: TextStyle(
+          color: foreground,
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
 }

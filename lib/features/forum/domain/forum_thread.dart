@@ -33,6 +33,38 @@ enum ForumCategory {
       );
 }
 
+/// Where a thread is in its lifecycle (spec 0066): a moderator triages a bug or
+/// idea from open through to done or rejected.
+enum ForumThreadStatus {
+  /// Newly raised, not yet triaged.
+  open('open', 'Åpen'),
+
+  /// Accepted and planned.
+  planned('planned', 'Planlagt'),
+
+  /// Fixed or implemented.
+  done('done', 'Ferdig'),
+
+  /// Will not be done.
+  rejected('rejected', 'Avvist');
+
+  const ForumThreadStatus(this.wire, this.label);
+
+  /// The value stored in the database.
+  final String wire;
+
+  /// The Norwegian label shown in the app.
+  final String label;
+
+  /// The status for a stored [wire] value, defaulting to [open] for an unknown
+  /// one (so an added status never crashes an older client).
+  static ForumThreadStatus fromWire(String? wire) =>
+      ForumThreadStatus.values.firstWhere(
+        (s) => s.wire == wire,
+        orElse: () => ForumThreadStatus.open,
+      );
+}
+
 /// One forum thread (spec 0054): a categorised topic with a title and opening
 /// body, started by [authorId]. [authorName] is attached for display when set.
 @immutable
@@ -43,6 +75,7 @@ class ForumThread {
     required this.category,
     required this.title,
     this.body = '',
+    this.status = ForumThreadStatus.open,
     this.authorId,
     this.authorName,
     this.createdAt,
@@ -60,6 +93,7 @@ class ForumThread {
       category: ForumCategory.fromWire(json['category'] as String?),
       title: json['title'] as String,
       body: (json['body'] as String?) ?? '',
+      status: ForumThreadStatus.fromWire(json['status'] as String?),
       createdAt: createdAt == null ? null : DateTime.parse(createdAt),
       imagePath: json['image_path'] as String?,
     );
@@ -80,6 +114,9 @@ class ForumThread {
   /// The opening message.
   final String body;
 
+  /// The thread's lifecycle status (spec 0066).
+  final ForumThreadStatus status;
+
   /// The starter's display name, attached by the repository, or `null`.
   final String? authorName;
 
@@ -96,8 +133,8 @@ class ForumThread {
   /// `null`. Not persisted.
   final String? imageUrl;
 
-  /// The columns sent on insert; `author_id` and `created_at` default
-  /// server-side (`auth.uid()` / `now()`).
+  /// The columns sent on insert; `author_id`, `created_at` and `status` default
+  /// server-side (`auth.uid()` / `now()` / `'open'`).
   Map<String, dynamic> toInsertJson() => <String, dynamic>{
     'id': id,
     'category': category.wire,
@@ -107,45 +144,32 @@ class ForumThread {
   };
 
   /// A copy with [authorName] attached.
-  ForumThread withAuthorName(String? authorName) => ForumThread(
-    id: id,
-    category: category,
-    title: title,
-    body: body,
-    authorId: authorId,
-    authorName: authorName,
-    createdAt: createdAt,
-    reactions: reactions,
-    imagePath: imagePath,
-    imageUrl: imageUrl,
-  );
+  ForumThread withAuthorName(String? authorName) =>
+      _copyWith(authorName: authorName);
 
   /// A copy with [reactions] attached (spec 0055).
-  ForumThread withReactions(List<ForumReaction> reactions) => ForumThread(
-    id: id,
-    category: category,
-    title: title,
-    body: body,
-    authorId: authorId,
-    authorName: authorName,
-    createdAt: createdAt,
-    reactions: reactions,
-    imagePath: imagePath,
-    imageUrl: imageUrl,
-  );
+  ForumThread withReactions(List<ForumReaction> reactions) =>
+      _copyWith(reactions: reactions);
 
   /// A copy with a displayable [imageUrl] attached (spec 0056).
-  ForumThread withImageUrl(String? imageUrl) => ForumThread(
+  ForumThread withImageUrl(String? imageUrl) => _copyWith(imageUrl: imageUrl);
+
+  ForumThread _copyWith({
+    String? authorName,
+    List<ForumReaction>? reactions,
+    String? imageUrl,
+  }) => ForumThread(
     id: id,
     category: category,
     title: title,
     body: body,
+    status: status,
     authorId: authorId,
-    authorName: authorName,
+    authorName: authorName ?? this.authorName,
     createdAt: createdAt,
-    reactions: reactions,
+    reactions: reactions ?? this.reactions,
     imagePath: imagePath,
-    imageUrl: imageUrl,
+    imageUrl: imageUrl ?? this.imageUrl,
   );
 
   @override
@@ -156,6 +180,7 @@ class ForumThread {
       other.category == category &&
       other.title == title &&
       other.body == body &&
+      other.status == status &&
       other.authorName == authorName &&
       other.createdAt == createdAt &&
       other.imagePath == imagePath &&
@@ -169,6 +194,7 @@ class ForumThread {
     category,
     title,
     body,
+    status,
     authorName,
     createdAt,
     imagePath,

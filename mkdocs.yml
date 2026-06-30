@@ -96,6 +96,7 @@ nav:
       - "0063 — Edit your own forum messages": specs/0063-edit-forum-messages.md
       - "0064 — Chat-style reply bubbles": specs/0064-forum-reply-bubbles.md
       - "0065 — Message timestamps": specs/0065-message-timestamps.md
+      - "0066 — Forum thread status": specs/0066-forum-thread-status.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

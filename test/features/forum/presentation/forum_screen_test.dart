@@ -402,6 +402,44 @@ void main() {
     expect(find.text('feil tekst'), findsNothing);
   });
 
+  testWidgets('a moderator sets the status and it shows a badge (0066)', (
+    tester,
+  ) async {
+    final repo = _meRepo()..addAdmin('me');
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(forumStatusMenuKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumStatusOptionKey('done')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(forumStatusBadgeKey('t1')), findsOneWidget);
+    expect(find.text('Ferdig'), findsWidgets);
+  });
+
+  testWidgets('a non-moderator sees no status menu (spec 0066)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(forumStatusMenuKey), findsNothing);
+  });
+
   testWidgets('a thread and reply show a timestamp (spec 0065)', (
     tester,
   ) async {
