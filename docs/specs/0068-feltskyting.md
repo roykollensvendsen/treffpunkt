@@ -23,6 +23,10 @@ shooting time, an **inner zone on every figure**, max **80/47** points.
 2. A **course preview** (the NorgesFelt 2026 løype): the 8 holds with their
    figures rendered to **real relative size**, reachable from the program list
    under **Feltskyting**.
+3. Figures are drawn the way the **real targets** look: a **black silhouette on
+   a white plate** (independent of the app theme), with the **inner zone** ringed
+   at the figure's **centre of mass** — so the ring sits on a triangle's lower
+   third or an animal's body, not the bounding-box centre.
 
 ## Rationale
 **Vector figures, reconstructed faithfully.** Geometric figures (circle, oval,
@@ -40,14 +44,18 @@ from the ring scoring machinery.
 ## Design
 - `felt_figure.dart`: `FeltFigureType` + `FeltFigure` (type, cm size, inner zone).
 - `felt_animal_paths.dart`: generated, traced animal polygons (hare/wolf/rype).
-- `felt_figure_painter.dart`: `figurePath` (parametric + polygon) + `FeltFigureView`
-  (draws the silhouette and inner circle at a given px-per-cm).
+- `felt_figure_painter.dart`: `figurePath` (parametric + polygon), `figureCentroid`
+  (area centroid for the inner-zone placement) + `FeltFigureView` (draws the black
+  silhouette on a white plate with the inner ring at a given px-per-cm).
 - `felt_course.dart`: the 2026 course (8 holds, figures with cm sizes).
 - `felt_course_screen.dart`: the preview, opened from the picker.
 
 ## Verification
 - **Widget:** the preview shows all 8 holds and their figures (the traced animals
   and a circle render).
+- **Unit:** `figureCentroid` centres symmetric shapes on the box, places a
+  triangle two-thirds down, and lands the animals on their body (off the box
+  centre) — matching where the photos ring the inner zone.
 - Figures proven faithful by re-rendering the generated paths against the source
   images during reconstruction.
 
