@@ -44,6 +44,11 @@ Like the competition chat, **your own replies** appear on the **right** in a
 coloured bubble and others' on the left with their name, so a discussion is easy
 to follow.
 
+## Copying text
+**Long-press** a reply — or the opening post's text — and choose **Kopier tekst**
+to put the message on your clipboard, so you can quote or paste it elsewhere. A
+short **Tekst kopiert** appears to confirm.
+
 ## Editing and deleting
 You can **edit your own** thread (the **pencil** in its top bar — change the title
 and text) and your own reply (**long-press** it and choose **Rediger**).

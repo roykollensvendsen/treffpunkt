@@ -7,9 +7,9 @@
 // deleting your own message removes it. Driven by the in-memory repository's
 // Realtime stand-in (watchMessages).
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
@@ -110,12 +110,55 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('slett meg'), findsOneWidget);
 
+    // Long-press opens the action sheet; "Slett" there asks to confirm.
     await tester.longPress(find.byKey(chatMessageKey('m1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(chatDeleteKey));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Slett'));
     await tester.pumpAndSettle();
 
     expect(find.text('slett meg'), findsNothing);
+  });
+
+  testWidgets('long-pressing a message copies its text (spec 0069)', (
+    tester,
+  ) async {
+    final calls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') calls.add(call);
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    await repo.postMessage(
+      const CompetitionMessage(
+        id: 'm1',
+        competitionId: 'c1',
+        body: 'kopier meg',
+      ),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.byKey(chatMessageKey('m1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(chatCopyKey));
+    await tester.pumpAndSettle();
+
+    expect((calls.single.arguments as Map)['text'], 'kopier meg');
+    expect(find.text('Tekst kopiert'), findsOneWidget);
   });
 
   testWidgets('reacting to another shooter adds a chip, then removes it', (

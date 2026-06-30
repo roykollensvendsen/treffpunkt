@@ -6,9 +6,9 @@
 // shows it in the list; opening a thread shows its body and a posted reply;
 // only the author or an admin sees the delete-thread action.
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
@@ -400,6 +400,88 @@ void main() {
 
     expect(find.text('rettet tekst'), findsOneWidget);
     expect(find.text('feil tekst'), findsNothing);
+  });
+
+  testWidgets('long-pressing a reply copies its text (spec 0069)', (
+    tester,
+  ) async {
+    final calls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') calls.add(call);
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+    await repo.postReply(
+      const ForumPost(id: 'p1', threadId: 't1', body: 'svar å kopiere'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.byKey(forumPostKey('p1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumReplyCopyKey));
+    await tester.pumpAndSettle();
+
+    expect((calls.single.arguments as Map)['text'], 'svar å kopiere');
+    expect(find.text('Tekst kopiert'), findsOneWidget);
+  });
+
+  testWidgets("long-pressing a thread's body copies it (spec 0069)", (
+    tester,
+  ) async {
+    final calls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') calls.add(call);
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(
+        id: 't1',
+        category: ForumCategory.bug,
+        title: 'T',
+        body: 'tråd å kopiere',
+      ),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('tråd å kopiere'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCopyKey));
+    await tester.pumpAndSettle();
+
+    expect((calls.single.arguments as Map)['text'], 'tråd å kopiere');
+    expect(find.text('Tekst kopiert'), findsOneWidget);
   });
 
   testWidgets('a moderator sets the status and it shows a badge (0066)', (

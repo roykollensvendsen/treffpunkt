@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Copy message text**: long-press a chat message, a forum reply, or a forum
+  thread's opening post and choose **Kopier tekst** to put its text on your
+  clipboard — a short **Tekst kopiert** confirms (spec 0069).
 - **Feltskyting** (field shooting): under **Feltskyting** in the program list you
   can now preview the **NorgesFelt 2026 course** — all 8 holds with their actual
   **figures** (hare, wolf head, ptarmigan, hexagons, triangles, circles …) drawn

@@ -73,8 +73,10 @@ newest at the bottom, with the sender's name.
   and pick one (you don't react to your own). Tap a reaction again to take it
   back. Everyone sees reactions update live. **Hold** a reaction to see **who
   reacted** with it.
-- **Long-press** a message to delete it: you can remove your own, and the
-  competition's **owner** can remove any message (light moderation).
+- **Long-press** a message for its actions: **Kopier tekst** puts its text on
+  your clipboard (a short **Tekst kopiert** confirms), and **Slett** removes it —
+  you can delete your own, and the competition's **owner** can remove any message
+  (light moderation).
 
 ## Archive old competitions
 When a competition is over and you want it out of the way, **archive** it.
