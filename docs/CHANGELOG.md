@@ -9,10 +9,10 @@ All notable changes to this project are documented here. The format is based on
 ### Added
 - **Notifications** (Android/desktop): turn on the **bell** in the top bar to get
   a system notification for a new competition message or an invitation — even
-  when the app is closed. iPhone is not covered yet (it would require installing
-  the app in a way that breaks sign-in); a native app is the path there. This
-  first step captures the subscription and installs the push service worker;
-  delivery follows in a server-side step (spec 0060, ADR-0026).
+  when the app is closed. Moderators also get one for a **new forum thread or
+  reply** (a reported bug or idea), so feedback is not missed. iPhone is not
+  covered yet (it would require installing the app in a way that breaks sign-in);
+  a native app is the path there (spec 0060, ADR-0026).
 - You can now **see who reacted**: hold (long-press) a reaction on a chat
   message, a forum thread or a forum reply to open a list of everyone who
   reacted with that emoji (spec 0059).

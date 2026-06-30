@@ -52,6 +52,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       await handleMessage(record);
     } else if (payload.table === "competition_invitations") {
       await handleInvitation(record);
+    } else if (payload.table === "forum_threads") {
+      await handleForumThread(record);
+    } else if (payload.table === "forum_posts") {
+      await handleForumPost(record);
     }
   } catch (error) {
     console.error("notify failed", error);
@@ -125,6 +129,65 @@ async function handleInvitation(
     tag: `invite-${competitionId}`,
     url: "./",
   });
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  bug: "Bug",
+  idea: "Ønske",
+  general: "Generelt",
+};
+
+async function handleForumThread(
+  record: Record<string, unknown>,
+): Promise<void> {
+  const authorId = record.author_id as string;
+  const admins = await adminRecipients(authorId);
+  if (admins.length === 0) return;
+
+  const author = await displayName(authorId);
+  const category = CATEGORY_LABELS[record.category as string] ?? "Forum";
+  await sendToUsers(admins, {
+    title: `Nytt i forumet: ${category}`,
+    body: `${author}: ${(record.title ?? "").toString()}`,
+    tag: `forum-thread-${record.id}`,
+    url: "./",
+  });
+}
+
+async function handleForumPost(
+  record: Record<string, unknown>,
+): Promise<void> {
+  const authorId = record.author_id as string;
+  const admins = await adminRecipients(authorId);
+  if (admins.length === 0) return;
+
+  const author = await displayName(authorId);
+  const body = (record.body ?? "").toString();
+  const text = body.length > 80 ? `${body.slice(0, 79)}…` : body;
+  await sendToUsers(admins, {
+    title: "Nytt svar i forumet",
+    body: `${author}: ${text}`,
+    tag: `forum-post-${record.thread_id}`,
+    url: "./",
+  });
+}
+
+// The app admins, minus the author (you do not get notified about your own
+// forum activity).
+async function adminRecipients(excludeId: string): Promise<string[]> {
+  const { data } = await admin.from("app_admins").select("user_id");
+  return (data ?? [])
+    .map((a) => a.user_id as string)
+    .filter((id) => id !== excludeId);
+}
+
+async function displayName(userId: string): Promise<string> {
+  const { data } = await admin
+    .from("profiles")
+    .select("display_name")
+    .eq("id", userId)
+    .maybeSingle();
+  return (data?.display_name as string) ?? "Noen";
 }
 
 async function sendToUsers(
