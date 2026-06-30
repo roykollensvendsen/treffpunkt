@@ -43,3 +43,9 @@ You can also attach a **picture** to a reply (the image button by the reply box)
 You can delete **your own** thread or reply (long-press a reply to delete it; a
 thread has a delete button in its top bar). A **moderator** can delete anyone's
 — that keeps the forum tidy.
+
+## Varsler til moderator
+Når noen starter en **ny tråd** eller skriver et **svar**, får moderatoren et
+varsel (om de har slått på **bjella** og bruker Android eller PC) — slik at en
+meldt bug eller et ønske ikke blir oversett. Du varsles ikke om dine egne
+innlegg.

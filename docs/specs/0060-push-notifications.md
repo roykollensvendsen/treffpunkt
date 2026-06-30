@@ -23,7 +23,9 @@ until there is a native build; this is recorded in ADR-0026.
    turning them off removes it.
 2. While on, the user receives a system notification for:
    - a **new chat message** in a competition they are in (not their own messages);
-   - a **competition invitation** addressed to them.
+   - a **competition invitation** addressed to them;
+   - (**admins only**) a **new forum thread or reply** — a reported bug or idea —
+     except their own.
 3. Tapping a notification opens the app (the relevant competition where known).
 4. The control is **hidden** where push cannot work (browser without the Push
    API, or no VAPID key configured) — never a dead button.
@@ -41,7 +43,9 @@ until there is a native build; this is recorded in ADR-0026.
   deployed — so the code is safe to ship ahead of the hosted setup
   (`docs/dev/deploy.md`). Recipients: a message notifies the competition's other
   members (not the sender); an invitation notifies the invited user (by email →
-  user; a not-yet-registered invitee has nobody to notify).
+  user; a not-yet-registered invitee has nobody to notify). A new forum thread or
+  reply notifies the **app admins** (`app_admins`) except the author, so a
+  reported bug/idea reaches a moderator even when they are not in the app.
 
 ## Rationale
 **A dedicated, cache-free service worker.** The web build ships
