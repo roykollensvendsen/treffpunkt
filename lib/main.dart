@@ -12,6 +12,7 @@ import 'package:treffpunkt/core/platform/share_plus_sharer.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
 import 'package:treffpunkt/features/competitions/data/supabase_competition_repository.dart';
 import 'package:treffpunkt/features/forum/data/supabase_forum_repository.dart';
+import 'package:treffpunkt/features/notifications/data/supabase_push_subscription_repository.dart';
 import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_picker_image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_target_scanner.dart';
@@ -72,6 +73,9 @@ Future<void> main() async {
       Supabase.instance.client,
     ),
     forumRepository: SupabaseForumRepository(Supabase.instance.client),
+    pushSubscriptionRepository: SupabasePushSubscriptionRepository(
+      Supabase.instance.client,
+    ),
     browserEnvironment: readBrowserEnvironment(),
     sharer: const SharePlusSharer(),
   );
