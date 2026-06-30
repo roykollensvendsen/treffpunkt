@@ -235,7 +235,8 @@ The email-code login needs a little hosted setup (no code):
 2. **Show the code in the email.** Authentication → Email Templates → **Magic
    Link**: make sure the body includes the token, e.g. `{{ .Token }}`, so the
    user can read and type the 6-digit code (the no-redirect flow). The default
-   template only shows a link.
+   template only shows a link. A ready-to-paste branded template is in
+   `supabase/templates/magic_link.html` — paste its contents into that template.
 3. **Use your own SMTP (recommended).** Authentication → SMTP Settings: point it
    at a provider (e.g. Resend). Supabase's built-in email is heavily
    rate-limited and "not for production", so without custom SMTP, codes may not
