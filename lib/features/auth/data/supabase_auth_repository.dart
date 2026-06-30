@@ -43,6 +43,20 @@ final class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  // Sends the passwordless login email; shouldCreateUser defaults to true, so a
+  // first-time shooter is registered on verify. The email template must include
+  // the code for the no-redirect flow (spec 0061).
+  Future<void> sendEmailOtp(String email) => _auth.signInWithOtp(email: email);
+
+  @override
+  Future<void> verifyEmailOtp({
+    required String email,
+    required String code,
+  }) async {
+    await _auth.verifyOTP(email: email, token: code, type: OtpType.email);
+  }
+
+  @override
   Future<void> signOut() => _auth.signOut();
 
   AuthStatus _statusFor(Session? session) {

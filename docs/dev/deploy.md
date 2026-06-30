@@ -225,3 +225,23 @@ a competition another account is in, with that other account's browser subscribe
 (the bell on) — a system notification should arrive. The function logs
 (`supabase functions logs notify`) show each send; subscriptions the push service
 has dropped are pruned automatically.
+
+## Email one-time-code sign-in (spec 0061)
+
+The email-code login needs a little hosted setup (no code):
+
+1. **Enable email auth.** Authentication → Providers → **Email** (on by default).
+   Keep "Confirm email" as you like; OTP sign-in creates the user on verify.
+2. **Show the code in the email.** Authentication → Email Templates → **Magic
+   Link**: make sure the body includes the token, e.g. `{{ .Token }}`, so the
+   user can read and type the 6-digit code (the no-redirect flow). The default
+   template only shows a link.
+3. **Use your own SMTP (recommended).** Authentication → SMTP Settings: point it
+   at a provider (e.g. Resend). Supabase's built-in email is heavily
+   rate-limited and "not for production", so without custom SMTP, codes may not
+   arrive once a few have been sent.
+4. The redirect-URL allowlist (Site URL + Redirect URLs, above) also lets the
+   magic *link* in the same email work; the **code** path needs no redirect.
+
+Verify on a phone: enter your email, receive the code, type it in, and you reach
+the app without using Google.
