@@ -402,6 +402,48 @@ void main() {
     expect(find.text('feil tekst'), findsNothing);
   });
 
+  testWidgets('your own reply is right-aligned, others left (spec 0064)', (
+    tester,
+  ) async {
+    final repo = _meRepo()..setDisplayName('other', 'Kari');
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+    await repo.postReply(
+      const ForumPost(id: 'mine', threadId: 't1', body: 'mitt svar'),
+    );
+    await repo
+        .asUser(userId: 'other')
+        .postReply(
+          const ForumPost(
+            id: 'theirs',
+            threadId: 't1',
+            body: 'kari svar',
+            authorId: 'other',
+          ),
+        );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    Alignment alignmentOf(String id) {
+      final align = tester.widget<Align>(
+        find
+            .ancestor(
+              of: find.byKey(forumPostKey(id)),
+              matching: find.byType(Align),
+            )
+            .first,
+      );
+      return align.alignment as Alignment;
+    }
+
+    expect(alignmentOf('mine'), Alignment.centerRight);
+    expect(alignmentOf('theirs'), Alignment.centerLeft);
+  });
+
   testWidgets('editing your own thread updates its title (spec 0063)', (
     tester,
   ) async {

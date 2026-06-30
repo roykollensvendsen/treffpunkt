@@ -40,6 +40,10 @@ for everyone. **Hold** a reaction to see **who reacted** with it.
 You can also attach a **picture** to a thread or reply (the image button by the
 box). On a computer you can **paste** a copied image with **Ctrl/Cmd+V**.
 
+Like the competition chat, **your own replies** appear on the **right** in a
+coloured bubble and others' on the left with their name, so a discussion is easy
+to follow.
+
 ## Editing and deleting
 You can **edit your own** thread (the **pencil** in its top bar — change the title
 and text) and your own reply (**long-press** it and choose **Rediger**).
