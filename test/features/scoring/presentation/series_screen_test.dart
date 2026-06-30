@@ -132,7 +132,9 @@ void main() {
   ) async {
     await tester.pumpWidget(_app(_silhouette3));
 
-    // The bank shows one mini-target per silhouette, not the single big target.
+    // One big focused target plus a thumbnail per silhouette (not the normal
+    // single target).
+    expect(find.byKey(silhouetteActiveTargetKey), findsOneWidget);
     for (var i = 0; i < 3; i++) {
       expect(find.byKey(silhouetteTargetKey(i)), findsOneWidget);
     }
@@ -140,10 +142,11 @@ void main() {
     // The single-face camera scan does not apply, so it is hidden.
     expect(find.byKey(scanTargetActionKey), findsNothing);
 
-    // Placing fills the targets in firing order.
+    // Tapping the big (active) target places one shot at a time, in order, as
+    // the active silhouette advances.
     expect(find.text('0 / 3'), findsOneWidget);
     for (var i = 0; i < 3; i++) {
-      await tester.tap(find.byKey(silhouetteTargetKey(i)));
+      await tester.tap(find.byKey(silhouetteActiveTargetKey));
       await tester.pump();
       expect(find.text('${i + 1} / 3'), findsOneWidget);
     }
@@ -155,7 +158,7 @@ void main() {
   ) async {
     await tester.pumpWidget(_app(_silhouette3));
     for (var i = 0; i < 3; i++) {
-      await tester.tap(find.byKey(silhouetteTargetKey(i)));
+      await tester.tap(find.byKey(silhouetteActiveTargetKey));
       await tester.pump();
     }
     await tester.tap(find.byKey(sealSeriesKey));

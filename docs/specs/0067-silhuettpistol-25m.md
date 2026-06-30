@@ -16,10 +16,13 @@ is unchanged; only the *recording and review presentation* differ.
 ## Requirements
 1. A new offered program **25 m Silhuettpistol** (.22): three timed stages
    (8 / 6 / 4 s), each four 5-shot series, on the rapid/silhouette face.
-2. While recording a series, the shooter sees **five mini-targets** (one per
-   silhouette). The **active** one (the next shot) is highlighted; tapping it
-   places that shot. Shots fill in firing order, one per silhouette.
-3. The scorecard **reviews** each series as the same five mini-targets, each
+2. While recording a series, the **active** silhouette (the next shot) is shown
+   **full size and zoomable** — tap to place its shot (or long-press a placed
+   shot to drag), exactly like a normal target. The other silhouettes are a
+   small, scrollable **thumbnail strip**; the active one is highlighted, and
+   tapping any thumbnail focuses it (to review or fix it). Shots fill in firing
+   order, one per silhouette.
+3. The scorecard **reviews** each series as a row of five mini-targets, each
    showing its one shot.
 4. Scoring and persistence are **unchanged** (a series is still 5 shots on one
    geometry).
@@ -33,11 +36,13 @@ Because the shots stay a single ordered list, **`Shot`, `ScoringService` and
 `SessionSnapshot` are untouched** — resume rebuilds from the catalogue stage,
 which now carries `targetsPerSeries`, so a part-recorded bank restores correctly.
 
-**Reuse the painter.** The recording bank (`SilhouetteSeriesTarget`) and the
-review render N mini-targets, each a `SeriesPainter` (with a new
-`highlightLast: false` so a filled silhouette isn't haloed). The single-face
-**camera scan is hidden** for a silhouette series (a 5-target photo is out of
-scope for v1; manual placement only).
+**A big focused target plus a thumbnail strip.** `SilhouetteSeriesTarget` shows
+the focused silhouette full size in an `InteractiveViewer` (zoom + place + drag,
+mirroring the normal target) and the rest as a horizontal thumbnail strip;
+tapping a thumbnail focuses it. The review renders the row of mini-targets. All
+reuse `SeriesPainter` (with a new `highlightLast: false` so a filled silhouette
+isn't haloed). The single-face **camera scan is hidden** for a silhouette series
+(a 5-target photo is out of scope for v1; manual placement only).
 
 ## Design
 - `program_definition.dart`: `StageDefinition.targetsPerSeries` (+ `shotsPerTarget`
