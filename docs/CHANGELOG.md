@@ -14,6 +14,9 @@ All notable changes to this project are documented here. The format is based on
   identical every deploy, so icons show immediately (spec 0027).
 
 ### Added
+- **Edit your own chat message**: long-press your message in a competition chat
+  and choose **Rediger** to fix a typo — the change shows live for everyone. Only
+  the author can edit (the owner still moderates by deleting); spec 0070.
 - **Copy message text**: long-press a chat message, a forum reply, or a forum
   thread's opening post and choose **Kopier tekst** to put its text on your
   clipboard — a short **Tekst kopiert** confirms (spec 0069).

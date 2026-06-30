@@ -173,6 +173,14 @@ abstract interface class CompetitionRepository {
   /// failure.
   Future<void> deleteMessage(String messageId);
 
+  /// Edits the chat message [messageId], replacing its text with [body]
+  /// (spec 0070).
+  ///
+  /// Only the **author** may edit (Row-Level Security enforces it); anyone else
+  /// is rejected. The change is delivered live through [watchMessages]. Throws
+  /// [CompetitionSyncException] on failure.
+  Future<void> editMessage(String messageId, {required String body});
+
   /// Toggles the caller's [emoji] reaction on message [messageId] (spec 0052):
   /// adds it when absent, removes it when present.
   ///
@@ -592,6 +600,25 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
     if (!allowed) return;
     _messages.remove(messageId);
     _reactions.remove(messageId);
+    if (_messagesChanged.hasListener) {
+      _messagesChanged.add(message.competitionId);
+    }
+  }
+
+  @override
+  Future<void> editMessage(String messageId, {required String body}) async {
+    final message = _messages[messageId];
+    // RLS allows only the author; for anyone else the update matches no row
+    // (a silent no-op), so mirror that. The created time is preserved.
+    if (message == null || message.userId != currentUserId) return;
+    _messages[messageId] = CompetitionMessage(
+      id: message.id,
+      competitionId: message.competitionId,
+      userId: message.userId,
+      body: body,
+      createdAt: message.createdAt,
+      imagePath: message.imagePath,
+    );
     if (_messagesChanged.hasListener) {
       _messagesChanged.add(message.competitionId);
     }

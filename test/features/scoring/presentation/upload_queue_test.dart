@@ -141,6 +141,9 @@ class _SpyCompetitionRepository implements CompetitionRepository {
   Future<void> deleteMessage(String messageId) async =>
       throw UnimplementedError();
   @override
+  Future<void> editMessage(String messageId, {required String body}) async =>
+      throw UnimplementedError();
+  @override
   Future<void> toggleReaction(String messageId, String emoji) async =>
       throw UnimplementedError();
   @override

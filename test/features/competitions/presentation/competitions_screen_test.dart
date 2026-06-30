@@ -850,6 +850,9 @@ class _GatedInviteRepository implements CompetitionRepository {
   Future<void> deleteMessage(String messageId) =>
       _inner.deleteMessage(messageId);
   @override
+  Future<void> editMessage(String messageId, {required String body}) =>
+      _inner.editMessage(messageId, body: body);
+  @override
   Future<void> toggleReaction(String messageId, String emoji) =>
       _inner.toggleReaction(messageId, emoji);
   @override
