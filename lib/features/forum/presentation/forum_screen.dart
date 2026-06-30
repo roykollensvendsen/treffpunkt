@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
+import 'package:treffpunkt/core/presentation/copy_message_text.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
@@ -73,6 +74,12 @@ const Key forumReplyEditKey = ValueKey<String>('forumReplyEdit');
 
 /// Key for the "Slett" action in a reply's menu, used by tests.
 const Key forumReplyDeleteKey = ValueKey<String>('forumReplyDelete');
+
+/// Key for the "Kopier tekst" action in a reply's menu (spec 0069).
+const Key forumReplyCopyKey = ValueKey<String>('forumReplyCopy');
+
+/// Key for the "Kopier tekst" action on a thread's opening post (spec 0069).
+const Key forumThreadCopyKey = ValueKey<String>('forumThreadCopy');
 
 /// Key for the title field in the edit-thread dialog, used by tests.
 const Key forumEditTitleFieldKey = ValueKey<String>('forumEditTitle');
@@ -571,6 +578,31 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     await ref.read(forumRepositoryProvider).deletePost(postId);
   }
 
+  /// Long-pressing the opening post offers "Kopier tekst" (spec 0069).
+  void _showThreadActions(String body) {
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        builder: (sheetContext) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                key: forumThreadCopyKey,
+                leading: const Icon(Icons.copy_outlined),
+                title: const Text('Kopier tekst'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(copyMessageText(context, body));
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Sets the thread's lifecycle status — moderators only (spec 0066).
   Future<void> _setStatus(String threadId, ForumThreadStatus status) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -747,9 +779,14 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                               ),
                               if (thread.body.isNotEmpty) ...[
                                 const SizedBox(height: 6),
-                                Text(
-                                  thread.body,
-                                  style: theme.textTheme.bodyMedium,
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onLongPress: () =>
+                                      _showThreadActions(thread.body),
+                                  child: Text(
+                                    thread.body,
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
                                 ),
                               ],
                               if (thread.imageUrl case final url?) ...[
@@ -878,7 +915,7 @@ class _ReplyTile extends StatelessWidget {
   final VoidCallback onDelete;
   final void Function(String emoji) onReact;
 
-  /// Offers Rediger/Slett for a reply you can act on (spec 0063).
+  /// Offers Kopier tekst (spec 0069) and Rediger/Slett (spec 0063) for a reply.
   void _showActions(BuildContext context) {
     unawaited(
       showModalBottomSheet<void>(
@@ -887,6 +924,16 @@ class _ReplyTile extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              if (post.body.isNotEmpty)
+                ListTile(
+                  key: forumReplyCopyKey,
+                  leading: const Icon(Icons.copy_outlined),
+                  title: const Text('Kopier tekst'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    unawaited(copyMessageText(context, post.body));
+                  },
+                ),
               if (canEdit)
                 ListTile(
                   key: forumReplyEditKey,
@@ -933,7 +980,7 @@ class _ReplyTile extends StatelessWidget {
           GestureDetector(
             key: forumPostKey(post.id),
             behavior: HitTestBehavior.opaque,
-            onLongPress: (canEdit || canDelete)
+            onLongPress: (canEdit || canDelete || post.body.isNotEmpty)
                 ? () => _showActions(context)
                 : null,
             child: Container(

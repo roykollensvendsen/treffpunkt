@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
+import 'package:treffpunkt/core/presentation/copy_message_text.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
@@ -36,6 +37,12 @@ const Key chatEmptyKey = ValueKey<String>('chatEmpty');
 
 /// Key for the chat bubble of the message with the given [id].
 Key chatMessageKey(String id) => ValueKey<String>('chatMessage-$id');
+
+/// Key for the "Kopier tekst" item in a message's action sheet (spec 0069).
+const Key chatCopyKey = ValueKey<String>('chatCopy');
+
+/// Key for the "Slett" item in a message's action sheet (spec 0069).
+const Key chatDeleteKey = ValueKey<String>('chatDelete');
 
 /// Key for the "add reaction" action on the message with the given [id].
 Key chatAddReactionKey(String id) => ValueKey<String>('chatAddReaction-$id');
@@ -338,6 +345,42 @@ class _MessageBubble extends StatelessWidget {
     if (emoji != null) onReact(emoji);
   }
 
+  /// Offers "Kopier tekst" (spec 0069) and, where allowed, "Slett" (spec 0051).
+  void _showActions(BuildContext context) {
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        builder: (sheetContext) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (message.body.isNotEmpty)
+                ListTile(
+                  key: chatCopyKey,
+                  leading: const Icon(Icons.copy_outlined),
+                  title: const Text('Kopier tekst'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    unawaited(copyMessageText(context, message.body));
+                  },
+                ),
+              if (canDelete)
+                ListTile(
+                  key: chatDeleteKey,
+                  leading: const Icon(Icons.delete_outline),
+                  title: const Text('Slett'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onDelete();
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -361,7 +404,9 @@ class _MessageBubble extends StatelessWidget {
         children: <Widget>[
           GestureDetector(
             key: chatMessageKey(message.id),
-            onLongPress: canDelete ? onDelete : null,
+            onLongPress: (message.body.isNotEmpty || canDelete)
+                ? () => _showActions(context)
+                : null,
             child: Container(
               margin: const EdgeInsets.only(top: 4),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

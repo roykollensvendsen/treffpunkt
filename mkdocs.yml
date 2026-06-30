@@ -99,6 +99,7 @@ nav:
       - "0066 — Forum thread status": specs/0066-forum-thread-status.md
       - "0067 — Silhuettpistol 25 m": specs/0067-silhuettpistol-25m.md
       - "0068 — Feltskyting (figures & course)": specs/0068-feltskyting.md
+      - "0069 — Copy message text": specs/0069-copy-message-text.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
