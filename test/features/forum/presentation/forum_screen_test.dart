@@ -402,6 +402,26 @@ void main() {
     expect(find.text('feil tekst'), findsNothing);
   });
 
+  testWidgets('a thread and reply show a timestamp (spec 0065)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+    await repo.postReply(
+      const ForumPost(id: 'p1', threadId: 't1', body: 'hei'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(forumTimeKey('t1')), findsOneWidget);
+    expect(find.byKey(forumTimeKey('p1')), findsOneWidget);
+  });
+
   testWidgets('your own reply is right-aligned, others left (spec 0064)', (
     tester,
   ) async {

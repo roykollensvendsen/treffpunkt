@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
+import 'package:treffpunkt/core/presentation/message_time.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
@@ -38,6 +39,9 @@ Key chatMessageKey(String id) => ValueKey<String>('chatMessage-$id');
 
 /// Key for the "add reaction" action on the message with the given [id].
 Key chatAddReactionKey(String id) => ValueKey<String>('chatAddReaction-$id');
+
+/// Key for the timestamp on the message with the given [id] (spec 0065).
+Key chatTimestampKey(String id) => ValueKey<String>('chatTimestamp-$id');
 
 /// Key for the [emoji] choice in the reaction palette.
 Key chatPaletteEmojiKey(String emoji) =>
@@ -398,6 +402,17 @@ class _MessageBubble extends StatelessWidget {
                     ),
                   if (message.body.isNotEmpty)
                     Text(message.body, style: theme.textTheme.bodyMedium),
+                  if (message.createdAt case final at?)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        formatMessageTime(at),
+                        key: chatTimestampKey(message.id),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

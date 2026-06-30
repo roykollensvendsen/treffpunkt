@@ -296,6 +296,19 @@ void main() {
     expect(chat, hasLength(1));
     expect(chat.single.imagePath, isNotNull);
   });
+
+  testWidgets('a message shows a timestamp (spec 0065)', (tester) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    await repo.postMessage(
+      const CompetitionMessage(id: 'm1', competitionId: 'c1', body: 'hei'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(chatTimestampKey('m1')), findsOneWidget);
+  });
 }
 
 /// A clipboard watcher whose paste stream the test drives.
