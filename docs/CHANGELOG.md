@@ -7,11 +7,12 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
-- **Feltskyting** (field shooting): a new section in the program list with the
-  classes **Finfelt / Grovfelt / Militærfelt / Revolverfelt**. Because field
-  shooting is scored by **hits** across a course of holds (not by rings), you
-  count the **hits and inner hits per hold** and see the running total
-  (spec 0068). (First version — saving/“Mine økter”/sync come next.)
+- **Feltskyting** (field shooting): under **Feltskyting** in the program list you
+  can now preview the **NorgesFelt 2026 course** — all 8 holds with their actual
+  **figures** (hare, wolf head, ptarmigan, hexagons, triangles, circles …) drawn
+  to real relative size, each with its inner zone. The figures are scalable
+  vector drawings reconstructed from norgesfelt.no (spec 0068). Recording and
+  scoring on the figures come next.
 - New program **25 m Silhuettpistol** (.22): 60 shots, 12 series of 5 across
   three timed stages (8 / 6 / 4 s). A series is recorded on a **bank of five
   silhouettes** — one shot at each, in firing order — and the scorecard reviews

@@ -1,62 +1,60 @@
-# Spec 0068 — Feltskyting (field shooting), hit counter
+# Spec 0068 — Feltskyting (figure-based field shooting)
 
-- **Status:** Accepted (v1: the per-hold hit counter)
-- **Related:** spec 0066 (the forum thread that planned this), the program
-  catalogue (the ring-scored programs this sits beside).
+- **Status:** Accepted — figure catalogue + course preview shipped; recording &
+  scoring planned.
+- **Related:** the program catalogue (ring-scored programs this sits beside);
+  forum thread "Feltskyting" (norgesfelt.no) that planned it.
 
 ## Context
-Pappa's **planned** forum thread "Feltskyting" asks for **field shooting**
-(NSF feltpistol — see norgesfelt.no). Field shooting is fundamentally different
-from every program in the app so far: a **course (løype) of holds (stations)**
-with **figure targets at varying distances**, scored by **hits**, not rings, and
-the course **changes every competition**. So the existing model (place a shot on
-a ringed face, score by distance from centre) does not apply.
+Field shooting (NSF feltpistol, **norgesfelt.no**) is scored by **hits on figure
+silhouettes** at varying distances across a **course of holds** — not by rings.
+An early hit-counter version was rejected by the domain expert: the real thing
+needs the **actual figures** (hare, wolf head, ptarmigan, hexagon, triangle,
+circles, …) drawn to scale, recorded as hits/inner per figure.
 
-The chosen v1 (confirmed with the user) is a **per-hold hit counter**: pick a
-class, then for each of the course's holds record the **hits** and **inner hits**;
-the app sums the total. No figure placement, no course data — just the score the
-way field shooting is actually scored.
+The NorgesFelt 2026 course (reconstructed from the official files on
+norgesfelt.no): **8 holds**, distances 15/25 m, shooting positions, **10 s**
+shooting time, an **inner zone on every figure**, max **80/47** points.
 
-## Requirements
-1. From the program list, a **Feltskyting** section offers the classes
-   **Finfelt / Grovfelt / Militærfelt / Revolverfelt** (all 6 shots per hold).
-2. The recorder shows the **10 holds**; each hold has a **Treff** (hits, 0–6) and
-   an **Inner** (inner hits) counter with − / + buttons.
-3. **Hits** are capped at the class's shots-per-hold and at 0; **inner hits**
-   never exceed that hold's hits.
-4. A live **total** shows hits (out of the max) and inner hits.
+## Requirements (this increment)
+1. A **figure catalogue**: each NorgesFelt figure drawn as scalable **vector**,
+   with its inner zone — geometric shapes parametrically, the three animal
+   silhouettes as **traced** outlines.
+2. A **course preview** (the NorgesFelt 2026 løype): the 8 holds with their
+   figures rendered to **real relative size**, reachable from the program list
+   under **Feltskyting**.
 
 ## Rationale
-**A separate, pure domain — not the ring `Session`.** `FeltSession(feltClass,
-holds)` with `FeltHold(hits, innerHits)` and `withHold(...)` that clamps; totals
-are simple sums. It deliberately does **not** reuse the shot/geometry/series
-machinery, because field shooting is hit-scored and course-variable. The recorder
-is a self-contained `FeltScreen` holding the session in local state.
+**Vector figures, reconstructed faithfully.** Geometric figures (circle, oval,
+triangle, hexagon, stripe, egg, bowling pin) are parametric paths. The animals
+were **traced from the official hold images** (potrace → contour) into
+normalised polygon paths (`felt_animal_paths.dart`), so they scale cleanly and
+match the originals. Each figure carries a real cm size, so a hold renders its
+figures to true relative scale at a shared px-per-cm.
 
-**Why not model the course.** Distances, figures and figure counts per hold come
-from the yearly Løypebeskrivelse and differ per competition; recording the
-**result per hold** captures the score without that data and without modelling
-figure geometry or hit detection.
+**A separate feature, not the ring `Session`.** Field shooting is hit-scored and
+the course changes yearly, so `felt/` has its own domain (`FeltFigure`,
+`FeltHoldDef`, the `norgesfelt2026` course) and presentation, deliberately apart
+from the ring scoring machinery.
 
 ## Design
-- `lib/features/felt/domain/felt_session.dart`: `FeltClass` enum, `FeltHold`,
-  `FeltSession` (+ `start`, `withHold`, totals).
-- `lib/features/felt/presentation/felt_screen.dart`: the recorder (a total header
-  + a − / + counter per hold).
-- Program picker: a **Feltskyting** section of four class cards launching
-  `FeltScreen`.
+- `felt_figure.dart`: `FeltFigureType` + `FeltFigure` (type, cm size, inner zone).
+- `felt_animal_paths.dart`: generated, traced animal polygons (hare/wolf/rype).
+- `felt_figure_painter.dart`: `figurePath` (parametric + polygon) + `FeltFigureView`
+  (draws the silhouette and inner circle at a given px-per-cm).
+- `felt_course.dart`: the 2026 course (8 holds, figures with cm sizes).
+- `felt_course_screen.dart`: the preview, opened from the picker.
 
 ## Verification
-- **Unit:** totals sum hits/inner; hits clamp to shots-per-hold and 0; inner
-  never exceeds hits.
-- **Widget:** counting hits updates the total; inner is capped at hits; hits do
-  not go below zero; the class name shows.
+- **Widget:** the preview shows all 8 holds and their figures (the traced animals
+  and a circle render).
+- Figures proven faithful by re-rendering the generated paths against the source
+  images during reconstruction.
 
-## Out of scope / next
-- **Offline resume** of a felt session (the immediate next step — the recorder is
-  currently in-memory).
-- Showing a felt result in **"Mine økter"** and syncing it to **competitions**.
-- The exact NSF **figure-bonus** scoring (a point per figure hit) and the
-  spesial/magnum classes (5 shots/hold) — to confirm with pappa; v1 counts hits
-  per hold (the dominant score) + inner hits (the tiebreak).
-- Per-hold **distance/figure** course data (a true løype), and figure placement.
+## Out of scope / next (pending the domain expert)
+- **Recording & scoring**: per hold, mark hits + inner per figure (or place
+  shots), with the total. Blocked on two NorgesFelt details asked of pappa:
+  **shots per hold**, and the **Treff vs Poeng** rule (figure bonus?).
+- Refine the egg / stripe / bowling-pin / 1-6 shapes (currently approximated).
+- Offline resume, "Mine økter", competition sync; loading a different yearly
+  course.
