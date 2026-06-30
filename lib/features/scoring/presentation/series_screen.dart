@@ -1124,8 +1124,8 @@ class _SilhouetteReview extends StatelessWidget {
       children: <Widget>[
         for (var i = 0; i < targetsPerSeries; i++)
           SizedBox(
-            width: 64,
-            height: 64,
+            width: 96,
+            height: 96,
             child: CustomPaint(
               painter: SeriesPainter(
                 geometry: series.geometry,
