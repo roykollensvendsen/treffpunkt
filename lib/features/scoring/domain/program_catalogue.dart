@@ -258,6 +258,43 @@ abstract final class ProgramCatalogue {
     ],
   );
 
+  /// Silhuettpistol 25 m (.22): 60 shots in twelve 5-shot series on the rapid /
+  /// silhouette face, across three timed stages (8 s / 6 s / 4 s). Each series
+  /// is fired one shot at each of **five** identical silhouette targets,
+  /// recorded in firing order — so the stage carries `targetsPerSeries: 5`
+  /// (spec 0067). The shots still score against the single rapid face (5–10).
+  static const ProgramDefinition silhuettpistol25m = ProgramDefinition(
+    name: '25 m Silhuettpistol',
+    discipline: Discipline.pistol,
+    weaponClasses: <String>['.22 LR'],
+    stages: <StageDefinition>[
+      StageDefinition(
+        name: '8 s',
+        geometry: TargetGeometry.pistol25mRapid(),
+        shotsPerSeries: 5,
+        seriesCount: 4,
+        secondsPerSeries: 8,
+        targetsPerSeries: 5,
+      ),
+      StageDefinition(
+        name: '6 s',
+        geometry: TargetGeometry.pistol25mRapid(),
+        shotsPerSeries: 5,
+        seriesCount: 4,
+        secondsPerSeries: 6,
+        targetsPerSeries: 5,
+      ),
+      StageDefinition(
+        name: '4 s',
+        geometry: TargetGeometry.pistol25mRapid(),
+        shotsPerSeries: 5,
+        seriesCount: 4,
+        secondsPerSeries: 4,
+        targetsPerSeries: 5,
+      ),
+    ],
+  );
+
   /// NAIS 25 m fin (.22–.32): 30 shots in six 5-shot series on the duel face —
   /// two 150 s precision series, two duel series, one 20 s and one 10 s series.
   /// NSF "Reglement for merkeskyting til NAIS-medaljen" / Skyteprogrammer §8.29.
@@ -366,6 +403,7 @@ abstract final class ProgramCatalogue {
     grovpistol25m,
     hurtigpistolFin25m,
     hurtigpistolGrov25m,
+    silhuettpistol25m,
     naisFin25m,
     naisGrov25m,
     freePistol50m,

@@ -17,6 +17,7 @@ import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart
 import 'package:treffpunkt/features/scoring/presentation/series_painter.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/silhouette_series_target.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 /// Key for the "complete series" / advance action in the app bar.
@@ -237,19 +238,23 @@ class SessionView extends ConsumerWidget {
     final runningTotal = sealedScore.total + seriesScore.total;
     final runningInnerTens = sealedScore.innerTens + seriesScore.innerTens;
     final multiSeries = program.totalShots > current.capacity;
+    // A silhouette-bank series is recorded across several mini-targets; the
+    // single-face camera scan does not apply, so it is hidden (spec 0067).
+    final isSilhouette = (session.currentStage?.targetsPerSeries ?? 1) > 1;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(program.name),
         actions: [
-          IconButton(
-            key: scanTargetActionKey,
-            icon: const Icon(Icons.document_scanner_outlined),
-            tooltip: 'Skann skive',
-            onPressed: current.isComplete
-                ? null
-                : () => _scanTarget(context, ref, current),
-          ),
+          if (!isSilhouette)
+            IconButton(
+              key: scanTargetActionKey,
+              icon: const Icon(Icons.document_scanner_outlined),
+              tooltip: 'Skann skive',
+              onPressed: current.isComplete
+                  ? null
+                  : () => _scanTarget(context, ref, current),
+            ),
           IconButton(
             key: sealSeriesKey,
             icon: const Icon(Icons.check),
@@ -273,7 +278,9 @@ class SessionView extends ConsumerWidget {
               program: program,
               session: session,
             );
-            const target = AspectRatio(aspectRatio: 1, child: SeriesTarget());
+            final target = isSilhouette
+                ? const SilhouetteSeriesTarget()
+                : const AspectRatio(aspectRatio: 1, child: SeriesTarget());
             final shots = _ShotsList(
               placed: current.placedCount,
               capacity: current.capacity,
@@ -904,6 +911,7 @@ class SessionScorecard extends StatelessWidget {
                     stageIndex: i,
                     name: program.stages[i].name,
                     score: score.stages[i],
+                    targetsPerSeries: program.stages[i].targetsPerSeries,
                     series: seriesByStage == null || i >= seriesByStage!.length
                         ? null
                         : seriesByStage![i],
@@ -925,6 +933,7 @@ class _StageScoreRow extends StatelessWidget {
     required this.name,
     required this.score,
     this.series,
+    this.targetsPerSeries = 1,
   });
 
   /// 0-based index of the stage, used to key its per-series rows.
@@ -934,6 +943,9 @@ class _StageScoreRow extends StatelessWidget {
 
   /// The sealed series of this stage, or `null` to omit the per-series targets.
   final List<Series>? series;
+
+  /// Targets per series, so a silhouette series reviews as a bank (spec 0067).
+  final int targetsPerSeries;
 
   @override
   Widget build(BuildContext context) {
@@ -977,6 +989,7 @@ class _StageScoreRow extends StatelessWidget {
             stageIndex: stageIndex,
             number: i + 1,
             score: score.series[i],
+            targetsPerSeries: targetsPerSeries,
             series: series == null || i >= series!.length ? null : series![i],
           ),
       ],
@@ -993,6 +1006,7 @@ class _SeriesResultRow extends StatelessWidget {
     required this.number,
     required this.score,
     this.series,
+    this.targetsPerSeries = 1,
     super.key,
   });
 
@@ -1005,6 +1019,9 @@ class _SeriesResultRow extends StatelessWidget {
 
   /// The series' shots + geometry, or `null` to omit the target (spec 0058).
   final Series? series;
+
+  /// Targets per series; >1 reviews it as a silhouette bank (spec 0067).
+  final int targetsPerSeries;
 
   @override
   Widget build(BuildContext context) {
@@ -1042,29 +1059,39 @@ class _SeriesResultRow extends StatelessWidget {
                 ],
               ),
               // The target with this series' shots, so you can review where
-              // every shot landed (spec 0058).
+              // every shot landed (spec 0058) — a single face, or a row of
+              // mini-targets for a silhouette bank (spec 0067).
               if (shotSeries != null && shotSeries.shots.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 6, bottom: 6),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: 240,
-                        maxHeight: 240,
-                      ),
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: CustomPaint(
-                          key: seriesReviewTargetKey(stageIndex, number - 1),
-                          painter: SeriesPainter(
-                            geometry: shotSeries.geometry,
-                            shots: shotSeries.shots,
-                            draggingIndex: null,
+                    child: targetsPerSeries > 1
+                        ? _SilhouetteReview(
+                            key: seriesReviewTargetKey(stageIndex, number - 1),
+                            series: shotSeries,
+                            targetsPerSeries: targetsPerSeries,
+                          )
+                        : ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxWidth: 240,
+                              maxHeight: 240,
+                            ),
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: CustomPaint(
+                                key: seriesReviewTargetKey(
+                                  stageIndex,
+                                  number - 1,
+                                ),
+                                painter: SeriesPainter(
+                                  geometry: shotSeries.geometry,
+                                  shots: shotSeries.shots,
+                                  draggingIndex: null,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
                   ),
                 ),
             ],
@@ -1072,6 +1099,50 @@ class _SeriesResultRow extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Reviews a silhouette-bank series as a row of mini-targets, one per face,
+/// each showing its single shot (spec 0067).
+class _SilhouetteReview extends StatelessWidget {
+  const _SilhouetteReview({
+    required this.series,
+    required this.targetsPerSeries,
+    super.key,
+  });
+
+  final Series series;
+  final int targetsPerSeries;
+
+  @override
+  Widget build(BuildContext context) {
+    final perTarget = series.capacity ~/ targetsPerSeries;
+    final shots = series.shots;
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: <Widget>[
+        for (var i = 0; i < targetsPerSeries; i++)
+          SizedBox(
+            width: 64,
+            height: 64,
+            child: CustomPaint(
+              painter: SeriesPainter(
+                geometry: series.geometry,
+                shots: _slice(shots, i * perTarget, perTarget),
+                draggingIndex: null,
+                highlightLast: false,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  static List<Shot> _slice(List<Shot> shots, int start, int count) {
+    if (start >= shots.length) return const <Shot>[];
+    final end = start + count;
+    return shots.sublist(start, end < shots.length ? end : shots.length);
   }
 }
 

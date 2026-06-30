@@ -97,6 +97,7 @@ nav:
       - "0064 — Chat-style reply bubbles": specs/0064-forum-reply-bubbles.md
       - "0065 — Message timestamps": specs/0065-message-timestamps.md
       - "0066 — Forum thread status": specs/0066-forum-thread-status.md
+      - "0067 — Silhuettpistol 25 m": specs/0067-silhuettpistol-25m.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

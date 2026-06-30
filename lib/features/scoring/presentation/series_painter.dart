@@ -18,6 +18,7 @@ class SeriesPainter extends CustomPainter {
     required this.geometry,
     required this.shots,
     required this.draggingIndex,
+    this.highlightLast = true,
   });
 
   /// The target whose rings are drawn.
@@ -29,6 +30,10 @@ class SeriesPainter extends CustomPainter {
   /// The index of the shot currently picked up, or `null`.
   final int? draggingIndex;
 
+  /// Whether to halo the most recently placed shot. `false` for a silhouette
+  /// mini-target, whose single shot should not be emphasised (spec 0067).
+  final bool highlightLast;
+
   /// The colour of the outer "halo" ring drawn around the highlighted (most
   /// recently placed) marker, so the latest shot stands out.
   static const Color _highlightColor = Colors.deepOrange;
@@ -37,7 +42,8 @@ class SeriesPainter extends CustomPainter {
   /// index) — or `null` when the series has no shots.
   ///
   /// Exposed so the highlight rule is unit-testable without rendering.
-  int? get highlightedIndex => shots.isEmpty ? null : shots.length - 1;
+  int? get highlightedIndex =>
+      (shots.isEmpty || !highlightLast) ? null : shots.length - 1;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -111,5 +117,6 @@ class SeriesPainter extends CustomPainter {
   bool shouldRepaint(SeriesPainter oldDelegate) =>
       oldDelegate.draggingIndex != draggingIndex ||
       oldDelegate.geometry != geometry ||
+      oldDelegate.highlightLast != highlightLast ||
       !listEquals(oldDelegate.shots, shots);
 }

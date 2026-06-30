@@ -111,7 +111,7 @@ void main() {
   });
 
   test('the catalogue seeds the real pistol programs', () {
-    expect(ProgramCatalogue.all.length, 13);
+    expect(ProgramCatalogue.all.length, 14);
     expect(
       ProgramCatalogue.all.every((p) => p.discipline == Discipline.pistol),
       isTrue,
@@ -160,6 +160,32 @@ void main() {
       ProgramCatalogue.hurtigpistolGrov25m.stages[0].geometry.caliberMm,
       9.65,
     );
+  });
+
+  test('silhuettpistol: 12 series of 5 across a 5-target bank (spec 0067)', () {
+    const silhuett = ProgramCatalogue.silhuettpistol25m;
+    expect(ProgramCatalogue.all, contains(silhuett));
+    expect(ProgramCatalogue.byName('25 m Silhuettpistol'), same(silhuett));
+    expect(silhuett.totalShots, 60);
+    expect(
+      silhuett.stages.map((s) => s.secondsPerSeries),
+      <int?>[8, 6, 4],
+    );
+    for (final stage in silhuett.stages) {
+      expect(stage.shotsPerSeries, 5);
+      expect(stage.seriesCount, 4);
+      expect(stage.targetsPerSeries, 5);
+      expect(stage.shotsPerTarget, 1); // one shot per silhouette
+      expect(stage.geometry.lowestRingValue, 5); // rapid / silhouette face
+    }
+    // Shot k lands on silhouette k (one shot per target, in firing order).
+    final stage = silhuett.stages.first;
+    expect(
+      <int>[for (var k = 0; k < 5; k++) stage.targetIndexForShot(k)],
+      <int>[0, 1, 2, 3, 4],
+    );
+    // A normal program's stage is a single face (the default).
+    expect(ProgramCatalogue.standardPistol25m.stages.first.targetsPerSeries, 1);
   });
 
   test('NAIS fin/grov: 30 shots in six series on the duel face', () {
