@@ -25,6 +25,14 @@ silhouette becomes active, so you record the five hits in firing order. Tap a
 thumbnail to go back and check or fix one. (You place these by tapping; the
 camera scan is for the single-face programs.)
 
+### Feltskyting (counting hits)
+Field shooting is scored by **hits**, not rings, so it works differently. In the
+program list, under **Feltskyting**, pick your class (Finfelt, Grovfelt,
+Militærfelt or Revolverfelt). You then get the **10 holds**; for each hold, use
+**＋ / −** to count your **Treff** (hits) and **Inner** (inner hits). The total
+adds up live at the top. (This first version isn't saved between app restarts
+yet.)
+
 ## Note where you are shooting
 Before a session starts, the setup step asks for the date, time and **place**.
 Tap **Bruk min posisjon** ("use my location") to fill the place from your

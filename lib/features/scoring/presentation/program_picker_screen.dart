@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_screen.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
 import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
@@ -214,6 +216,33 @@ class ProgramPickerScreen extends ConsumerWidget {
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: () => unawaited(
                                   _startProgram(context, ref, definition),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(4, 16, 4, 4),
+                        child: Text(
+                          'Feltskyting',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      for (final feltClass in FeltClass.values)
+                        Card(
+                          child: ListTile(
+                            key: ValueKey<String>('felt-${feltClass.name}'),
+                            title: Text(feltClass.label),
+                            subtitle: Text(
+                              'Felt · 10 hold · ${feltClass.shotsPerHold} '
+                              'skudd/hold · teller treff',
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => unawaited(
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      FeltScreen(feltClass: feltClass),
                                 ),
                               ),
                             ),
