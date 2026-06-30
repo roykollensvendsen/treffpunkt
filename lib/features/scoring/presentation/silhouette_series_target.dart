@@ -89,6 +89,12 @@ class _SilhouetteSeriesTargetState
             transform: _transform,
             minScale: _minScale,
             maxScale: _maxScale,
+            onPlace: (shot) {
+              ref.read(sessionProvider.notifier).placeShot(shot);
+              // Release the manual focus so it follows the next silhouette to
+              // shoot — otherwise the marker stays on the one just shot.
+              setState(() => _focused = null);
+            },
           ),
         ),
         const SizedBox(height: 8),
@@ -125,6 +131,7 @@ class _BigTarget extends ConsumerStatefulWidget {
     required this.transform,
     required this.minScale,
     required this.maxScale,
+    required this.onPlace,
   });
 
   final TargetGeometry geometry;
@@ -135,6 +142,7 @@ class _BigTarget extends ConsumerStatefulWidget {
   final TransformationController transform;
   final double minScale;
   final double maxScale;
+  final void Function(Shot) onPlace;
 
   @override
   ConsumerState<_BigTarget> createState() => _BigTargetState();
@@ -153,7 +161,7 @@ class _BigTargetState extends ConsumerState<_BigTarget> {
 
   void _onTap(Offset px, double side) {
     if (!widget.canPlace) return;
-    ref.read(sessionProvider.notifier).placeShot(_toShot(px, side));
+    widget.onPlace(_toShot(px, side));
   }
 
   @override

@@ -153,6 +153,24 @@ void main() {
     expect(sealButton(tester).onPressed, isNotNull);
   });
 
+  testWidgets('focusing a thumbnail then shooting still advances (0067)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(_silhouette3));
+
+    // Tap the active silhouette's thumbnail (pins focus), then shoot it.
+    await tester.tap(find.byKey(silhouetteTargetKey(0)));
+    await tester.pump();
+    await tester.tap(find.byKey(silhouetteActiveTargetKey));
+    await tester.pump();
+    expect(find.text('1 / 3'), findsOneWidget);
+
+    // The marker must have advanced to silhouette 2 — a further shot lands.
+    await tester.tap(find.byKey(silhouetteActiveTargetKey));
+    await tester.pump();
+    expect(find.text('2 / 3'), findsOneWidget);
+  });
+
   testWidgets('the scorecard reviews a silhouette series as a bank (0067)', (
     tester,
   ) async {
