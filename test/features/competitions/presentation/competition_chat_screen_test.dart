@@ -6,12 +6,14 @@
 // message; an incoming message from another shooter appears with their name;
 // deleting your own message removes it. Driven by the in-memory repository's
 // Realtime stand-in (watchMessages).
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
@@ -260,4 +262,51 @@ void main() {
     expect(chat, hasLength(1));
     expect(chat.single.imagePath, isNotNull);
   });
+
+  testWidgets('pasting an image uploads and posts it (spec 0062)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    final clipboard = FakeClipboardImageWatcher();
+    addTearDown(clipboard.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(initial: const SignedIn(_me)),
+          ),
+          competitionRepositoryProvider.overrideWithValue(repo),
+          clipboardImageWatcherProvider.overrideWithValue(clipboard),
+        ],
+        child: const MaterialApp(
+          home: CompetitionChatScreen(competition: _competition),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    clipboard.emit(
+      PastedImage(bytes: Uint8List.fromList(<int>[1, 2, 3]), isPng: true),
+    );
+    await tester.pumpAndSettle();
+
+    final chat = await repo.watchMessages('c1').first;
+    expect(chat, hasLength(1));
+    expect(chat.single.imagePath, isNotNull);
+  });
+}
+
+/// A clipboard watcher whose paste stream the test drives.
+class FakeClipboardImageWatcher implements ClipboardImageWatcher {
+  final StreamController<PastedImage> _controller =
+      StreamController<PastedImage>.broadcast();
+
+  @override
+  Stream<PastedImage> get images => _controller.stream;
+
+  void emit(PastedImage image) => _controller.add(image);
+
+  void dispose() => unawaited(_controller.close());
 }

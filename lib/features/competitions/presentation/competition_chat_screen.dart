@@ -3,9 +3,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
@@ -76,12 +78,30 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
   final TextEditingController _composer = TextEditingController();
   final ScrollController _scroll = ScrollController();
   bool _sending = false;
+  StreamSubscription<PastedImage>? _pasteSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Paste an image (Ctrl/Cmd+V) to send it, just like picking one (spec 0062).
+    _pasteSub = ref
+        .read(clipboardImageWatcherProvider)
+        .images
+        .listen(_onImagePasted);
+  }
 
   @override
   void dispose() {
+    unawaited(_pasteSub?.cancel());
     _composer.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  void _onImagePasted(PastedImage image) {
+    // Only the visible chat handles a paste, never a screen underneath it.
+    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    unawaited(_sendImageBytes(image.bytes, isPng: image.isPng));
   }
 
   Future<void> _send() async {
@@ -109,13 +129,22 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
 
   Future<void> _pickAndSendImage() async {
     if (_sending) return;
-    final messenger = ScaffoldMessenger.of(context);
     final picked = await ref.read(imagePickerProvider)();
     if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    await _sendImageBytes(
+      bytes,
+      isPng: picked.name.toLowerCase().endsWith('.png'),
+    );
+  }
+
+  /// Uploads [bytes] and posts a message with the image — the shared path for
+  /// both a picked and a pasted image (spec 0062).
+  Future<void> _sendImageBytes(Uint8List bytes, {required bool isPng}) async {
+    if (_sending) return;
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _sending = true);
     try {
-      final bytes = await picked.readAsBytes();
-      final isPng = picked.name.toLowerCase().endsWith('.png');
       final repo = ref.read(competitionRepositoryProvider);
       final path = await repo.uploadChatImage(
         widget.competition.id,

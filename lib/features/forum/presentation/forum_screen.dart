@@ -3,9 +3,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
@@ -246,22 +248,48 @@ class _NewThreadScreenState extends ConsumerState<NewThreadScreen> {
   ForumCategory _category = ForumCategory.bug;
   bool _saving = false;
   String? _imagePath;
+  StreamSubscription<PastedImage>? _pasteSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Paste an image (Ctrl/Cmd+V) to attach it, like picking one (spec 0062).
+    _pasteSub = ref
+        .read(clipboardImageWatcherProvider)
+        .images
+        .listen(_onImagePasted);
+  }
 
   @override
   void dispose() {
+    unawaited(_pasteSub?.cancel());
     _title.dispose();
     _body.dispose();
     super.dispose();
   }
 
+  void _onImagePasted(PastedImage image) {
+    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    unawaited(_attachImageBytes(image.bytes, isPng: image.isPng));
+  }
+
   Future<void> _pickImage() async {
-    final messenger = ScaffoldMessenger.of(context);
     final picked = await ref.read(forumImagePickerProvider)();
     if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    await _attachImageBytes(
+      bytes,
+      isPng: picked.name.toLowerCase().endsWith('.png'),
+    );
+  }
+
+  /// Uploads [bytes] and stages it as the thread's image — shared by a picked
+  /// and a pasted image (spec 0062).
+  Future<void> _attachImageBytes(Uint8List bytes, {required bool isPng}) async {
+    if (_saving) return;
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _saving = true);
     try {
-      final bytes = await picked.readAsBytes();
-      final isPng = picked.name.toLowerCase().endsWith('.png');
       final path = await ref
           .read(forumRepositoryProvider)
           .uploadForumImage(bytes, fileExtension: isPng ? 'png' : 'jpg');
@@ -398,11 +426,29 @@ class ForumThreadScreen extends ConsumerStatefulWidget {
 class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
   final TextEditingController _reply = TextEditingController();
   bool _sending = false;
+  StreamSubscription<PastedImage>? _pasteSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Paste an image (Ctrl/Cmd+V) to send it in a reply, like picking one
+    // (spec 0062).
+    _pasteSub = ref
+        .read(clipboardImageWatcherProvider)
+        .images
+        .listen(_onImagePasted);
+  }
 
   @override
   void dispose() {
+    unawaited(_pasteSub?.cancel());
     _reply.dispose();
     super.dispose();
+  }
+
+  void _onImagePasted(PastedImage image) {
+    if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    unawaited(_sendImageBytes(image.bytes, isPng: image.isPng));
   }
 
   Future<void> _send() async {
@@ -433,13 +479,22 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
 
   Future<void> _pickAndSendImage() async {
     if (_sending) return;
-    final messenger = ScaffoldMessenger.of(context);
     final picked = await ref.read(forumImagePickerProvider)();
     if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    await _sendImageBytes(
+      bytes,
+      isPng: picked.name.toLowerCase().endsWith('.png'),
+    );
+  }
+
+  /// Uploads [bytes] and posts a reply with the image — shared by a picked and
+  /// a pasted image (spec 0062).
+  Future<void> _sendImageBytes(Uint8List bytes, {required bool isPng}) async {
+    if (_sending) return;
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _sending = true);
     try {
-      final bytes = await picked.readAsBytes();
-      final isPng = picked.name.toLowerCase().endsWith('.png');
       final repo = ref.read(forumRepositoryProvider);
       final path = await repo.uploadForumImage(
         bytes,
