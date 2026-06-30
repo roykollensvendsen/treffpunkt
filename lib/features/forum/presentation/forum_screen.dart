@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
+import 'package:treffpunkt/core/presentation/message_time.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
@@ -84,6 +85,9 @@ const Key forumEditSaveKey = ValueKey<String>('forumEditSave');
 
 /// Key for the post [id] in a thread.
 Key forumPostKey(String id) => ValueKey<String>('forumPost-$id');
+
+/// Key for the timestamp on a thread or reply [id] (spec 0065).
+Key forumTimeKey(String id) => ValueKey<String>('forumTime-$id');
 
 /// Key for the "add reaction" action on a forum [target] (`thread:<id>` or
 /// `post:<id>`).
@@ -687,6 +691,17 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                                 const SizedBox(height: 8),
                                 _ForumImage(id: thread.id, url: url),
                               ],
+                              if (thread.createdAt case final at?)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    formatMessageTime(at),
+                                    key: forumTimeKey(thread.id),
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
                               _ForumReactionBar(
                                 target: 'thread:${thread.id}',
                                 reactions: thread.reactions,
@@ -886,6 +901,17 @@ class _ReplyTile extends StatelessWidget {
                         top: post.imageUrl != null ? 6 : 0,
                       ),
                       child: Text(post.body, style: theme.textTheme.bodyMedium),
+                    ),
+                  if (post.createdAt case final at?)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        formatMessageTime(at),
+                        key: forumTimeKey(post.id),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                 ],
               ),

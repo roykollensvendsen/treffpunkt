@@ -64,7 +64,8 @@ Open the competition and tap **Chat**. Everyone who can see the competition can
 read it; if you have joined, you can post. Messages appear **live** for everyone,
 newest at the bottom, with the sender's name.
 
-- Type in the box at the bottom and tap **send**.
+- Type in the box at the bottom and tap **send**. Each message shows a small
+  **timestamp** of when it was sent.
 - **Attach a picture**: tap the **image** button to the left of the box, pick a
   photo, and it posts to the chat. Images are private to the competition. On a
   computer you can also **paste** a copied image with **Ctrl/Cmd+V**.

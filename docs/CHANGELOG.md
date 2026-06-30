@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Chat messages and forum threads/replies now show a small **timestamp** of when
+  they were posted — just the time today, the date earlier (spec 0065).
 - Forum replies now look like the **chat**: your own replies sit on the **right**
   in an accent bubble, others' on the left with their name — so it's easy to see
   who said what (spec 0064).
