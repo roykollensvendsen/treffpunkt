@@ -20,6 +20,7 @@ import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/silhouette_series_target.dart';
 import 'package:treffpunkt/features/settings/presentation/contribution_providers.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon_class.dart';
@@ -58,6 +59,22 @@ const ProgramDefinition _precision5 = ProgramDefinition(
       geometry: TargetGeometry.pistol25mPrecision(),
       shotsPerSeries: 5,
       seriesCount: 1,
+    ),
+  ],
+);
+
+// A tiny silhouette bank: one series of 3 shots, one shot at each of 3 faces
+// (spec 0067) — small enough to complete in a widget test.
+const ProgramDefinition _silhouette3 = ProgramDefinition(
+  name: 'Silhouette-3',
+  discipline: Discipline.pistol,
+  stages: <StageDefinition>[
+    StageDefinition(
+      name: 'S',
+      geometry: TargetGeometry.pistol25mRapid(),
+      shotsPerSeries: 3,
+      seriesCount: 1,
+      targetsPerSeries: 3,
     ),
   ],
 );
@@ -108,6 +125,50 @@ void main() {
     await tester.tap(find.byKey(sealSeriesKey));
     await tester.pumpAndSettle();
     expect(find.byKey(sessionCompleteKey), findsOneWidget);
+  });
+
+  testWidgets('silhouette bank records on 5 mini-targets, not one (0067)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(_silhouette3));
+
+    // The bank shows one mini-target per silhouette, not the single big target.
+    for (var i = 0; i < 3; i++) {
+      expect(find.byKey(silhouetteTargetKey(i)), findsOneWidget);
+    }
+    expect(find.byKey(seriesTargetKey), findsNothing);
+    // The single-face camera scan does not apply, so it is hidden.
+    expect(find.byKey(scanTargetActionKey), findsNothing);
+
+    // Placing fills the targets in firing order.
+    expect(find.text('0 / 3'), findsOneWidget);
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.byKey(silhouetteTargetKey(i)));
+      await tester.pump();
+      expect(find.text('${i + 1} / 3'), findsOneWidget);
+    }
+    expect(sealButton(tester).onPressed, isNotNull);
+  });
+
+  testWidgets('the scorecard reviews a silhouette series as a bank (0067)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(_silhouette3));
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.byKey(silhouetteTargetKey(i)));
+      await tester.pump();
+    }
+    await tester.tap(find.byKey(sealSeriesKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(sessionCompleteKey), findsOneWidget);
+    // The review of the series is a bank of 3 mini-targets, not one face.
+    final review = find.byKey(seriesReviewTargetKey(0, 0));
+    expect(review, findsOneWidget);
+    expect(
+      find.descendant(of: review, matching: find.byType(CustomPaint)),
+      findsNWidgets(3),
+    );
   });
 
   testWidgets('advances through stages, switching the face, then finishes', (

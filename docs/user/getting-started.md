@@ -16,6 +16,13 @@ corner of the sign-in screen before you sign in. It works offline.
 2. Tap where your shot hit. A marker appears and the score shows at the top.
 3. The score updates the moment you place the marker.
 
+### Silhuettpistol (the 5-target bank)
+**25 m Silhuettpistol** is shot one shot at each of **five silhouettes**. Instead
+of one target you see **five mini-targets**; the highlighted one is the next shot.
+Tap it to place that shot, then the next mini-target lights up — so you record the
+five hits in firing order. (You place these by tapping; the camera scan is for the
+single-face programs.)
+
 ## Note where you are shooting
 Before a session starts, the setup step asks for the date, time and **place**.
 Tap **Bruk min posisjon** ("use my location") to fill the place from your

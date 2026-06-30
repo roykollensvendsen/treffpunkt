@@ -25,6 +25,7 @@ class StageDefinition {
     required this.shotsPerSeries,
     required this.seriesCount,
     this.secondsPerSeries,
+    this.targetsPerSeries = 1,
   });
 
   /// Human-readable stage name, e.g. `'Presisjon'`.
@@ -42,8 +43,26 @@ class StageDefinition {
   /// Time limit per series in seconds, or `null` for no limit.
   final int? secondsPerSeries;
 
+  /// How many separate targets a series is fired across (spec 0067).
+  ///
+  /// `1` (the default) is the normal case: every shot of the series lands on
+  /// the one [geometry]. For a silhouette bank it is `5` — the shooter fires
+  /// one shot at each of five identical [geometry] faces, in firing order. The
+  /// shots are still stored in order on the single [geometry]; this only drives
+  /// how the recording and review screens lay them out (shot _k_ → target
+  /// [targetIndexForShot]).
+  final int targetsPerSeries;
+
   /// Total shots in the stage ([shotsPerSeries] × [seriesCount]).
   int get totalShots => shotsPerSeries * seriesCount;
+
+  /// How many shots are fired at each target ([shotsPerSeries] ÷
+  /// [targetsPerSeries]); `1` for a one-shot-per-target silhouette bank.
+  int get shotsPerTarget => shotsPerSeries ~/ targetsPerSeries;
+
+  /// Which target (0-based) the shot at firing-order index [shotIndex] belongs
+  /// to (spec 0067).
+  int targetIndexForShot(int shotIndex) => shotIndex ~/ shotsPerTarget;
 }
 
 /// A seeded definition of an official shooting program (øvelse).

@@ -52,7 +52,7 @@ centre-fire **pistol** (grovpistol).
 | Finpistol (6F) | 25 m Sport Pistol | 25 m | .22 | Presisjon 6×5 (precision) + Duell 6×5 (rapid, 3 s/7 s) | 60 | integer + X | H |
 | Grovpistol (6G) | 25 m Centre-Fire | 25 m | 7.62–9.65 mm | as finpistol (precision + rapid) | 60 | integer + X | H |
 | Standardpistol (5) | 25 m Standard | 25 m | .22 | 3 stages 4×5 on precision @ 150/20/10 s | 60 | integer + X | H |
-| Silhuettpistol (4) | ~25 m Rapid Fire | 25 m | .22 | rapid face; 2×30 @ 8/6/4 s | 60 | integer + X | M |
+| Silhuettpistol | national | 25 m | .22 | rapid/silhouette face; **5-target bank** (1 shot/target, in order); 4×5 @8 s + 4×5 @6 s + 4×5 @4 s | 60 | integer + X | H |
 | Hurtigpistol fin/grov | national | 25 m | .22 / c-f | rapid/duel face; (prøve) + 4×5 @10 s + 4×5 @8 s + 4×5 @6 s | 60 | integer + X | H |
 | NAIS fin/grov | national | 25 m | .22–.32 / .38–.45 | rapid/duel face; 2×5 @150 s + 2×5 duell + 1×5 @20 s + 1×5 @10 s | 30 | integer + X | H |
 | Fripistol (2A) | 50 m Pistol | 50 m | .22 | precision/50 m face; 6×10, 2 h | 60 | integer + X (X scored) | H |
@@ -70,7 +70,6 @@ competitions stored under it still load.
 
 ## Still to confirm with the father / a live NSF rulebook
 - **Per-series precision time** for fin/grov: 5 min (Evje) vs 6 min (SNL).
-- **Silhuettpistol** exact series-per-timing and single-turning vs 5-target bank.
 - **Luftpistol** face: ISSF 11.5 mm (asserted) vs the national air-duel face.
 - **Fripistol** modelling: true 50 m (precision face) vs national Fripistol-B 25 m
   (Colt face) — or both.
@@ -79,6 +78,12 @@ competitions stored under it still load.
   black-bull (cosmetic) — the FSU 2020 source gives only "40 skudd … på
   Sprintluft-skive (eller vanlig skive på 5,5 meter)". It was a corona-era
   home program (shootable unapproved), not a standing NSF program.
+**Silhuettpistol** is now **confirmed and seeded** (spec 0067) from the domain
+expert: 60 shots = 12×5 (4 series each at 8 / 6 / 4 s) on the rapid/silhouette
+face, fired as a **5-target bank** — one shot at each of five silhouettes, in
+firing order. All five share the rapid face, so the score is unchanged; the
+recording and review screens lay the series out as five mini-targets.
+
 NAIS and hurtigpistol fin/grov are now **confirmed and seeded** (spec 0031) from
 the NSF *Skyteprogrammer – Pistol* (§8.26 hurtig, §8.29 NAIS) and the NSF
 *Reglement for merkeskyting til NAIS-medaljen*: hurtig is 60 shots (12×5, timed

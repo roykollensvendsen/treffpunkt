@@ -7,6 +7,10 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- New program **25 m Silhuettpistol** (.22): 60 shots, 12 series of 5 across
+  three timed stages (8 / 6 / 4 s). A series is recorded on a **bank of five
+  silhouettes** — one shot at each, in firing order — and the scorecard reviews
+  it the same way (spec 0067).
 - Forum threads now have a **status** a moderator can set — **Åpen**,
   **Planlagt**, **Ferdig** or **Avvist** — shown as a small badge, so you can see
   which bugs/ideas are done or rejected (spec 0066).
