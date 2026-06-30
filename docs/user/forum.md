@@ -37,7 +37,8 @@ under it and pick one — a quick way to "vote" 👍 on a bug or idea (you don't
 react to your own). Tap a reaction again to take it back. Reactions update live
 for everyone. **Hold** a reaction to see **who reacted** with it.
 
-You can also attach a **picture** to a reply (the image button by the reply box).
+You can also attach a **picture** to a thread or reply (the image button by the
+box). On a computer you can **paste** a copied image with **Ctrl/Cmd+V**.
 
 ## Deleting
 You can delete **your own** thread or reply (long-press a reply to delete it; a

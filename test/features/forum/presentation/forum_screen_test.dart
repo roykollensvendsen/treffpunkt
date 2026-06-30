@@ -5,12 +5,14 @@
 // Widget tests for the forum (spec 0054): the empty state; creating a thread
 // shows it in the list; opening a thread shows its body and a posted reply;
 // only the author or an admin sees the delete-thread action.
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
@@ -297,4 +299,89 @@ void main() {
     expect(posts, hasLength(1));
     expect(posts.single.imagePath, isNotNull);
   });
+
+  testWidgets('pasting an image in a reply posts it (spec 0062)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+    final clipboard = FakeClipboardImageWatcher();
+    addTearDown(clipboard.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(initial: const SignedIn(_me)),
+          ),
+          forumRepositoryProvider.overrideWithValue(repo),
+          clipboardImageWatcherProvider.overrideWithValue(clipboard),
+        ],
+        child: const MaterialApp(
+          home: ForumThreadScreen(
+            thread: ForumThread(
+              id: 't1',
+              category: ForumCategory.bug,
+              title: 'T',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    clipboard.emit(
+      PastedImage(bytes: Uint8List.fromList(<int>[1, 2, 3]), isPng: false),
+    );
+    await tester.pumpAndSettle();
+
+    final posts = await repo.watchPosts('t1').first;
+    expect(posts, hasLength(1));
+    expect(posts.single.imagePath, isNotNull);
+  });
+
+  testWidgets('pasting an image in the new-thread form attaches it (0062)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    final clipboard = FakeClipboardImageWatcher();
+    addTearDown(clipboard.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(initial: const SignedIn(_me)),
+          ),
+          forumRepositoryProvider.overrideWithValue(repo),
+          clipboardImageWatcherProvider.overrideWithValue(clipboard),
+        ],
+        child: const MaterialApp(home: NewThreadScreen()),
+      ),
+    );
+    await tester.pump();
+    expect(find.byKey(threadImageAttachedKey), findsNothing);
+
+    clipboard.emit(
+      PastedImage(bytes: Uint8List.fromList(<int>[1, 2, 3]), isPng: true),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(threadImageAttachedKey), findsOneWidget);
+  });
+}
+
+/// A clipboard watcher whose paste stream the test drives.
+class FakeClipboardImageWatcher implements ClipboardImageWatcher {
+  final StreamController<PastedImage> _controller =
+      StreamController<PastedImage>.broadcast();
+
+  @override
+  Stream<PastedImage> get images => _controller.stream;
+
+  void emit(PastedImage image) => _controller.add(image);
+
+  void dispose() => unawaited(_controller.close());
 }

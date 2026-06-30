@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Paste an image** (Ctrl/Cmd+V) straight into a competition chat, a forum reply
+  or the new-thread form — e.g. a screenshot — instead of picking a file. On the
+  web; the picker button still works everywhere (spec 0062).
 - **Sign in with a one-time email code** as an alternative to Google: enter your
   email, get a code in your inbox, and type it in — no Google, no redirect, so it
   works in browsers where Google sign-in is blocked (e.g. iPhone) (spec 0061).
