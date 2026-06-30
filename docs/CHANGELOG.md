@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Icons could appear blank after an update**: the web build shipped a per-build
+  *subset* of the icon font at a fixed, non-cache-busted URL, so a returning
+  browser kept its cached old subset and any newly added icon (e.g. the **Kopier
+  tekst** copy symbol) rendered blank. The build now ships the full icon font,
+  identical every deploy, so icons show immediately (spec 0027).
+
 ### Added
 - **Copy message text**: long-press a chat message, a forum reply, or a forum
   thread's opening post and choose **Kopier tekst** to put its text on your
