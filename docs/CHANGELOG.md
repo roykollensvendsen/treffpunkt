@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Sign in with a one-time email code** as an alternative to Google: enter your
+  email, get a code in your inbox, and type it in — no Google, no redirect, so it
+  works in browsers where Google sign-in is blocked (e.g. iPhone) (spec 0061).
 - **Notifications** (Android/desktop): turn on the **bell** in the top bar to get
   a system notification for a new competition message or an invitation — even
   when the app is closed. Moderators also get one for a **new forum thread or

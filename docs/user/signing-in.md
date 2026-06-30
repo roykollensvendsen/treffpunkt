@@ -1,15 +1,31 @@
 # Signing in
 
-Treffpunkt uses your Google account, so your results are tied to you across
-competitions.
+You can sign in to Treffpunkt with **Google** or with a **one-time code on
+email**, so your results are tied to you across competitions.
 
-## Sign in
+## Sign in with Google
 1. Open the app — you'll see a **Sign in with Google** button.
 2. Tap it and choose your Google account.
 3. You're in: the target screen appears.
 
 If sign-in is cancelled or fails, you stay on the sign-in screen and can try
 again.
+
+## Sign in with a one-time email code
+
+Under the Google button (after the **eller** divider) you can sign in with your
+email instead — handy on an **iPhone**, where Google sign-in can be blocked:
+
+1. Type your email and tap **Logg inn med e-post**.
+2. Check your inbox for a message with a **code**, and type the code into the
+   **Engangskode** field.
+3. Tap **Logg inn** — you're in. (First time? Your account is created
+   automatically.)
+
+This method uses no Google and no redirect, so it works in browsers where Google
+sign-in does not. If the code does not arrive, check spam, and note the code is
+short-lived — request a new one if it has expired (use **Bytt e-post** to start
+over).
 
 ## "Open in Safari or Chrome" (iOS)
 

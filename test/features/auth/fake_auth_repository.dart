@@ -30,6 +30,18 @@ class FakeAuthRepository implements AuthRepository {
   /// Number of times [signOut] has been called.
   int signOutCallCount = 0;
 
+  /// The email the last one-time code was requested for.
+  String? lastOtpEmail;
+
+  /// Number of times [sendEmailOtp] has been called.
+  int sendEmailOtpCallCount = 0;
+
+  /// The code [verifyEmailOtp] accepts; any other code throws.
+  String validOtp = '123456';
+
+  /// If true, the next [sendEmailOtp] throws (e.g. to simulate a send failure).
+  bool failNextOtpSend = false;
+
   @override
   AuthStatus get currentStatus => _current;
 
@@ -50,6 +62,27 @@ class FakeAuthRepository implements AuthRepository {
       throw Exception('sign-in failed');
     }
     emit(const SignedIn(AppUser(id: 'fake-user', email: 'shooter@example.no')));
+  }
+
+  @override
+  Future<void> sendEmailOtp(String email) async {
+    sendEmailOtpCallCount++;
+    lastOtpEmail = email;
+    if (failNextOtpSend) {
+      failNextOtpSend = false;
+      throw Exception('otp send failed');
+    }
+  }
+
+  @override
+  Future<void> verifyEmailOtp({
+    required String email,
+    required String code,
+  }) async {
+    if (code != validOtp) {
+      throw Exception('invalid code');
+    }
+    emit(SignedIn(AppUser(id: 'fake-user', email: email)));
   }
 
   @override

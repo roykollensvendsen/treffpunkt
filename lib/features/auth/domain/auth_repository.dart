@@ -18,6 +18,17 @@ abstract interface class AuthRepository {
   /// Starts Google sign-in. The result arrives via [authStateChanges].
   Future<void> signInWithGoogle();
 
+  /// Sends a one-time login code to [email] (passwordless sign-in, spec 0061).
+  ///
+  /// Works without an OAuth redirect, so it is the fallback for browsers where
+  /// Google sign-in is blocked (e.g. iOS). The user then calls [verifyEmailOtp]
+  /// with the code from their inbox.
+  Future<void> sendEmailOtp(String email);
+
+  /// Verifies the one-time [code] sent to [email]; on success the user is
+  /// signed in and the result arrives via [authStateChanges] (spec 0061).
+  Future<void> verifyEmailOtp({required String email, required String code});
+
   /// Signs the current user out.
   Future<void> signOut();
 }

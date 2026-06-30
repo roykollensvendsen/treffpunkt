@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/platform/browser_environment.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
+import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/auth/presentation/sign_in_screen.dart';
 import 'package:treffpunkt/features/help/presentation/help_screen.dart';
@@ -71,6 +72,61 @@ void main() {
     // The manual's contents screen, reachable without signing in.
     expect(find.text('Brukerveiledning'), findsOneWidget);
     expect(find.byKey(manualPageTileKey('signing-in.md')), findsOneWidget);
+  });
+
+  group('email one-time code sign-in (spec 0061)', () {
+    testWidgets('sends a code, then signs in with it', (tester) async {
+      final fake = FakeAuthRepository();
+      addTearDown(fake.dispose);
+      await tester.pumpWidget(_screen(fake));
+
+      await tester.enterText(find.byKey(emailOtpFieldKey), 'kari@example.no');
+      await tester.tap(find.byKey(sendEmailOtpButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(fake.sendEmailOtpCallCount, 1);
+      expect(fake.lastOtpEmail, 'kari@example.no');
+      // The code step is now shown.
+      expect(find.byKey(emailOtpCodeFieldKey), findsOneWidget);
+
+      await tester.enterText(find.byKey(emailOtpCodeFieldKey), '123456');
+      await tester.tap(find.byKey(verifyEmailOtpButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(fake.currentStatus, isA<SignedIn>());
+    });
+
+    testWidgets('a wrong code shows an error and stays signed out', (
+      tester,
+    ) async {
+      final fake = FakeAuthRepository();
+      addTearDown(fake.dispose);
+      await tester.pumpWidget(_screen(fake));
+
+      await tester.enterText(find.byKey(emailOtpFieldKey), 'kari@example.no');
+      await tester.tap(find.byKey(sendEmailOtpButtonKey));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(emailOtpCodeFieldKey), '000000');
+      await tester.tap(find.byKey(verifyEmailOtpButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Feil'), findsOneWidget);
+      expect(fake.currentStatus, isA<SignedOut>());
+    });
+
+    testWidgets('an invalid email is rejected before sending', (tester) async {
+      final fake = FakeAuthRepository();
+      addTearDown(fake.dispose);
+      await tester.pumpWidget(_screen(fake));
+
+      await tester.enterText(find.byKey(emailOtpFieldKey), 'notanemail');
+      await tester.tap(find.byKey(sendEmailOtpButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(fake.sendEmailOtpCallCount, 0);
+      expect(find.textContaining('gyldig e-post'), findsOneWidget);
+      expect(find.byKey(emailOtpCodeFieldKey), findsNothing);
+    });
   });
 
   group('blocked browser warning (spec 0042)', () {
