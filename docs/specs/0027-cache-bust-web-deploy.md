@@ -41,6 +41,16 @@ and the existing killswitch intact.
    worker and does **not** change `--pwa-strategy=none`. The existing
    service-worker killswitch script in `web/index.html` (spec 0003) is left
    exactly as-is.
+2b. **Ship the full icon font (no icon tree-shaking).** The build runs with
+   `--no-tree-shake-icons`, so `MaterialIcons-Regular.otf` is the **complete**
+   font — byte-for-byte identical on every deploy — rather than a per-build
+   subset. The default tree-shaking emits a *different* tiny subset at the
+   *same* un-hashed URL each build; that asset is **not** covered by the `?v=`
+   entry stamp, so a returning browser keeps serving its HTTP-cached old subset
+   while running the new `main.dart.js`. Any icon introduced since that cached
+   subset was built then renders **blank** (the glyph is simply absent from the
+   stale font). With the full font, the cached copy already contains every
+   glyph, so newly used icons appear immediately without a cache-bust.
 3. **Apply at build time, in the pipeline.** A POSIX-shell script
    `tool/cache_bust_web.sh <build-web-dir> <version>` rewrites the built output
    in place. It runs in `.github/workflows/deploy.yml` **after** "Build web" and
@@ -74,6 +84,19 @@ classic stale-deploy source); ADR-0011 keeps `--pwa-strategy=none`, so a
 build-time URL stamp is the smaller, more predictable change. Content hashing the
 filenames (the usual bundler approach) is not something `flutter build web`
 emits for the entry files, so a post-build stamp is the pragmatic equivalent.
+
+**The full icon font over a cache-busted subset.** The icon font has the same
+un-hashed-URL problem as the entry files, but the `?v=` query trick does not
+reach it: the font URL lives inside the engine's asset manifests, not in
+`index.html`/`flutter_bootstrap.js`, and the modern `AssetManifest.bin` is a
+binary blob that a post-build shell stamp cannot safely rewrite. Disabling icon
+tree-shaking sidesteps all of that: the full `MaterialIcons-Regular.otf` is
+identical across builds, so a browser caches it **once** and that single cached
+copy serves every icon the app will ever use — no per-build invalidation needed.
+The cost is a larger font download (the complete font instead of a ~15 KB
+subset), paid once and then cached; for an app that adds icons feature by
+feature, that is a better trade than a class of silently-blank icons for
+returning users after each deploy.
 
 **The short commit SHA as the version.** It is unique per build, already
 available in the workflow as `${GITHUB_SHA::8}`, monotonic-enough for cache
@@ -111,9 +134,9 @@ tool/cache_bust_web.sh <build-web-dir> <version>
   skipped, not double-stamped.
 
 .github/workflows/deploy.yml
-  - Build web (unchanged flags: --release --pwa-strategy=none
+  - Build web (--release --pwa-strategy=none --no-tree-shake-icons
     --base-href /treffpunkt/ --dart-define=…)
-  - NEW: run sh tool/cache_bust_web.sh build/web "${GITHUB_SHA::8}"
+  - run sh tool/cache_bust_web.sh build/web "${GITHUB_SHA::8}"
   - actions/upload-pages-artifact (path: build/web)
 ```
 
