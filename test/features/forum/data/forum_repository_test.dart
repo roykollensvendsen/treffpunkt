@@ -178,4 +178,28 @@ void main() {
       expect(posts.single.imageUrl, isNotNull);
     },
   );
+
+  test(
+    'the author edits a thread and a reply; others cannot (spec 0063)',
+    () async {
+      final alice = InMemoryForumRepository(currentUserId: 'alice');
+      final bob = alice.asUser(userId: 'bob');
+      await alice.createThread(_thread('t1', authorId: 'alice'));
+      await alice.postReply(_post('p1', 't1', 'hei', authorId: 'alice'));
+
+      await alice.editThread('t1', title: 'Ny tittel', body: 'ny tekst');
+      await alice.editPost('p1', body: 'rettet');
+      var threads = await alice.watchThreads().first;
+      expect(threads.single.title, 'Ny tittel');
+      expect(threads.single.body, 'ny tekst');
+      expect((await alice.watchPosts('t1').first).single.body, 'rettet');
+
+      // Bob is neither the author nor an admin — his edits are a no-op.
+      await bob.editThread('t1', title: 'Kapret', body: 'x');
+      await bob.editPost('p1', body: 'kapret');
+      threads = await alice.watchThreads().first;
+      expect(threads.single.title, 'Ny tittel');
+      expect((await alice.watchPosts('t1').first).single.body, 'rettet');
+    },
+  );
 }

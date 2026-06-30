@@ -93,6 +93,7 @@ nav:
       - "0060 — Push notifications": specs/0060-push-notifications.md
       - "0061 — Email one-time-code sign-in": specs/0061-email-otp-sign-in.md
       - "0062 — Paste images into chat & forum": specs/0062-paste-images.md
+      - "0063 — Edit your own forum messages": specs/0063-edit-forum-messages.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

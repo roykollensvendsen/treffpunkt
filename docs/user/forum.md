@@ -40,10 +40,13 @@ for everyone. **Hold** a reaction to see **who reacted** with it.
 You can also attach a **picture** to a thread or reply (the image button by the
 box). On a computer you can **paste** a copied image with **Ctrl/Cmd+V**.
 
-## Deleting
-You can delete **your own** thread or reply (long-press a reply to delete it; a
-thread has a delete button in its top bar). A **moderator** can delete anyone's
-— that keeps the forum tidy.
+## Editing and deleting
+You can **edit your own** thread (the **pencil** in its top bar — change the title
+and text) and your own reply (**long-press** it and choose **Rediger**).
+
+You can **delete your own** thread or reply (the reply's long-press menu has
+**Slett**; a thread has a delete button in its top bar). A **moderator** can
+delete anyone's — that keeps the forum tidy — but only the author can edit.
 
 ## Varsler til moderator
 Når noen starter en **ny tråd** eller skriver et **svar**, får moderatoren et

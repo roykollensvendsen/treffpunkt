@@ -230,6 +230,35 @@ final class SupabaseForumRepository implements ForumRepository {
   }
 
   @override
+  Future<void> editThread(
+    String threadId, {
+    required String title,
+    required String body,
+  }) async {
+    try {
+      // RLS limits the update to the author's own thread (spec 0063).
+      await _client
+          .from('forum_threads')
+          .update(<String, dynamic>{'title': title, 'body': body})
+          .eq('id', threadId);
+    } on Object catch (error) {
+      throw ForumException(error);
+    }
+  }
+
+  @override
+  Future<void> editPost(String postId, {required String body}) async {
+    try {
+      await _client
+          .from('forum_posts')
+          .update(<String, dynamic>{'body': body})
+          .eq('id', postId);
+    } on Object catch (error) {
+      throw ForumException(error);
+    }
+  }
+
+  @override
   Future<bool> isAdmin() async {
     try {
       // RLS limits the select to the caller's own admin row, so a returned row
