@@ -232,15 +232,29 @@ The email-code login needs a little hosted setup (no code):
 
 1. **Enable email auth.** Authentication → Providers → **Email** (on by default).
    Keep "Confirm email" as you like; OTP sign-in creates the user on verify.
-2. **Show the code in the email.** Authentication → Email Templates → **Magic
-   Link**: make sure the body includes the token, e.g. `{{ .Token }}`, so the
-   user can read and type the 6-digit code (the no-redirect flow). The default
-   template only shows a link. A ready-to-paste branded template is in
-   `supabase/templates/magic_link.html` — paste its contents into that template.
-3. **Use your own SMTP (recommended).** Authentication → SMTP Settings: point it
-   at a provider (e.g. Resend). Supabase's built-in email is heavily
-   rate-limited and "not for production", so without custom SMTP, codes may not
-   arrive once a few have been sent.
+2. **Set up a custom SMTP — this is the free unlock.** On the free plan the email
+   templates are **read-only** until you either configure custom SMTP or upgrade
+   to Pro. Custom SMTP is free, so configure it first: it both unlocks the
+   template editor *and* gives reliable delivery (Supabase's built-in email is
+   heavily rate-limited and "not for production"). Authentication → SMTP Settings
+   → enable custom SMTP.
+
+   Most providers (Resend etc.) need a domain you can add DNS records to, which a
+   `github.io` site does not have. Two no-domain options:
+
+   - **Your own Gmail (simplest, ~500/day).** Turn on 2-Step Verification, create
+     an [app password](https://myaccount.google.com/apppasswords), then set:
+     Host `smtp.gmail.com`, Port `465`, Username + Sender = your Gmail, Password =
+     the app password, Sender name `Treffpunkt`.
+   - **Brevo (free 300/day).** Verify a *single sender* email (not a whole
+     domain) and use its SMTP (`smtp-relay.brevo.com`, port 587, the SMTP key).
+3. **Paste the code template.** Authentication → Email Templates → **Magic Link**
+   (and **Confirm signup**, which first-time OTP users may receive): paste the
+   contents of `supabase/templates/magic_link.html`. It shows the 6-digit code
+   (`{{ .Token }}`) for the no-redirect flow; the default template only shows a
+   link. A good **Subject** is `Innloggingskode til Treffpunkt: {{ .Token }}` —
+   putting the code in the subject lets it show in the phone's notification
+   preview (avoid words like "verify/confirm" that trip spam filters).
 4. The redirect-URL allowlist (Site URL + Redirect URLs, above) also lets the
    magic *link* in the same email work; the **code** path needs no redirect.
 
