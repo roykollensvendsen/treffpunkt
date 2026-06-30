@@ -449,6 +449,30 @@ void main() {
       },
     );
 
+    test('the author edits own message; others cannot (spec 0070)', () async {
+      final alice = InMemoryCompetitionRepository(
+        currentUserId: 'alice',
+        currentEmail: 'alice@example.com',
+      );
+      final bob = alice.asUser(userId: 'bob', email: 'bob@example.com');
+      await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+      await alice.invite('c1', 'bob@example.com');
+      await bob.acceptInvitation('c1');
+      await bob.postMessage(_msg('m1', 'c1', 'feil tekst'));
+
+      // The owner cannot edit someone else's words (edit stays author-only,
+      // unlike delete) — a non-author update matches no row, a silent no-op.
+      await alice.editMessage('m1', body: 'kapret');
+      expect((await alice.watchMessages('c1').first).single.body, 'feil tekst');
+
+      // The author rewrites their own message.
+      await bob.editMessage('m1', body: 'rettet tekst');
+      expect(
+        (await alice.watchMessages('c1').first).single.body,
+        'rettet tekst',
+      );
+    });
+
     test('watchMessages re-emits when a message is posted', () async {
       final alice = InMemoryCompetitionRepository(
         currentUserId: 'alice',

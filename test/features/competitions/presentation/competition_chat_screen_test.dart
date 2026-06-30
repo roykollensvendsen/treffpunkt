@@ -121,6 +121,57 @@ void main() {
     expect(find.text('slett meg'), findsNothing);
   });
 
+  testWidgets('editing your own message shows the new text (spec 0070)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    await repo.postMessage(
+      const CompetitionMessage(
+        id: 'm1',
+        competitionId: 'c1',
+        body: 'feil tekst',
+      ),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    expect(find.text('feil tekst'), findsOneWidget);
+
+    await tester.longPress(find.byKey(chatMessageKey('m1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(chatEditKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(chatEditBodyFieldKey), 'rettet tekst');
+    await tester.tap(find.byKey(chatEditSaveKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('rettet tekst'), findsOneWidget);
+    expect(find.text('feil tekst'), findsNothing);
+  });
+
+  testWidgets("another shooter's message has no edit action (spec 0070)", (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    final other = repo.asUser(userId: 'other', email: 'other@example.com');
+    await repo.invite('c1', 'other@example.com');
+    await other.acceptInvitation('c1');
+    await other.postMessage(
+      const CompetitionMessage(id: 'm1', competitionId: 'c1', body: 'hei'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    // I own the competition, so I can delete it — but I cannot edit it.
+    await tester.longPress(find.byKey(chatMessageKey('m1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(chatEditKey), findsNothing);
+    expect(find.byKey(chatDeleteKey), findsOneWidget);
+  });
+
   testWidgets('long-pressing a message copies its text (spec 0069)', (
     tester,
   ) async {

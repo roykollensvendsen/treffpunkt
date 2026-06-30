@@ -556,6 +556,19 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   }
 
   @override
+  Future<void> editMessage(String messageId, {required String body}) async {
+    try {
+      // RLS limits the update to the author's own message (spec 0070).
+      await _client
+          .from('competition_messages')
+          .update(<String, dynamic>{'body': body})
+          .eq('id', messageId);
+    } on Object catch (error) {
+      throw CompetitionSyncException(error);
+    }
+  }
+
+  @override
   Future<void> toggleReaction(String messageId, String emoji) async {
     try {
       // Toggle: delete the caller's own reaction with this emoji (RLS limits

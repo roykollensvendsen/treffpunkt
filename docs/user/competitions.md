@@ -74,9 +74,11 @@ newest at the bottom, with the sender's name.
   back. Everyone sees reactions update live. **Hold** a reaction to see **who
   reacted** with it.
 - **Long-press** a message for its actions: **Kopier tekst** puts its text on
-  your clipboard (a short **Tekst kopiert** confirms), and **Slett** removes it —
-  you can delete your own, and the competition's **owner** can remove any message
-  (light moderation).
+  your clipboard (a short **Tekst kopiert** confirms), **Rediger** lets you fix a
+  typo in **your own** message (the change shows live for everyone), and **Slett**
+  removes it — you can delete your own, and the competition's **owner** can remove
+  any message (light moderation). Only the author can edit; the owner moderates by
+  deleting, not editing.
 
 ## Archive old competitions
 When a competition is over and you want it out of the way, **archive** it.

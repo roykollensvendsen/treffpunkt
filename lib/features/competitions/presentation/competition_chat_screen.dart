@@ -44,6 +44,15 @@ const Key chatCopyKey = ValueKey<String>('chatCopy');
 /// Key for the "Slett" item in a message's action sheet (spec 0069).
 const Key chatDeleteKey = ValueKey<String>('chatDelete');
 
+/// Key for the "Rediger" item in a message's action sheet (spec 0070).
+const Key chatEditKey = ValueKey<String>('chatEdit');
+
+/// Key for the body field in the edit-message dialog (spec 0070).
+const Key chatEditBodyFieldKey = ValueKey<String>('chatEditBody');
+
+/// Key for the "Lagre" action in the edit-message dialog (spec 0070).
+const Key chatEditSaveKey = ValueKey<String>('chatEditSave');
+
 /// Key for the "add reaction" action on the message with the given [id].
 Key chatAddReactionKey(String id) => ValueKey<String>('chatAddReaction-$id');
 
@@ -209,6 +218,27 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
     }
   }
 
+  /// Opens an editor for your own message, then saves the new text (spec 0070).
+  Future<void> _editMessage(CompetitionMessage message) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final newBody = await showDialog<String>(
+      context: context,
+      builder: (_) => _EditMessageDialog(initialBody: message.body),
+    );
+    if (newBody == null) return;
+    // The text may be cleared only when the message still carries an image.
+    if (newBody.isEmpty && message.imageUrl == null) return;
+    try {
+      await ref
+          .read(competitionRepositoryProvider)
+          .editMessage(message.id, body: newBody);
+    } on CompetitionSyncException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke lagre endringen.')),
+      );
+    }
+  }
+
   Future<void> _toggleReaction(String messageId, String emoji) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -280,6 +310,7 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
                             myUserId: uid,
                             canDelete: mine || isOwner,
                             onDelete: () => unawaited(_confirmDelete(message)),
+                            onEdit: () => unawaited(_editMessage(message)),
                             onReact: (emoji) =>
                                 unawaited(_toggleReaction(message.id, emoji)),
                           );
@@ -311,6 +342,7 @@ class _MessageBubble extends StatelessWidget {
     required this.myUserId,
     required this.canDelete,
     required this.onDelete,
+    required this.onEdit,
     required this.onReact,
   });
 
@@ -319,6 +351,7 @@ class _MessageBubble extends StatelessWidget {
   final String? myUserId;
   final bool canDelete;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
   final void Function(String emoji) onReact;
 
   Future<void> _openPalette(BuildContext context) async {
@@ -345,7 +378,8 @@ class _MessageBubble extends StatelessWidget {
     if (emoji != null) onReact(emoji);
   }
 
-  /// Offers "Kopier tekst" (spec 0069) and, where allowed, "Slett" (spec 0051).
+  /// Offers "Kopier tekst" (spec 0069), "Rediger" your own message (spec 0070)
+  /// and, where allowed, "Slett" (spec 0051).
   void _showActions(BuildContext context) {
     unawaited(
       showModalBottomSheet<void>(
@@ -362,6 +396,16 @@ class _MessageBubble extends StatelessWidget {
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     unawaited(copyMessageText(context, message.body));
+                  },
+                ),
+              if (mine)
+                ListTile(
+                  key: chatEditKey,
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text('Rediger'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onEdit();
                   },
                 ),
               if (canDelete)
@@ -500,6 +544,55 @@ class _MessageBubble extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A small editor for your own chat message's text (spec 0070).
+class _EditMessageDialog extends StatefulWidget {
+  const _EditMessageDialog({required this.initialBody});
+
+  final String initialBody;
+
+  @override
+  State<_EditMessageDialog> createState() => _EditMessageDialogState();
+}
+
+class _EditMessageDialogState extends State<_EditMessageDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialBody,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Rediger melding'),
+    content: SizedBox(
+      width: double.maxFinite,
+      child: TextField(
+        key: chatEditBodyFieldKey,
+        controller: _controller,
+        autofocus: true,
+        minLines: 1,
+        maxLines: 6,
+        decoration: const InputDecoration(hintText: 'Melding …'),
+      ),
+    ),
+    actions: <Widget>[
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Avbryt'),
+      ),
+      FilledButton(
+        key: chatEditSaveKey,
+        onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+        child: const Text('Lagre'),
+      ),
+    ],
+  );
 }
 
 class _ReactionChip extends StatelessWidget {
