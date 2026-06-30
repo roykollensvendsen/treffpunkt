@@ -169,3 +169,55 @@ browser network panel: a `GET …/rest/v1/sessions` returning **`404`** means
 `public.sessions` does not exist on the hosted project — apply the migration
 above. A `200` means the table is live; an empty list then just means no synced
 sessions yet.
+
+## Push notifications (spec 0060)
+
+The notification **delivery** (Increment B) is inert until the steps below are
+done. The trigger migration is a no-op until configured, and the `notify`
+function is not called until deployed — so the code is safe to ship first; these
+are the one-time hosted steps that switch it on. They are **not** automated (they
+involve secrets and a function deploy).
+
+### 1. Generate a VAPID key pair
+A VAPID key pair signs the pushes. Generate one (the public key is safe to ship;
+the **private key is a secret** — keep it out of the repo and out of chat):
+
+```sh
+npx web-push generate-vapid-keys
+# → Public Key:  B....   Private Key:  ....
+```
+
+### 2. Ship the public key to the web build
+```sh
+gh variable set VAPID_PUBLIC_KEY --body "B<public-key>"
+```
+Re-deploy (push to `main` or run the workflow) so the bell appears for users.
+
+### 3. Configure and deploy the function
+Pick any long random string for `NOTIFY_SECRET` (the trigger and the function
+must share it). Then set the function's secrets and deploy it:
+
+```sh
+supabase secrets set \
+  VAPID_PUBLIC_KEY="B<public-key>" \
+  VAPID_PRIVATE_KEY="<private-key>" \
+  VAPID_SUBJECT="mailto:you@example.com" \
+  NOTIFY_SECRET="<random-shared-secret>"
+supabase functions deploy notify   # deployed with verify_jwt = false (config.toml)
+```
+
+### 4. Apply the trigger migration and point it at the function
+Apply `20260630130000_push_notification_triggers.sql` (CLI or SQL editor, as
+above), then set the database settings the triggers read — using the **same**
+`NOTIFY_SECRET` as step 3:
+
+```sql
+alter database postgres set app.notify_url    = 'https://<ref>.functions.supabase.co/notify';
+alter database postgres set app.notify_secret = '<random-shared-secret>';
+```
+
+New database sessions pick these up immediately. To verify: from one account post
+a message (or send an invitation) to a competition another account is in, with
+that other account's browser subscribed (the bell on) — a system notification
+should arrive. The function logs (`supabase functions logs notify`) show each
+send; subscriptions the push service has dropped are pruned automatically.
