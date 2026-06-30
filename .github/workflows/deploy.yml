@@ -42,6 +42,7 @@ jobs:
             --base-href /treffpunkt/ \
             --dart-define=SUPABASE_URL='${{ vars.SUPABASE_URL }}' \
             --dart-define=SUPABASE_PUBLISHABLE_KEY='${{ vars.SUPABASE_PUBLISHABLE_KEY }}' \
+            --dart-define=VAPID_PUBLIC_KEY='${{ vars.VAPID_PUBLIC_KEY }}' \
             --dart-define=BUILD_SHA="${GITHUB_SHA::8}" \
             --dart-define=BUILD_TIME="$(date -u +%Y-%m-%dT%H:%MZ)"
       # Cache-bust the un-hashed entry references so a refresh after a deploy

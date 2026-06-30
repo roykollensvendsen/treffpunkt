@@ -92,3 +92,15 @@ bring it back to your active list.
 Only the **owner** can delete a competition. Open it and tap **Slett
 konkurranse**; this removes it — and its participants, invitations and results —
 for everyone. If it is not yours, archive it instead.
+
+## Varsler
+
+Slå på **varsler** for å bli varslet om en **ny melding** i en konkurranse du er
+med i, og om en **invitasjon** til deg — også når appen er lukket. Trykk på
+**bjella** øverst og tillat varsler i nettleseren. Trykk på bjella igjen for å slå
+dem av.
+
+Varsler virker på **Android og PC** (Chrome, Firefox, Edge). På **iPhone** virker
+de foreløpig ikke: Safari krever da at appen installeres som en egen app, noe som
+bryter Google-innloggingen — så vi venter med iPhone-varsler til en egen app er på
+plass. Ser du ingen bjelle, støtter ikke nettleseren din varsler.

@@ -17,15 +17,22 @@
   <base href="$FLUTTER_BASE_HREF">
 
   <!--
-    No service worker is used (the web build passes --pwa-strategy=none).
-    Proactively unregister any worker left from an earlier build and clear its
-    caches, so a stale cached build cannot keep serving the app after a deploy.
+    The Flutter build passes --pwa-strategy=none, so it ships no service worker.
+    Proactively unregister any *Flutter* worker left from an earlier build and
+    clear its caches, so a stale cached build cannot keep serving the app after a
+    deploy. The dedicated push worker (push_sw.js, spec 0060) is left alone — it
+    caches nothing, so it is safe to keep across deploys.
   -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function (registrations) {
         for (var i = 0; i < registrations.length; i++) {
-          registrations[i].unregister();
+          var registration = registrations[i];
+          var active = registration.active;
+          var url = active ? active.scriptURL : '';
+          if (url.indexOf('push_sw.js') === -1) {
+            registration.unregister();
+          }
         }
       });
       if (window.caches && caches.keys) {

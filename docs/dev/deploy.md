@@ -35,6 +35,20 @@ gh variable set SUPABASE_PUBLISHABLE_KEY --body "sb_publishable_..."
 
 (or repo Settings → Secrets and variables → Actions → Variables).
 
+#### Optional: push notifications (spec 0060)
+
+For Web Push notifications, also set the **VAPID public key** as a variable (it
+is a public key — safe to ship; the private key never goes here):
+
+```sh
+gh variable set VAPID_PUBLIC_KEY --body "B<base64url-public-key>"
+```
+
+Without it the build still works — the notifications bell simply stays hidden.
+Generating the keypair, storing the **private** key as a Supabase secret, and
+deploying the sender are part of the notification-delivery step (Increment B);
+see spec 0060.
+
 ## How it works
 On push to `main`, the workflow builds the web app with `--base-href
 /treffpunkt/` and the variables above, then publishes `build/web` to Pages.

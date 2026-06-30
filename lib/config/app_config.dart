@@ -15,6 +15,12 @@ abstract final class AppConfig {
     'SUPABASE_PUBLISHABLE_KEY',
   );
 
+  /// The VAPID public key for Web Push (spec 0060) — a public key, safe to
+  /// ship. Empty when not configured, which hides the notifications control.
+  static const String vapidPublicKey = String.fromEnvironment(
+    'VAPID_PUBLIC_KEY',
+  );
+
   /// Whether both required values were provided at build time.
   static bool get isConfigured =>
       supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
