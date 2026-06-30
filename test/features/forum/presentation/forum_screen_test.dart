@@ -18,6 +18,7 @@ import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
+import 'package:treffpunkt/features/forum/domain/forum_post.dart';
 import 'package:treffpunkt/features/forum/domain/forum_thread.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_providers.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
@@ -370,6 +371,62 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(threadImageAttachedKey), findsOneWidget);
+  });
+
+  testWidgets('editing your own reply shows the new text (spec 0063)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+    await repo.postReply(
+      const ForumPost(id: 'p1', threadId: 't1', body: 'feil tekst'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+    expect(find.text('feil tekst'), findsOneWidget);
+
+    await tester.longPress(find.byKey(forumPostKey('p1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumReplyEditKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(forumEditBodyFieldKey), 'rettet tekst');
+    await tester.tap(find.byKey(forumEditSaveKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('rettet tekst'), findsOneWidget);
+    expect(find.text('feil tekst'), findsNothing);
+  });
+
+  testWidgets('editing your own thread updates its title (spec 0063)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(
+        id: 't1',
+        category: ForumCategory.bug,
+        title: 'Gammel tittel',
+        body: 'tekst',
+      ),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(editThreadButtonKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(forumEditTitleFieldKey), 'Ny tittel');
+    await tester.tap(find.byKey(forumEditSaveKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ny tittel'), findsOneWidget);
   });
 }
 

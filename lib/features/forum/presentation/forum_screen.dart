@@ -64,6 +64,24 @@ const Key forumReplySendKey = ValueKey<String>('forumReplySend');
 /// Key for the delete-thread action on the thread screen.
 const Key deleteThreadButtonKey = ValueKey<String>('deleteThread');
 
+/// Key for the "edit thread" action on your own thread (spec 0063).
+const Key editThreadButtonKey = ValueKey<String>('editThread');
+
+/// Key for the "Rediger" action in a reply's menu, used by tests.
+const Key forumReplyEditKey = ValueKey<String>('forumReplyEdit');
+
+/// Key for the "Slett" action in a reply's menu, used by tests.
+const Key forumReplyDeleteKey = ValueKey<String>('forumReplyDelete');
+
+/// Key for the title field in the edit-thread dialog, used by tests.
+const Key forumEditTitleFieldKey = ValueKey<String>('forumEditTitle');
+
+/// Key for the body field in an edit dialog, used by tests.
+const Key forumEditBodyFieldKey = ValueKey<String>('forumEditBody');
+
+/// Key for the "Lagre" action in an edit dialog, used by tests.
+const Key forumEditSaveKey = ValueKey<String>('forumEditSave');
+
 /// Key for the post [id] in a thread.
 Key forumPostKey(String id) => ValueKey<String>('forumPost-$id');
 
@@ -529,6 +547,49 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     await ref.read(forumRepositoryProvider).deletePost(postId);
   }
 
+  /// Opens an editor for your own thread (title + body), then saves it
+  /// (spec 0063).
+  Future<void> _editThread(ForumThread thread) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await showDialog<(String, String)>(
+      context: context,
+      builder: (_) => _EditThreadDialog(
+        initialTitle: thread.title,
+        initialBody: thread.body,
+      ),
+    );
+    if (result == null) return;
+    final (title, body) = result;
+    // A thread needs a title; the body may be empty only with an image.
+    if (title.isEmpty || (body.isEmpty && thread.imageUrl == null)) return;
+    try {
+      await ref
+          .read(forumRepositoryProvider)
+          .editThread(thread.id, title: title, body: body);
+    } on ForumException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke lagre endringen.')),
+      );
+    }
+  }
+
+  /// Opens an editor for your own reply body, then saves it (spec 0063).
+  Future<void> _editPost(ForumPost post) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final newBody = await showDialog<String>(
+      context: context,
+      builder: (_) => _EditReplyDialog(initialBody: post.body),
+    );
+    if (newBody == null || (newBody.isEmpty && post.imageUrl == null)) return;
+    try {
+      await ref.read(forumRepositoryProvider).editPost(post.id, body: newBody);
+    } on ForumException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke lagre endringen.')),
+      );
+    }
+  }
+
   Future<void> _toggleReaction(
     String targetType,
     String targetId,
@@ -574,6 +635,13 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
       appBar: AppBar(
         title: Text(thread.title),
         actions: <Widget>[
+          if (thread.authorId == uid)
+            IconButton(
+              key: editThreadButtonKey,
+              tooltip: 'Rediger tråd',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => unawaited(_editThread(thread)),
+            ),
           if (canModerateThread)
             IconButton(
               key: deleteThreadButtonKey,
@@ -651,6 +719,8 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                             _ReplyTile(
                               post: post,
                               myUserId: uid,
+                              canEdit: post.authorId == uid,
+                              onEdit: () => unawaited(_editPost(post)),
                               canDelete: post.authorId == uid || isAdmin,
                               onDelete: () => unawaited(_deletePost(post.id)),
                               onReact: (emoji) => unawaited(
@@ -713,6 +783,8 @@ class _ReplyTile extends StatelessWidget {
   const _ReplyTile({
     required this.post,
     required this.myUserId,
+    required this.canEdit,
+    required this.onEdit,
     required this.canDelete,
     required this.onDelete,
     required this.onReact,
@@ -720,16 +792,55 @@ class _ReplyTile extends StatelessWidget {
 
   final ForumPost post;
   final String? myUserId;
+  final bool canEdit;
+  final VoidCallback onEdit;
   final bool canDelete;
   final VoidCallback onDelete;
   final void Function(String emoji) onReact;
+
+  /// Offers Rediger/Slett for a reply you can act on (spec 0063).
+  void _showActions(BuildContext context) {
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        builder: (sheetContext) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (canEdit)
+                ListTile(
+                  key: forumReplyEditKey,
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text('Rediger'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onEdit();
+                  },
+                ),
+              if (canDelete)
+                ListTile(
+                  key: forumReplyDeleteKey,
+                  leading: const Icon(Icons.delete_outline),
+                  title: const Text('Slett'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    onDelete();
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return GestureDetector(
       key: forumPostKey(post.id),
-      onLongPress: canDelete ? onDelete : null,
+      behavior: HitTestBehavior.opaque,
+      onLongPress: (canEdit || canDelete) ? () => _showActions(context) : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         child: Column(
@@ -889,4 +1000,124 @@ class _ForumReactionBar extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Dialog to edit your own thread's title and body (spec 0063). Owns its
+/// controllers so they outlive the dialog's dismiss animation. Returns
+/// `(title, body)` on save, or null on cancel.
+class _EditThreadDialog extends StatefulWidget {
+  const _EditThreadDialog({
+    required this.initialTitle,
+    required this.initialBody,
+  });
+
+  final String initialTitle;
+  final String initialBody;
+
+  @override
+  State<_EditThreadDialog> createState() => _EditThreadDialogState();
+}
+
+class _EditThreadDialogState extends State<_EditThreadDialog> {
+  late final TextEditingController _title = TextEditingController(
+    text: widget.initialTitle,
+  );
+  late final TextEditingController _body = TextEditingController(
+    text: widget.initialBody,
+  );
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _body.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Rediger tråd'),
+    content: SizedBox(
+      width: double.maxFinite,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TextField(
+            key: forumEditTitleFieldKey,
+            controller: _title,
+            decoration: const InputDecoration(labelText: 'Tittel'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            key: forumEditBodyFieldKey,
+            controller: _body,
+            minLines: 1,
+            maxLines: 6,
+            decoration: const InputDecoration(labelText: 'Tekst'),
+          ),
+        ],
+      ),
+    ),
+    actions: <Widget>[
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Avbryt'),
+      ),
+      FilledButton(
+        key: forumEditSaveKey,
+        onPressed: () =>
+            Navigator.of(context).pop((_title.text.trim(), _body.text.trim())),
+        child: const Text('Lagre'),
+      ),
+    ],
+  );
+}
+
+/// Dialog to edit your own reply's body (spec 0063). Returns the new body on
+/// save, or null on cancel.
+class _EditReplyDialog extends StatefulWidget {
+  const _EditReplyDialog({required this.initialBody});
+
+  final String initialBody;
+
+  @override
+  State<_EditReplyDialog> createState() => _EditReplyDialogState();
+}
+
+class _EditReplyDialogState extends State<_EditReplyDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialBody,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Rediger svar'),
+    content: SizedBox(
+      width: double.maxFinite,
+      child: TextField(
+        key: forumEditBodyFieldKey,
+        controller: _controller,
+        autofocus: true,
+        minLines: 1,
+        maxLines: 6,
+        decoration: const InputDecoration(hintText: 'Svar …'),
+      ),
+    ),
+    actions: <Widget>[
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Avbryt'),
+      ),
+      FilledButton(
+        key: forumEditSaveKey,
+        onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+        child: const Text('Lagre'),
+      ),
+    ],
+  );
 }

@@ -46,6 +46,18 @@ abstract interface class ForumRepository {
   /// Deletes reply [postId] (author or admin). Throws [ForumException].
   Future<void> deletePost(String postId);
 
+  /// Edits thread [threadId]'s [title] and [body] — author only (spec 0063).
+  /// Throws [ForumException].
+  Future<void> editThread(
+    String threadId, {
+    required String title,
+    required String body,
+  });
+
+  /// Edits reply [postId]'s [body] — author only (spec 0063). Throws
+  /// [ForumException].
+  Future<void> editPost(String postId, {required String body});
+
   /// Whether the caller is a moderator (may delete others' threads/replies).
   Future<bool> isAdmin();
 
@@ -231,6 +243,41 @@ class InMemoryForumRepository implements ForumRepository {
       _posts.remove(postId);
       _emit();
     }
+  }
+
+  @override
+  Future<void> editThread(
+    String threadId, {
+    required String title,
+    required String body,
+  }) async {
+    final thread = _threads[threadId];
+    if (thread == null || thread.authorId != currentUserId) return;
+    _threads[threadId] = ForumThread(
+      id: thread.id,
+      category: thread.category,
+      title: title,
+      body: body,
+      authorId: thread.authorId,
+      createdAt: thread.createdAt,
+      imagePath: thread.imagePath,
+    );
+    _emit();
+  }
+
+  @override
+  Future<void> editPost(String postId, {required String body}) async {
+    final post = _posts[postId];
+    if (post == null || post.authorId != currentUserId) return;
+    _posts[postId] = ForumPost(
+      id: post.id,
+      threadId: post.threadId,
+      body: body,
+      authorId: post.authorId,
+      createdAt: post.createdAt,
+      imagePath: post.imagePath,
+    );
+    _emit();
   }
 
   @override

@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Edit your own forum messages**: fix a typo in your own thread (the pencil in
+  its top bar — title and text) or your own reply (long-press → **Rediger**).
+  Only the author can edit; moderators still delete, not edit (spec 0063).
 - **Paste an image** (Ctrl/Cmd+V) straight into a competition chat, a forum reply
   or the new-thread form — e.g. a screenshot — instead of picking a file. On the
   web; the picker button still works everywhere (spec 0062).
