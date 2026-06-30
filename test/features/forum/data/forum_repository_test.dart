@@ -180,6 +180,30 @@ void main() {
   );
 
   test(
+    'a moderator sets the thread status; others cannot (spec 0066)',
+    () async {
+      final alice = InMemoryForumRepository(currentUserId: 'alice')
+        ..addAdmin('mod');
+      final mod = alice.asUser(userId: 'mod');
+      await alice.createThread(_thread('t1', authorId: 'alice'));
+
+      // The author, who is not an admin, cannot change status (no-op).
+      await alice.setThreadStatus('t1', ForumThreadStatus.done);
+      expect(
+        (await alice.watchThreads().first).single.status,
+        ForumThreadStatus.open,
+      );
+
+      // The moderator can.
+      await mod.setThreadStatus('t1', ForumThreadStatus.done);
+      expect(
+        (await alice.watchThreads().first).single.status,
+        ForumThreadStatus.done,
+      );
+    },
+  );
+
+  test(
     'the author edits a thread and a reply; others cannot (spec 0063)',
     () async {
       final alice = InMemoryForumRepository(currentUserId: 'alice');

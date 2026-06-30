@@ -259,6 +259,26 @@ final class SupabaseForumRepository implements ForumRepository {
   }
 
   @override
+  Future<void> setThreadStatus(
+    String threadId,
+    ForumThreadStatus status,
+  ) async {
+    try {
+      // The RPC checks is_app_admin and updates only the status column
+      // (spec 0066).
+      await _client.rpc<void>(
+        'set_thread_status',
+        params: <String, dynamic>{
+          'p_thread_id': threadId,
+          'p_status': status.wire,
+        },
+      );
+    } on Object catch (error) {
+      throw ForumException(error);
+    }
+  }
+
+  @override
   Future<bool> isAdmin() async {
     try {
       // RLS limits the select to the caller's own admin row, so a returned row

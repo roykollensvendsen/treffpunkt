@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Forum threads now have a **status** a moderator can set — **Åpen**,
+  **Planlagt**, **Ferdig** or **Avvist** — shown as a small badge, so you can see
+  which bugs/ideas are done or rejected (spec 0066).
 - Chat messages and forum threads/replies now show a small **timestamp** of when
   they were posted — just the time today, the date earlier (spec 0065).
 - Forum replies now look like the **chat**: your own replies sit on the **right**

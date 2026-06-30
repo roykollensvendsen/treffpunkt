@@ -52,6 +52,12 @@ You can **delete your own** thread or reply (the reply's long-press menu has
 **Slett**; a thread has a delete button in its top bar). A **moderator** can
 delete anyone's — that keeps the forum tidy — but only the author can edit.
 
+## Status på en tråd
+En **moderator** kan sette status på en tråd via **flagg-knappen** øverst på
+tråden: **Åpen**, **Planlagt**, **Ferdig** eller **Avvist**. Statusen vises som et
+lite, farget merke på tråden (i lista og inne i tråden), så det er lett å se hva
+som er gjort eller avvist. Bare moderatorer endrer status.
+
 ## Varsler til moderator
 Når noen starter en **ny tråd** eller skriver et **svar**, får moderatoren et
 varsel (om de har slått på **bjella** og bruker Android eller PC) — slik at en
