@@ -206,18 +206,22 @@ supabase secrets set \
 supabase functions deploy notify   # deployed with verify_jwt = false (config.toml)
 ```
 
-### 4. Apply the trigger migration and point it at the function
-Apply `20260630130000_push_notification_triggers.sql` (CLI or SQL editor, as
-above), then set the database settings the triggers read — using the **same**
-`NOTIFY_SECRET` as step 3:
+### 4. Apply the migrations and point the trigger at the function
+Apply the push migrations (`supabase db push`, or the SQL editor). The trigger
+reads its URL + shared secret from the `app_settings` table; set them with the
+**same** `NOTIFY_SECRET` as step 3 (a plain INSERT, so it works over the CLI /
+Management API — unlike `alter database ... set`, which the API forbids):
 
 ```sql
-alter database postgres set app.notify_url    = 'https://<ref>.functions.supabase.co/notify';
-alter database postgres set app.notify_secret = '<random-shared-secret>';
+insert into public.app_settings (key, value) values
+  ('notify_url',    'https://<ref>.supabase.co/functions/v1/notify'),
+  ('notify_secret', '<random-shared-secret>')
+on conflict (key) do update set value = excluded.value, updated_at = now();
 ```
 
-New database sessions pick these up immediately. To verify: from one account post
-a message (or send an invitation) to a competition another account is in, with
-that other account's browser subscribed (the bell on) — a system notification
-should arrive. The function logs (`supabase functions logs notify`) show each
-send; subscriptions the push service has dropped are pruned automatically.
+(`supabase db query --linked -f settings.sql` applies it without handling the DB
+password.) To verify: from one account post a message (or send an invitation) to
+a competition another account is in, with that other account's browser subscribed
+(the bell on) — a system notification should arrive. The function logs
+(`supabase functions logs notify`) show each send; subscriptions the push service
+has dropped are pruned automatically.
