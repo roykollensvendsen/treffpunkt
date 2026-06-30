@@ -837,37 +837,68 @@ class _ReplyTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return GestureDetector(
-      key: forumPostKey(post.id),
-      behavior: HitTestBehavior.opaque,
-      onLongPress: (canEdit || canDelete) ? () => _showActions(context) : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              post.authorName ?? 'Ukjent',
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurfaceVariant,
+    // Mirror the competition chat: your own replies sit on the right in an
+    // accent bubble, others' on the left (spec 0063).
+    final mine = post.authorId == myUserId;
+    final colour = mine
+        ? theme.colorScheme.primaryContainer
+        : theme.colorScheme.surfaceContainerHighest;
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Column(
+        crossAxisAlignment: mine
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: <Widget>[
+          GestureDetector(
+            key: forumPostKey(post.id),
+            behavior: HitTestBehavior.opaque,
+            onLongPress: (canEdit || canDelete)
+                ? () => _showActions(context)
+                : null,
+            child: Container(
+              margin: const EdgeInsets.only(top: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              constraints: const BoxConstraints(maxWidth: 460),
+              decoration: BoxDecoration(
+                color: colour,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (!mine)
+                    Text(
+                      post.authorName ?? 'Ukjent',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  if (post.imageUrl case final url?) ...[
+                    if (post.body.isNotEmpty || !mine)
+                      const SizedBox(height: 4),
+                    _ForumImage(id: post.id, url: url),
+                  ],
+                  if (post.body.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: post.imageUrl != null ? 6 : 0,
+                      ),
+                      child: Text(post.body, style: theme.textTheme.bodyMedium),
+                    ),
+                ],
               ),
             ),
-            if (post.body.isNotEmpty)
-              Text(post.body, style: theme.textTheme.bodyMedium),
-            if (post.imageUrl case final url?) ...[
-              const SizedBox(height: 4),
-              _ForumImage(id: post.id, url: url),
-            ],
-            _ForumReactionBar(
-              target: 'post:${post.id}',
-              reactions: post.reactions,
-              myUserId: myUserId,
-              mine: post.authorId == myUserId,
-              onReact: onReact,
-            ),
-          ],
-        ),
+          ),
+          _ForumReactionBar(
+            target: 'post:${post.id}',
+            reactions: post.reactions,
+            myUserId: myUserId,
+            mine: mine,
+            onReact: onReact,
+          ),
+        ],
       ),
     );
   }

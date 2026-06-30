@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Forum replies now look like the **chat**: your own replies sit on the **right**
+  in an accent bubble, others' on the left with their name — so it's easy to see
+  who said what (spec 0064).
 - **Edit your own forum messages**: fix a typo in your own thread (the pencil in
   its top bar — title and text) or your own reply (long-press → **Rediger**).
   Only the author can edit; moderators still delete, not edit (spec 0063).
