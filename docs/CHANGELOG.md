@@ -12,7 +12,10 @@ All notable changes to this project are documented here. The format is based on
   **figures** (hare, wolf head, ptarmigan, hexagons, triangles, circles …) drawn
   to real relative size, each with its inner zone. The figures are scalable
   vector drawings reconstructed from norgesfelt.no (spec 0068). Recording and
-  scoring on the figures come next.
+  scoring on the figures come next. The figures now look like the real targets —
+  a **black silhouette on a white plate** — and each **inner zone** is ringed at
+  the figure's centre of mass, so it sits on a triangle's lower third or an
+  animal's body instead of the bounding-box centre.
 - New program **25 m Silhuettpistol** (.22): 60 shots, 12 series of 5 across
   three timed stages (8 / 6 / 4 s). A series is recorded on a **bank of five
   silhouettes** — one shot at each, in firing order — and the scorecard reviews

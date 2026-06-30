@@ -9,6 +9,10 @@ import 'package:treffpunkt/features/felt/presentation/felt_animal_paths.dart';
 /// Renders a single field figure at a real scale (spec 0068): the silhouette
 /// plus its inner zone, sized [pxPerCm] pixels per centimetre so a hold's
 /// figures keep their true relative sizes.
+///
+/// The NorgesFelt figures are solid black on a white plate, so we draw them
+/// that way (independent of the app theme) on a white card and ring the inner
+/// zone in white — the real targets' look — so the preview reads in any theme.
 class FeltFigureView extends StatelessWidget {
   /// Creates a figure view.
   const FeltFigureView({
@@ -17,6 +21,9 @@ class FeltFigureView extends StatelessWidget {
     super.key,
   });
 
+  /// The black of the printed silhouette.
+  static const Color _figureBlack = Color(0xFF101010);
+
   /// The figure to draw.
   final FeltFigure figure;
 
@@ -24,12 +31,22 @@ class FeltFigureView extends StatelessWidget {
   final double pxPerCm;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
-    size: Size(figure.widthCm * pxPerCm, figure.heightCm * pxPerCm),
-    painter: FeltFigurePainter(
-      figure: figure,
-      colour: Theme.of(context).colorScheme.onSurface,
-      innerColour: Theme.of(context).colorScheme.surface,
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(4),
+      border: Border.all(color: Colors.black12),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(3),
+      child: CustomPaint(
+        size: Size(figure.widthCm * pxPerCm, figure.heightCm * pxPerCm),
+        painter: FeltFigurePainter(
+          figure: figure,
+          colour: _figureBlack,
+          innerColour: Colors.white,
+        ),
+      ),
     ),
   );
 }
@@ -57,11 +74,14 @@ class FeltFigurePainter extends CustomPainter {
     final path = figurePath(figure.type, size);
     canvas.drawPath(path, Paint()..color = colour);
 
-    // The inner zone (innertreff): a centred circle scaled like the figure.
+    // The inner zone (innertreff): a circle at the figure's centre of mass,
+    // not the bounding-box centre — so it sits over the body of an asymmetric
+    // figure (a triangle's lower third, an animal's chest) the way the real
+    // targets place it.
     final pxPerCm = size.width / figure.widthCm;
     final innerR = figure.effectiveInnerCm * pxPerCm / 2;
     canvas.drawCircle(
-      size.center(Offset.zero),
+      figureCentroid(figure.type, size),
       innerR,
       Paint()
         ..style = PaintingStyle.stroke
@@ -136,4 +156,53 @@ Path _polygon(List<Offset> points, Size size) {
     path.lineTo(p.dx * size.width, p.dy * size.height);
   }
   return path..close();
+}
+
+/// The point to centre the inner zone on for [type], filling [size]: the
+/// figure's centre of mass (spec 0068). Symmetric shapes use the box centre; a
+/// triangle's mass sits at two-thirds down; the animals use their traced
+/// polygon's area centroid (which lands on the body/head, matching the photos).
+Offset figureCentroid(FeltFigureType type, Size size) {
+  switch (type) {
+    case FeltFigureType.triangle:
+      return Offset(size.width / 2, size.height * 2 / 3);
+    case FeltFigureType.hare:
+      return _polygonCentroid(feltHareOutline, size);
+    case FeltFigureType.wolfHead:
+      return _polygonCentroid(feltWolfHeadOutline, size);
+    case FeltFigureType.ptarmigan:
+      return _polygonCentroid(feltPtarmiganOutline, size);
+    case FeltFigureType.circle:
+    case FeltFigureType.oval:
+    case FeltFigureType.egg:
+    case FeltFigureType.hexagon:
+    case FeltFigureType.stripe:
+    case FeltFigureType.bowlingPin:
+    case FeltFigureType.reducedFigure:
+      return size.center(Offset.zero);
+  }
+}
+
+/// The area centroid of the closed polygon [points] (normalised 0..1), scaled
+/// to [size]. Uses the shoelace formula; degenerate rings fall back to the
+/// mean of the vertices.
+Offset _polygonCentroid(List<Offset> points, Size size) {
+  var area = 0.0;
+  var cx = 0.0;
+  var cy = 0.0;
+  for (var i = 0; i < points.length; i++) {
+    final a = points[i];
+    final b = points[(i + 1) % points.length];
+    final cross = a.dx * b.dy - b.dx * a.dy;
+    area += cross;
+    cx += (a.dx + b.dx) * cross;
+    cy += (a.dy + b.dy) * cross;
+  }
+  area *= 0.5;
+  if (area.abs() < 1e-9) {
+    final mx = points.map((p) => p.dx).reduce((a, b) => a + b) / points.length;
+    final my = points.map((p) => p.dy).reduce((a, b) => a + b) / points.length;
+    return Offset(mx * size.width, my * size.height);
+  }
+  return Offset(cx / (6 * area) * size.width, cy / (6 * area) * size.height);
 }
