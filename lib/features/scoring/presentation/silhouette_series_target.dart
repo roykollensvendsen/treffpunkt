@@ -44,13 +44,18 @@ class SilhouetteSeriesTarget extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         const spacing = 8.0;
+        // Aim for a comfortably large, tappable target: fit as many columns as
+        // hold at least [minTile] px, wrapping the rest onto more rows rather
+        // than squeezing all targets onto one row (spec 0067).
+        const minTile = 160.0;
         final width = constraints.maxWidth.isFinite
             ? constraints.maxWidth
-            : 320.0;
-        final tile = ((width - spacing * (targets - 1)) / targets).clamp(
-          56.0,
-          150.0,
+            : 360.0;
+        final columns = ((width + spacing) ~/ (minTile + spacing)).clamp(
+          1,
+          targets,
         );
+        final tile = (width - spacing * (columns - 1)) / columns;
         return Wrap(
           spacing: spacing,
           runSpacing: spacing,
