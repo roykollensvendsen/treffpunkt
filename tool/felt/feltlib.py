@@ -415,6 +415,32 @@ def iou(a, b):
     return inter / union if union else 1.0
 
 
+def strip_small(rgb, model_ink=None, keep_frac=0.12, floor=400):
+    """Blank small non-paper components the model doesn't explain (distance
+    labels like "25m"/"5m", which are printed on the sheet but are not
+    målgruppe elements — the app shows distance on its own).
+
+    Model-aware: a component is removed only if it is small *and* barely
+    overlaps the rendered model, so every real figure the model drew (even a
+    tiny circle or bowling pin) is kept; only unmatched text is dropped.
+    """
+    mask = _ink_mask(rgb)
+    comps = components(mask, min_area=1)
+    if not comps:
+        return rgb
+    top = int(comps[0].sum())
+    out = rgb.copy()
+    for c in comps:
+        small = c.sum() < max(floor, keep_frac * top)
+        if not small:
+            continue
+        matched = model_ink is not None and \
+            (c & model_ink).sum() > 0.15 * c.sum()
+        if not matched:
+            out[c] = np.array(PAPER)
+    return out
+
+
 def _ink_coverage(rgb, thresh=60.0):
     """Soft ink coverage in [0, 1]: 0 = paper, 1 = fully non-paper.
 
@@ -532,6 +558,7 @@ def compare(model, source_rgb):
     """
     h, w = source_rgb.shape[:2]
     rendered = _aa_render(model, (w, h))
+    source_rgb = strip_small(source_rgb, model_ink=_ink_mask(rendered))
     ra = _ink_coverage(rendered)
     sa = _ink_coverage(source_rgb.astype(np.float64))
     soft_iou = float(np.minimum(ra, sa).sum() / max(np.maximum(ra, sa).sum(), 1))
@@ -550,8 +577,10 @@ def compare(model, source_rgb):
 
 def panel(model, source_rgb, gap=12):
     """3-panel image: left=vector, middle=vector-over-source, right=source."""
-    src = Image.fromarray(source_rgb.astype(np.uint8))
-    vec = render_model(model, scale=SUPERSAMPLE).resize(src.size, Image.LANCZOS)
+    vec = render_model(model, scale=SUPERSAMPLE).resize(
+        (source_rgb.shape[1], source_rgb.shape[0]), Image.LANCZOS)
+    stripped = strip_small(source_rgb, model_ink=_ink_mask(np.asarray(vec)))
+    src = Image.fromarray(stripped.astype(np.uint8))
     over = Image.blend(src.convert('RGB'), vec, 0.5)
     w, h = src.size
     out = Image.new('RGB', (w * 3 + gap * 2, h), (255, 255, 255))
