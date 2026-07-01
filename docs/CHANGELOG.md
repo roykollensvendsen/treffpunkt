@@ -19,6 +19,11 @@ All notable changes to this project are documented here. The format is based on
 - **Felt rounds in "Mine økter"**: finishing a felt round saves it (locally) and
   it now shows in **Mine økter** alongside your ring sessions, by date, with its
   total points; tapping it opens the felt scorecard (spec 0082).
+- **Felt rounds sync to your account**: finished felt rounds now upload to your
+  Supabase account (owner-only) and show in "Mine økter" across devices — sync is
+  best-effort and offline-tolerant, so a round is always kept locally and uploads
+  when you're signed in (spec 0083). Needs the `felt_sessions` table migration
+  applied to the hosted project.
 
 ### Changed
 - **Composed NorgesFelt holds**: each hold in the course preview is now drawn as

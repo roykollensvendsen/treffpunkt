@@ -128,10 +128,15 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
 
     final pending = _unionById(<List<SessionRecord>>[stored, live]);
     final entries = mergeMySessions(synced: synced, pending: pending);
-    // Finished felt rounds are stored locally (spec 0082) and interleaved into
-    // the same list, newest-first by date.
-    final feltRounds =
+    // Finished felt rounds: the local history (spec 0082) merged with the
+    // account's synced rounds (spec 0083) by id, then interleaved with the ring
+    // sessions newest-first.
+    final feltLocal =
         ref.watch(feltHistoryProvider).value ?? const <FeltSessionRecord>[];
+    final feltSynced =
+        ref.watch(feltSyncedSessionsProvider).value ??
+        const <FeltSessionRecord>[];
+    final feltRounds = mergeFeltRounds(local: feltLocal, synced: feltSynced);
     final items = mergeSessionItems(entries: entries, rounds: feltRounds);
 
     return Scaffold(

@@ -148,6 +148,12 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
         session: _snapshot(),
       );
       unawaited(saveFeltRound(ref, record).catchError((Object _) {}));
+      unawaited(
+        ref
+            .read(feltSyncProvider.notifier)
+            .uploadOne(record)
+            .catchError((Object _) {}),
+      );
     }
   }
 

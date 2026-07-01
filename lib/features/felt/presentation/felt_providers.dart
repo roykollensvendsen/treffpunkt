@@ -2,8 +2,13 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/auth/domain/auth_status.dart';
+import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
+import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -38,4 +43,70 @@ Future<void> saveFeltRound(WidgetRef ref, FeltSessionRecord record) async {
   final current = await store.load();
   await store.save(<FeltSessionRecord>[record, ...current]);
   ref.invalidate(feltHistoryProvider);
+}
+
+/// The account's felt-round sync backend (spec 0083). Defaults to in-memory;
+/// `main()` overrides it with the Supabase repository.
+final feltSessionRepositoryProvider = Provider<FeltSessionRepository>(
+  (ref) => InMemoryFeltSessionRepository(),
+);
+
+/// The account's synced felt rounds, read in the background for "Mine økter"
+/// (spec 0083). A failed read surfaces as this provider's error and is treated
+/// as a non-blocking notice — the local rounds still show.
+final feltSyncedSessionsProvider = FutureProvider<List<FeltSessionRecord>>(
+  (ref) => ref.watch(feltSessionRepositoryProvider).list(),
+);
+
+/// Keeps finished felt rounds synced to the account (spec 0083): uploads the
+/// local rounds on sign-in and at app start, and one round on finish. Kept
+/// alive by the app root (like the ring upload queue); best-effort throughout.
+final feltSyncProvider = NotifierProvider<FeltSyncNotifier, void>(
+  FeltSyncNotifier.new,
+);
+
+/// The notifier behind [feltSyncProvider].
+class FeltSyncNotifier extends Notifier<void> {
+  Future<void>? _tail;
+
+  @override
+  void build() {
+    ref.listen<AsyncValue<AuthStatus>>(authStateChangesProvider, (prev, next) {
+      final wasSignedIn = prev?.value is SignedIn;
+      final isSignedIn = next.value is SignedIn;
+      if (isSignedIn && !wasSignedIn) unawaited(uploadAll());
+    });
+    unawaited(uploadAll());
+  }
+
+  bool get _signedIn {
+    try {
+      return ref.read(authStateChangesProvider).value is SignedIn;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Uploads every locally-stored finished round (a sign-in / start reconcile).
+  Future<void> uploadAll() => _run(() async {
+    if (!_signedIn) return;
+    final repository = ref.read(feltSessionRepositoryProvider);
+    final local = await ref.read(feltHistoryStoreProvider).load();
+    for (final round in local) {
+      await repository.upload(round);
+    }
+  });
+
+  /// Uploads one just-finished [record] (best-effort; a no-op when signed out).
+  Future<void> uploadOne(FeltSessionRecord record) => _run(() async {
+    if (!_signedIn) return;
+    await ref.read(feltSessionRepositoryProvider).upload(record);
+  });
+
+  Future<void> _run(Future<void> Function() task) {
+    final previous = _tail ?? Future<void>.value();
+    final next = previous.then((_) => task());
+    _tail = next.catchError((Object _, StackTrace _) {});
+    return next;
+  }
 }
