@@ -313,6 +313,19 @@ def rdp(pts, eps):
     return np.vstack([start, end])
 
 
+def chaikin(pts, iters=1):
+    """Chaikin corner-cutting on a closed polygon — rounds facets smoothly."""
+    pts = np.asarray(pts, dtype=np.float64)
+    for _ in range(iters):
+        nxt = np.roll(pts, -1, axis=0)
+        q = 0.75 * pts + 0.25 * nxt
+        r = 0.25 * pts + 0.75 * nxt
+        pts = np.empty((len(pts) * 2, 2))
+        pts[0::2] = q
+        pts[1::2] = r
+    return pts
+
+
 def rdp_closed(ring, eps):
     """RDP for a closed ring; returns minimal vertices (open, no repeat)."""
     ring = np.asarray(ring, dtype=np.float64)
@@ -339,6 +352,18 @@ def _figure_polygon(fig, steps=96):
         a = np.linspace(0, 2 * np.pi, steps, endpoint=False)
         return np.column_stack([p['cx'] + p['r'] * np.cos(a),
                                 p['cy'] + p['r'] * np.sin(a)])
+    if t == 'tcircle':
+        # A circle cut flat across the bottom at y = bottomY (the NSF C-figures).
+        cx, cy, r, by = p['cx'], p['cy'], p['r'], p['bottomY']
+        if by >= cy + r - 0.5:
+            a = np.linspace(0, 2 * np.pi, steps, endpoint=False)
+            return np.column_stack([cx + r * np.cos(a), cy + r * np.sin(a)])
+        s = max(-1.0, min(1.0, (by - cy) / r))
+        phi = float(np.arcsin(s))
+        # sweep over the top from the right chord end to the left chord end;
+        # closing the polygon draws the flat chord along the bottom.
+        a = np.linspace(phi, -(np.pi + phi), steps)
+        return np.column_stack([cx + r * np.cos(a), cy + r * np.sin(a)])
     if t == 'ellipse':
         a = np.linspace(0, 2 * np.pi, steps, endpoint=False)
         ex, ey = p['a'] * np.cos(a), p['b'] * np.sin(a)

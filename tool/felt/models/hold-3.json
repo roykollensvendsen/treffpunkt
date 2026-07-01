@@ -89,11 +89,12 @@
    }
   },
   {
-   "type": "circle",
+   "type": "tcircle",
    "params": {
     "cx": 187.8,
     "cy": 116.8,
-    "r": 39.2
+    "r": 39.2,
+    "bottomY": 149.0
    },
    "fill": [
     237,
@@ -113,11 +114,12 @@
    }
   },
   {
-   "type": "circle",
+   "type": "tcircle",
    "params": {
     "cx": 195.4,
     "cy": 34.0,
-    "r": 31.5
+    "r": 31.5,
+    "bottomY": 60.0
    },
    "fill": [
     237,
@@ -137,11 +139,12 @@
    }
   },
   {
-   "type": "circle",
+   "type": "tcircle",
    "params": {
     "cx": 112.9,
     "cy": 129.8,
-    "r": 22.2
+    "r": 22.2,
+    "bottomY": 149.0
    },
    "fill": [
     237,
