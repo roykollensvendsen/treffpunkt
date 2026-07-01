@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Shoot the NorgesFelt course**: from the course preview, tap **Skyt løypa** to
+  record a round — choose your group (6 shots/hold for group 1, 5 for groups
+  2–3), then place each shot on the hold picture where it hit. The app resolves
+  which figure and inner zone each shot landed in and scores it NorgesFelt-style
+  (1 point per hit, 1 per distinct figure hit, 1 per inner-zone hit), with a live
+  total and an end scorecard (spec 0080).
+
 ### Changed
 - **Composed NorgesFelt holds**: each hold in the course preview is now drawn as
   **one picture matching the official target sheet** — the figures at their real

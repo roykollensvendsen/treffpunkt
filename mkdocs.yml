@@ -110,6 +110,7 @@ nav:
       - "0077 — Accurate NorgesFelt figures": specs/0077-accurate-felt-figures.md
       - "0078 — NorgesFelt figure colours": specs/0078-felt-figure-colours.md
       - "0079 — Composed hold layout": specs/0079-composed-hold-layout.md
+      - "0080 — Feltskyting: hit recording": specs/0080-felt-hit-recording.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

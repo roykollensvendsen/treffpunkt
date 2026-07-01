@@ -7,6 +7,10 @@ import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
+
+/// Key for the "shoot the course" button on the preview (spec 0080), for tests.
+const Key feltShootButtonKey = ValueKey<String>('feltShoot');
 
 /// Key for hold [number]'s card in the course preview (spec 0068), for tests.
 Key feltHoldCardKey(int number) => ValueKey<String>('feltHold-$number');
@@ -41,6 +45,17 @@ class FeltCourseScreen extends StatelessWidget {
                       'offisielle skiva.',
                     ),
                   ),
+                ),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  key: feltShootButtonKey,
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const FeltRecordScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.my_location),
+                  label: const Text('Skyt løypa'),
                 ),
                 const SizedBox(height: 8),
                 for (final hold in norgesfelt2026)

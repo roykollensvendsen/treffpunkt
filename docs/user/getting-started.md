@@ -33,7 +33,11 @@ picture that matches the official target sheet**: the figures (hare, wolf head,
 ptarmigan, hexagons, triangles, circles …) at their real relative size and
 position, in the hold's colour, white figures knocked out of a coloured plate,
 the **black lines dividing the målgrupper**, and the inner-treff ring on every
-figure. Recording your hits on the figures is coming next.
+figure. Tap **Skyt løypa** to record a round: choose your **group** (which sets
+6 or 5 shots per hold), then **place each shot** on the hold picture where it
+hit. The app works out which figure and inner zone each shot landed in and
+scores it the NorgesFelt way — **1 point per hit, 1 per figure you hit, 1 per
+inner-zone hit** — with a running total and a scorecard at the end.
 
 ## Note where you are shooting
 Before a session starts, the setup step asks for the date, time and **place**.
