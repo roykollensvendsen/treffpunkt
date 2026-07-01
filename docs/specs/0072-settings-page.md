@@ -62,19 +62,24 @@ Email-OTP users have no `full_name` in auth metadata, so their `profiles`
 editable **brukernavn** and **require one before posting**.
 
 - **Requirements.** Under **Konto**, a **Brukernavn** row shows the current name
-  (or "Ikke satt") and opens an editor to change it. Posting a chat message, a
-  forum reply, or a new thread **requires** a name: with none set, a "Velg
-  brukernavn" prompt appears first and the post waits until one is chosen. The
-  name may be a **pseudonym** — it need not be the real name — so anonymity is
-  possible while every message still carries a name. A rename shows
-  **retroactively** on existing messages (names are joined live, spec 0010).
+  (or "Ikke satt") and opens an editor to change it. On sign-in a **default**
+  name is set so no one shows as "Ukjent": keep a name the user already chose;
+  otherwise the identity provider's name (Google); otherwise the **e-post local
+  part** (before `@`). The name may be a **pseudonym** — it need not be the real
+  name — so anonymity is possible. A rename shows **retroactively** on existing
+  messages (names are joined live, spec 0010). Posting still falls back to a
+  "Velg brukernavn" prompt if — unusually — no name is set at all (e.g. the
+  profile sync has not yet run).
 - **Design.** `CompetitionRepository.fetchProfile(id)` reads the own profile;
   `currentProfileProvider` / `displayNameProvider` expose it;
   `display_name.dart` holds `saveDisplayName` (reuses `upsertOwnProfile`),
-  `ensureDisplayName` (the gate) and the editor dialog (`displayNameFieldKey` /
-  `displayNameSaveKey`). The chat `_send`/image-send and the forum reply/new-
-  thread submit call `ensureDisplayName` first. **No migration** — the profiles
-  table already allows an owner to update their own row (spec 0010).
+  `ensureDisplayName` (the fallback gate) and the editor dialog
+  (`displayNameFieldKey` / `displayNameSaveKey`). `ProfileSyncNotifier` now reads
+  the existing profile first and **only fills a name when there is none**
+  (keep-chosen → provider name → `emailLocalPart`), so it never overwrites a
+  chosen brukernavn on a later sign-in. The chat `_send`/image-send and the forum
+  reply/new-thread submit call `ensureDisplayName` first. **No migration** — the
+  profiles table already allows an owner to update their own row (spec 0010).
 
 ## Verification
 - **Widget** (`settings_screen_test.dart`): the four sections + account e-post

@@ -48,6 +48,52 @@ void main() {
     ]);
   });
 
+  test('defaults the display name to the e-post local part (0072)', () async {
+    final repo = InMemoryCompetitionRepository(currentUserId: 'u1');
+    final auth = FakeAuthRepository(
+      initial: const SignedIn(
+        AppUser(id: 'u1', email: 'frode.svendsen@gmail.com'),
+      ),
+    );
+    addTearDown(auth.dispose);
+    final container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(auth),
+        competitionRepositoryProvider.overrideWithValue(repo),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(profileSyncProvider);
+    await Future<void>.delayed(Duration.zero);
+
+    expect((await repo.fetchProfile('u1'))?.displayName, 'frode.svendsen');
+  });
+
+  test('keeps a display name the user already chose (spec 0072)', () async {
+    final repo = InMemoryCompetitionRepository(currentUserId: 'u1');
+    await repo.upsertOwnProfile(const Profile(id: 'u1', displayName: 'Blink'));
+    final auth = FakeAuthRepository(
+      initial: const SignedIn(
+        // A different provider name must not overwrite the chosen "Blink".
+        AppUser(id: 'u1', email: 'frode@x.no', displayName: 'Frode Svendsen'),
+      ),
+    );
+    addTearDown(auth.dispose);
+    final container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(auth),
+        competitionRepositoryProvider.overrideWithValue(repo),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(profileSyncProvider);
+    await Future<void>.delayed(Duration.zero);
+
+    expect((await repo.fetchProfile('u1'))?.displayName, 'Blink');
+  });
+
   test('a failing profile upsert does not break sign-in', () async {
     final auth = FakeAuthRepository(
       initial: const SignedIn(AppUser(id: 'u1')),

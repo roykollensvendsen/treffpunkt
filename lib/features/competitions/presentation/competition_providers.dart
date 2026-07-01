@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
@@ -28,9 +29,10 @@ final competitionRepositoryProvider = Provider<CompetitionRepository>(
 );
 
 /// Keeps the signed-in user's profile up to date (spec 0010): on each
-/// transition to signed-in it upserts their profile, so a shared scoreboard can
-/// show their name. Best-effort — a failure (e.g. the `profiles` table not yet
-/// applied to hosted) is swallowed so it can never break sign-in.
+/// transition to signed-in it ensures they have a profile with a display name,
+/// so a shared scoreboard and chat/forum never show "Ukjent". Best-effort — a
+/// failure (e.g. the `profiles` table not yet applied to hosted) is swallowed
+/// so it can never break sign-in.
 ///
 /// Built eagerly at the app root (like the upload queue) so the listener is
 /// registered at start; `fireImmediately` covers the already-signed-in case.
@@ -40,21 +42,50 @@ class ProfileSyncNotifier extends Notifier<void> {
     ref.listen(authStateChangesProvider, (previous, next) {
       final status = next.value;
       if (status is! SignedIn) return;
-      final profile = Profile.fromAppUser(status.user);
-      unawaited(
-        ref
-            .read(competitionRepositoryProvider)
-            .upsertOwnProfile(profile)
-            .catchError((Object error, StackTrace stackTrace) {
-              // Defence in depth — a conforming repository already swallows,
-              // but a failed profile sync must never surface on sign-in.
-              if (!kReleaseMode) {
-                debugPrint('Failed to sync the profile on sign-in: $error');
-              }
-            }),
-      );
+      unawaited(_sync(status.user));
     }, fireImmediately: true);
   }
+
+  /// Ensures [user] has a profile with a display name **without overwriting a
+  /// name they have chosen** (spec 0072): keep an existing name; otherwise use
+  /// the identity provider's name; otherwise the e-post local part — so an
+  /// e-post sign-in gets a sensible default instead of "Ukjent".
+  Future<void> _sync(AppUser user) async {
+    final repo = ref.read(competitionRepositoryProvider);
+    try {
+      final existing = await repo.fetchProfile(user.id);
+      final current = existing?.displayName?.trim() ?? '';
+      final fromProvider = user.displayName?.trim() ?? '';
+      final name = current.isNotEmpty
+          ? current
+          : fromProvider.isNotEmpty
+          ? fromProvider
+          : emailLocalPart(user.email);
+      await repo.upsertOwnProfile(
+        Profile(
+          id: user.id,
+          displayName: name,
+          avatarUrl: existing?.avatarUrl ?? user.avatarUrl,
+        ),
+      );
+    } on Object catch (error) {
+      // A conforming repository already swallows, but a failed profile sync
+      // must never surface on sign-in.
+      if (!kReleaseMode) {
+        debugPrint('Failed to sync the profile on sign-in: $error');
+      }
+    }
+  }
+}
+
+/// The local part of an e-post address (before `@`), trimmed — a friendly
+/// default display name — or `null` when there is no usable address
+/// (spec 0072).
+String? emailLocalPart(String? email) {
+  if (email == null) return null;
+  final at = email.indexOf('@');
+  final local = (at > 0 ? email.substring(0, at) : email).trim();
+  return local.isEmpty ? null : local;
 }
 
 /// Drives the on-sign-in profile upsert; watched at the app root to stay alive.

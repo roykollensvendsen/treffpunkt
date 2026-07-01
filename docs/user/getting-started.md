@@ -58,10 +58,11 @@ ut**), **Utseende** (theme), **Varsler** (notifications) and **Personvern**
 (training images).
 
 Your **Brukernavn** (display name) is the name shown on your chat and forum
-messages. You choose it under **Konto** — it can be a **kallenavn** (nickname),
-so you can stay anonymous while your messages still carry a name. The first time
-you post you'll be asked to pick one. Changing it later updates your name on
-earlier messages too.
+messages. You get a sensible default when you sign in — your Google name, or the
+part of your e-post before the `@` — so you never show up as "Ukjent". Change it
+under **Konto** to anything you like; it can be a **kallenavn** (nickname), so
+you can stay anonymous while your messages still carry a name. Changing it later
+updates your name on earlier messages too.
 
 By default the app follows your device or browser theme — dark phone, dark app.
 To override it, open **Innstillinger → Utseende** and choose **Følg systemet**,

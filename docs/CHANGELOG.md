@@ -27,9 +27,10 @@ All notable changes to this project are documented here. The format is based on
   varsler and personvern in one place (spec 0072).
 - **Brukernavn (display name)**: set a display name under **Innstillinger →
   Konto** — it can be a **kallenavn**, so you stay anonymous while your messages
-  still show a name. You're now asked to pick one before your first post, which
-  fixes missing names for e-post sign-ins. Changing it updates your name on
-  earlier messages too (spec 0072).
+  still show a name. New sign-ins get a sensible **default** name (your Google
+  name, or the part of your e-post before `@`) so no one shows as "Ukjent", and a
+  chosen brukernavn is **kept** across sign-ins (it is no longer reset). Changing
+  it updates your name on earlier messages too (spec 0072).
 - **Edit your own chat message**: long-press your message in a competition chat
   and choose **Rediger** to fix a typo — the change shows live for everyone. Only
   the author can edit (the owner still moderates by deleting); spec 0070.
