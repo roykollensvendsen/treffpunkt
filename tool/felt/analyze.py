@@ -51,11 +51,8 @@ def _solidity(mask):
 
 
 def dominant_colour(rgb, mask):
-    px = rgb[mask]
-    for anchor, name in ((fl.PAPER, 'paper'), (fl.BLACK, 'black'),
-                         (fl.GREEN, 'green'), (fl.RED, 'red')):
-        pass
-    return [int(round(v)) for v in px.mean(0)]
+    """Mean RGB over the masked pixels."""
+    return [int(round(v)) for v in rgb[mask].mean(0)]
 
 
 def _shape_fits(rgb, region):
