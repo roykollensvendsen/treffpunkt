@@ -6,14 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_gate.dart';
-import 'package:treffpunkt/features/auth/presentation/sign_out_button.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/join_link_handler.dart';
-import 'package:treffpunkt/features/notifications/presentation/notification_toggle_button.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
-import 'package:treffpunkt/features/settings/presentation/contribution_toggle_button.dart';
-import 'package:treffpunkt/features/settings/presentation/theme_mode_button.dart';
+import 'package:treffpunkt/features/settings/presentation/settings_screen.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
 
 /// The Treffpunkt application root: an auth gate in front of the app content.
@@ -46,12 +43,7 @@ class TreffpunktApp extends ConsumerWidget {
       home: AuthGate(
         signedInBuilder: (user) => const JoinLinkHandler(
           child: ProgramPickerScreen(
-            actions: [
-              NotificationToggleButton(),
-              ThemeModeButton(),
-              ContributionToggleButton(),
-              SignOutButton(),
-            ],
+            actions: [SettingsButton()],
           ),
         ),
       ),

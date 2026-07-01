@@ -102,6 +102,7 @@ nav:
       - "0069 — Copy message text": specs/0069-copy-message-text.md
       - "0070 — Edit your own chat message": specs/0070-edit-chat-message.md
       - "0071 — Live delete/edit over Realtime": specs/0071-realtime-live-delete.md
+      - "0072 — Settings page": specs/0072-settings-page.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

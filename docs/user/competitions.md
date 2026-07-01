@@ -102,11 +102,11 @@ for everyone. If it is not yours, archive it instead.
 ## Varsler
 
 Slå på **varsler** for å bli varslet om en **ny melding** i en konkurranse du er
-med i, og om en **invitasjon** til deg — også når appen er lukket. Trykk på
-**bjella** øverst og tillat varsler i nettleseren. Trykk på bjella igjen for å slå
-dem av.
+med i, og om en **invitasjon** til deg — også når appen er lukket. Åpne
+**Innstillinger** (tannhjulet øverst) og slå på **Varsler**, og tillat varsler i
+nettleseren. Slå dem av samme sted.
 
 Varsler virker på **Android og PC** (Chrome, Firefox, Edge). På **iPhone** virker
 de foreløpig ikke: Safari krever da at appen installeres som en egen app, noe som
 bryter Google-innloggingen — så vi venter med iPhone-varsler til en egen app er på
-plass. Ser du ingen bjelle, støtter ikke nettleseren din varsler.
+plass. Står varsler-valget som utilgjengelig, støtter ikke nettleseren din varsler.
