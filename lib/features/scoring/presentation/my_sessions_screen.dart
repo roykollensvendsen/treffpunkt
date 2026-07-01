@@ -7,6 +7,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_session_detail_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/month_calendar.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
@@ -18,6 +21,9 @@ import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
 /// Key for the card of the saved session with the given [id], used by tests.
 Key mySessionCard(String id) => ValueKey<String>('mySessionCard-$id');
+
+/// Key for a saved felt round's card in "Mine økter" (spec 0082), for tests.
+Key feltSessionCard(String id) => ValueKey<String>('feltSessionCard-$id');
 
 /// Key for the overflow (Slett) menu on the session [id]'s card (spec 0033).
 Key deleteSessionMenuKey(String id) =>
@@ -122,6 +128,11 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
 
     final pending = _unionById(<List<SessionRecord>>[stored, live]);
     final entries = mergeMySessions(synced: synced, pending: pending);
+    // Finished felt rounds are stored locally (spec 0082) and interleaved into
+    // the same list, newest-first by date.
+    final feltRounds =
+        ref.watch(feltHistoryProvider).value ?? const <FeltSessionRecord>[];
+    final items = mergeSessionItems(entries: entries, rounds: feltRounds);
 
     return Scaffold(
       appBar: AppBar(
@@ -148,8 +159,8 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
                 if (syncFailed) const _SyncErrorBanner(),
                 Expanded(
                   child: _calendar
-                      ? _calendarView(entries)
-                      : _SessionsList(entries: entries),
+                      ? _calendarView(items)
+                      : _SessionsList(items: items),
                 ),
               ],
             ),
@@ -162,22 +173,22 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
   /// The calendar: a month grid with the days that have sessions marked, and
   /// the selected day's sessions below it (spec 0038). Sessions with no stored
   /// date are not placed on the calendar (they stay in the list view).
-  Widget _calendarView(List<MySessionEntry> entries) {
-    final byDay = <DateTime, List<MySessionEntry>>{};
-    for (final entry in entries) {
-      final at = entry.record.capturedAt;
+  Widget _calendarView(List<MySessionItem> items) {
+    final byDay = <DateTime, List<MySessionItem>>{};
+    for (final item in items) {
+      final at = item.capturedAt;
       if (at == null) continue;
-      byDay.putIfAbsent(dateKey(at), () => <MySessionEntry>[]).add(entry);
+      byDay.putIfAbsent(dateKey(at), () => <MySessionItem>[]).add(item);
     }
-    // Entries are sorted newest-first, so the first dated one anchors the
+    // Items are sorted newest-first, so the first dated one anchors the
     // default month/day; with no dated sessions, fall back to today.
-    final dated = entries.where((e) => e.record.capturedAt != null);
+    final dated = items.where((e) => e.capturedAt != null);
     final anchor = dated.isEmpty
         ? dateKey(DateTime.now())
-        : dateKey(dated.first.record.capturedAt!);
+        : dateKey(dated.first.capturedAt!);
     final selectedDay = _selectedDay ?? anchor;
     final month = _month ?? firstOfMonth(selectedDay);
-    final dayEntries = byDay[selectedDay] ?? const <MySessionEntry>[];
+    final dayEntries = byDay[selectedDay] ?? const <MySessionItem>[];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -205,7 +216,7 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
               ),
             )
           else
-            for (final entry in dayEntries) _SessionCard(entry: entry),
+            for (final item in dayEntries) _itemRow(item),
         ],
       ),
     );
@@ -226,21 +237,80 @@ List<SessionRecord> _unionById(List<List<SessionRecord>> sources) {
 
 /// The loaded list of saved sessions, or the empty state when there are none.
 class _SessionsList extends StatelessWidget {
-  const _SessionsList({required this.entries});
+  const _SessionsList({required this.items});
 
-  final List<MySessionEntry> entries;
+  final List<MySessionItem> items;
 
   @override
   Widget build(BuildContext context) {
-    if (entries.isEmpty) {
+    if (items.isEmpty) {
       return const _EmptyState();
     }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: entries.length,
-      itemBuilder: (context, index) => _SessionCard(entry: entries[index]),
+      itemCount: items.length,
+      itemBuilder: (context, index) => _itemRow(items[index]),
     );
   }
+}
+
+/// Builds the row for a unified list [item] (spec 0082): a ring session card or
+/// a finished felt round card.
+Widget _itemRow(MySessionItem item) => switch (item) {
+  RingSessionItem(:final entry) => _SessionCard(entry: entry),
+  FeltSessionItem(:final record) => _FeltSessionCard(record: record),
+};
+
+/// A finished felt round in "Mine økter" (spec 0082): its date, group and total
+/// points; tapping opens the felt scorecard.
+class _FeltSessionCard extends StatelessWidget {
+  const _FeltSessionCard({required this.record});
+
+  final FeltSessionRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tally = record.tally;
+    return Card(
+      child: ListTile(
+        key: feltSessionCard(record.id),
+        leading: const Icon(Icons.my_location),
+        title: const Text('NorgesFelt-løype 2026'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${_feltDate(record.capturedAt)} · ${tally.group.label}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            Text(
+              '${tally.points} poeng',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        onTap: () => unawaited(
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => FeltSessionDetailScreen(record: record),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Formats a felt round's date like the ring meta line.
+String _feltDate(DateTime at) {
+  String two(int v) => v.toString().padLeft(2, '0');
+  return '${at.year}-${two(at.month)}-${two(at.day)} '
+      '${two(at.hour)}:${two(at.minute)}';
 }
 
 /// The friendly empty state: a cue that nothing is saved yet, a hint on how to

@@ -12,6 +12,7 @@ import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
 
 // A saved round with one inner hit on hare (hold 1), the other holds empty.
 FeltSessionSnapshot _savedHareInner(FeltShooterGroup group) =>

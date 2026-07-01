@@ -16,6 +16,9 @@ All notable changes to this project are documented here. The format is based on
 - **Resume a felt round**: an in-progress felt round is saved as you place shots
   and survives an app restart; the course page shows a **Fortsett felt-økt** card
   to pick it up exactly where you left off, or discard it (spec 0081).
+- **Felt rounds in "Mine økter"**: finishing a felt round saves it (locally) and
+  it now shows in **Mine økter** alongside your ring sessions, by date, with its
+  total points; tapping it opens the felt scorecard (spec 0082).
 
 ### Changed
 - **Composed NorgesFelt holds**: each hold in the course preview is now drawn as

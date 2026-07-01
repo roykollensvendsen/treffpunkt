@@ -39,7 +39,8 @@ hit. The app works out which figure and inner zone each shot landed in and
 scores it the NorgesFelt way — **1 point per hit, 1 per figure you hit, 1 per
 inner-zone hit** — with a running total and a scorecard at the end. The round
 is **saved as you go**, so you can leave and pick it up later from **Fortsett
-felt-økt** on the course page, exactly where you left off.
+felt-økt** on the course page, exactly where you left off. When you finish, the
+round is saved and shows up in **Mine økter** together with your ring sessions.
 
 ## Note where you are shooting
 Before a session starts, the setup step asks for the date, time and **place**.

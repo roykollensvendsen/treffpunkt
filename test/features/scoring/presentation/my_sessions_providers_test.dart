@@ -13,6 +13,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
@@ -31,7 +34,42 @@ SessionRecord _record(String id, {DateTime? capturedAt}) => SessionRecord(
   payload: <String, dynamic>{'id': id},
 );
 
+FeltSessionRecord _felt(String id, {required DateTime capturedAt}) =>
+    FeltSessionRecord(
+      id: id,
+      capturedAt: capturedAt,
+      session: const FeltSessionSnapshot(
+        group: FeltShooterGroup.one,
+        currentHold: 0,
+        holds: <List<FeltPlacedShot>>[
+          <FeltPlacedShot>[
+            FeltPlacedShot(dx: 1, dy: 1, figureIndex: 0, inner: true),
+          ],
+        ],
+      ),
+    );
+
 void main() {
+  test('mergeSessionItems interleaves ring and felt newest-first (0082)', () {
+    final ring = <MySessionEntry>[
+      MySessionEntry(
+        record: _record('r1', capturedAt: DateTime.utc(2026, 7, 5)),
+        synced: true,
+      ),
+      MySessionEntry(record: _record('r2'), synced: false), // undated
+    ];
+    final felt = <FeltSessionRecord>[
+      _felt('f1', capturedAt: DateTime.utc(2026, 7, 6)),
+    ];
+
+    final items = mergeSessionItems(entries: ring, rounds: felt);
+
+    expect(items.length, 3);
+    expect((items[0] as FeltSessionItem).record.id, 'f1'); // newest
+    expect((items[1] as RingSessionItem).entry.record.id, 'r1');
+    expect((items[2] as RingSessionItem).entry.record.id, 'r2'); // undated last
+  });
+
   test('synced-only records become synced entries', () {
     final entries = mergeMySessions(
       synced: <SessionRecord>[_record('a'), _record('b')],

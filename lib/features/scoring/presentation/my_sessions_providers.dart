@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
@@ -35,6 +36,63 @@ class MySessionEntry {
 
   @override
   int get hashCode => Object.hash(record.id, synced);
+}
+
+/// One row of the unified "Mine økter" list (spec 0082): a ring session or a
+/// finished felt round. Both expose [capturedAt] so the two kinds interleave by
+/// date; the list dispatches on the variant to render the right card.
+sealed class MySessionItem {
+  const MySessionItem();
+
+  /// When the item happened, for sorting (null sorts last).
+  DateTime? get capturedAt;
+}
+
+/// A ring session in the unified list (spec 0082).
+class RingSessionItem extends MySessionItem {
+  /// Wraps a ring [entry].
+  const RingSessionItem(this.entry);
+
+  /// The ring session entry.
+  final MySessionEntry entry;
+
+  @override
+  DateTime? get capturedAt => entry.record.capturedAt;
+}
+
+/// A finished felt round in the unified list (spec 0082).
+class FeltSessionItem extends MySessionItem {
+  /// Wraps a finished felt [record].
+  const FeltSessionItem(this.record);
+
+  /// The finished felt round.
+  final FeltSessionRecord record;
+
+  @override
+  DateTime? get capturedAt => record.capturedAt;
+}
+
+/// Interleaves the ring [entries] and finished felt [rounds] into one list,
+/// newest-first by date (undated last) — spec 0082. A pure function, so it is
+/// unit-testable without a widget.
+List<MySessionItem> mergeSessionItems({
+  required List<MySessionEntry> entries,
+  required List<FeltSessionRecord> rounds,
+}) {
+  final items = <MySessionItem>[
+    for (final entry in entries) RingSessionItem(entry),
+    for (final round in rounds) FeltSessionItem(round),
+  ];
+  return List<MySessionItem>.unmodifiable(
+    items..sort((a, b) {
+      final aAt = a.capturedAt;
+      final bAt = b.capturedAt;
+      if (aAt == null && bAt == null) return 0;
+      if (aAt == null) return 1;
+      if (bAt == null) return -1;
+      return bAt.compareTo(aAt);
+    }),
+  );
 }
 
 /// How long to wait for the cloud read before treating it as a failure.
