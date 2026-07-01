@@ -28,6 +28,8 @@ void main() {
     }
     // Each hold is drawn as one composed picture.
     expect(find.byType(FeltHoldArtView), findsNWidgets(8));
+    // The course can be shot (spec 0080).
+    expect(find.byKey(feltShootButtonKey), findsOneWidget);
     // The figure names are listed under each hold.
     expect(find.textContaining('Hare'), findsWidgets);
     expect(find.textContaining('Ulvehode'), findsWidgets);
