@@ -3,3 +3,8 @@ out/
 # Local caches.
 __pycache__/
 *.pyc
+# Stray reference/source images left by tooling — never commit.
+*.png
+*.jpg
+*.jpeg
+*.gif
