@@ -80,6 +80,8 @@ class _SpyCompetitionRepository implements CompetitionRepository {
   @override
   Future<void> upsertOwnProfile(Profile profile) async {}
   @override
+  Future<Profile?> fetchProfile(String id) async => null;
+  @override
   Future<void> createCompetition(Competition competition) async =>
       throw UnimplementedError();
   @override

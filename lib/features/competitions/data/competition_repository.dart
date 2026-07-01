@@ -43,6 +43,12 @@ abstract interface class CompetitionRepository {
   /// throw.
   Future<void> upsertOwnProfile(Profile profile);
 
+  /// Reads the profile for user [id], or `null` if none exists yet (spec 0072).
+  ///
+  /// Used to show and edit the signed-in user's own display name. Best-effort:
+  /// a read failure yields `null` rather than throwing.
+  Future<Profile?> fetchProfile(String id);
+
   /// Creates [competition] (owned by the caller).
   ///
   /// The id is freshly generated per create, so this is a one-shot insert (not
@@ -317,6 +323,9 @@ class InMemoryCompetitionRepository implements CompetitionRepository {
       _emailByUserId[profile.id] = email;
     }
   }
+
+  @override
+  Future<Profile?> fetchProfile(String id) async => _profiles[id];
 
   @override
   Future<void> createCompetition(Competition competition) async {

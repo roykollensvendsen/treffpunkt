@@ -17,6 +17,10 @@ import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
+import 'package:treffpunkt/features/competitions/domain/profile.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
 import 'package:treffpunkt/features/forum/domain/forum_thread.dart';
@@ -30,15 +34,28 @@ const _me = AppUser(id: 'me', email: 'me@example.com', displayName: 'Me');
 Widget _app(
   InMemoryForumRepository repo, {
   Widget home = const ForumScreen(),
+  String? displayName = 'Me',
 }) => ProviderScope(
   overrides: [
     authRepositoryProvider.overrideWithValue(
       FakeAuthRepository(initial: const SignedIn(_me)),
     ),
     forumRepositoryProvider.overrideWithValue(repo),
+    // Posting is gated on a display name (spec 0072); the current user "me"
+    // has one by default so the existing posting tests are not blocked. Pass
+    // displayName: null to exercise the "choose a name first" gate.
+    competitionRepositoryProvider.overrideWithValue(_profileRepo(displayName)),
   ],
   child: MaterialApp(home: home),
 );
+
+/// A competition repo whose current user "me" has the given [displayName] (or
+/// none). The in-memory upsert is synchronous, so the profile is set at once.
+InMemoryCompetitionRepository _profileRepo(String? displayName) {
+  final repo = InMemoryCompetitionRepository(currentUserId: 'me');
+  unawaited(repo.upsertOwnProfile(Profile(id: 'me', displayName: displayName)));
+  return repo;
+}
 
 InMemoryForumRepository _meRepo() =>
     InMemoryForumRepository(currentUserId: 'me')..setDisplayName('me', 'Me');
@@ -91,6 +108,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('God idé!'), findsOneWidget);
+  });
+
+  testWidgets('posting with no brukernavn asks for one first (spec 0072)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(_meRepo(), displayName: null));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(newThreadButtonKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(threadTitleFieldKey), 'Ny sak');
+    await tester.tap(find.byKey(threadCategoryKey('bug')));
+    await tester.tap(find.byKey(createThreadSubmitKey));
+    await tester.pumpAndSettle();
+
+    // A "choose a name" prompt appears instead of creating the thread.
+    expect(find.byKey(displayNameFieldKey), findsOneWidget);
+
+    await tester.enterText(find.byKey(displayNameFieldKey), 'Blink');
+    await tester.tap(find.byKey(displayNameSaveKey));
+    await tester.pumpAndSettle();
+
+    // With a name set, the thread is created and shown in the list.
+    expect(find.text('Ny sak'), findsOneWidget);
   });
 
   testWidgets('only the author or an admin can delete a thread', (

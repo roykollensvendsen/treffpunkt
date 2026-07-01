@@ -473,6 +473,43 @@ void main() {
       );
     });
 
+    test('fetchProfile returns the upserted profile (spec 0072)', () async {
+      final repo = InMemoryCompetitionRepository(currentUserId: 'me');
+      expect(await repo.fetchProfile('me'), isNull);
+      await repo.upsertOwnProfile(
+        const Profile(id: 'me', displayName: 'Skarpskytter'),
+      );
+      expect((await repo.fetchProfile('me'))?.displayName, 'Skarpskytter');
+    });
+
+    test(
+      'renaming shows on existing messages (live join, spec 0072)',
+      () async {
+        final alice = InMemoryCompetitionRepository(
+          currentUserId: 'alice',
+          currentEmail: 'alice@example.com',
+        );
+        await alice.upsertOwnProfile(
+          const Profile(id: 'alice', displayName: 'Gammelt'),
+        );
+        await alice.createCompetition(_comp('c1', ownerId: 'alice'));
+        await alice.postMessage(_msg('m1', 'c1', 'hei'));
+        expect(
+          (await alice.watchMessages('c1').first).single.profile?.displayName,
+          'Gammelt',
+        );
+
+        // A rename updates the name on the already-posted message.
+        await alice.upsertOwnProfile(
+          const Profile(id: 'alice', displayName: 'Nytt'),
+        );
+        expect(
+          (await alice.watchMessages('c1').first).single.profile?.displayName,
+          'Nytt',
+        );
+      },
+    );
+
     test('watchMessages re-emits when a message is posted', () async {
       final alice = InMemoryCompetitionRepository(
         currentUserId: 'alice',

@@ -75,6 +75,23 @@ final currentUserIdProvider = Provider<String?>((ref) {
   return status is SignedIn ? status.user.id : null;
 });
 
+/// The signed-in user's own profile (spec 0072), or `null` before sign-in or
+/// when none exists yet. Invalidate it after editing the display name so the
+/// new value is read back.
+final currentProfileProvider = FutureProvider<Profile?>((ref) async {
+  final id = ref.watch(currentUserIdProvider);
+  if (id == null) return null;
+  return ref.watch(competitionRepositoryProvider).fetchProfile(id);
+});
+
+/// The signed-in user's display name (spec 0072), trimmed; empty when unset.
+///
+/// Drives the "brukernavn" setting and the "choose a name before posting" gate.
+final displayNameProvider = Provider<String>((ref) {
+  final profile = ref.watch(currentProfileProvider).value;
+  return profile?.displayName?.trim() ?? '';
+});
+
 /// The competitions the signed-in user owns or has joined (spec 0011).
 ///
 /// A foreground read: it surfaces [CompetitionSyncException] as the provider's

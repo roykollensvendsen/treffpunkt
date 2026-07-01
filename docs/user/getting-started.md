@@ -53,9 +53,15 @@ so the card only appears while a session is in progress.
 ## Settings (Innstillinger)
 
 Tap the **gear** in the top bar to open **Innstillinger**, where the app's
-settings live in one place: your **account** (e-post and **Logg ut**),
-**Utseende** (theme), **Varsler** (notifications) and **Personvern** (training
-images).
+settings live in one place: your **account** (**Brukernavn**, e-post and **Logg
+ut**), **Utseende** (theme), **Varsler** (notifications) and **Personvern**
+(training images).
+
+Your **Brukernavn** (display name) is the name shown on your chat and forum
+messages. You choose it under **Konto** — it can be a **kallenavn** (nickname),
+so you can stay anonymous while your messages still carry a name. The first time
+you post you'll be asked to pick one. Changing it later updates your name on
+earlier messages too.
 
 By default the app follows your device or browser theme — dark phone, dark app.
 To override it, open **Innstillinger → Utseende** and choose **Følg systemet**,
