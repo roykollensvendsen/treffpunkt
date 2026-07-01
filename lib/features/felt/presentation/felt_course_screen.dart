@@ -63,31 +63,27 @@ class FeltCourseScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: <Widget>[
-                                for (final figure in hold.figures)
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 12),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: <Widget>[
-                                        FeltFigureView(
-                                          figure: figure,
-                                          pxPerCm: _pxPerCm,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          figure.displayName,
-                                          style: theme.textTheme.labelSmall,
-                                        ),
-                                      ],
-                                    ),
+                          _FigureStrip(
+                            children: <Widget>[
+                              for (final figure in hold.figures)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 12),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      FeltFigureView(
+                                        figure: figure,
+                                        pxPerCm: _pxPerCm,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        figure.displayName,
+                                        style: theme.textTheme.labelSmall,
+                                      ),
+                                    ],
                                   ),
-                              ],
-                            ),
+                                ),
+                            ],
                           ),
                         ],
                       ),
@@ -100,4 +96,42 @@ class FeltCourseScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A horizontal strip of a hold's figures with an always-visible scrollbar, so
+/// on desktop/web it is clear the figures scroll and they can be dragged there
+/// (the app also enables mouse-drag scrolling; spec 0074).
+class _FigureStrip extends StatefulWidget {
+  const _FigureStrip({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  State<_FigureStrip> createState() => _FigureStripState();
+}
+
+class _FigureStripState extends State<_FigureStrip> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scrollbar(
+    controller: _controller,
+    thumbVisibility: true,
+    child: SingleChildScrollView(
+      controller: _controller,
+      scrollDirection: Axis.horizontal,
+      // Leave room below the figures so the scrollbar clears their labels.
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: widget.children,
+      ),
+    ),
+  );
 }

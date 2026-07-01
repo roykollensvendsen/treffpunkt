@@ -12,6 +12,10 @@ All notable changes to this project are documented here. The format is based on
   **pan** (drag) to see the details — with a close button to return (spec 0073).
 
 ### Fixed
+- **Scroll the field-course figures with a mouse**: on the NorgesFelt-løype 2026
+  preview you couldn't reach the figures past the edge of a hold in a desktop
+  browser (no touch swipe). The strips now show a scrollbar and can be
+  dragged with the mouse/trackpad — everywhere in the app (spec 0074).
 - **Logg ut now returns you to the sign-in screen**: signing out from
   Innstillinger used to leave the settings page on top; it now drops any open
   screen and lands on the sign-in screen (spec 0072).
