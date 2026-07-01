@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/widgets.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/bootstrap.dart';
@@ -13,6 +14,7 @@ import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
 import 'package:treffpunkt/features/competitions/data/supabase_competition_repository.dart';
 import 'package:treffpunkt/features/forum/data/supabase_forum_repository.dart';
 import 'package:treffpunkt/features/notifications/data/supabase_push_subscription_repository.dart';
+import 'package:treffpunkt/features/scoring/data/big_data_cloud_geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_picker_image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_target_scanner.dart';
@@ -61,6 +63,7 @@ Future<void> main() async {
     weaponStore: weaponStore,
     initialWeapons: savedWeapons,
     locationService: const GeolocatorLocationService(),
+    geocoder: BigDataCloudGeocoder(http.Client()),
     imageSourceService: ImagePickerImageSourceService(),
     targetScanner: const ImageTargetScanner(),
     contributionService: SupabaseContributionService(Supabase.instance.client),

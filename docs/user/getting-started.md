@@ -36,9 +36,11 @@ coming next.
 ## Note where you are shooting
 Before a session starts, the setup step asks for the date, time and **place**.
 Tap **Bruk min posisjon** ("use my location") to fill the place from your
-device's location — the first time, your browser or phone asks permission. You
-can always type the range name by hand instead, and you can carry on with no
-place at all. If location is turned off or you decline the prompt, nothing
+device's location — the first time, your browser or phone asks permission. It
+fills in the **name** of where you are (the town or area), looked up from your
+coordinates; if that can't be found it falls back to the coordinates. You can
+always type the range name by hand instead (a name you've typed isn't
+overwritten), and you can carry on with no place at all. If location is turned off or you decline the prompt, nothing
 breaks: just type the place. (In a web browser, the location button needs a
 secure `https://` page; the live app provides one.)
 

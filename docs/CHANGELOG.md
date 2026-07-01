@@ -7,6 +7,10 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **"Bruk min posisjon" now fills a place name**: instead of raw coordinates, the
+  place field is filled with the **name** of where you are (town/area), looked up
+  from your location. If the name can't be resolved it falls back to the
+  coordinates as before, and the coordinates are still saved (spec 0076).
 - **GIF uploads, and a clear message for unsupported files**: you can now attach
   **GIF** images (as well as JPG/PNG) in chat and the forum, and they keep their
   animation. Files that aren't a supported image are refused with **"Filformatet
