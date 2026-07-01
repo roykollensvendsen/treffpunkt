@@ -1,0 +1,5 @@
+# Verification artefacts embed the copyrighted source hold images — never commit.
+out/
+# Local caches.
+__pycache__/
+*.pyc
