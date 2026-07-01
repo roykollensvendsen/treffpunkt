@@ -2,21 +2,21 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Widget test for the NorgesFelt 2026 course preview (spec 0068): all 8 holds
-// render with their figures.
+// Widget test for the NorgesFelt 2026 course preview (specs 0068/0079): all 8
+// holds render as one composed picture with their figure names.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_figure.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
-import 'package:treffpunkt/features/felt/presentation/felt_figure_painter.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
 
 void main() {
-  testWidgets('shows all 8 holds with their figures (spec 0068)', (
+  testWidgets('shows all 8 composed holds with their figures (spec 0079)', (
     tester,
   ) async {
     // A tall viewport so the lazy list builds every hold.
-    tester.view.physicalSize = const Size(1200, 5000);
+    tester.view.physicalSize = const Size(1200, 6000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
@@ -26,14 +26,13 @@ void main() {
     for (var n = 1; n <= 8; n++) {
       expect(find.byKey(feltHoldCardKey(n)), findsOneWidget);
     }
-    // Figures are drawn (e.g. the traced animals and a circle).
-    expect(find.byType(FeltFigureView), findsWidgets);
-    expect(find.text('Ulvehode'), findsOneWidget);
-    expect(find.text('Hare'), findsOneWidget);
-    expect(find.text('C13'), findsWidgets);
-    // Each hold's figure strip shows a scrollbar so it's clear it scrolls
-    // (and can be dragged) on desktop/web (spec 0074).
-    expect(find.byType(Scrollbar), findsWidgets);
+    // Each hold is drawn as one composed picture.
+    expect(find.byType(FeltHoldArtView), findsNWidgets(8));
+    // The figure names are listed under each hold.
+    expect(find.textContaining('Hare'), findsWidgets);
+    expect(find.textContaining('Ulvehode'), findsWidgets);
+    expect(find.textContaining('Hold 1'), findsOneWidget);
+    expect(find.textContaining('Hold 8'), findsOneWidget);
   });
 
   test(
