@@ -2,13 +2,18 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hit_test.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 
 /// Key for the group-picker button for [group] (spec 0080), for tests.
 Key feltGroupButtonKey(FeltShooterGroup group) =>
@@ -27,13 +32,17 @@ const Key feltTotalPointsKey = ValueKey<String>('feltTotalPoints');
 const Key feltScorecardKey = ValueKey<String>('feltScorecard');
 
 /// Records a NorgesFelt session (spec 0080): pick a group, then place each shot
-/// on every hold and see the score, ending on a scorecard.
-class FeltRecordScreen extends StatefulWidget {
-  /// Creates the recording screen.
-  const FeltRecordScreen({super.key});
+/// on every hold and see the score, ending on a scorecard. The in-progress
+/// round is saved after each change and can be [restored] (spec 0081).
+class FeltRecordScreen extends ConsumerStatefulWidget {
+  /// Creates the recorder, optionally resuming a saved [restored] round.
+  const FeltRecordScreen({this.restored, super.key});
+
+  /// A saved round to resume into, or null to start fresh (spec 0081).
+  final FeltSessionSnapshot? restored;
 
   @override
-  State<FeltRecordScreen> createState() => _FeltRecordScreenState();
+  ConsumerState<FeltRecordScreen> createState() => _FeltRecordScreenState();
 }
 
 class _Placed {
@@ -42,36 +51,96 @@ class _Placed {
   final FeltShot shot;
 }
 
-class _FeltRecordScreenState extends State<FeltRecordScreen> {
+class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
   FeltShooterGroup? _group;
   int _hold = 0;
   bool _done = false;
-  late final List<List<_Placed>> _shots = List<List<_Placed>>.generate(
-    norgesfelt2026Art.length,
-    (_) => <_Placed>[],
-  );
+  late List<List<_Placed>> _shots;
+
+  @override
+  void initState() {
+    super.initState();
+    final restored = widget.restored;
+    if (restored != null) {
+      _group = restored.group;
+      _hold = restored.currentHold;
+      _shots = <List<_Placed>>[
+        for (final hold in restored.holds)
+          <_Placed>[
+            for (final s in hold)
+              _Placed(
+                Offset(s.dx, s.dy),
+                FeltShot(figureIndex: s.figureIndex, inner: s.inner),
+              ),
+          ],
+      ];
+    } else {
+      _shots = List<List<_Placed>>.generate(
+        norgesfelt2026Art.length,
+        (_) => <_Placed>[],
+      );
+    }
+  }
 
   FeltHoldTally _tally(int i) =>
       FeltHoldTally(_shots[i].map((p) => p.shot).toList());
 
   FeltSessionTally get _session => FeltSessionTally(
     group: _group!,
-    holds: <FeltHoldTally>[
-      for (var i = 0; i < _shots.length; i++) _tally(i),
+    holds: <FeltHoldTally>[for (var i = 0; i < _shots.length; i++) _tally(i)],
+  );
+
+  int get _totalShots => _shots.fold(0, (sum, h) => sum + h.length);
+
+  FeltSessionSnapshot _snapshot() => FeltSessionSnapshot(
+    group: _group!,
+    currentHold: _hold,
+    holds: <List<FeltPlacedShot>>[
+      for (final hold in _shots)
+        <FeltPlacedShot>[
+          for (final p in hold)
+            FeltPlacedShot(
+              dx: p.pos.dx,
+              dy: p.pos.dy,
+              figureIndex: p.shot.figureIndex,
+              inner: p.shot.inner,
+            ),
+        ],
     ],
   );
+
+  /// Saves the in-progress round, or clears the store when there is nothing
+  /// worth resuming (no group, no shots, or finished). Best-effort (spec 0081).
+  void _persist() {
+    final store = ref.read(feltSessionStoreProvider);
+    final write = (_group == null || _done || _totalShots == 0)
+        ? store.clear()
+        : store.save(_snapshot());
+    unawaited(write.catchError((Object _) {}));
+  }
+
+  void _pickGroup(FeltShooterGroup group) {
+    setState(() => _group = group);
+    _persist();
+  }
 
   void _place(FeltHoldArt art, Offset holdPoint) {
     if (_shots[_hold].length >= _group!.shotsPerHold) return;
     setState(() {
       _shots[_hold].add(_Placed(holdPoint, feltHitTest(art, holdPoint)));
     });
+    _persist();
+  }
+
+  void _mutate(VoidCallback change) {
+    setState(change);
+    _persist();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_group == null) {
-      return _GroupPicker(onPick: (g) => setState(() => _group = g));
+      return _GroupPicker(onPick: _pickGroup);
     }
     if (_done) {
       return _Scorecard(
@@ -138,14 +207,14 @@ class _FeltRecordScreenState extends State<FeltRecordScreen> {
                     TextButton.icon(
                       onPressed: placed.isEmpty
                           ? null
-                          : () => setState(placed.removeLast),
+                          : () => _mutate(placed.removeLast),
                       icon: const Icon(Icons.undo),
                       label: const Text('Angre'),
                     ),
                     TextButton.icon(
                       onPressed: placed.isEmpty
                           ? null
-                          : () => setState(placed.clear),
+                          : () => _mutate(placed.clear),
                       icon: const Icon(Icons.clear),
                       label: const Text('Tøm'),
                     ),
@@ -158,17 +227,17 @@ class _FeltRecordScreenState extends State<FeltRecordScreen> {
                     TextButton(
                       onPressed: _hold == 0
                           ? null
-                          : () => setState(() => _hold--),
+                          : () => _mutate(() => _hold--),
                       child: const Text('Forrige'),
                     ),
                     if (_hold < norgesfelt2026.length - 1)
                       FilledButton(
-                        onPressed: () => setState(() => _hold++),
+                        onPressed: () => _mutate(() => _hold++),
                         child: const Text('Neste'),
                       )
                     else
                       FilledButton(
-                        onPressed: () => setState(() => _done = true),
+                        onPressed: () => _mutate(() => _done = true),
                         child: const Text('Fullfør'),
                       ),
                   ],

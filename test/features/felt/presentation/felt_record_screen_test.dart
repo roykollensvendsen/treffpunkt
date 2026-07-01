@@ -4,6 +4,7 @@
 
 // Widget test for recording a NorgesFelt session (spec 0080).
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
@@ -27,7 +28,9 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const MaterialApp(home: FeltRecordScreen()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: FeltRecordScreen())),
+    );
     await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
     await tester.pumpAndSettle();
 
@@ -47,7 +50,9 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const MaterialApp(home: FeltRecordScreen()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: FeltRecordScreen())),
+    );
     await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
     await tester.pumpAndSettle();
 
@@ -65,7 +70,9 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const MaterialApp(home: FeltRecordScreen()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: FeltRecordScreen())),
+    );
     await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)));
     await tester.pumpAndSettle();
 
