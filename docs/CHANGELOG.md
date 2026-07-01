@@ -10,7 +10,9 @@ All notable changes to this project are documented here. The format is based on
 - **More accurate NorgesFelt figures**: the field-course figures are now traced
   from the official high-resolution blink images, so the **1/6**, **bowling
   pin**, **sekskant**, **egg**, the small rounded **triangle** and the big
-  **right-angled triangle** all match the real targets (spec 0077).
+  **right-angled triangle** all match the real targets. The **C-figures** (C13 /
+  C20 / C25) are drawn as a **truncated circle** — flat across the bottom — not a
+  full circle (spec 0077).
 
 ### Added
 - **"Bruk min posisjon" now fills a place name**: instead of raw coordinates, the

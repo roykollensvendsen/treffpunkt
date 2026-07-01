@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:treffpunkt/features/felt/domain/felt_figure.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_figure_paths.dart';
@@ -103,6 +105,8 @@ class FeltFigurePainter extends CustomPainter {
 Path figurePath(FeltFigureType type, Size size) {
   switch (type) {
     case FeltFigureType.circle:
+      // The C-figures are a circle cut flat across the bottom (spec 0077).
+      return _truncatedCircle(size);
     case FeltFigureType.oval:
       return Path()..addOval(Offset.zero & size);
     case FeltFigureType.stripe:
@@ -132,6 +136,34 @@ Path figurePath(FeltFigureType type, Size size) {
     case FeltFigureType.ptarmigan:
       return _polygon(feltPtarmiganOutline, size);
   }
+}
+
+/// A circle as wide as [size] cut flat across the bottom of the box: the arc
+/// over the top, closed by the chord at the bottom (spec 0077). A square box
+/// (height == width) yields a full circle.
+Path _truncatedCircle(Size size) {
+  final w = size.width;
+  final h = size.height;
+  final r = w / 2;
+  if (h >= w) return Path()..addOval(Offset.zero & size);
+  final cx = w / 2;
+  final cy = r;
+  // Angle of the right-hand chord end, where the circle meets the flat bottom.
+  final chordAngle = math.asin(((h - cy) / r).clamp(-1.0, 1.0));
+  final sweep = -(math.pi + 2 * chordAngle); // over the top, right end → left
+  const steps = 80;
+  final path = Path();
+  for (var i = 0; i <= steps; i++) {
+    final a = chordAngle + sweep * i / steps;
+    final x = cx + r * math.cos(a);
+    final y = cy + r * math.sin(a);
+    if (i == 0) {
+      path.moveTo(x, y);
+    } else {
+      path.lineTo(x, y);
+    }
+  }
+  return path..close();
 }
 
 Path _polygon(List<Offset> points, Size size) {
@@ -168,6 +200,8 @@ Offset figureCentroid(FeltFigureType type, Size size) {
     case FeltFigureType.ptarmigan:
       return _polygonCentroid(feltPtarmiganOutline, size);
     case FeltFigureType.circle:
+      // Concentric with the circle (its centre is a radius down from the top).
+      return Offset(size.width / 2, math.min(size.width / 2, size.height));
     case FeltFigureType.oval:
     case FeltFigureType.stripe:
       return size.center(Offset.zero);

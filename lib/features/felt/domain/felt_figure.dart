@@ -66,7 +66,9 @@ class FeltFigure {
     double? innerCm,
   }) : innerCm = innerCm ?? 0;
 
-  /// A circle figure ([diameterCm]); the C-figures use this.
+  /// A circle figure ([diameterCm]); the C-figures use this. The figure is a
+  /// circle **cut flat at the bottom**, so it is [diameterCm] wide but a little
+  /// shorter (spec 0077).
   factory FeltFigure.circle(
     double diameterCm, {
     String? name,
@@ -74,10 +76,14 @@ class FeltFigure {
   }) => FeltFigure(
     FeltFigureType.circle,
     widthCm: diameterCm,
-    heightCm: diameterCm,
+    heightCm: diameterCm * circleHeightRatio,
     name: name ?? 'C${diameterCm.toStringAsFixed(0)}',
     innerCm: innerCm,
   );
+
+  /// The C-figures are a circle cut flat across the bottom, at this fraction of
+  /// the diameter down (measured from the official images, spec 0077).
+  static const double circleHeightRatio = 0.9;
 
   /// The figure's shape.
   final FeltFigureType type;

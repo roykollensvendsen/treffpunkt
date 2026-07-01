@@ -34,6 +34,12 @@ scaled-up rounded triangle, so it gets its own `FeltFigureType.rightTriangle`;
 Hold 5 uses it. The inner ring for every traced figure sits at the outline's
 area centroid.
 
+**The C-figures are a truncated circle.** Measured from the images, each C-figure
+is a circle **cut flat across the bottom** at 0.9 of the diameter (the flat chord
+is ≈0.6 of the diameter). So `FeltFigure.circle` is the full diameter wide but
+`0.9 ×` as tall, and the painter draws the arc-over-the-top closed by the bottom
+chord (a square box degrades to a full circle); its inner ring is concentric.
+
 ## Design
 - `felt_figure_paths.dart` (generated, replaces `felt_animal_paths.dart`): the
   traced outlines `feltHareOutline`, `feltWolfHeadOutline`,
