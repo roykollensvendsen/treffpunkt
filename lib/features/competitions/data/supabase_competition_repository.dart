@@ -48,6 +48,24 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   }
 
   @override
+  Future<Profile?> fetchProfile(String id) async {
+    try {
+      final row = await _client
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .eq('id', id)
+          .maybeSingle();
+      return row == null ? null : Profile.fromJson(row);
+    } on Object catch (error) {
+      // Best-effort: a read failure just means "no name yet", never a block.
+      if (!kReleaseMode) {
+        debugPrint('Failed to fetch the profile: $error');
+      }
+      return null;
+    }
+  }
+
+  @override
   Future<void> createCompetition(Competition competition) async {
     try {
       // A plain insert, not an upsert: the id is freshly generated per create,

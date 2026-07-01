@@ -107,6 +107,9 @@ class _RecordingCompetitionRepository implements CompetitionRepository {
   Future<void> upsertOwnProfile(Profile profile) async => upserted.add(profile);
 
   @override
+  Future<Profile?> fetchProfile(String id) async => null;
+
+  @override
   Future<void> createCompetition(Competition competition) async =>
       throw UnimplementedError();
   @override

@@ -24,6 +24,7 @@ import 'package:treffpunkt/features/competitions/domain/competition_message.dart
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_chat_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 
 import '../../auth/fake_auth_repository.dart';
 
@@ -47,10 +48,16 @@ Widget _app(InMemoryCompetitionRepository repo) => ProviderScope(
   ),
 );
 
-InMemoryCompetitionRepository _meRepo() => InMemoryCompetitionRepository(
-  currentUserId: 'me',
-  currentEmail: 'me@example.com',
-);
+InMemoryCompetitionRepository _meRepo() {
+  final repo = InMemoryCompetitionRepository(
+    currentUserId: 'me',
+    currentEmail: 'me@example.com',
+  );
+  // Give "me" a display name so posting is not gated (spec 0072); the in-memory
+  // upsert is synchronous, so the profile is set before the widget pumps.
+  unawaited(repo.upsertOwnProfile(const Profile(id: 'me', displayName: 'Me')));
+  return repo;
+}
 
 void main() {
   testWidgets('sending a message shows it in the chat', (tester) async {
@@ -67,6 +74,36 @@ void main() {
 
     expect(find.text('Hei alle!'), findsOneWidget);
     expect(find.byKey(chatEmptyKey), findsNothing);
+  });
+
+  testWidgets('posting with no brukernavn asks for one first (spec 0072)', (
+    tester,
+  ) async {
+    // A user with no display name yet (typical email-OTP sign-in).
+    final repo = InMemoryCompetitionRepository(
+      currentUserId: 'me',
+      currentEmail: 'me@example.com',
+    );
+    await repo.createCompetition(_competition);
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(chatComposerFieldKey), 'Hei alle!');
+    await tester.tap(find.byKey(chatSendButtonKey));
+    await tester.pumpAndSettle();
+
+    // The message is not sent yet; a "choose a name" prompt appears (the chat
+    // still shows its empty state, the text stays in the composer).
+    expect(find.byKey(displayNameFieldKey), findsOneWidget);
+    expect(find.byKey(chatEmptyKey), findsOneWidget);
+
+    // Choose a pseudonym; the message now posts under it.
+    await tester.enterText(find.byKey(displayNameFieldKey), 'Blink');
+    await tester.tap(find.byKey(displayNameSaveKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(chatEmptyKey), findsNothing);
+    expect((await repo.fetchProfile('me'))?.displayName, 'Blink');
   });
 
   testWidgets('an incoming message shows with its author name', (tester) async {

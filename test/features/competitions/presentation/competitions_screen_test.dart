@@ -789,6 +789,8 @@ class _GatedInviteRepository implements CompetitionRepository {
   Future<void> upsertOwnProfile(Profile profile) =>
       _inner.upsertOwnProfile(profile);
   @override
+  Future<Profile?> fetchProfile(String id) => _inner.fetchProfile(id);
+  @override
   Future<void> createCompetition(Competition competition) =>
       _inner.createCompetition(competition);
   @override

@@ -11,6 +11,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 import 'package:treffpunkt/features/notifications/data/push_subscription_repository.dart';
 import 'package:treffpunkt/features/notifications/data/web_push.dart';
 import 'package:treffpunkt/features/notifications/domain/push_subscription.dart';
@@ -56,6 +59,7 @@ class _FakeWebPush implements WebPush {
 ProviderContainer _container({
   FakeAuthRepository? auth,
   _FakeWebPush? webPush,
+  InMemoryCompetitionRepository? competitions,
   String vapidKey = 'BPaWpublicKey',
 }) => ProviderContainer(
   overrides: [
@@ -66,6 +70,9 @@ ProviderContainer _container({
               AppUser(id: 'me', email: 'frode@example.no'),
             ),
           ),
+    ),
+    competitionRepositoryProvider.overrideWithValue(
+      competitions ?? InMemoryCompetitionRepository(currentUserId: 'me'),
     ),
     webPushProvider.overrideWithValue(webPush ?? _FakeWebPush()),
     vapidPublicKeyProvider.overrideWithValue(vapidKey),
@@ -149,6 +156,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(contributionConsentProvider).enabled, isFalse);
+  });
+
+  testWidgets('editing the brukernavn saves it (spec 0072)', (tester) async {
+    final comp = InMemoryCompetitionRepository(currentUserId: 'me');
+    final container = _container(competitions: comp);
+    addTearDown(container.dispose);
+    await _pump(tester, container);
+
+    expect(container.read(displayNameProvider), isEmpty);
+    expect(find.text('Ikke satt'), findsOneWidget);
+
+    await tester.tap(find.byKey(settingsUsernameKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(displayNameFieldKey), 'Skarpskytter');
+    await tester.tap(find.byKey(displayNameSaveKey));
+    await tester.pumpAndSettle();
+
+    // The name is persisted to the profile...
+    expect((await comp.fetchProfile('me'))?.displayName, 'Skarpskytter');
+    // ...and reflected on the page.
+    await container.read(currentProfileProvider.future);
+    await tester.pumpAndSettle();
+    expect(container.read(displayNameProvider), 'Skarpskytter');
+    expect(find.text('Skarpskytter'), findsOneWidget);
   });
 
   testWidgets('Logg ut signs the user out', (tester) async {

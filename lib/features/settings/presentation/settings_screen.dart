@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 import 'package:treffpunkt/features/notifications/presentation/notification_providers.dart';
 import 'package:treffpunkt/features/settings/presentation/contribution_providers.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
@@ -17,6 +19,9 @@ const Key settingsButtonKey = ValueKey<String>('settingsButton');
 
 /// Key for the "Logg ut" tile on the settings page.
 const Key settingsSignOutKey = ValueKey<String>('settingsSignOut');
+
+/// Key for the "Brukernavn" tile on the settings page (spec 0072).
+const Key settingsUsernameKey = ValueKey<String>('settingsUsername');
 
 /// Key for the "follow the system" theme choice on the settings page.
 const Key settingsThemeOptionSystemKey = ValueKey<String>(
@@ -117,13 +122,33 @@ class _SectionHeader extends StatelessWidget {
 class _AccountSection extends ConsumerWidget {
   const _AccountSection();
 
+  Future<void> _editName(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) async {
+    final chosen = await showDisplayNameDialog(context, initial: current);
+    if (chosen != null && chosen.isNotEmpty) {
+      await saveDisplayName(ref, chosen);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(authStateChangesProvider).value;
     final email = status is SignedIn ? status.user.email : null;
+    final name = ref.watch(displayNameProvider);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
+        ListTile(
+          key: settingsUsernameKey,
+          leading: const Icon(Icons.person_outline),
+          title: const Text('Brukernavn'),
+          subtitle: Text(name.isEmpty ? 'Ikke satt' : name),
+          trailing: const Icon(Icons.edit_outlined),
+          onTap: () => unawaited(_editName(context, ref, name)),
+        ),
         if (email != null)
           ListTile(
             leading: const Icon(Icons.alternate_email),

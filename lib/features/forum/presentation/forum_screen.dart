@@ -11,6 +11,7 @@ import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
+import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
 import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
@@ -355,6 +356,8 @@ class _NewThreadScreenState extends ConsumerState<NewThreadScreen> {
   Future<void> _submit() async {
     final title = _title.text.trim();
     if (title.isEmpty || _saving) return;
+    if (!await ensureDisplayName(context, ref)) return;
+    if (!mounted) return;
     setState(() => _saving = true);
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -503,6 +506,8 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
   Future<void> _send() async {
     final text = _reply.text.trim();
     if (text.isEmpty || _sending) return;
+    if (!await ensureDisplayName(context, ref)) return;
+    if (!mounted) return;
     setState(() => _sending = true);
     final messenger = ScaffoldMessenger.of(context);
     try {

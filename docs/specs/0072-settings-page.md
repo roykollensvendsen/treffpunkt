@@ -1,9 +1,10 @@
-# Spec 0072 — Settings page (Innstillinger)
+# Spec 0072 — Settings page (Innstillinger) & brukernavn
 
-- **Status:** Accepted (increment 1 — consolidate existing settings). Editable
-  brukernavn is a follow-up increment.
+- **Status:** Accepted (increment 1 — consolidate existing settings; increment 2
+  — editable brukernavn + require it before posting).
 - **Related:** 0030 (theme mode), 0041 (training-image contribution), 0060 (push
-  notifications), 0003 (sign-out) — this gathers their controls in one place.
+  notifications), 0003 (sign-out), 0010 (profiles) — this gathers their controls
+  in one place and adds the account's display name.
 
 ## Context
 The program picker's app bar carried four settings controls as loose icon
@@ -53,13 +54,34 @@ and the existing `HelpScreen`/`MySessionsScreen` shell.
 - Removed: `notification_toggle_button.dart`, `contribution_toggle_button.dart`,
   `sign_out_button.dart` and their tests.
 
+## Increment 2 — Brukernavn (display name)
+
+Email-OTP users have no `full_name` in auth metadata, so their `profiles`
+`display_name` is null and their chat/forum messages showed **"Ukjent"**. Add an
+editable **brukernavn** and **require one before posting**.
+
+- **Requirements.** Under **Konto**, a **Brukernavn** row shows the current name
+  (or "Ikke satt") and opens an editor to change it. Posting a chat message, a
+  forum reply, or a new thread **requires** a name: with none set, a "Velg
+  brukernavn" prompt appears first and the post waits until one is chosen. The
+  name may be a **pseudonym** — it need not be the real name — so anonymity is
+  possible while every message still carries a name. A rename shows
+  **retroactively** on existing messages (names are joined live, spec 0010).
+- **Design.** `CompetitionRepository.fetchProfile(id)` reads the own profile;
+  `currentProfileProvider` / `displayNameProvider` expose it;
+  `display_name.dart` holds `saveDisplayName` (reuses `upsertOwnProfile`),
+  `ensureDisplayName` (the gate) and the editor dialog (`displayNameFieldKey` /
+  `displayNameSaveKey`). The chat `_send`/image-send and the forum reply/new-
+  thread submit call `ensureDisplayName` first. **No migration** — the profiles
+  table already allows an owner to update their own row (spec 0010).
+
 ## Verification
 - **Widget** (`settings_screen_test.dart`): the four sections + account e-post
   render; picking Mørkt writes `themeModeProvider`; the notifications switch
   subscribes and confirms; an unsupported push shows the disabled row; the
-  contribution switch flips consent; Logg ut calls the auth repository.
+  contribution switch flips consent; Logg ut calls the auth repository; editing
+  the brukernavn saves it and shows it.
+- **Widget/repo** (chat, forum, competition repo): posting with no name shows the
+  prompt and blocks until one is chosen, then posts under it; `fetchProfile`
+  returns the upserted profile; a rename shows on an existing message.
 - Full suite, analyze, format, REUSE, docs build green.
-
-## Out of scope / next
-- **Editable brukernavn** (display name) under Konto, and requiring one before
-  posting — the follow-up increment (email-OTP users currently have no name).

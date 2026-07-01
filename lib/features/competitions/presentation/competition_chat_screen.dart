@@ -15,6 +15,7 @@ import 'package:treffpunkt/features/competitions/data/competition_repository.dar
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 import 'package:uuid/uuid.dart';
 
 /// Key for the "open chat" action on the competition detail (spec 0051).
@@ -127,6 +128,8 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
   Future<void> _send() async {
     final text = _composer.text.trim();
     if (text.isEmpty || _sending) return;
+    if (!await ensureDisplayName(context, ref)) return;
+    if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _sending = true);
     final message = CompetitionMessage(
@@ -162,6 +165,8 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
   /// both a picked and a pasted image (spec 0062).
   Future<void> _sendImageBytes(Uint8List bytes, {required bool isPng}) async {
     if (_sending) return;
+    if (!await ensureDisplayName(context, ref)) return;
+    if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _sending = true);
     try {
