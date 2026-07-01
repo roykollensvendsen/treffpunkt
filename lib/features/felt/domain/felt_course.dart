@@ -146,7 +146,7 @@ final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
     position: 'Stående 2 hender',
     figures: <FeltFigure>[
       FeltFigure(
-        FeltFigureType.triangle,
+        FeltFigureType.rightTriangle,
         widthCm: 50,
         heightCm: 50,
         name: 'Trekant stor',
