@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
+import 'package:treffpunkt/core/presentation/full_screen_image.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
@@ -298,6 +299,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(forumImageKey('t1')), findsOneWidget);
+
+    // Tapping the picture opens the zoomable full-screen viewer (spec 0073).
+    await tester.tap(find.byKey(forumImageKey('t1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(fullScreenImageKey), findsOneWidget);
   });
 
   testWidgets('attaching an image to a reply posts it (spec 0056)', (

@@ -103,6 +103,7 @@ nav:
       - "0070 — Edit your own chat message": specs/0070-edit-chat-message.md
       - "0071 — Live delete/edit over Realtime": specs/0071-realtime-live-delete.md
       - "0072 — Settings page": specs/0072-settings-page.md
+      - "0073 — Full-screen image viewer": specs/0073-fullscreen-image-viewer.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

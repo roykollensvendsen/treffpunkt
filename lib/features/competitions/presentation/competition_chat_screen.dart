@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
+import 'package:treffpunkt/core/presentation/full_screen_image.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
@@ -480,18 +481,10 @@ class _MessageBubble extends StatelessWidget {
                       padding: EdgeInsets.only(
                         bottom: message.body.isEmpty ? 0 : 6,
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          url,
-                          key: chatImageKey(message.id),
-                          height: 180,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => const SizedBox(
-                            height: 180,
-                            child: Center(child: Icon(Icons.broken_image)),
-                          ),
-                        ),
+                      child: TappableNetworkImage(
+                        url: url,
+                        heroTag: 'chatImage-${message.id}',
+                        thumbnailKey: chatImageKey(message.id),
                       ),
                     ),
                   if (message.body.isNotEmpty)
