@@ -60,4 +60,20 @@ void main() {
       );
     }
   });
+
+  test('a C-figure is a circle cut flat at the bottom (spec 0077)', () {
+    // Wide as the diameter, a little shorter than it (the flat cut).
+    final c = FeltFigure.circle(20);
+    expect(c.widthCm, 20);
+    expect(c.heightCm, lessThan(20));
+    expect(c.heightCm, 20 * FeltFigure.circleHeightRatio);
+
+    // The path's flat bottom is narrower than the full width at the widest.
+    final path = figurePath(FeltFigureType.circle, const Size(100, 90));
+    final bounds = path.getBounds();
+    expect(bounds.width, closeTo(100, 1));
+    // The bottom edge (chord) is inside the box width, not the full 100.
+    expect(path.contains(const Offset(5, 89)), isFalse);
+    expect(path.contains(const Offset(50, 89)), isTrue);
+  });
 }
