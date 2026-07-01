@@ -18,6 +18,10 @@ All notable changes to this project are documented here. The format is based on
   identical every deploy, so icons show immediately (spec 0027).
 
 ### Added
+- **Settings page (Innstillinger)**: the theme, notifications, training-image and
+  sign-out controls that used to crowd the top bar now live behind a single
+  **gear** on one Innstillinger page — account (e-post + logg ut), utseende,
+  varsler and personvern in one place (spec 0072).
 - **Edit your own chat message**: long-press your message in a competition chat
   and choose **Rediger** to fix a typo — the change shows live for everyone. Only
   the author can edit (the owner still moderates by deleting); spec 0070.
