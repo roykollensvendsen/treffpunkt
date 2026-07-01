@@ -28,10 +28,12 @@ camera scan is for the single-face programs.)
 ### Feltskyting (field shooting)
 Field shooting is scored by **hits on figures** at different distances, not by
 rings. Under **Feltskyting** in the program list you can open **NorgesFelt-løype
-2026** to preview the whole course — all **8 holds** with their actual figures
-(hare, wolf head, ptarmigan, hexagons, triangles, circles …) drawn to real
-relative size, each with its inner zone. Recording your hits on the figures is
-coming next.
+2026** to preview the whole course — all **8 holds**, each drawn as **one
+picture that matches the official target sheet**: the figures (hare, wolf head,
+ptarmigan, hexagons, triangles, circles …) at their real relative size and
+position, in the hold's colour, white figures knocked out of a coloured plate,
+the **black lines dividing the målgrupper**, and the inner-treff ring on every
+figure. Recording your hits on the figures is coming next.
 
 ## Note where you are shooting
 Before a session starts, the setup step asks for the date, time and **place**.

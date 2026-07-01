@@ -19,6 +19,13 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Roy Kollen Svendsen"
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
+# Reconstructed felt-hold vector models (JSON has no comment syntax for headers).
+[[annotations]]
+path = ["tool/felt/models/*.json"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Roy Kollen Svendsen"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
 # Documentation, configuration and the root license copy.
 [[annotations]]
 path = ["**/*.md", "**/*.yaml", "**/*.yml", "COPYING"]

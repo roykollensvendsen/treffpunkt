@@ -4,19 +4,20 @@
 
 import 'package:flutter/material.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
-import 'package:treffpunkt/features/felt/presentation/felt_figure_painter.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
 
 /// Key for hold [number]'s card in the course preview (spec 0068), for tests.
 Key feltHoldCardKey(int number) => ValueKey<String>('feltHold-$number');
 
-/// A preview of the NorgesFelt 2026 field course (spec 0068): the 8 holds with
-/// their figures drawn to real relative scale (recording/scoring come next).
+/// A preview of the NorgesFelt 2026 field course (specs 0068/0079): the 8 holds
+/// each drawn as one composed picture matching the official target sheet
+/// (backing plates, figures to real relative scale, inner rings, and the black
+/// separators between målgrupper). Recording/scoring come next.
 class FeltCourseScreen extends StatelessWidget {
   /// Creates the course preview.
   const FeltCourseScreen({super.key});
-
-  /// Pixels per centimetre — the shared scale that keeps figures' real sizes.
-  static const double _pxPerCm = 3.5;
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +37,8 @@ class FeltCourseScreen extends StatelessWidget {
                     padding: EdgeInsets.all(12),
                     child: Text(
                       '8 hold · innertreff på alle figurer · 10 sek skytetid · '
-                      'maks 80/47 poeng. Figurene er tegnet i riktig størrelse '
-                      'i forhold til hverandre.',
+                      'maks 80/47 poeng. Hvert hold er tegnet som på den '
+                      'offisielle skiva.',
                     ),
                   ),
                 ),
@@ -63,28 +64,14 @@ class FeltCourseScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          _FigureStrip(
-                            children: <Widget>[
-                              for (final figure in hold.figures)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 12),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: <Widget>[
-                                      FeltFigureView(
-                                        figure: figure,
-                                        pxPerCm: _pxPerCm,
-                                        colour: feltHoldColour(hold.colour),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        figure.displayName,
-                                        style: theme.textTheme.labelSmall,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
+                          FeltHoldArtView(art: _artFor(hold.number)),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Figurer: '
+                            '${hold.figures.map((f) => f.name).join(', ')}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
@@ -99,40 +86,6 @@ class FeltCourseScreen extends StatelessWidget {
   }
 }
 
-/// A horizontal strip of a hold's figures with an always-visible scrollbar, so
-/// on desktop/web it is clear the figures scroll and they can be dragged there
-/// (the app also enables mouse-drag scrolling; spec 0074).
-class _FigureStrip extends StatefulWidget {
-  const _FigureStrip({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  State<_FigureStrip> createState() => _FigureStripState();
-}
-
-class _FigureStripState extends State<_FigureStrip> {
-  final ScrollController _controller = ScrollController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => Scrollbar(
-    controller: _controller,
-    thumbVisibility: true,
-    child: SingleChildScrollView(
-      controller: _controller,
-      scrollDirection: Axis.horizontal,
-      // Leave room below the figures so the scrollbar clears their labels.
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: widget.children,
-      ),
-    ),
-  );
-}
+/// The composed art for hold [number] (spec 0079).
+FeltHoldArt _artFor(int number) =>
+    norgesfelt2026Art.firstWhere((a) => a.number == number);

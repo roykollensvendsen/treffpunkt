@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Changed
+- **Composed NorgesFelt holds**: each hold in the course preview is now drawn as
+  **one picture matching the official target sheet** — the figures at their real
+  relative size and position, white figures knocked out of coloured backing
+  plates, the **black vertical lines between målgrupper**, and the inner-treff
+  ring on every figure — instead of a strip of separate figures. The round
+  **C-figures** are cut flat across the bottom. The geometry is reconstructed
+  from the official images and measured for faithfulness (spec 0079).
 - **More accurate NorgesFelt figures**: the field-course figures are now traced
   from the official high-resolution blink images, so the **1/6**, **bowling
   pin**, **sekskant**, **egg**, the small rounded **triangle** and the big
