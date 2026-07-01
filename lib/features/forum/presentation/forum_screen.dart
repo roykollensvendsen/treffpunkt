@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
+import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
@@ -321,29 +322,32 @@ class _NewThreadScreenState extends ConsumerState<NewThreadScreen> {
 
   void _onImagePasted(PastedImage image) {
     if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
-    unawaited(_attachImageBytes(image.bytes, isPng: image.isPng));
+    unawaited(_attachImageBytes(image.bytes));
   }
 
   Future<void> _pickImage() async {
     final picked = await ref.read(forumImagePickerProvider)();
     if (picked == null) return;
-    final bytes = await picked.readAsBytes();
-    await _attachImageBytes(
-      bytes,
-      isPng: picked.name.toLowerCase().endsWith('.png'),
-    );
+    await _attachImageBytes(await picked.readAsBytes());
   }
 
   /// Uploads [bytes] and stages it as the thread's image — shared by a picked
-  /// and a pasted image (spec 0062).
-  Future<void> _attachImageBytes(Uint8List bytes, {required bool isPng}) async {
+  /// and a pasted image (spec 0062). Only JPG/PNG/GIF are accepted (spec 0075).
+  Future<void> _attachImageBytes(Uint8List bytes) async {
     if (_saving) return;
     final messenger = ScaffoldMessenger.of(context);
+    final format = detectImageFormat(bytes);
+    if (format == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text(unsupportedImageMessage)),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       final path = await ref
           .read(forumRepositoryProvider)
-          .uploadForumImage(bytes, fileExtension: isPng ? 'png' : 'jpg');
+          .uploadForumImage(bytes, fileExtension: format.extension);
       setState(() => _imagePath = path);
     } on ForumException {
       messenger.showSnackBar(
@@ -501,7 +505,7 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
 
   void _onImagePasted(PastedImage image) {
     if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
-    unawaited(_sendImageBytes(image.bytes, isPng: image.isPng));
+    unawaited(_sendImageBytes(image.bytes));
   }
 
   Future<void> _send() async {
@@ -536,24 +540,27 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     if (_sending) return;
     final picked = await ref.read(forumImagePickerProvider)();
     if (picked == null) return;
-    final bytes = await picked.readAsBytes();
-    await _sendImageBytes(
-      bytes,
-      isPng: picked.name.toLowerCase().endsWith('.png'),
-    );
+    await _sendImageBytes(await picked.readAsBytes());
   }
 
   /// Uploads [bytes] and posts a reply with the image — shared by a picked and
-  /// a pasted image (spec 0062).
-  Future<void> _sendImageBytes(Uint8List bytes, {required bool isPng}) async {
+  /// a pasted image (spec 0062). Only JPG/PNG/GIF are accepted (spec 0075).
+  Future<void> _sendImageBytes(Uint8List bytes) async {
     if (_sending) return;
     final messenger = ScaffoldMessenger.of(context);
+    final format = detectImageFormat(bytes);
+    if (format == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text(unsupportedImageMessage)),
+      );
+      return;
+    }
     setState(() => _sending = true);
     try {
       final repo = ref.read(forumRepositoryProvider);
       final path = await repo.uploadForumImage(
         bytes,
-        fileExtension: isPng ? 'png' : 'jpg',
+        fileExtension: format.extension,
       );
       await repo.postReply(
         ForumPost(

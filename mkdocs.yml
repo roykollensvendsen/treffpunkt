@@ -105,6 +105,7 @@ nav:
       - "0072 — Settings page": specs/0072-settings-page.md
       - "0073 — Full-screen image viewer": specs/0073-fullscreen-image-viewer.md
       - "0074 — Mouse-drag horizontal scroll": specs/0074-mouse-drag-horizontal-scroll.md
+      - "0075 — Supported image types": specs/0075-supported-image-types.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
 import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
@@ -328,7 +329,7 @@ final class SupabaseForumRepository implements ForumRepository {
   }) async {
     try {
       final path = '${const Uuid().v4()}.$fileExtension';
-      final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
+      final contentType = imageMimeForExtension(fileExtension);
       await _client.storage
           .from('forum-images')
           .uploadBinary(

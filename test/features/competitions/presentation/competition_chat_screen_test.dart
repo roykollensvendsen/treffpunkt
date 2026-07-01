@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
+import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
@@ -28,6 +29,26 @@ import 'package:treffpunkt/features/competitions/presentation/competition_provid
 import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 
 import '../../auth/fake_auth_repository.dart';
+
+/// Minimal valid headers so the upload's format detection accepts them.
+final Uint8List _pngBytes = Uint8List.fromList(<int>[
+  0x89,
+  0x50,
+  0x4E,
+  0x47,
+  13,
+  10,
+  26,
+  10,
+]);
+final Uint8List _gifBytes = Uint8List.fromList(<int>[
+  0x47,
+  0x49,
+  0x46,
+  0x38,
+  0x39,
+  0x61,
+]);
 
 const _me = AppUser(id: 'me', email: 'me@example.com', displayName: 'Me');
 const _competition = Competition(
@@ -370,10 +391,7 @@ void main() {
   ) async {
     final repo = _meRepo();
     await repo.createCompetition(_competition);
-    final picked = XFile.fromData(
-      Uint8List.fromList(<int>[1, 2, 3]),
-      name: 'shot.jpg',
-    );
+    final picked = XFile.fromData(_pngBytes, name: 'shot.png');
 
     await tester.pumpWidget(
       ProviderScope(
@@ -424,14 +442,75 @@ void main() {
     );
     await tester.pump();
 
-    clipboard.emit(
-      PastedImage(bytes: Uint8List.fromList(<int>[1, 2, 3]), isPng: true),
-    );
+    clipboard.emit(PastedImage(bytes: _pngBytes, isPng: true));
     await tester.pumpAndSettle();
 
     final chat = await repo.watchMessages('c1').first;
     expect(chat, hasLength(1));
     expect(chat.single.imagePath, isNotNull);
+  });
+
+  testWidgets('a pasted GIF is accepted (spec 0075)', (tester) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    final clipboard = FakeClipboardImageWatcher();
+    addTearDown(clipboard.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(initial: const SignedIn(_me)),
+          ),
+          competitionRepositoryProvider.overrideWithValue(repo),
+          clipboardImageWatcherProvider.overrideWithValue(clipboard),
+        ],
+        child: const MaterialApp(
+          home: CompetitionChatScreen(competition: _competition),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    clipboard.emit(PastedImage(bytes: _gifBytes, isPng: false));
+    await tester.pumpAndSettle();
+
+    final chat = await repo.watchMessages('c1').first;
+    expect(chat.single.imagePath, endsWith('.gif'));
+  });
+
+  testWidgets('an unsupported file is refused with a message (spec 0075)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    final clipboard = FakeClipboardImageWatcher();
+    addTearDown(clipboard.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(initial: const SignedIn(_me)),
+          ),
+          competitionRepositoryProvider.overrideWithValue(repo),
+          clipboardImageWatcherProvider.overrideWithValue(clipboard),
+        ],
+        child: const MaterialApp(
+          home: CompetitionChatScreen(competition: _competition),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Not a real image (e.g. a WebP or a text file) — refused, nothing posted.
+    clipboard.emit(
+      PastedImage(bytes: Uint8List.fromList(<int>[1, 2, 3, 4]), isPng: false),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(unsupportedImageMessage), findsOneWidget);
+    expect(await repo.watchMessages('c1').first, isEmpty);
   });
 
   testWidgets('a message shows a timestamp (spec 0065)', (tester) async {
