@@ -40,6 +40,49 @@ void main() {
     expect(find.byKey(signInWithGoogleButtonKey), findsNothing);
   });
 
+  testWidgets('signing out drops pushed screens and shows sign-in', (
+    tester,
+  ) async {
+    final fake = FakeAuthRepository(
+      initial: const SignedIn(AppUser(id: 't', email: 'a@b.no')),
+    );
+    addTearDown(fake.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authRepositoryProvider.overrideWithValue(fake)],
+        child: MaterialApp(
+          home: AuthGate(
+            signedInBuilder: (user) => Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          const Scaffold(body: Center(child: Text('pushed'))),
+                    ),
+                  ),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Push a screen on top (like opening Innstillinger).
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('pushed'), findsOneWidget);
+
+    // Signing out drops the pushed screen and lands on the sign-in screen.
+    await fake.signOut();
+    await tester.pumpAndSettle();
+    expect(find.text('pushed'), findsNothing);
+    expect(find.byKey(signInWithGoogleButtonKey), findsOneWidget);
+  });
+
   testWidgets('tapping sign in reveals the app content', (tester) async {
     final fake = FakeAuthRepository();
     addTearDown(fake.dispose);

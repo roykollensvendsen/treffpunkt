@@ -20,6 +20,14 @@ class AuthGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // On sign-out, drop any screens pushed on top (e.g. Innstillinger) so the
+    // user lands on the sign-in screen — rebuilt below as the home route —
+    // instead of an orphaned screen left covering it (spec 0072).
+    ref.listen(authStateChangesProvider, (previous, next) {
+      if (previous?.value is SignedIn && next.value is SignedOut) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    });
     return ref
         .watch(authStateChangesProvider)
         .when(
