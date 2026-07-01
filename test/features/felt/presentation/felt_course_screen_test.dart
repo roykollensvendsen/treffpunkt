@@ -5,6 +5,7 @@
 // Widget test for the NorgesFelt 2026 course preview (specs 0068/0079): all 8
 // holds render as one composed picture with their figure names.
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_figure.dart';
@@ -20,7 +21,9 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const MaterialApp(home: FeltCourseScreen()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: FeltCourseScreen())),
+    );
     await tester.pumpAndSettle();
 
     for (var n = 1; n <= 8; n++) {

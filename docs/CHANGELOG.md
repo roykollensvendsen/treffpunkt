@@ -13,6 +13,9 @@ All notable changes to this project are documented here. The format is based on
   which figure and inner zone each shot landed in and scores it NorgesFelt-style
   (1 point per hit, 1 per distinct figure hit, 1 per inner-zone hit), with a live
   total and an end scorecard (spec 0080).
+- **Resume a felt round**: an in-progress felt round is saved as you place shots
+  and survives an app restart; the course page shows a **Fortsett felt-økt** card
+  to pick it up exactly where you left off, or discard it (spec 0081).
 
 ### Changed
 - **Composed NorgesFelt holds**: each hold in the course preview is now drawn as

@@ -2,30 +2,42 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 
 /// Key for the "shoot the course" button on the preview (spec 0080), for tests.
 const Key feltShootButtonKey = ValueKey<String>('feltShoot');
 
+/// Key for the "Fortsett felt-økt" resume card (spec 0081), for tests.
+const Key feltResumeCardKey = ValueKey<String>('feltResume');
+
+/// Key for the resume card's discard button (spec 0081), for tests.
+const Key feltDiscardCardKey = ValueKey<String>('feltDiscard');
+
 /// Key for hold [number]'s card in the course preview (spec 0068), for tests.
 Key feltHoldCardKey(int number) => ValueKey<String>('feltHold-$number');
 
 /// A preview of the NorgesFelt 2026 field course (specs 0068/0079): the 8 holds
-/// each drawn as one composed picture matching the official target sheet
-/// (backing plates, figures to real relative scale, inner rings, and the black
-/// separators between målgrupper). Recording/scoring come next.
-class FeltCourseScreen extends StatelessWidget {
+/// each drawn as one composed picture matching the official target sheet, with
+/// a "Skyt løypa" recorder (spec 0080) and a "Fortsett felt-økt" card to resume
+/// a saved round (spec 0081).
+class FeltCourseScreen extends ConsumerWidget {
   /// Creates the course preview.
   const FeltCourseScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final saved = ref.watch(feltSavedSessionProvider).asData?.value;
     return Scaffold(
       appBar: AppBar(title: const Text('NorgesFelt-løype 2026')),
       body: SafeArea(
@@ -47,13 +59,29 @@ class FeltCourseScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                FilledButton.icon(
-                  key: feltShootButtonKey,
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const FeltRecordScreen(),
+                if (saved != null && saved.totalShots > 0)
+                  Card(
+                    key: feltResumeCardKey,
+                    color: theme.colorScheme.tertiaryContainer,
+                    child: ListTile(
+                      leading: const Icon(Icons.play_circle_outline),
+                      title: const Text('Fortsett felt-økt'),
+                      subtitle: Text(
+                        '${saved.group.label} · Hold ${saved.currentHold + 1} '
+                        '· ${saved.totalShots} skudd plassert',
+                      ),
+                      trailing: IconButton(
+                        key: feltDiscardCardKey,
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: 'Forkast lagret økt',
+                        onPressed: () => unawaited(_discard(ref)),
+                      ),
+                      onTap: () => unawaited(_resume(context, ref, saved)),
                     ),
                   ),
+                FilledButton.icon(
+                  key: feltShootButtonKey,
+                  onPressed: () => unawaited(_shoot(context, ref)),
                   icon: const Icon(Icons.my_location),
                   label: const Text('Skyt løypa'),
                 ),
@@ -98,6 +126,31 @@ class FeltCourseScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _shoot(BuildContext context, WidgetRef ref) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const FeltRecordScreen()),
+    );
+    ref.invalidate(feltSavedSessionProvider);
+  }
+
+  Future<void> _resume(
+    BuildContext context,
+    WidgetRef ref,
+    FeltSessionSnapshot saved,
+  ) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => FeltRecordScreen(restored: saved),
+      ),
+    );
+    ref.invalidate(feltSavedSessionProvider);
+  }
+
+  Future<void> _discard(WidgetRef ref) async {
+    await ref.read(feltSessionStoreProvider).clear();
+    ref.invalidate(feltSavedSessionProvider);
   }
 }
 
