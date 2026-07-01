@@ -12,25 +12,29 @@ import 'package:treffpunkt/features/felt/presentation/felt_figure_paths.dart';
 /// plus its inner zone, sized [pxPerCm] pixels per centimetre so a hold's
 /// figures keep their true relative sizes.
 ///
-/// The NorgesFelt figures are solid black on a white plate, so we draw them
-/// that way (independent of the app theme) on a white card and ring the inner
+/// The NorgesFelt figures are printed in the hold's [colour] on a white plate,
+/// so we draw them that way (independent of the app theme) and ring the inner
 /// zone in white — the real targets' look — so the preview reads in any theme.
 class FeltFigureView extends StatelessWidget {
-  /// Creates a figure view.
+  /// Creates a figure view drawn in [colour] (defaults to black).
   const FeltFigureView({
     required this.figure,
     required this.pxPerCm,
+    this.colour = feltFigureBlack,
     super.key,
   });
 
-  /// The black of the printed silhouette.
-  static const Color _figureBlack = Color(0xFF101010);
+  /// The black of a black-hold figure (spec 0078).
+  static const Color feltFigureBlack = Color(0xFF101010);
 
   /// The figure to draw.
   final FeltFigure figure;
 
   /// Pixels per centimetre.
   final double pxPerCm;
+
+  /// The colour to fill the silhouette with (the hold's colour, spec 0078).
+  final Color colour;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
@@ -45,13 +49,20 @@ class FeltFigureView extends StatelessWidget {
         size: Size(figure.widthCm * pxPerCm, figure.heightCm * pxPerCm),
         painter: FeltFigurePainter(
           figure: figure,
-          colour: _figureBlack,
+          colour: colour,
           innerColour: Colors.white,
         ),
       ),
     ),
   );
 }
+
+/// The real colour for a hold's [colour] enum (spec 0078).
+Color feltHoldColour(FeltHoldColour colour) => switch (colour) {
+  FeltHoldColour.black => FeltFigureView.feltFigureBlack,
+  FeltHoldColour.green => const Color(0xFF00683F),
+  FeltHoldColour.red => const Color(0xFFED1C24),
+};
 
 /// Paints a field figure: a filled silhouette with the inner-zone circle.
 class FeltFigurePainter extends CustomPainter {

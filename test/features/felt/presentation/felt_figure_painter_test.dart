@@ -61,6 +61,15 @@ void main() {
     }
   });
 
+  test('each hold colour maps to a distinct fill (spec 0078)', () {
+    final black = feltHoldColour(FeltHoldColour.black);
+    final green = feltHoldColour(FeltHoldColour.green);
+    final red = feltHoldColour(FeltHoldColour.red);
+    expect(<Color>{black, green, red}, hasLength(3));
+    expect(green, const Color(0xFF00683F));
+    expect(red, const Color(0xFFED1C24));
+  });
+
   test('a C-figure is a circle cut flat at the bottom (spec 0077)', () {
     // Wide as the diameter, a little shorter than it (the flat cut).
     final c = FeltFigure.circle(20);

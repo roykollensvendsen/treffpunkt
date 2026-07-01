@@ -6,6 +6,8 @@
 // render with their figures.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
+import 'package:treffpunkt/features/felt/domain/felt_figure.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_figure_painter.dart';
 
@@ -33,4 +35,20 @@ void main() {
     // (and can be dragged) on desktop/web (spec 0074).
     expect(find.byType(Scrollbar), findsWidgets);
   });
+
+  test(
+    'holds are coloured black / green / red as on the course (spec 0078)',
+    () {
+      FeltHoldColour colourOf(int number) =>
+          norgesfelt2026.firstWhere((h) => h.number == number).colour;
+      expect(colourOf(1), FeltHoldColour.black);
+      expect(colourOf(2), FeltHoldColour.green);
+      expect(colourOf(3), FeltHoldColour.red);
+      expect(colourOf(4), FeltHoldColour.black);
+      expect(colourOf(5), FeltHoldColour.green);
+      expect(colourOf(6), FeltHoldColour.red);
+      expect(colourOf(7), FeltHoldColour.black);
+      expect(colourOf(8), FeltHoldColour.green);
+    },
+  );
 }

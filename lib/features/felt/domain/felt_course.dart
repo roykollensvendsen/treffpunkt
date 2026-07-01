@@ -17,6 +17,7 @@ class FeltHoldDef {
     required this.number,
     required this.distance,
     required this.position,
+    required this.colour,
     required this.figures,
   });
 
@@ -29,6 +30,9 @@ class FeltHoldDef {
   /// Shooting position (stilling).
   final String position;
 
+  /// The colour all the hold's figures are printed in (spec 0078).
+  final FeltHoldColour colour;
+
   /// The figures on the hold, in order.
   final List<FeltFigure> figures;
 }
@@ -40,6 +44,7 @@ final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
     number: 1,
     distance: '15 m',
     position: 'Stående 1 hånd',
+    colour: FeltHoldColour.black,
     figures: <FeltFigure>[
       FeltFigure(FeltFigureType.hare, widthCm: 31, heightCm: 41, name: 'Hare'),
       FeltFigure(
@@ -54,6 +59,7 @@ final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
     number: 2,
     distance: '25 / 15 m',
     position: 'Stående fri',
+    colour: FeltHoldColour.green,
     figures: <FeltFigure>[
       FeltFigure(
         FeltFigureType.stripe,
@@ -97,6 +103,7 @@ final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
     number: 3,
     distance: '25 / 15 m',
     position: 'Stående 2 hender',
+    colour: FeltHoldColour.red,
     figures: <FeltFigure>[
       FeltFigure(
         FeltFigureType.triangle,
@@ -119,6 +126,7 @@ final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
     number: 4,
     distance: '25 m',
     position: 'FG Stående 1 hånd – andre fri',
+    colour: FeltHoldColour.black,
     figures: <FeltFigure>[
       FeltFigure(
         FeltFigureType.oval,
@@ -144,6 +152,7 @@ final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
     number: 5,
     distance: '25 m',
     position: 'Stående 2 hender',
+    colour: FeltHoldColour.green,
     figures: <FeltFigure>[
       FeltFigure(
         FeltFigureType.rightTriangle,
@@ -163,6 +172,7 @@ final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
     number: 6,
     distance: '25 / 15 m',
     position: 'Stående fri',
+    colour: FeltHoldColour.red,
     figures: <FeltFigure>[
       FeltFigure(
         FeltFigureType.hexagon,
@@ -190,6 +200,7 @@ final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
     number: 7,
     distance: '25 m',
     position: 'Sittende 2 hender',
+    colour: FeltHoldColour.black,
     figures: <FeltFigure>[
       FeltFigure(
         FeltFigureType.oval,
@@ -210,6 +221,7 @@ final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
     number: 8,
     distance: '25 / 15 m',
     position: 'Stående fri',
+    colour: FeltHoldColour.green,
     figures: <FeltFigure>[
       FeltFigure(
         FeltFigureType.hexagon,
