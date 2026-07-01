@@ -29,5 +29,8 @@ void main() {
     expect(find.text('Ulvehode'), findsOneWidget);
     expect(find.text('Hare'), findsOneWidget);
     expect(find.text('C13'), findsWidgets);
+    // Each hold's figure strip shows a scrollbar so it's clear it scrolls
+    // (and can be dragged) on desktop/web (spec 0074).
+    expect(find.byType(Scrollbar), findsWidgets);
   });
 }

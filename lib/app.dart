@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/app_scroll_behavior.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_gate.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
@@ -35,6 +36,9 @@ class TreffpunktApp extends ConsumerWidget {
       ..watch(profileSyncProvider);
     return MaterialApp(
       title: 'Treffpunkt',
+      // Let the mouse/trackpad drag-scroll horizontal strips on web/desktop
+      // (spec 0074).
+      scrollBehavior: const AppScrollBehavior(),
       theme: lightTheme,
       darkTheme: darkTheme,
       // Follow the system/browser theme by default; a saved choice (spec 0030)
