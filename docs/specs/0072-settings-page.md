@@ -17,7 +17,8 @@ the app one **Innstillinger** page and put those four behind a single gear.
 1. A **gear** action on the program picker opens an **Innstillinger** page; the
    four settings buttons leave the app bar.
 2. The page gathers, using the **existing** providers (behaviour unchanged):
-   - **Konto**: the signed-in e-post (read-only) and **Logg ut**.
+   - **Konto**: the signed-in e-post (read-only) and **Logg ut** (which returns
+     to the sign-in screen — the `AuthGate` drops any pushed screens on sign-out).
    - **Utseende**: theme — Følg systemet / Lyst / Mørkt.
    - **Varsler**: push notifications on/off, with the same subscribe/permission
      feedback; when push cannot work (no Push API, or no VAPID key) an explanatory

@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **Logg ut now returns you to the sign-in screen**: signing out from
+  Innstillinger used to leave the settings page on top; it now drops any open
+  screen and lands on the sign-in screen (spec 0072).
 - **Deleted/edited chat messages now update live**: a deleted (or edited) message
   used to keep showing until you restarted the app — the live update was silently
   dropped for filtered subscriptions. Deletions and edits in a competition chat
