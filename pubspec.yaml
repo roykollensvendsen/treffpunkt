@@ -13,6 +13,7 @@ dependencies:
   flutter_markdown: ^0.7.4
   flutter_riverpod: ^3.3.2
   geolocator: ^14.0.3
+  http: ^1.2.0
   image: ^4.3.0
   image_picker: ^1.1.2
   meta: ^1.18.0

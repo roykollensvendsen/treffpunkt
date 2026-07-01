@@ -17,6 +17,7 @@ import 'package:treffpunkt/features/forum/presentation/forum_providers.dart';
 import 'package:treffpunkt/features/notifications/data/push_subscription_repository.dart';
 import 'package:treffpunkt/features/notifications/presentation/notification_providers.dart';
 import 'package:treffpunkt/features/scoring/data/contribution_service.dart';
+import 'package:treffpunkt/features/scoring/data/geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
@@ -78,6 +79,7 @@ void runTreffpunkt(
   WeaponStore? weaponStore,
   List<Weapon>? initialWeapons,
   LocationService? locationService,
+  Geocoder? geocoder,
   ImageSourceService? imageSourceService,
   TargetScanner? targetScanner,
   ContributionService? contributionService,
@@ -108,6 +110,7 @@ void runTreffpunkt(
           initialWeaponsProvider.overrideWithValue(initialWeapons),
         if (locationService != null)
           locationServiceProvider.overrideWithValue(locationService),
+        if (geocoder != null) geocoderProvider.overrideWithValue(geocoder),
         if (imageSourceService != null)
           imageSourceServiceProvider.overrideWithValue(imageSourceService),
         if (targetScanner != null)

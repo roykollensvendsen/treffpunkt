@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/scoring/data/contribution_service.dart';
+import 'package:treffpunkt/features/scoring/data/geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
@@ -118,6 +119,13 @@ final savedRecordingProvider = FutureProvider<SessionRecording?>((ref) async {
 final locationServiceProvider = Provider<LocationService>(
   (ref) => const UnavailableLocationService(),
 );
+
+/// The app's [Geocoder] for naming the place from "use my location"
+/// coordinates (spec 0076).
+///
+/// Defaults to one that resolves nothing, so the place stays as the coordinates
+/// until a real geocoder is wired; `main()` overrides it, and tests fake it.
+final geocoderProvider = Provider<Geocoder>((ref) => const NoGeocoder());
 
 /// The app's [ImageSourceService] for the camera "Skann skive" scan (0039).
 ///

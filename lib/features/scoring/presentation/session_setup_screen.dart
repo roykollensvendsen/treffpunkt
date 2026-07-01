@@ -111,18 +111,27 @@ class _SessionSetupScreenState extends ConsumerState<SessionSetupScreen> {
     setState(() => _locating = true);
     final result = await ref.read(locationServiceProvider).currentLocation();
     if (!mounted) return;
-    setState(() {
-      _locating = false;
-      if (result case LocationFix(:final location)) {
-        _latitude = location.latitude;
-        _longitude = location.longitude;
+    if (result case LocationFix(:final location)) {
+      _latitude = location.latitude;
+      _longitude = location.longitude;
+      // Name the place from the coordinates; fall back to the coordinates
+      // themselves if the lookup can't resolve a name (spec 0076).
+      final name = await ref
+          .read(geocoderProvider)
+          .reverseGeocode(location.latitude, location.longitude);
+      if (!mounted) return;
+      final coordinates =
+          '${location.latitude.toStringAsFixed(4)}, '
+          '${location.longitude.toStringAsFixed(4)}';
+      setState(() {
+        _locating = false;
         if (_placeController.text.trim().isEmpty) {
-          _placeController.text =
-              '${location.latitude.toStringAsFixed(4)}, '
-              '${location.longitude.toStringAsFixed(4)}';
+          _placeController.text = name ?? coordinates;
         }
-      }
-    });
+      });
+    } else {
+      setState(() => _locating = false);
+    }
     // Only a permanent denial is fixable from the OS settings; every other
     // non-fix outcome degrades silently to manual entry, exactly as before.
     if (result is LocationDeniedForever) _offerOpenSettings();

@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/features/scoring/data/geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
@@ -23,9 +24,16 @@ import '../fake_location_service.dart';
 void main() {
   final clock = DateTime(2026, 6, 21, 14, 30);
 
-  Widget app(FakeLocationService location, {ProgramDefinition? program}) {
+  Widget app(
+    FakeLocationService location, {
+    ProgramDefinition? program,
+    Geocoder? geocoder,
+  }) {
     return ProviderScope(
-      overrides: [locationServiceProvider.overrideWithValue(location)],
+      overrides: [
+        locationServiceProvider.overrideWithValue(location),
+        if (geocoder != null) geocoderProvider.overrideWithValue(geocoder),
+      ],
       child: MaterialApp(
         home: SessionSetupScreen(
           program: program ?? ProgramCatalogue.airRifle10m,
@@ -74,6 +82,30 @@ void main() {
     expect(find.byKey(seriesTargetKey), findsOneWidget);
 
     final place = pushedMetadata(tester)!.place!;
+    expect(place.latitude, 59.9);
+    expect(place.longitude, 10.7);
+  });
+
+  testWidgets('names the place from the coordinates when possible (0076)', (
+    tester,
+  ) async {
+    final location = FakeLocationService.fix(latitude: 59.9, longitude: 10.7);
+    await tester.pumpWidget(
+      app(location, geocoder: _FakeGeocoder('Løvenskiold skytebane')),
+    );
+
+    await tester.tap(find.byKey(useMyLocationKey));
+    await tester.pumpAndSettle();
+
+    // The field shows the resolved name, not the coordinates.
+    final field = tester.widget<TextField>(find.byKey(placeFieldKey));
+    expect(field.controller!.text, 'Løvenskiold skytebane');
+
+    // The name is the label, and the coordinates still ride along.
+    await tester.tap(find.byKey(sessionConfirmKey));
+    await tester.pumpAndSettle();
+    final place = pushedMetadata(tester)!.place!;
+    expect(place.label, 'Løvenskiold skytebane');
     expect(place.latitude, 59.9);
     expect(place.longitude, 10.7);
   });
@@ -243,4 +275,15 @@ void main() {
     expect(find.byKey(seriesTargetKey), findsOneWidget);
     expect(pushedWeapon(tester), rifle);
   });
+}
+
+/// A geocoder that always resolves to a fixed [name] (spec 0076).
+class _FakeGeocoder implements Geocoder {
+  _FakeGeocoder(this.name);
+
+  final String name;
+
+  @override
+  Future<String?> reverseGeocode(double latitude, double longitude) async =>
+      name;
 }

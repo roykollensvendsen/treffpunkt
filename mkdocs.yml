@@ -106,6 +106,7 @@ nav:
       - "0073 — Full-screen image viewer": specs/0073-fullscreen-image-viewer.md
       - "0074 — Mouse-drag horizontal scroll": specs/0074-mouse-drag-horizontal-scroll.md
       - "0075 — Supported image types": specs/0075-supported-image-types.md
+      - "0076 — Name the place from coordinates": specs/0076-reverse-geocode-place.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
