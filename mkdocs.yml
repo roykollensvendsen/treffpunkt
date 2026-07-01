@@ -112,6 +112,7 @@ nav:
       - "0079 — Composed hold layout": specs/0079-composed-hold-layout.md
       - "0080 — Feltskyting: hit recording": specs/0080-felt-hit-recording.md
       - "0081 — Feltskyting: save & resume": specs/0081-felt-session-persistence.md
+      - "0082 — Feltskyting: rounds in Mine økter": specs/0082-felt-rounds-in-my-sessions.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

@@ -8,12 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hit_test.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
 
 /// Key for the group-picker button for [group] (spec 0080), for tests.
 Key feltGroupButtonKey(FeltShooterGroup group) =>
@@ -27,9 +29,6 @@ const Key feltHoldPointsKey = ValueKey<String>('feltHoldPoints');
 
 /// Key for the running session total text (spec 0080).
 const Key feltTotalPointsKey = ValueKey<String>('feltTotalPoints');
-
-/// Key for the final scorecard (spec 0080).
-const Key feltScorecardKey = ValueKey<String>('feltScorecard');
 
 /// Records a NorgesFelt session (spec 0080): pick a group, then place each shot
 /// on every hold and see the score, ending on a scorecard. The in-progress
@@ -137,15 +136,33 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     _persist();
   }
 
+  /// Finishes the round: shows the scorecard, clears the in-progress store and
+  /// saves the finished round to history (once, if any shots) — spec 0082.
+  void _finish() {
+    setState(() => _done = true);
+    _persist();
+    if (_totalShots > 0) {
+      final record = FeltSessionRecord(
+        id: DateTime.now().microsecondsSinceEpoch.toRadixString(36),
+        capturedAt: DateTime.now(),
+        session: _snapshot(),
+      );
+      unawaited(saveFeltRound(ref, record).catchError((Object _) {}));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_group == null) {
       return _GroupPicker(onPick: _pickGroup);
     }
     if (_done) {
-      return _Scorecard(
-        session: _session,
-        onBack: () => setState(() => _done = false),
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Resultat'),
+          leading: BackButton(onPressed: () => setState(() => _done = false)),
+        ),
+        body: SafeArea(child: FeltScorecard(session: _session)),
       );
     }
     return _recording(context);
@@ -237,7 +254,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
                       )
                     else
                       FilledButton(
-                        onPressed: () => _mutate(() => _done = true),
+                        onPressed: _finish,
                         child: const Text('Fullfør'),
                       ),
                   ],
@@ -369,63 +386,6 @@ class _ShotMarker extends StatelessWidget {
         boxShadow: const <BoxShadow>[
           BoxShadow(color: Colors.black45, blurRadius: 2),
         ],
-      ),
-    );
-  }
-}
-
-/// The end-of-session scorecard (spec 0080).
-class _Scorecard extends StatelessWidget {
-  const _Scorecard({required this.session, required this.onBack});
-
-  final FeltSessionTally session;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Resultat'),
-        leading: BackButton(onPressed: onBack),
-      ),
-      body: SafeArea(
-        key: feltScorecardKey,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: ListView(
-              padding: const EdgeInsets.all(12),
-              children: <Widget>[
-                for (var i = 0; i < session.holds.length; i++)
-                  ListTile(
-                    dense: true,
-                    title: Text('Hold ${i + 1}'),
-                    subtitle: Text(
-                      'Treff ${session.holds[i].treff} · '
-                      'Figur ${session.holds[i].figures} · '
-                      'Inner ${session.holds[i].inner}',
-                    ),
-                    trailing: Text(
-                      '${session.holds[i].points}',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ),
-                const Divider(),
-                ListTile(
-                  title: Text(
-                    'Totalt (${session.group.label})',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  trailing: Text(
-                    '${session.points} poeng',
-                    style: theme.textTheme.titleLarge,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
