@@ -7,6 +7,10 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **Deleted/edited chat messages now update live**: a deleted (or edited) message
+  used to keep showing until you restarted the app — the live update was silently
+  dropped for filtered subscriptions. Deletions and edits in a competition chat
+  (and forum replies) now appear immediately for everyone (spec 0071).
 - **Icons could appear blank after an update**: the web build shipped a per-build
   *subset* of the icon font at a fixed, non-cache-busted URL, so a returning
   browser kept its cached old subset and any newly added icon (e.g. the **Kopier
