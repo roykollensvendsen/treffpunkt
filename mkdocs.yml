@@ -108,6 +108,7 @@ nav:
       - "0075 — Supported image types": specs/0075-supported-image-types.md
       - "0076 — Name the place from coordinates": specs/0076-reverse-geocode-place.md
       - "0077 — Accurate NorgesFelt figures": specs/0077-accurate-felt-figures.md
+      - "0078 — NorgesFelt figure colours": specs/0078-felt-figure-colours.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

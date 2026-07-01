@@ -74,6 +74,7 @@ class FeltCourseScreen extends StatelessWidget {
                                       FeltFigureView(
                                         figure: figure,
                                         pxPerCm: _pxPerCm,
+                                        colour: feltHoldColour(hold.colour),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(

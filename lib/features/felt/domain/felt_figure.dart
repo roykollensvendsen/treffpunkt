@@ -52,6 +52,21 @@ enum FeltFigureType {
   final String label;
 }
 
+/// The colour a hold's figures are printed in (spec 0078). On the NorgesFelt
+/// course every figure on a hold shares one colour; it cycles black → green →
+/// red across the holds. A pure-Dart enum so the domain stays Flutter-free; the
+/// presentation maps it to a real colour.
+enum FeltHoldColour {
+  /// Black figures (holds 1, 4, 7).
+  black,
+
+  /// NSF-green figures (holds 2, 5, 8).
+  green,
+
+  /// Red figures (holds 3, 6).
+  red,
+}
+
 /// One figure on a hold (spec 0068): a [type] at a real size in centimetres,
 /// with an optional display [name] (e.g. `C13`, `Stor oval`) and the inner-zone
 /// diameter ([innerCm]).
