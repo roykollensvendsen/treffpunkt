@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
+import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
@@ -123,7 +124,7 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
   void _onImagePasted(PastedImage image) {
     // Only the visible chat handles a paste, never a screen underneath it.
     if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
-    unawaited(_sendImageBytes(image.bytes, isPng: image.isPng));
+    unawaited(_sendImageBytes(image.bytes));
   }
 
   Future<void> _send() async {
@@ -155,27 +156,31 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
     if (_sending) return;
     final picked = await ref.read(imagePickerProvider)();
     if (picked == null) return;
-    final bytes = await picked.readAsBytes();
-    await _sendImageBytes(
-      bytes,
-      isPng: picked.name.toLowerCase().endsWith('.png'),
-    );
+    await _sendImageBytes(await picked.readAsBytes());
   }
 
   /// Uploads [bytes] and posts a message with the image — the shared path for
-  /// both a picked and a pasted image (spec 0062).
-  Future<void> _sendImageBytes(Uint8List bytes, {required bool isPng}) async {
+  /// both a picked and a pasted image (spec 0062). Only JPG/PNG/GIF are
+  /// accepted; anything else is refused with a clear message (spec 0075).
+  Future<void> _sendImageBytes(Uint8List bytes) async {
     if (_sending) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final format = detectImageFormat(bytes);
+    if (format == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text(unsupportedImageMessage)),
+      );
+      return;
+    }
     if (!await ensureDisplayName(context, ref)) return;
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
     setState(() => _sending = true);
     try {
       final repo = ref.read(competitionRepositoryProvider);
       final path = await repo.uploadChatImage(
         widget.competition.id,
         bytes,
-        fileExtension: isPng ? 'png' : 'jpg',
+        fileExtension: format.extension,
       );
       await repo.postMessage(
         CompetitionMessage(

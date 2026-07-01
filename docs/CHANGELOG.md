@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **GIF uploads, and a clear message for unsupported files**: you can now attach
+  **GIF** images (as well as JPG/PNG) in chat and the forum, and they keep their
+  animation. Files that aren't a supported image are refused with **"Filformatet
+  støttes ikke. Bruk JPG, PNG eller GIF."** instead of being stored wrong (spec
+  0075).
 - **Tap a picture to view it full-screen**: pictures in chat and the forum now
   open **full-screen** when tapped, where you can **zoom** (pinch/scroll) and
   **pan** (drag) to see the details — with a close button to return (spec 0073).

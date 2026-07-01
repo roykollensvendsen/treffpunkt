@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
@@ -618,7 +619,7 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
       // Path's first segment is the competition id — Storage RLS reads it to
       // gate the upload to a participant (spec 0053).
       final path = '$competitionId/${const Uuid().v4()}.$fileExtension';
-      final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
+      final contentType = imageMimeForExtension(fileExtension);
       await _client.storage
           .from('chat-images')
           .uploadBinary(

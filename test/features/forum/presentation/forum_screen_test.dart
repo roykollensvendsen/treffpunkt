@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
+import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
@@ -29,6 +30,26 @@ import 'package:treffpunkt/features/forum/presentation/forum_providers.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
 
 import '../../auth/fake_auth_repository.dart';
+
+/// Minimal valid headers so the upload's format detection accepts them.
+final Uint8List _pngBytes = Uint8List.fromList(<int>[
+  0x89,
+  0x50,
+  0x4E,
+  0x47,
+  13,
+  10,
+  26,
+  10,
+]);
+final Uint8List _gifBytes = Uint8List.fromList(<int>[
+  0x47,
+  0x49,
+  0x46,
+  0x38,
+  0x39,
+  0x61,
+]);
 
 const _me = AppUser(id: 'me', email: 'me@example.com', displayName: 'Me');
 
@@ -48,6 +69,25 @@ Widget _app(
     competitionRepositoryProvider.overrideWithValue(_profileRepo(displayName)),
   ],
   child: MaterialApp(home: home),
+);
+
+/// A thread screen wired to a paste [clipboard], for the image-paste tests.
+Widget _pasteApp(
+  InMemoryForumRepository repo,
+  FakeClipboardImageWatcher clipboard,
+) => ProviderScope(
+  overrides: [
+    authRepositoryProvider.overrideWithValue(
+      FakeAuthRepository(initial: const SignedIn(_me)),
+    ),
+    forumRepositoryProvider.overrideWithValue(repo),
+    clipboardImageWatcherProvider.overrideWithValue(clipboard),
+  ],
+  child: const MaterialApp(
+    home: ForumThreadScreen(
+      thread: ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    ),
+  ),
 );
 
 /// A competition repo whose current user "me" has the given [displayName] (or
@@ -313,10 +353,7 @@ void main() {
     await repo.createThread(
       const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
     );
-    final picked = XFile.fromData(
-      Uint8List.fromList(<int>[1, 2, 3]),
-      name: 'x.jpg',
-    );
+    final picked = XFile.fromData(_pngBytes, name: 'x.png');
 
     await tester.pumpWidget(
       ProviderScope(
@@ -380,14 +417,54 @@ void main() {
     );
     await tester.pump();
 
-    clipboard.emit(
-      PastedImage(bytes: Uint8List.fromList(<int>[1, 2, 3]), isPng: false),
-    );
+    clipboard.emit(PastedImage(bytes: _pngBytes, isPng: false));
     await tester.pumpAndSettle();
 
     final posts = await repo.watchPosts('t1').first;
     expect(posts, hasLength(1));
     expect(posts.single.imagePath, isNotNull);
+  });
+
+  testWidgets('a pasted GIF reply is accepted (spec 0075)', (tester) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+    final clipboard = FakeClipboardImageWatcher();
+    addTearDown(clipboard.dispose);
+
+    await tester.pumpWidget(_pasteApp(repo, clipboard));
+    await tester.pump();
+
+    clipboard.emit(PastedImage(bytes: _gifBytes, isPng: false));
+    await tester.pumpAndSettle();
+
+    expect(
+      (await repo.watchPosts('t1').first).single.imagePath,
+      endsWith('.gif'),
+    );
+  });
+
+  testWidgets('an unsupported reply file is refused (spec 0075)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+    final clipboard = FakeClipboardImageWatcher();
+    addTearDown(clipboard.dispose);
+
+    await tester.pumpWidget(_pasteApp(repo, clipboard));
+    await tester.pump();
+
+    clipboard.emit(
+      PastedImage(bytes: Uint8List.fromList(<int>[1, 2, 3, 4]), isPng: false),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(unsupportedImageMessage), findsOneWidget);
+    expect(await repo.watchPosts('t1').first, isEmpty);
   });
 
   testWidgets('pasting an image in the new-thread form attaches it (0062)', (
@@ -412,9 +489,7 @@ void main() {
     await tester.pump();
     expect(find.byKey(threadImageAttachedKey), findsNothing);
 
-    clipboard.emit(
-      PastedImage(bytes: Uint8List.fromList(<int>[1, 2, 3]), isPng: true),
-    );
+    clipboard.emit(PastedImage(bytes: _pngBytes, isPng: true));
     await tester.pumpAndSettle();
 
     expect(find.byKey(threadImageAttachedKey), findsOneWidget);

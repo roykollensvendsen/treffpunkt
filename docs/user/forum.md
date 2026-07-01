@@ -38,9 +38,10 @@ react to your own). Tap a reaction again to take it back. Reactions update live
 for everyone. **Hold** a reaction to see **who reacted** with it.
 
 You can also attach a **picture** to a thread or reply (the image button by the
-box). On a computer you can **paste** a copied image with **Ctrl/Cmd+V**. **Tap
-a picture** to open it **full-screen**, where you can **zoom** and **pan** to see
-the details.
+box) — **JPG, PNG or GIF**; other files are refused with a short message. On a
+computer you can **paste** a copied image with **Ctrl/Cmd+V**. **Tap a picture**
+to open it **full-screen**, where you can **zoom** and **pan** to see the
+details.
 
 Like the competition chat, **your own replies** appear on the **right** in a
 coloured bubble and others' on the left with their name, so a discussion is easy
