@@ -70,6 +70,24 @@ void main() {
     expect((items[2] as RingSessionItem).entry.record.id, 'r2'); // undated last
   });
 
+  test(
+    'mergeFeltRounds dedups local and synced by id, newest first (0083)',
+    () {
+      final merged = mergeFeltRounds(
+        local: <FeltSessionRecord>[
+          _felt('a', capturedAt: DateTime.utc(2026, 7, 5)),
+          _felt('b', capturedAt: DateTime.utc(2026, 7, 4)),
+        ],
+        synced: <FeltSessionRecord>[
+          _felt('a', capturedAt: DateTime.utc(2026, 7, 5)), // duplicate id
+          _felt('c', capturedAt: DateTime.utc(2026, 7, 6)), // cloud-only
+        ],
+      );
+
+      expect(merged.map((r) => r.id), <String>['c', 'a', 'b']);
+    },
+  );
+
   test('synced-only records become synced entries', () {
     final entries = mergeMySessions(
       synced: <SessionRecord>[_record('a'), _record('b')],

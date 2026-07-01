@@ -13,6 +13,7 @@ import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
+import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
@@ -79,6 +80,7 @@ void runTreffpunkt(
   SessionStore? sessionStore,
   FeltSessionStore? feltSessionStore,
   FeltHistoryStore? feltHistoryStore,
+  FeltSessionRepository? feltSessionRepository,
   SessionRepository? sessionRepository,
   PendingUploadsStore? pendingUploadsStore,
   WeaponStore? weaponStore,
@@ -109,6 +111,10 @@ void runTreffpunkt(
           feltSessionStoreProvider.overrideWithValue(feltSessionStore),
         if (feltHistoryStore != null)
           feltHistoryStoreProvider.overrideWithValue(feltHistoryStore),
+        if (feltSessionRepository != null)
+          feltSessionRepositoryProvider.overrideWithValue(
+            feltSessionRepository,
+          ),
         if (sessionRepository != null)
           sessionRepositoryProvider.overrideWithValue(sessionRepository),
         if (pendingUploadsStore != null)

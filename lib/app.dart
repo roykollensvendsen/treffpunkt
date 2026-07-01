@@ -9,6 +9,7 @@ import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_gate.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/join_link_handler.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 import 'package:treffpunkt/features/settings/presentation/settings_screen.dart';
@@ -33,7 +34,8 @@ class TreffpunktApp extends ConsumerWidget {
     // signed-in user's profile is upserted for the shared scoreboard.
     ref
       ..watch(uploadQueueProvider)
-      ..watch(profileSyncProvider);
+      ..watch(profileSyncProvider)
+      ..watch(feltSyncProvider);
     return MaterialApp(
       title: 'Treffpunkt',
       // Let the mouse/trackpad drag-scroll horizontal strips on web/desktop

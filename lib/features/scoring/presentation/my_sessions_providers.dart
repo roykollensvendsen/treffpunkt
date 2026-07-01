@@ -72,6 +72,26 @@ class FeltSessionItem extends MySessionItem {
   DateTime? get capturedAt => record.capturedAt;
 }
 
+/// Merges the [local] (spec 0082) and [synced] (spec 0083) felt rounds into one
+/// list, deduplicated by id (the synced copy wins the tiebreak) and most-recent
+/// first — so a round on both sides shows once and a round from another device
+/// appears. A pure function, unit-testable without a widget.
+List<FeltSessionRecord> mergeFeltRounds({
+  required List<FeltSessionRecord> local,
+  required List<FeltSessionRecord> synced,
+}) {
+  final byId = <String, FeltSessionRecord>{};
+  for (final round in local) {
+    byId[round.id] = round;
+  }
+  for (final round in synced) {
+    byId[round.id] = round;
+  }
+  return List<FeltSessionRecord>.unmodifiable(
+    byId.values.toList()..sort((a, b) => b.capturedAt.compareTo(a.capturedAt)),
+  );
+}
+
 /// Interleaves the ring [entries] and finished felt [rounds] into one list,
 /// newest-first by date (undated last) — spec 0082. A pure function, so it is
 /// unit-testable without a widget.

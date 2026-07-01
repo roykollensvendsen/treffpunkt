@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
+import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -101,5 +102,31 @@ void main() {
     await tester.tap(find.byKey(feltSessionCard('felt-1')));
     await tester.pumpAndSettle();
     expect(find.byKey(feltScorecardKey), findsOneWidget);
+  });
+
+  testWidgets('a cloud-only felt round shows in Mine økter (spec 0083)', (
+    tester,
+  ) async {
+    bigView(tester);
+    final repository = InMemoryFeltSessionRepository();
+    await repository.upload(_record()); // only in the cloud, not local history
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          feltSessionRepositoryProvider.overrideWithValue(repository),
+          sessionRepositoryProvider.overrideWithValue(
+            InMemorySessionRepository(),
+          ),
+          pendingUploadsStoreProvider.overrideWithValue(
+            InMemoryPendingUploadsStore(),
+          ),
+        ],
+        child: const MaterialApp(home: MySessionsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(feltSessionCard('felt-1')), findsOneWidget);
   });
 }

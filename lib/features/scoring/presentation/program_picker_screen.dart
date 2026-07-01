@@ -10,6 +10,7 @@ import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
 import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
@@ -112,7 +113,9 @@ class ProgramPickerScreen extends ConsumerWidget {
   Future<void> _openMySessions(BuildContext context, WidgetRef ref) async {
     ref
       ..invalidate(syncedSessionsProvider)
-      ..invalidate(storedPendingProvider);
+      ..invalidate(storedPendingProvider)
+      ..invalidate(feltHistoryProvider)
+      ..invalidate(feltSyncedSessionsProvider);
     await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const MySessionsScreen()),
     );
