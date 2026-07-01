@@ -68,7 +68,9 @@ newest at the bottom, with the sender's name.
   **timestamp** of when it was sent.
 - **Attach a picture**: tap the **image** button to the left of the box, pick a
   photo, and it posts to the chat. Images are private to the competition. On a
-  computer you can also **paste** a copied image with **Ctrl/Cmd+V**.
+  computer you can also **paste** a copied image with **Ctrl/Cmd+V**. **Tap a
+  picture** to open it **full-screen**, where you can **zoom** and **pan** to see
+  the details.
 - **React** to **another shooter's** message: tap the **emoji** button under it
   and pick one (you don't react to your own). Tap a reaction again to take it
   back. Everyone sees reactions update live. **Hold** a reaction to see **who

@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
+import 'package:treffpunkt/core/presentation/full_screen_image.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
@@ -354,9 +355,14 @@ void main() {
     );
 
     await tester.pumpWidget(_app(repo));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.byKey(chatImageKey('m1')), findsOneWidget);
+
+    // Tapping the picture opens the zoomable full-screen viewer (spec 0073).
+    await tester.tap(find.byKey(chatImageKey('m1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(fullScreenImageKey), findsOneWidget);
   });
 
   testWidgets('attaching an image uploads and posts it (spec 0053)', (

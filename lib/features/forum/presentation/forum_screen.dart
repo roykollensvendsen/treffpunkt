@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
+import 'package:treffpunkt/core/presentation/full_screen_image.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
@@ -1055,21 +1056,11 @@ class _ForumImage extends StatelessWidget {
   final String url;
 
   @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        url,
-        key: forumImageKey(id),
-        height: 180,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => const SizedBox(
-          height: 180,
-          child: Center(child: Icon(Icons.broken_image)),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => TappableNetworkImage(
+    url: url,
+    heroTag: 'forumImage-$id',
+    thumbnailKey: forumImageKey(id),
+  );
 }
 
 /// The reaction chips on a thread or reply plus an add-reaction button

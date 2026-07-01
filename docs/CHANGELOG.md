@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Tap a picture to view it full-screen**: pictures in chat and the forum now
+  open **full-screen** when tapped, where you can **zoom** (pinch/scroll) and
+  **pan** (drag) to see the details — with a close button to return (spec 0073).
+
 ### Fixed
 - **Logg ut now returns you to the sign-in screen**: signing out from
   Innstillinger used to leave the settings page on top; it now drops any open
