@@ -13,8 +13,11 @@ enum FeltFigureType {
   /// A circle (the C13 / C20 / C25 figures).
   circle('Sirkel'),
 
-  /// A triangle, apex up.
+  /// A rounded triangle, apex up (the small "Trekant").
   triangle('Trekant'),
+
+  /// A right-angled triangle (the big "Trekant stor").
+  rightTriangle('Trekant'),
 
   /// A hexagon.
   hexagon('Sekskant'),

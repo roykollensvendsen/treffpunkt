@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **More accurate NorgesFelt figures**: the field-course figures are now traced
+  from the official high-resolution blink images, so the **1/6**, **bowling
+  pin**, **sekskant**, **egg**, the small rounded **triangle** and the big
+  **right-angled triangle** all match the real targets (spec 0077).
+
 ### Added
 - **"Bruk min posisjon" now fills a place name**: instead of raw coordinates, the
   place field is filled with the **name** of where you are (town/area), looked up

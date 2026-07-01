@@ -4,7 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:treffpunkt/features/felt/domain/felt_figure.dart';
-import 'package:treffpunkt/features/felt/presentation/felt_animal_paths.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_figure_paths.dart';
 
 /// Renders a single field figure at a real scale (spec 0068): the silhouette
 /// plus its inner zone, sized [pxPerCm] pixels per centimetre so a hold's
@@ -97,49 +97,34 @@ class FeltFigurePainter extends CustomPainter {
       old.innerColour != innerColour;
 }
 
-/// Builds the silhouette [Path] for [type], filling [size]. Geometric shapes
-/// are parametric; the animals are traced polygons (spec 0068).
+/// Builds the silhouette [Path] for [type], filling [size]. Circles and ovals
+/// are exact ellipses; every other figure is a polygon traced from the official
+/// NorgesFelt blink images (spec 0077).
 Path figurePath(FeltFigureType type, Size size) {
-  final w = size.width;
-  final h = size.height;
   switch (type) {
     case FeltFigureType.circle:
     case FeltFigureType.oval:
-    case FeltFigureType.egg:
-      // Circle/oval exactly; egg is approximated by its ellipse for now.
       return Path()..addOval(Offset.zero & size);
-    case FeltFigureType.triangle:
-      return Path()
-        ..moveTo(w / 2, 0)
-        ..lineTo(w, h)
-        ..lineTo(0, h)
-        ..close();
-    case FeltFigureType.hexagon:
-      return Path()
-        ..moveTo(0.25 * w, 0)
-        ..lineTo(0.75 * w, 0)
-        ..lineTo(w, 0.5 * h)
-        ..lineTo(0.75 * w, h)
-        ..lineTo(0.25 * w, h)
-        ..lineTo(0, 0.5 * h)
-        ..close();
     case FeltFigureType.stripe:
-      // A rounded vertical bar.
+      // A near-rectangular vertical bar (the "størenstripe" plates).
       return Path()..addRRect(
         RRect.fromRectAndRadius(
           Offset.zero & size,
-          Radius.circular(w / 2),
+          const Radius.circular(3),
         ),
       );
+    case FeltFigureType.triangle:
+      return _polygon(feltTriangleOutline, size);
+    case FeltFigureType.rightTriangle:
+      return _polygon(feltRightTriangleOutline, size);
+    case FeltFigureType.hexagon:
+      return _polygon(feltHexagonOutline, size);
+    case FeltFigureType.egg:
+      return _polygon(feltEggOutline, size);
     case FeltFigureType.bowlingPin:
+      return _polygon(feltBowlingPinOutline, size);
     case FeltFigureType.reducedFigure:
-      // Approximated by a rounded rectangle until traced (spec 0068).
-      return Path()..addRRect(
-        RRect.fromRectAndRadius(
-          Offset.zero & size,
-          Radius.circular(0.3 * (w < h ? w : h)),
-        ),
-      );
+      return _polygon(feltReducedFigureOutline, size);
     case FeltFigureType.hare:
       return _polygon(feltHareOutline, size);
     case FeltFigureType.wolfHead:
@@ -165,7 +150,17 @@ Path _polygon(List<Offset> points, Size size) {
 Offset figureCentroid(FeltFigureType type, Size size) {
   switch (type) {
     case FeltFigureType.triangle:
-      return Offset(size.width / 2, size.height * 2 / 3);
+      return _polygonCentroid(feltTriangleOutline, size);
+    case FeltFigureType.rightTriangle:
+      return _polygonCentroid(feltRightTriangleOutline, size);
+    case FeltFigureType.hexagon:
+      return _polygonCentroid(feltHexagonOutline, size);
+    case FeltFigureType.egg:
+      return _polygonCentroid(feltEggOutline, size);
+    case FeltFigureType.bowlingPin:
+      return _polygonCentroid(feltBowlingPinOutline, size);
+    case FeltFigureType.reducedFigure:
+      return _polygonCentroid(feltReducedFigureOutline, size);
     case FeltFigureType.hare:
       return _polygonCentroid(feltHareOutline, size);
     case FeltFigureType.wolfHead:
@@ -174,11 +169,7 @@ Offset figureCentroid(FeltFigureType type, Size size) {
       return _polygonCentroid(feltPtarmiganOutline, size);
     case FeltFigureType.circle:
     case FeltFigureType.oval:
-    case FeltFigureType.egg:
-    case FeltFigureType.hexagon:
     case FeltFigureType.stripe:
-    case FeltFigureType.bowlingPin:
-    case FeltFigureType.reducedFigure:
       return size.center(Offset.zero);
   }
 }
