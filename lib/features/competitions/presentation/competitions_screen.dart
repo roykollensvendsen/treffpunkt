@@ -5,19 +5,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:treffpunkt/core/platform/sharer.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
-import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
-import 'package:treffpunkt/features/competitions/domain/join_link.dart';
-import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/domain/scoreboard.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_chat_screen.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_invite_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/month_calendar.dart';
@@ -109,24 +105,11 @@ String _formatNorDate(DateTime date) {
   return '${two(date.day)}.${two(date.month)}.${date.year}';
 }
 
-/// Key for the "share join link" action on the detail screen (spec 0048).
-const Key shareInviteKey = ValueKey<String>('shareInvite');
+/// Key for the app-bar overflow menu on the detail page (spec 0093).
+const Key competitionMenuKey = ValueKey<String>('competitionMenu');
 
-/// Key for the "copy join link" action on the detail screen.
-const Key copyInviteLinkKey = ValueKey<String>('copyInviteLink');
-
-/// Key for the "regenerate join link" action on the detail screen.
-const Key regenerateLinkKey = ValueKey<String>('regenerateLink');
-
-/// Key for the registered-shooter picker on the detail screen (spec 0032).
-const Key shooterPickerKey = ValueKey<String>('shooterPicker');
-
-/// Key for the tile of the registered shooter [userId] in the picker.
-Key shooterTileKey(String userId) => ValueKey<String>('shooterTile-$userId');
-
-/// Key for the "invite" action on the registered shooter [userId].
-Key inviteShooterButtonKey(String userId) =>
-    ValueKey<String>('inviteShooter-$userId');
+/// Key for the owner's Inviter action on the detail page (spec 0093).
+const Key inviteCompetitionKey = ValueKey<String>('inviteCompetition');
 
 /// Key for the "shoot for this competition" action on the detail screen.
 const Key shootForCompetitionKey = ValueKey<String>('shootForCompetition');
@@ -908,94 +891,6 @@ class CompetitionDetailScreen extends ConsumerStatefulWidget {
 
 class _CompetitionDetailScreenState
     extends ConsumerState<CompetitionDetailScreen> {
-  // The shooter whose invite is in flight, so only that tile shows the pending
-  // state — not every Inviter button at once (they share this screen's state).
-  String? _invitingShooterId;
-  // Shooters invited this visit, merged with the server's pending invitees so
-  // their tile shows "Invitert" rather than an active button (spec 0032).
-  final Set<String> _invitedShooterIds = <String>{};
-
-  /// The competition's shareable join link, or null if the token can't be read
-  /// (only the owner can — and this section is owner-only). Spec 0048.
-  Future<Uri?> _joinLink() async {
-    final token = await ref.read(
-      competitionJoinTokenProvider(widget.competition.id).future,
-    );
-    if (token == null) return null;
-    return competitionJoinLink(
-      ref.read(appBaseUrlProvider),
-      competitionId: widget.competition.id,
-      token: token,
-    );
-  }
-
-  /// Shares the join link through the OS share sheet (Messenger / SMS / … ).
-  Future<void> _share() async {
-    final link = await _joinLink();
-    if (link == null || !mounted) return;
-    await ref
-        .read(sharerProvider)
-        .share('Bli med i ${widget.competition.name} på Treffpunkt: $link');
-  }
-
-  /// Copies the join link — the reliable fallback where sharing is unavailable.
-  Future<void> _copyLink() async {
-    final link = await _joinLink();
-    if (link == null) return;
-    await Clipboard.setData(ClipboardData(text: link.toString()));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(const SnackBar(content: Text('Lenke kopiert.')));
-  }
-
-  /// Issues a fresh token, so old links stop working.
-  Future<void> _regenerateLink() async {
-    final messenger = ScaffoldMessenger.of(context)..clearSnackBars();
-    try {
-      await ref
-          .read(competitionRepositoryProvider)
-          .regenerateJoinToken(widget.competition.id);
-      ref.invalidate(competitionJoinTokenProvider(widget.competition.id));
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Ny lenke laget. Gamle lenker slutter å virke.'),
-        ),
-      );
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke lage ny lenke.')),
-      );
-    }
-  }
-
-  /// Invites a registered shooter picked from the list (spec 0032). Their email
-  /// is resolved server-side; this client only knows the user id.
-  Future<void> _inviteUser(Profile shooter) async {
-    if (_invitingShooterId != null) return;
-    setState(() => _invitingShooterId = shooter.id);
-    final messenger = ScaffoldMessenger.of(context);
-    final label = shooter.displayName ?? 'skytteren';
-    try {
-      await ref
-          .read(competitionRepositoryProvider)
-          .inviteUser(widget.competition.id, shooter.id);
-      if (mounted) {
-        setState(() => _invitedShooterIds.add(shooter.id));
-        // Refresh the server-side invitee list so the marker is authoritative
-        // and survives a reopen.
-        ref.invalidate(competitionInviteesProvider(widget.competition.id));
-      }
-      messenger.showSnackBar(SnackBar(content: Text('Invitert $label.')));
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke invitere.')),
-      );
-    } finally {
-      if (mounted) setState(() => _invitingShooterId = null);
-    }
-  }
-
   /// Confirms, then deletes the competition (owner only, spec 0034); on success
   /// returns to the hub with the list refreshed. The cascade removes its
   /// members, invitations and results. A failure keeps the screen, with a
@@ -1082,50 +977,6 @@ class _CompetitionDetailScreenState
     ref.invalidate(competitionScoreboardProvider(widget.competition.id));
   }
 
-  /// The registered shooters the owner can invite (spec 0032): everyone with a
-  /// The registered shooters, minus the owner, each in one of three states:
-  /// not invited (an *Inviter* button), invited (a settled *Invitert*), or a
-  /// member who accepted (a settled *Deltar*). Hidden while loading or on error
-  /// — the email field stays as the fallback.
-  List<Widget> _shooterPicker(List<CompetitionMember>? members) {
-    final shooters = ref.watch(shootersProvider);
-    final uid = ref.watch(currentUserIdProvider);
-    // Shooters with a pending invitation from an earlier visit (owner-only,
-    // server-resolved) — merged with this visit's invites so the marker
-    // persists across reopen.
-    final invitees =
-        ref.watch(competitionInviteesProvider(widget.competition.id)).value ??
-        const <String>[];
-    final memberIds = <String>{...?members?.map((m) => m.userId)};
-    return shooters.maybeWhen(
-      orElse: () => const <Widget>[],
-      data: (all) {
-        // Only the owner is dropped; members stay, shown as "Deltar".
-        final listed = all.where((p) => p.id != uid).toList(growable: false);
-        if (listed.isEmpty) return const <Widget>[];
-        return <Widget>[
-          const _SectionHeader('Inviter en registrert skytter'),
-          Column(
-            key: shooterPickerKey,
-            children: <Widget>[
-              for (final shooter in listed)
-                _ShooterTile(
-                  shooter: shooter,
-                  inviting: _invitingShooterId == shooter.id,
-                  invited:
-                      _invitedShooterIds.contains(shooter.id) ||
-                      invitees.contains(shooter.id),
-                  joined: memberIds.contains(shooter.id),
-                  onInvite: () => unawaited(_inviteUser(shooter)),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-        ];
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final competition = widget.competition;
@@ -1149,7 +1000,40 @@ class _CompetitionDetailScreenState
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(competition.name)),
+      appBar: AppBar(
+        title: Text(competition.name),
+        actions: [
+          // Rare and destructive actions live in the overflow menu (spec
+          // 0093): archive/restore for everyone, delete for the owner.
+          PopupMenuButton<_DetailMenuAction>(
+            key: competitionMenuKey,
+            tooltip: 'Flere valg',
+            onSelected: (action) => switch (action) {
+              _DetailMenuAction.archive => unawaited(
+                _toggleArchive(archived: isArchived),
+              ),
+              _DetailMenuAction.delete => unawaited(_delete()),
+            },
+            itemBuilder: (_) => <PopupMenuEntry<_DetailMenuAction>>[
+              PopupMenuItem<_DetailMenuAction>(
+                key: toggleArchiveButtonKey,
+                value: _DetailMenuAction.archive,
+                child: Text(
+                  isArchived
+                      ? 'Gjenopprett konkurranse'
+                      : 'Arkiver konkurranse',
+                ),
+              ),
+              if (isOwner)
+                const PopupMenuItem<_DetailMenuAction>(
+                  key: deleteCompetitionButtonKey,
+                  value: _DetailMenuAction.delete,
+                  child: Text('Slett konkurranse'),
+                ),
+            ],
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -1159,85 +1043,63 @@ class _CompetitionDetailScreenState
               children: [
                 Text(_subtitle(competition), style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 16),
-                // The competition's chat — the shared back-channel for the
-                // people in it (spec 0051).
-                OutlinedButton.icon(
-                  key: competitionChatButtonKey,
-                  onPressed: () => unawaited(
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            CompetitionChatScreen(competition: competition),
-                      ),
-                    ),
-                  ),
-                  icon: const Icon(Icons.forum_outlined),
-                  label: const Text('Chat'),
-                ),
-                const SizedBox(height: 16),
-                if (isParticipant) ...[
-                  FilledButton.icon(
-                    key: shootForCompetitionKey,
-                    onPressed: program == null
-                        ? null
-                        : () => unawaited(_shoot()),
-                    icon: const Icon(Icons.gps_fixed),
-                    label: const Text('Skyt nå'),
-                  ),
-                  if (program == null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Ukjent program',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                ],
-                if (isOwner) ...[
-                  const _SectionHeader('Inviter med lenke'),
-                  Text(
-                    'Del en lenke; den som åpner den blir med.',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: <Widget>[
+                // One compact action row (spec 0093): shoot, chat and — for
+                // the owner — the invite page; the results lead below it.
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: <Widget>[
+                    if (isParticipant)
                       FilledButton.icon(
-                        key: shareInviteKey,
-                        onPressed: () => unawaited(_share()),
-                        icon: const Icon(Icons.share),
-                        label: const Text('Del lenke'),
+                        key: shootForCompetitionKey,
+                        onPressed: program == null
+                            ? null
+                            : () => unawaited(_shoot()),
+                        icon: const Icon(Icons.gps_fixed),
+                        label: const Text('Skyt nå'),
                       ),
-                      OutlinedButton.icon(
-                        key: copyInviteLinkKey,
-                        onPressed: () => unawaited(_copyLink()),
-                        icon: const Icon(Icons.link),
-                        label: const Text('Kopier lenke'),
+                    // The competition's chat — the shared back-channel for
+                    // the people in it (spec 0051).
+                    OutlinedButton.icon(
+                      key: competitionChatButtonKey,
+                      onPressed: () => unawaited(
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => CompetitionChatScreen(
+                              competition: competition,
+                            ),
+                          ),
+                        ),
                       ),
-                      TextButton.icon(
-                        key: regenerateLinkKey,
-                        onPressed: () => unawaited(_regenerateLink()),
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Lag ny lenke'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ..._shooterPicker(members.value),
-                  OutlinedButton.icon(
-                    key: deleteCompetitionButtonKey,
-                    onPressed: () => unawaited(_delete()),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.colorScheme.error,
+                      icon: const Icon(Icons.forum_outlined),
+                      label: const Text('Chat'),
                     ),
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Slett konkurranse'),
+                    if (isOwner)
+                      OutlinedButton.icon(
+                        key: inviteCompetitionKey,
+                        onPressed: () => unawaited(
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => CompetitionInviteScreen(
+                                competition: competition,
+                              ),
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.person_add_alt),
+                        label: const Text('Inviter'),
+                      ),
+                  ],
+                ),
+                if (isParticipant && program == null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Ukjent program',
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                ],
+                const SizedBox(height: 16),
                 const _SectionHeader('Resultater'),
                 ...results.when(
                   loading: () => const <Widget>[
@@ -1298,24 +1160,6 @@ class _CompetitionDetailScreenState
                       ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                // Archiving is personal view state, so it is open to everyone —
-                // including a non-owner who cannot delete (spec 0049).
-                OutlinedButton.icon(
-                  key: toggleArchiveButtonKey,
-                  onPressed: () =>
-                      unawaited(_toggleArchive(archived: isArchived)),
-                  icon: Icon(
-                    isArchived
-                        ? Icons.unarchive_outlined
-                        : Icons.archive_outlined,
-                  ),
-                  label: Text(
-                    isArchived
-                        ? 'Gjenopprett konkurranse'
-                        : 'Arkiver konkurranse',
-                  ),
-                ),
               ],
             ),
           ),
@@ -1324,6 +1168,11 @@ class _CompetitionDetailScreenState
     );
   }
 }
+
+/// What the detail page's overflow menu can do (spec 0093). Archiving is
+/// personal view state, so it is open to everyone — including a non-owner
+/// who cannot delete (spec 0049).
+enum _DetailMenuAction { archive, delete }
 
 /// One scoreboard row: rank, the submitter's name, and the score (spec 0012).
 class _ResultRow extends StatelessWidget {
@@ -1355,71 +1204,6 @@ class _ResultRow extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// One row in the registered-shooter picker: name + avatar and an Inviter
-/// button. Shows only the name/avatar — never the shooter's email (spec 0032).
-class _ShooterTile extends StatelessWidget {
-  const _ShooterTile({
-    required this.shooter,
-    required this.inviting,
-    required this.invited,
-    required this.joined,
-    required this.onInvite,
-  });
-
-  final Profile shooter;
-  final bool inviting;
-
-  /// Whether this shooter has a pending invitation — the tile then shows a
-  /// settled "Invitert" state instead of an active button.
-  final bool invited;
-
-  /// Whether this shooter accepted and is now a member — a settled "Deltar"
-  /// state that takes precedence over [invited].
-  final bool joined;
-  final VoidCallback onInvite;
-
-  @override
-  Widget build(BuildContext context) {
-    final avatarUrl = shooter.avatarUrl;
-    return ListTile(
-      key: shooterTileKey(shooter.id),
-      leading: CircleAvatar(
-        backgroundImage: avatarUrl == null ? null : NetworkImage(avatarUrl),
-        child: avatarUrl == null ? const Icon(Icons.person_outline) : null,
-      ),
-      title: Text(shooter.displayName ?? 'Ukjent skytter'),
-      // Three settled states: a member who accepted reads "Deltar"; a pending
-      // invitee reads "Invitert"; both are disabled so no no-op invite fires.
-      // Otherwise an active "Inviter" button.
-      trailing: _trailing(),
-    );
-  }
-
-  Widget _trailing() {
-    if (joined) {
-      return TextButton.icon(
-        key: inviteShooterButtonKey(shooter.id),
-        onPressed: null,
-        icon: const Icon(Icons.how_to_reg),
-        label: const Text('Deltar'),
-      );
-    }
-    if (invited) {
-      return TextButton.icon(
-        key: inviteShooterButtonKey(shooter.id),
-        onPressed: null,
-        icon: const Icon(Icons.check),
-        label: const Text('Invitert'),
-      );
-    }
-    return FilledButton.tonal(
-      key: inviteShooterButtonKey(shooter.id),
-      onPressed: inviting ? null : onInvite,
-      child: const Text('Inviter'),
     );
   }
 }

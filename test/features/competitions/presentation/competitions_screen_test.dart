@@ -23,6 +23,7 @@ import 'package:treffpunkt/features/competitions/domain/competition_message.dart
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_chat_screen.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_invite_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
@@ -125,6 +126,41 @@ void main() {
     expect(find.text('Alice Cup'), findsOneWidget);
   });
 
+  testWidgets('the detail leads with results; Inviter opens its page (0093)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    const competition = Competition(
+      id: 'c1',
+      name: 'My Cup',
+      program: '25 m NAIS fin',
+      ownerId: 'me',
+    );
+    await repo.createCompetition(competition);
+
+    await tester.pumpWidget(
+      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+    );
+    await tester.pumpAndSettle();
+
+    // No inline invite machinery: one compact Inviter action instead, and
+    // the results section sits above the participants.
+    expect(find.byKey(shareInviteKey), findsNothing);
+    expect(find.byKey(shooterPickerKey), findsNothing);
+    expect(find.byKey(inviteCompetitionKey), findsOneWidget);
+    final resultsY = tester.getTopLeft(find.text('Resultater')).dy;
+    final membersY = tester.getTopLeft(find.text('Deltakere')).dy;
+    expect(resultsY, lessThan(membersY));
+
+    // The Inviter action opens the dedicated invite page with both
+    // mechanisms (specs 0048/0032).
+    await tester.tap(find.byKey(inviteCompetitionKey));
+    await tester.pumpAndSettle();
+    expect(find.byType(CompetitionInviteScreen), findsOneWidget);
+    expect(find.byKey(shareInviteKey), findsOneWidget);
+    expect(find.text('Inviter med lenke'), findsOneWidget);
+  });
+
   testWidgets('the owner shares and copies a join link', (tester) async {
     final repo = _meRepo();
     const competition = Competition(
@@ -159,7 +195,7 @@ void main() {
           ),
         ],
         child: const MaterialApp(
-          home: CompetitionDetailScreen(competition: competition),
+          home: CompetitionInviteScreen(competition: competition),
         ),
       ),
     );
@@ -208,7 +244,7 @@ void main() {
     await alice.acceptInvitation('c1');
 
     await tester.pumpWidget(
-      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+      _app(repo, home: const CompetitionInviteScreen(competition: competition)),
     );
     await tester.pumpAndSettle();
 
@@ -246,7 +282,7 @@ void main() {
     await bob.upsertOwnProfile(const Profile(id: 'bob', displayName: 'Bob'));
 
     await tester.pumpWidget(
-      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+      _app(repo, home: const CompetitionInviteScreen(competition: competition)),
     );
     await tester.pumpAndSettle();
 
@@ -285,7 +321,7 @@ void main() {
     await repo.inviteUser('c1', 'bob');
 
     await tester.pumpWidget(
-      _app(repo, home: const CompetitionDetailScreen(competition: competition)),
+      _app(repo, home: const CompetitionInviteScreen(competition: competition)),
     );
     await tester.pumpAndSettle();
 
@@ -327,7 +363,7 @@ void main() {
           competitionRepositoryProvider.overrideWithValue(repo),
         ],
         child: const MaterialApp(
-          home: CompetitionDetailScreen(competition: competition),
+          home: CompetitionInviteScreen(competition: competition),
         ),
       ),
     );
@@ -363,8 +399,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.byKey(inviteCompetitionKey), findsNothing);
     expect(find.byKey(shooterPickerKey), findsNothing);
     expect(find.byKey(shareInviteKey), findsNothing);
+
+    // The overflow menu offers archive but never delete (spec 0093).
+    await tester.tap(find.byKey(competitionMenuKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(toggleArchiveButtonKey), findsOneWidget);
     expect(find.byKey(deleteCompetitionButtonKey), findsNothing);
   });
 
@@ -387,6 +429,8 @@ void main() {
     await tester.tap(find.byKey(competitionCard('c1')));
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(competitionMenuKey));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(deleteCompetitionButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(deleteCompetitionConfirmKey));
@@ -412,13 +456,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(competitionMenuKey));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(deleteCompetitionButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Avbryt'));
     await tester.pumpAndSettle();
 
     // Still on the detail screen — nothing deleted.
-    expect(find.byKey(deleteCompetitionButtonKey), findsOneWidget);
+    expect(find.byKey(competitionMenuKey), findsOneWidget);
   });
 
   testWidgets('the detail shows the scoreboard, best first', (tester) async {
@@ -753,7 +799,8 @@ void main() {
 
     // A non-owner has no delete action, but can archive.
     expect(find.byKey(deleteCompetitionButtonKey), findsNothing);
-    await tester.ensureVisible(find.byKey(toggleArchiveButtonKey));
+    await tester.tap(find.byKey(competitionMenuKey));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(toggleArchiveButtonKey));
     await tester.pumpAndSettle();
 

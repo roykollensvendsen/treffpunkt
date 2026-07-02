@@ -45,6 +45,12 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Changed
+- **The competition page leads with the scoreboard**: the invite machinery no
+  longer fills the top of the page. One compact action row — **Skyt nå**,
+  **Chat** and (for the owner) **Inviter** — sits above **Resultater** and
+  **Deltakere**; the **Inviter** button opens its own page with both invite
+  ways (link and registered shooters), and **Arkiver**/**Slett** moved to the
+  **⋮** menu in the top bar (spec 0093).
 - **NorgesFelt: save the round with a button — never duplicates**: finishing
   a round now shows the scorecard without saving; tap **Lagre økt** to save
   it — exactly once, however much you walk back and forth (the round keeps
