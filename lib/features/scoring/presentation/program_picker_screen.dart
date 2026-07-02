@@ -332,7 +332,7 @@ class ProgramPickerScreen extends ConsumerWidget {
                         crossAxisCount: 2,
                         mainAxisSpacing: 4,
                         crossAxisSpacing: 8,
-                        childAspectRatio: 2.0,
+                        childAspectRatio: 2,
                         children: [
                           for (final category in ProgramCategory.values)
                             _CategoryTile(
