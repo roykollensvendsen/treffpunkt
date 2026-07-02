@@ -12,6 +12,7 @@ import 'package:treffpunkt/core/platform/browser_environment.dart';
 import 'package:treffpunkt/core/platform/share_plus_sharer.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
 import 'package:treffpunkt/features/competitions/data/supabase_competition_repository.dart';
+import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/data/supabase_felt_session_repository.dart';
@@ -47,6 +48,8 @@ Future<void> main() async {
   // can start populated without an async build (spec 0019).
   final savedWeapons = await weaponStore.load();
   final themeModeStore = SharedPreferencesThemeModeStore(prefs);
+  final feltGroupStore = SharedPreferencesFeltGroupStore(prefs);
+  final initialFeltGroup = await feltGroupStore.load();
   // Load the saved theme once here too, so the app starts on the right theme
   // without a first-frame flash of the wrong one (spec 0030).
   final initialThemeMode = await themeModeStore.load();
@@ -76,6 +79,8 @@ Future<void> main() async {
     imageSourceService: ImagePickerImageSourceService(),
     targetScanner: const ImageTargetScanner(),
     contributionService: SupabaseContributionService(Supabase.instance.client),
+    feltGroupStore: feltGroupStore,
+    initialFeltGroup: initialFeltGroup,
     themeModeStore: themeModeStore,
     initialThemeMode: initialThemeMode,
     contributionConsentStore: contributionConsentStore,
