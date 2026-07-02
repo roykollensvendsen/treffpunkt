@@ -65,7 +65,10 @@ void main() {
 
       // The picker is shown. Pick the air-pistol program from the catalogue,
       // through its category (spec 0084).
-      expect(find.byKey(mySessionsButtonKey), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('category-NSF Luft')),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const ValueKey<String>('category-NSF Luft')));
       await tester.pumpAndSettle();
       await tester.tap(
@@ -105,8 +108,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
-      expect(find.byKey(mySessionsButtonKey), findsOneWidget);
-
+      // Mine økter is a bottom-bar destination now (spec 0097).
       await tester.tap(find.byKey(mySessionsButtonKey));
       await tester.pumpAndSettle();
 

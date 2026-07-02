@@ -38,21 +38,24 @@ class TappableCardTile extends StatelessWidget {
   final String semanticsLabel;
 
   /// Invoked on tap — by touch and by a screen reader's activate action.
-  final VoidCallback onTap;
+  /// Null renders the tile disabled (muted, no button semantics) — used by
+  /// the «kommer senere» MIL category (spec 0097).
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Semantics(
-        button: true,
+        button: onTap != null,
         label: semanticsLabel,
         onTap: onTap,
         child: ExcludeSemantics(
           child: ListTile(
             key: tileKey,
+            enabled: onTap != null,
             title: Text(title),
             subtitle: Text(subtitle),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: onTap == null ? null : const Icon(Icons.chevron_right),
             onTap: onTap,
           ),
         ),

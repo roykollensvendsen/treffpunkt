@@ -14,6 +14,7 @@ import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
+import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/notifications/data/push_subscription_repository.dart';
 import 'package:treffpunkt/features/notifications/data/web_push.dart';
 import 'package:treffpunkt/features/notifications/domain/push_subscription.dart';
@@ -194,5 +195,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(auth.signOutCallCount, 1);
+  });
+
+  testWidgets('Brukerveiledning opens the manual (spec 0097)', (tester) async {
+    final container = _container();
+    addTearDown(container.dispose);
+    await _pump(tester, container);
+
+    await tester.scrollUntilVisible(find.byKey(helpButtonKey), 200);
+    await tester.ensureVisible(find.byKey(helpButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(helpButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(manualPageTileKey('competitions.md')), findsOneWidget);
   });
 }
