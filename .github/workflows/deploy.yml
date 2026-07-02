@@ -28,7 +28,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -52,9 +52,13 @@ jobs:
       # silently shipping a non-busted build.
       - name: Cache-bust web entry
         run: sh tool/cache_bust_web.sh build/web "${GITHUB_SHA::8}"
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: build/web
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
+        with:
+          # Ride out slow Pages queues (two 10-minute queue timeouts on
+          # 2026-07-02) instead of aborting at the 10-minute default.
+          timeout: 1800000
