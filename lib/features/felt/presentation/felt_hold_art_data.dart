@@ -256,8 +256,6 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           color: Color(0xFFFFFFFF),
         ),
       ),
-      // The two Stor striper: three squares each scoring as one figure, the
-      // middle square is the innertreff (spec 0086).
       FeltArtFigure(
         shape: FeltArtShape.polygon,
         points: <Offset>[
@@ -888,8 +886,6 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           color: Color(0xFFFFFFFF),
         ),
       ),
-      // The Stor stripe: a column of three squares scoring as one figure,
-      // the middle square is the innertreff (spec 0086).
       FeltArtFigure(
         shape: FeltArtShape.polygon,
         points: <Offset>[
@@ -924,8 +920,6 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
         fill: Color(0xFF00683F),
         scoreIndex: 2,
       ),
-      // The three Små striper: rows of three squares, each scoring as one
-      // figure with the middle square as the innertreff (spec 0086).
       FeltArtFigure(
         shape: FeltArtShape.polygon,
         points: <Offset>[
