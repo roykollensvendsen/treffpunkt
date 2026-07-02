@@ -13,8 +13,8 @@ of the sign-in screen. It works offline.
 
 ## Record your first shot
 1. The bar at the bottom takes you everywhere: **Hjem**, **Mine økter**,
-   **Statistikk**, **Konkurranser** and **Forum** — always visible, with
-   labels. On **Hjem**, pick a **category**: **NSF Luft** (the luftpistol
+   **Statistikk**, **Stevner** (konkurranser) and **Forum** — always
+   visible, with labels. On **Hjem**, pick a **category**: **NSF Luft** (the luftpistol
    programs), **NSF Fin/Grov** (the 25 m and 50 m fin- og grovpistol
    programs) or **Felt** (field shooting — opens the course directly); MIL
    is marked «kommer senere». Shot before? The **Skyt igjen** card at the

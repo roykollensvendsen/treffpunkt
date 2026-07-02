@@ -53,8 +53,8 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 - **Bottom navigation and a cleaner start page**: a bar at the bottom now
-  takes you to **Hjem**, **Mine økter**, **Statistikk**, **Konkurranser**
-  and **Forum** — always visible, with labels. Hjem is all about shooting:
+  takes you to **Hjem**, **Mine økter**, **Statistikk**, **Stevner**
+  (konkurransene) and **Forum** — always visible, with labels. Hjem is all about shooting:
   a highlighted **Skyt igjen** card restarts your latest exercise in one
   tap, in-progress rounds show as **Fortsett økt** / **Fortsett felt-økt**
   cards, and the categories sit in a compact grid — **Felt** opens the

@@ -33,7 +33,7 @@ void main() {
       'Hjem',
       'Mine økter',
       'Statistikk',
-      'Konkurranser',
+      'Stevner',
       'Forum',
     ]) {
       expect(find.text(label), findsOneWidget);

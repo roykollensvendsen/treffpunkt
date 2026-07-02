@@ -332,7 +332,7 @@ class ProgramPickerScreen extends ConsumerWidget {
                         crossAxisCount: 2,
                         mainAxisSpacing: 4,
                         crossAxisSpacing: 8,
-                        childAspectRatio: 1.9,
+                        childAspectRatio: 1.6,
                         children: [
                           for (final category in ProgramCategory.values)
                             _CategoryTile(
@@ -368,6 +368,16 @@ String _resumeSubtitle(SessionRecording recording) {
   final placed = recording.current?.placedCount ?? 0;
   return '${recording.session.program.name} · $placed skudd plassert';
 }
+
+/// The compact subtitle on the grid tile (spec 0097): short enough for a
+/// half-width tile on a narrow phone; the full description stays in the
+/// tile's semantics label.
+String _categoryTileSubtitle(ProgramCategory category) => switch (category) {
+  ProgramCategory.nsfLuft => 'Luftpistol – 10 m',
+  ProgramCategory.nsfFinGrov => '25 m og 50 m',
+  ProgramCategory.mil => 'Kommer senere',
+  ProgramCategory.felt => 'NorgesFelt-løypa',
+};
 
 String _categorySubtitle(ProgramCategory category) {
   final count = ProgramCatalogue.inCategory(category).length;
@@ -432,7 +442,7 @@ class _CategoryTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Expanded(
                     child: Text(
-                      _categorySubtitle(category),
+                      _categoryTileSubtitle(category),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(color: muted),

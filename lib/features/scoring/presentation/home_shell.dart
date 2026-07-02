@@ -66,39 +66,50 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         3 => const CompetitionsScreen(),
         _ => const ForumScreen(),
       },
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _select,
-        destinations: const [
-          NavigationDestination(
-            key: homeTabKey,
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Hjem',
+      // A slightly smaller label style so «Konkurranser» fits on one line
+      // on narrow phones (spec 0097 fix).
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          labelTextStyle: WidgetStatePropertyAll<TextStyle?>(
+            Theme.of(context).textTheme.labelSmall,
           ),
-          NavigationDestination(
-            key: mySessionsButtonKey,
-            icon: Icon(Icons.history),
-            label: 'Mine økter',
-          ),
-          NavigationDestination(
-            key: statisticsButtonKey,
-            icon: Icon(Icons.show_chart),
-            label: 'Statistikk',
-          ),
-          NavigationDestination(
-            key: competitionsButtonKey,
-            icon: Icon(Icons.emoji_events_outlined),
-            selectedIcon: Icon(Icons.emoji_events),
-            label: 'Konkurranser',
-          ),
-          NavigationDestination(
-            key: forumButtonKey,
-            icon: Icon(Icons.forum_outlined),
-            selectedIcon: Icon(Icons.forum),
-            label: 'Forum',
-          ),
-        ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: _select,
+          destinations: const [
+            NavigationDestination(
+              key: homeTabKey,
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Hjem',
+            ),
+            NavigationDestination(
+              key: mySessionsButtonKey,
+              icon: Icon(Icons.history),
+              label: 'Mine økter',
+            ),
+            NavigationDestination(
+              key: statisticsButtonKey,
+              icon: Icon(Icons.show_chart),
+              label: 'Statistikk',
+            ),
+            NavigationDestination(
+              key: competitionsButtonKey,
+              icon: Icon(Icons.emoji_events_outlined),
+              selectedIcon: Icon(Icons.emoji_events),
+              // «Stevner»: short enough to never wrap on narrow phones
+              // (spec 0097 fix); the screen itself stays «Konkurranser».
+              label: 'Stevner',
+            ),
+            NavigationDestination(
+              key: forumButtonKey,
+              icon: Icon(Icons.forum_outlined),
+              selectedIcon: Icon(Icons.forum),
+              label: 'Forum',
+            ),
+          ],
+        ),
       ),
     );
   }

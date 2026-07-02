@@ -138,7 +138,7 @@ void main() {
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('kommer senere'), findsOneWidget);
+    expect(find.textContaining('ommer senere'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey<String>('category-MIL')));
     await tester.pumpAndSettle();
 
