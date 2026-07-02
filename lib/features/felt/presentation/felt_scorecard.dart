@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/personal_best_banner.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
 
 /// Key for the scorecard body (specs 0080/0082), for tests.
 const Key feltScorecardKey = ValueKey<String>('feltScorecard');
@@ -19,6 +22,7 @@ class FeltScorecard extends StatelessWidget {
   const FeltScorecard({
     required this.session,
     this.personalBest = false,
+    this.holds,
     super.key,
   });
 
@@ -29,6 +33,11 @@ class FeltScorecard extends StatelessWidget {
   /// celebrated with the «Ny pers!» banner. Only the live finished-round
   /// screen sets it; the historical detail view never celebrates again.
   final bool personalBest;
+
+  /// The round's placed shots per hold (the snapshot's `holds`), or null to
+  /// omit the hold pictures. When given, every hold shows its picture with
+  /// the shots marked where they landed (spec 0105).
+  final List<List<FeltPlacedShot>>? holds;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +54,7 @@ class FeltScorecard extends StatelessWidget {
                 padding: EdgeInsets.only(bottom: 8),
                 child: PersonalBestBanner(),
               ),
-            for (var i = 0; i < session.holds.length; i++)
+            for (var i = 0; i < session.holds.length; i++) ...[
               ListTile(
                 dense: true,
                 title: Text('Hold ${i + 1}'),
@@ -60,6 +69,18 @@ class FeltScorecard extends StatelessWidget {
                   style: theme.textTheme.titleMedium,
                 ),
               ),
+              // The hold picture with the shots where they landed (0105).
+              if (holds != null &&
+                  i < holds!.length &&
+                  i < norgesfelt2026Art.length)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: FeltHoldShotsView(
+                    art: norgesfelt2026Art[i],
+                    shots: holds![i],
+                  ),
+                ),
+            ],
             const Divider(),
             Padding(
               padding: const EdgeInsets.only(top: 4),

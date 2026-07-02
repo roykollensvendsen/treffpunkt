@@ -70,7 +70,9 @@ programs show inner tens. You get a running total, and the scorecard at the
 end shows the total in the same coloured result box as the ring programs. The round
 is **saved as you go**, so you can leave and pick it up later from **Fortsett
 felt-økt** on the course page, exactly where you left off. When you tap
-**Fullfør** you get the scorecard — check it, and tap **Lagre økt** to save
+**Fullfør** you get the scorecard — every hold's picture with your shots
+marked where they landed (green = innertreff, amber = treff, red = bom) —
+check it, and tap **Lagre økt** to save
 the round: it then shows up in **Mine økter** together with your ring
 sessions, and — when you're signed in — it syncs to your account so it
 follows you across devices. Until you save, the round stays resumable, and

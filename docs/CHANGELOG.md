@@ -65,6 +65,14 @@ All notable changes to this project are documented here. The format is based on
   (spec 0103, forum request).
 
 ### Added
+- **Felt rounds replay on the targets**: open a saved NorgesFelt round
+  (the end-of-round scorecard or "Mine økter") and every hold now shows
+  its picture with the shots marked where they landed — green for inner
+  hits, amber for hits, red for misses, exactly as while recording. The
+  positions were already stored; synced rounds show them too (spec 0105,
+  forum idea).
+
+### Added
 - **Standard sted**: set the range you usually shoot at under
   **Innstillinger → Skyting**, and the setup step before every session
   (felt too) starts with the place pre-filled — still editable, and **Bruk
