@@ -148,6 +148,29 @@ void main() {
     );
   });
 
+  test('a hit on a stripe divider line counts as a hit, not inner (0087)', () {
+    FeltHoldArt art(int n) =>
+        norgesfelt2026Art.firstWhere((a) => a.number == n);
+
+    // Hold 2's top stripe: squares at x 3–39 / 40–75 / 76–111, y 3–38. The
+    // 1-px white dividers (x ≈ 39.5 and 75.5) are part of the figure.
+    for (final x in <double>[39.5, 75.5]) {
+      final shot = feltHitTest(art(2), Offset(x, 20));
+      expect(shot.figureIndex, 4, reason: 'divider at x=$x');
+      expect(shot.inner, isFalse, reason: 'divider at x=$x');
+    }
+
+    // Hold 8's Stor stripe is a column (y 3–53 / 55–104 / 106–155): the
+    // horizontal divider at y ≈ 54 hits the stripe.
+    final vertical = feltHitTest(art(8), const Offset(128, 54));
+    expect(vertical.figureIndex, 2);
+    expect(vertical.inner, isFalse);
+
+    // Just outside the stripe outline is still a miss.
+    expect(feltHitTest(art(2), const Offset(2, 20)).isHit, isFalse);
+    expect(feltHitTest(art(2), const Offset(112, 20)).isHit, isFalse);
+  });
+
   test('hold 2 and hold 8 stripes group with a middle inner square (0086)', () {
     FeltHoldArt art(int n) =>
         norgesfelt2026Art.firstWhere((a) => a.number == n);

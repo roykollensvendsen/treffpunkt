@@ -26,5 +26,22 @@ FeltShot feltHitTest(FeltHoldArt art, Offset p) {
       return FeltShot(figureIndex: figure.scoreIndex ?? i, inner: inner);
     }
   }
+
+  // A shot on the white divider between a grouped figure's squares (spec
+  // 0087): the dividers lie inside the group's bounding box, which is the
+  // stripe's true outline, so a boxed point that no shape claimed is a hit
+  // on the stripe — never an innertreff (only the middle square is).
+  final groupBounds = <int, Rect>{};
+  for (var i = 0; i < art.figures.length; i++) {
+    final figure = art.figures[i];
+    final anchor = figure.scoreIndex;
+    if (anchor == null) continue;
+    final bounds = feltArtFigurePath(figure).getBounds();
+    final grown = groupBounds[anchor];
+    groupBounds[anchor] = grown == null ? bounds : grown.expandToInclude(bounds);
+  }
+  for (final group in groupBounds.entries) {
+    if (group.value.contains(p)) return FeltShot(figureIndex: group.key);
+  }
   return const FeltShot();
 }
