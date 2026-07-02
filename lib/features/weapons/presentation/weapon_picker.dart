@@ -21,22 +21,36 @@ const Key saveWeaponKey = ValueKey<String>('saveWeapon');
 
 /// Lets the shooter pick the weapon for a session.
 ///
-/// Lists the shooter's personal weapons permitted for [program] (see
-/// `Weapon.isPermittedFor`), highlights the chosen one, and offers an "add"
-/// control that creates a new weapon from a permitted catalogue class. The
-/// selection is written to `selectedWeaponProvider` and reported via
-/// [onSelected].
+/// Lists the shooter's personal weapons of the permitted classes, highlights
+/// the chosen one, and offers an "add" control that creates a new weapon from
+/// a permitted catalogue class. The selection is written to
+/// `selectedWeaponProvider` and reported via [onSelected].
 class WeaponPicker extends ConsumerWidget {
-  /// Creates a picker for [program].
-  const WeaponPicker({required this.program, this.onSelected, super.key});
+  /// Creates a picker for [program]'s permitted classes.
+  WeaponPicker({required ProgramDefinition program, this.onSelected, super.key})
+    : discipline = program.discipline,
+      classLabels = program.weaponClasses;
 
-  /// The program whose permitted weapons are offered.
-  final ProgramDefinition program;
+  /// Creates a picker for the given [discipline] and [classLabels] directly
+  /// (spec 0092) — an empty [classLabels] permits every class of the
+  /// discipline. Used by flows without a `ProgramDefinition` (felt).
+  const WeaponPicker.forClasses({
+    required this.discipline,
+    this.classLabels = const <String>[],
+    this.onSelected,
+    super.key,
+  });
+
+  /// The discipline whose weapons are offered.
+  final Discipline discipline;
+
+  /// The permitted class labels; empty means every class of [discipline].
+  final List<String> classLabels;
 
   /// Called with the weapon when the shooter selects one.
   final ValueChanged<Weapon>? onSelected;
 
-  /// The catalogue classes permitted for [program], by discipline and label.
+  /// The permitted catalogue classes, by discipline and label.
   ///
   /// Filters by **both** discipline and label: a label such as `'Air 4.5 mm'`
   /// could be shared across disciplines (it once was, by the now-removed
@@ -45,11 +59,15 @@ class WeaponPicker extends ConsumerWidget {
   List<WeaponClass> get _permittedClasses => WeaponCatalogue.all
       .where(
         (weaponClass) =>
-            weaponClass.discipline == program.discipline &&
-            (program.weaponClasses.isEmpty ||
-                program.weaponClasses.contains(weaponClass.label)),
+            weaponClass.discipline == discipline &&
+            (classLabels.isEmpty || classLabels.contains(weaponClass.label)),
       )
       .toList();
+
+  /// Whether [weapon] may be offered: its class is one of the permitted ones.
+  bool _isPermitted(Weapon weapon) =>
+      weapon.discipline == discipline &&
+      (classLabels.isEmpty || classLabels.contains(weapon.classLabel));
 
   void _select(WidgetRef ref, Weapon weapon) {
     ref.read(selectedWeaponProvider.notifier).select(weapon);
@@ -71,10 +89,7 @@ class WeaponPicker extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(selectedWeaponProvider);
-    final permitted = ref
-        .watch(weaponsProvider)
-        .where((weapon) => weapon.isPermittedFor(program))
-        .toList();
+    final permitted = ref.watch(weaponsProvider).where(_isPermitted).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

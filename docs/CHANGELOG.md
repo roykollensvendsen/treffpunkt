@@ -26,6 +26,12 @@ All notable changes to this project are documented here. The format is based on
   applied to the hosted project.
 
 ### Added
+- **NorgesFelt rounds get time, place and weapon**: "Skyt løypa" now starts
+  with the same setup step as the other programs — date and time, place
+  (typed or from **Bruk min posisjon**) and your weapon — before the group
+  picker. The details follow the round through save/resume and sync, show on
+  the round's card and scorecard in "Mine økter", and the chosen date is
+  what orders the round in lists and statistics (spec 0092).
 - **Statistikk — see if you are improving**: "Mine økter" has a new chart
   button that opens per-exercise progress curves. Pick an øvelse and see your
   **poengsum** and **innertreff** per completed session as two coloured

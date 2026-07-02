@@ -297,10 +297,21 @@ class _FeltSessionCard extends ConsumerWidget {
   /// Whether the round is on the account, so deleting must clear it there too.
   final bool synced;
 
+  /// The "date · group[ · place]" caption (spec 0092: the place rides along).
+  String get _metaLine {
+    final place = record.session.placeLabel;
+    return [
+      _feltDate(record.capturedAt),
+      record.tally.group.label,
+      if (place != null && place.isNotEmpty) place,
+    ].join(' · ');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final tally = record.tally;
+    final weapon = record.session.weaponName;
     return Card(
       child: Row(
         children: [
@@ -310,9 +321,9 @@ class _FeltSessionCard extends ConsumerWidget {
             child: Semantics(
               button: true,
               label:
-                  'NorgesFelt-løype 2026. '
-                  '${_feltDate(record.capturedAt)} · ${tally.group.label}. '
-                  '${tally.points} poeng, ${tally.inner} innertreff',
+                  'NorgesFelt-løype 2026. $_metaLine. '
+                  '${tally.points} poeng, ${tally.inner} innertreff'
+                  '${weapon == null ? '' : '. $weapon'}',
               onTap: () => unawaited(_open(context)),
               child: ExcludeSemantics(
                 child: ListTile(
@@ -323,8 +334,7 @@ class _FeltSessionCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${_feltDate(record.capturedAt)} · '
-                        '${tally.group.label}',
+                        _metaLine,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -339,6 +349,14 @@ class _FeltSessionCard extends ConsumerWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      // The weapon, like the ring cards (spec 0092).
+                      if (weapon != null)
+                        Text(
+                          weapon,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                     ],
                   ),
                   onTap: () => unawaited(_open(context)),

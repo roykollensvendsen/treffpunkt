@@ -162,6 +162,55 @@ void main() {
     expect(find.byKey(feltSaveRoundKey), findsNothing);
   });
 
+  testWidgets("the felt card shows the round's place and weapon (0092)", (
+    tester,
+  ) async {
+    bigView(tester);
+    final history = InMemoryFeltHistoryStore();
+    final round = FeltSessionRecord(
+      id: 'felt-2',
+      capturedAt: DateTime.utc(2026, 7, 2, 18),
+      session: FeltSessionSnapshot(
+        group: FeltShooterGroup.one,
+        currentHold: 0,
+        placeLabel: 'Kongsberg',
+        weaponName: 'Min revolver',
+        holds: <List<FeltPlacedShot>>[
+          const <FeltPlacedShot>[
+            FeltPlacedShot(dx: 1, dy: 1, figureIndex: 0),
+          ],
+          for (var i = 1; i < 8; i++) const <FeltPlacedShot>[],
+        ],
+      ),
+    );
+    await history.save(<FeltSessionRecord>[round]);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          feltHistoryStoreProvider.overrideWithValue(history),
+          sessionRepositoryProvider.overrideWithValue(
+            InMemorySessionRepository(),
+          ),
+          pendingUploadsStoreProvider.overrideWithValue(
+            InMemoryPendingUploadsStore(),
+          ),
+        ],
+        child: const MaterialApp(home: MySessionsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Kongsberg'), findsOneWidget);
+    expect(find.text('Min revolver'), findsOneWidget);
+
+    // The detail view captions the round with them too.
+    await tester.tap(find.byKey(feltSessionCard('felt-2')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Kongsberg'), findsOneWidget);
+    expect(find.textContaining('Min revolver'), findsOneWidget);
+  });
+
   Future<void> tapDeleteAndConfirm(WidgetTester tester, String id) async {
     await tester.tap(find.byKey(deleteSessionMenuKey(id)));
     await tester.pumpAndSettle();

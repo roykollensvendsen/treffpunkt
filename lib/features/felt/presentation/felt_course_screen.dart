@@ -13,6 +13,7 @@ import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
 
 /// Key for the "shoot the course" button on the preview (spec 0080), for tests.
 const Key feltShootButtonKey = ValueKey<String>('feltShoot');
@@ -129,8 +130,10 @@ class FeltCourseScreen extends ConsumerWidget {
   }
 
   Future<void> _shoot(BuildContext context, WidgetRef ref) async {
+    // The setup step first (spec 0092): date/time, place and weapon —
+    // the same form the ring programs use.
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const FeltRecordScreen()),
+      MaterialPageRoute<void>(builder: (_) => FeltSetupScreen()),
     );
     ref.invalidate(feltSavedSessionProvider);
   }

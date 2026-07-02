@@ -40,7 +40,10 @@ const Key openLocationSettingsKey = ValueKey<String>('openLocationSettings');
 /// opens the shooting screen with it attached. Manual entry is a full
 /// alternative — the shooter can proceed with no location, a typed place, or a
 /// GPS fix.
-class SessionSetupScreen extends ConsumerStatefulWidget {
+///
+/// The form itself is the shared [SessionSetupForm] (spec 0092): this screen
+/// is the ring wrapper, the felt flow wraps the same form.
+class SessionSetupScreen extends StatelessWidget {
   /// Creates the setup screen for [program], seeding the date/time from [now]
   /// (defaults to the wall clock; injected in tests).
   SessionSetupScreen({
@@ -60,10 +63,62 @@ class SessionSetupScreen extends ConsumerStatefulWidget {
   final DateTime now;
 
   @override
-  ConsumerState<SessionSetupScreen> createState() => _SessionSetupScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(program.name)),
+      body: SessionSetupForm(
+        now: now,
+        discipline: program.discipline,
+        classLabels: program.weaponClasses,
+        onConfirm: (metadata, weapon) => unawaited(
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => SeriesScreen(
+                program: program,
+                metadata: metadata,
+                weapon: weapon,
+                competitionId: competitionId,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _SessionSetupScreenState extends ConsumerState<SessionSetupScreen> {
+/// The one session-setup form (specs 0008/0092): date and time, place (typed
+/// or from device location) and the weapon, ending in a confirm button that
+/// reports the built [SessionMetadata] and chosen [Weapon] to [onConfirm].
+/// The ring and felt flows both render exactly this form.
+class SessionSetupForm extends ConsumerStatefulWidget {
+  /// Creates the form, seeding the editable date/time from [now].
+  const SessionSetupForm({
+    required this.now,
+    required this.discipline,
+    required this.onConfirm,
+    this.classLabels = const <String>[],
+    super.key,
+  });
+
+  /// The moment used to seed the editable date and time.
+  final DateTime now;
+
+  /// The discipline whose weapons are offered.
+  final Discipline discipline;
+
+  /// The permitted weapon-class labels; empty offers every class of
+  /// [discipline].
+  final List<String> classLabels;
+
+  /// Called on confirm with the metadata and the chosen weapon (or null).
+  final void Function(SessionMetadata metadata, Weapon? weapon) onConfirm;
+
+  @override
+  ConsumerState<SessionSetupForm> createState() => _SessionSetupFormState();
+}
+
+class _SessionSetupFormState extends ConsumerState<SessionSetupForm> {
   late DateTime _capturedAt = widget.now;
   final TextEditingController _placeController = TextEditingController();
   double? _latitude;
@@ -168,90 +223,76 @@ class _SessionSetupScreenState extends ConsumerState<SessionSetupScreen> {
   }
 
   void _confirm() {
-    final metadata = SessionMetadata(
-      capturedAt: _capturedAt,
-      place: _buildPlace(),
-    );
-    unawaited(
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => SeriesScreen(
-            program: widget.program,
-            metadata: metadata,
-            weapon: _weapon,
-            competitionId: widget.competitionId,
-          ),
-        ),
-      ),
+    widget.onConfirm(
+      SessionMetadata(capturedAt: _capturedAt, place: _buildPlace()),
+      _weapon,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.program.name)),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 700),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Når og hvor',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+    return SafeArea(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 700),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Når og hvor',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 16),
-                  _DateTimeField(
-                    value: _formattedDateTime,
-                    onTap: _editDateTime,
+                ),
+                const SizedBox(height: 16),
+                _DateTimeField(
+                  value: _formattedDateTime,
+                  onTap: _editDateTime,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  key: placeFieldKey,
+                  controller: _placeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Sted',
+                    hintText: 'Skytebane, bane eller lag',
+                    border: OutlineInputBorder(),
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    key: placeFieldKey,
-                    controller: _placeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Sted',
-                      hintText: 'Skytebane, bane eller lag',
-                      border: OutlineInputBorder(),
-                    ),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: useMyLocationKey,
+                    onPressed: _locating ? null : _useMyLocation,
+                    icon: const Icon(Icons.my_location),
+                    label: const Text('Bruk min posisjon'),
                   ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      key: useMyLocationKey,
-                      onPressed: _locating ? null : _useMyLocation,
-                      icon: const Icon(Icons.my_location),
-                      label: const Text('Bruk min posisjon'),
-                    ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Våpen',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Våpen',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  WeaponPicker(
-                    program: widget.program,
-                    onSelected: (weapon) => setState(() => _weapon = weapon),
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton.icon(
-                    key: sessionConfirmKey,
-                    onPressed: _confirm,
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text('Start skyting'),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                WeaponPicker.forClasses(
+                  discipline: widget.discipline,
+                  classLabels: widget.classLabels,
+                  onSelected: (weapon) => setState(() => _weapon = weapon),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  key: sessionConfirmKey,
+                  onPressed: _confirm,
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Start skyting'),
+                ),
+              ],
             ),
           ),
         ),
