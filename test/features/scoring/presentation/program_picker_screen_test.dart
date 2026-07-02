@@ -2,11 +2,13 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Widget test for the program picker.
+// Widget test for the program picker: the four-category front page and the
+// per-category program pages (spec 0084).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
 import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
@@ -15,6 +17,7 @@ import 'package:treffpunkt/features/scoring/domain/session.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/program_category_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
@@ -29,20 +32,93 @@ void main() {
     );
   }
 
-  testWidgets('lists programs and opens the setup screen on tap', (
+  testWidgets('shows the four categories and no individual programs', (
     tester,
   ) async {
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
-    expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
+    // The four category cards, top to bottom in the sketched order (spec
+    // 0084 req 1).
+    final cards = <Finder>[
+      find.byKey(const ValueKey<String>('category-NSF Luft')),
+      find.byKey(const ValueKey<String>('category-NSF Fin/Grov')),
+      find.byKey(const ValueKey<String>('category-MIL')),
+      find.byKey(const ValueKey<String>('category-Felt')),
+    ];
+    for (final card in cards) {
+      expect(card, findsOneWidget);
+    }
+    final tops = <double>[for (final card in cards) tester.getTopLeft(card).dy];
+    for (var i = 0; i + 1 < tops.length; i++) {
+      expect(
+        tops[i],
+        lessThan(tops[i + 1]),
+        reason: 'category card $i must sit above card ${i + 1}',
+      );
+    }
+
+    // The front page carries no individual program tiles any more.
+    expect(
+      find.byKey(const ValueKey<String>('program-10 m Luftpistol 60 skudd')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('felt-norgesfelt-2026')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('NSF Luft lists the air programs and opens setup on tap', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('category-NSF Luft')));
+    await tester.pumpAndSettle();
+
+    // The category page lists the air programs — and only them.
+    expect(
+      find.byKey(const ValueKey<String>('program-10 m Luftpistol 60 skudd')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('program-Sprintluft')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('program-25 m Finpistol')),
+      findsNothing,
+    );
     // Air rifle is the spec-0001 reference / fixture but is not offered.
     expect(find.text('10 m Air Rifle'), findsNothing);
 
-    // Tap a pistol program further down the list, scrolled into view, to
-    // navigate — also proving the list scrolls past the first screenful.
+    await tester.tap(
+      find.byKey(const ValueKey<String>('program-10 m Luftpistol 60 skudd')),
+    );
+    await tester.pumpAndSettle();
+
+    // Navigated to the session setup step (date/time + place) for the program.
+    expect(find.byKey(sessionConfirmKey), findsOneWidget);
+    expect(find.text('10 m Luftpistol 60 skudd'), findsWidgets);
+  });
+
+  testWidgets('NSF Fin/Grov lists the cartridge programs, scrolled into view', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('category-NSF Fin/Grov')),
+    );
+    await tester.pumpAndSettle();
+
+    // Tap a program further down the list, scrolled into view, to navigate —
+    // also proving the list scrolls past the first screenful.
     final program = find.byKey(
-      const ValueKey<String>('program-25 m Finpistol'),
+      const ValueKey<String>('program-50 m Fripistol'),
     );
     await tester.scrollUntilVisible(program, 80);
     await tester.ensureVisible(program);
@@ -50,9 +126,50 @@ void main() {
     await tester.tap(program);
     await tester.pumpAndSettle();
 
-    // Navigated to the session setup step (date/time + place) for the program.
     expect(find.byKey(sessionConfirmKey), findsOneWidget);
-    expect(find.text('25 m Finpistol'), findsWidgets);
+    expect(find.text('50 m Fripistol'), findsWidgets);
+  });
+
+  testWidgets('MIL shows an empty state until programs are seeded', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('category-MIL')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(emptyCategoryKey), findsOneWidget);
+    expect(
+      find.text('Ingen programmer i denne kategorien ennå.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Felt lists the NorgesFelt course and opens the preview', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('category-Felt')));
+    await tester.pumpAndSettle();
+
+    final course = find.byKey(const ValueKey<String>('felt-norgesfelt-2026'));
+    expect(course, findsOneWidget);
+    // The course card is a screen-reader button too, like every picker tile.
+    expect(
+      tester.getSemantics(
+        find.bySemanticsLabel(RegExp('^Velg løype: NorgesFelt-løype 2026')),
+      ),
+      isSemantics(isButton: true, hasTapAction: true),
+    );
+    await tester.tap(course);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FeltCourseScreen), findsOneWidget);
+    handle.dispose();
   });
 
   testWidgets('opens the forum from the forum action (spec 0054)', (
@@ -80,6 +197,48 @@ void main() {
     expect(find.byKey(manualPageTileKey('competitions.md')), findsOneWidget);
   });
 
+  testWidgets('labels each category card as a button for screen readers', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    final card = find.bySemanticsLabel(RegExp('^Velg kategori: NSF Luft'));
+    expect(card, findsOneWidget);
+
+    // A labelled "button" is useless to a screen reader if it carries no tap
+    // action: it can be announced but not activated. Assert both the role and
+    // the action are present on the very same node.
+    expect(
+      tester.getSemantics(card),
+      isSemantics(isButton: true, hasTapAction: true),
+    );
+
+    handle.dispose();
+  });
+
+  testWidgets('activating a category card via semantics opens its page', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    // A screen-reader double-tap maps to a semantic tap; it must navigate.
+    tester.semantics.tap(
+      find.semantics.byLabel(RegExp('^Velg kategori: NSF Luft')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('program-10 m Luftpistol 60 skudd')),
+      findsOneWidget,
+    );
+
+    handle.dispose();
+  });
+
   testWidgets('labels each program tile as a button for screen readers', (
     tester,
   ) async {
@@ -87,14 +246,15 @@ void main() {
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const ValueKey<String>('category-NSF Luft')));
+    await tester.pumpAndSettle();
+
     final tile = find.bySemanticsLabel(
       RegExp('^Velg program: 10 m Luftpistol 60 skudd'),
     );
     expect(tile, findsOneWidget);
 
-    // A labelled "button" is useless to a screen reader if it carries no tap
-    // action: it can be announced but not activated. Assert both the role and
-    // the action are present on the very same node.
+    // Role and tap action on the very same node, as for the category cards.
     expect(
       tester.getSemantics(tile),
       isSemantics(isButton: true, hasTapAction: true),
@@ -110,7 +270,9 @@ void main() {
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
-    // A screen-reader double-tap maps to a semantic tap; it must navigate.
+    await tester.tap(find.byKey(const ValueKey<String>('category-NSF Luft')));
+    await tester.pumpAndSettle();
+
     // `semantics.tap` throws if the node carries no tap action, so this also
     // guards against the "announced but inert" defect.
     tester.semantics.tap(

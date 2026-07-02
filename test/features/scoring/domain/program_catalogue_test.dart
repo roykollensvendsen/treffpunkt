@@ -5,6 +5,7 @@
 // Unit tests for the program-definition model and seeded catalogue.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
+import 'package:treffpunkt/features/scoring/domain/program_category.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 
@@ -209,6 +210,60 @@ void main() {
     }
     expect(ProgramCatalogue.naisFin25m.stages[0].geometry.caliberMm, 5.6);
     expect(ProgramCatalogue.naisGrov25m.stages[0].geometry.caliberMm, 9.65);
+  });
+
+  test('the categories partition the offered programs (spec 0084)', () {
+    // NSF Luft holds the five air programs; NSF Fin/Grov the nine cartridge
+    // programs (spec 0084 req 3).
+    expect(ProgramCatalogue.inCategory(ProgramCategory.nsfLuft), hasLength(5));
+    expect(
+      ProgramCatalogue.inCategory(ProgramCategory.nsfFinGrov),
+      hasLength(9),
+    );
+    expect(
+      ProgramCatalogue.inCategory(
+        ProgramCategory.nsfLuft,
+      ).every((p) => p.weaponClasses.single == 'Air 4.5 mm'),
+      isTrue,
+    );
+    expect(
+      ProgramCatalogue.inCategory(
+        ProgramCategory.nsfFinGrov,
+      ).any((p) => p.weaponClasses.contains('Air 4.5 mm')),
+      isFalse,
+    );
+
+    // MIL has no seeded programs yet, and Felt's content is the felt
+    // feature's courses, not ring programs.
+    expect(ProgramCatalogue.inCategory(ProgramCategory.mil), isEmpty);
+    expect(ProgramCatalogue.inCategory(ProgramCategory.felt), isEmpty);
+
+    // The categories cover the offered list exactly: every offered program
+    // sits in exactly one category, and no category offers anything else.
+    final categorized = <ProgramDefinition>[
+      for (final category in ProgramCategory.values)
+        ...ProgramCatalogue.inCategory(category),
+    ];
+    expect(categorized.toSet(), ProgramCatalogue.all.toSet());
+    expect(categorized, hasLength(ProgramCatalogue.all.length));
+
+    // And every categorized program resolves by name — the guard for seeding
+    // a future category (e.g. MIL): a program added to `inCategory` but not
+    // to `all` would show in the picker while its stored sessions could no
+    // longer load back through `byName`.
+    for (final program in categorized) {
+      expect(ProgramCatalogue.byName(program.name), same(program));
+    }
+  });
+
+  test('each category carries its Norwegian label (spec 0084)', () {
+    expect(
+      ProgramCategory.values.map((c) => c.label),
+      <String>['NSF Luft', 'NSF Fin/Grov', 'MIL', 'Felt'],
+    );
+    for (final category in ProgramCategory.values) {
+      expect(category.description, isNotEmpty);
+    }
   });
 
   test('byName resolves a known program and returns null otherwise', () {

@@ -7,19 +7,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
+import 'package:treffpunkt/core/presentation/tappable_card_tile.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
-import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
 import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
-import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
+import 'package:treffpunkt/features/scoring/domain/program_category.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/program_category_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
-import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
 /// Key for the "resume saved session" card, used by tests.
 const Key resumeSessionKey = ValueKey<String>('resumeSession');
@@ -30,8 +30,9 @@ const Key discardSessionKey = ValueKey<String>('discardSession');
 /// Key for the "My sessions" app-bar action, used by tests (spec 0026).
 const Key mySessionsButtonKey = ValueKey<String>('mySessionsButton');
 
-/// Lets the shooter choose which official program to shoot, then opens the
-/// session setup step (date, time and place) before shooting (spec 0008).
+/// The front page of the picker: the four program categories (spec 0084) —
+/// NSF Luft, NSF Fin/Grov, MIL and Felt. Tapping a category opens its
+/// [ProgramCategoryScreen], where the shooter picks the program (spec 0008).
 ///
 /// When a saved session is stored locally (spec 0009), a "Fortsett økt" card at
 /// the top reopens the shooting screen restored to the exact saved state — the
@@ -67,18 +68,18 @@ class ProgramPickerScreen extends ConsumerWidget {
     ref.invalidate(savedRecordingProvider);
   }
 
-  /// Opens [definition]'s setup step, then refreshes the resume card on return.
+  /// Opens [category]'s page, then refreshes the resume card on return.
   ///
-  /// The setup flow may save a new in-progress recording (the shooter places a
+  /// The flow below may save a new in-progress recording (the shooter places a
   /// shot and leaves), so re-read the store to surface it as a resume card.
-  Future<void> _startProgram(
+  Future<void> _openCategory(
     BuildContext context,
     WidgetRef ref,
-    ProgramDefinition definition,
+    ProgramCategory category,
   ) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => SessionSetupScreen(program: definition),
+        builder: (_) => ProgramCategoryScreen(category: category),
       ),
     );
     ref.invalidate(savedRecordingProvider);
@@ -194,59 +195,20 @@ class ProgramPickerScreen extends ConsumerWidget {
                                 unawaited(_resume(context, ref, saved)),
                           ),
                         ),
-                      for (final definition in ProgramCatalogue.all)
-                        Card(
-                          child: Semantics(
-                            button: true,
-                            label:
-                                'Velg program: ${definition.name}, '
-                                '${_subtitle(definition)}',
-                            // Carry the tap action on the SAME node as the
-                            // label so a screen reader can activate the tile;
-                            // `ExcludeSemantics` would otherwise drop the
-                            // ListTile's own tap action.
-                            onTap: () => unawaited(
-                              _startProgram(context, ref, definition),
-                            ),
-                            child: ExcludeSemantics(
-                              child: ListTile(
-                                key: ValueKey<String>(
-                                  'program-${definition.name}',
-                                ),
-                                title: Text(definition.name),
-                                subtitle: Text(_subtitle(definition)),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () => unawaited(
-                                  _startProgram(context, ref, definition),
-                                ),
-                              ),
-                            ),
+                      for (final category in ProgramCategory.values)
+                        TappableCardTile(
+                          tileKey: ValueKey<String>(
+                            'category-${category.label}',
                           ),
-                        ),
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(4, 16, 4, 4),
-                        child: Text(
-                          'Feltskyting',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Card(
-                        child: ListTile(
-                          key: const ValueKey<String>('felt-norgesfelt-2026'),
-                          title: const Text('NorgesFelt-løype 2026'),
-                          subtitle: const Text(
-                            'Forhåndsvis de 8 holdene og figurene',
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
+                          title: category.label,
+                          subtitle: _categorySubtitle(category),
+                          semanticsLabel:
+                              'Velg kategori: ${category.label}, '
+                              '${_categorySubtitle(category)}',
                           onTap: () => unawaited(
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const FeltCourseScreen(),
-                              ),
-                            ),
+                            _openCategory(context, ref, category),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -270,9 +232,9 @@ String _resumeSubtitle(SessionRecording recording) {
   return '${recording.session.program.name} · $placed skudd plassert';
 }
 
-String _subtitle(ProgramDefinition definition) {
-  final discipline = definition.discipline == Discipline.rifle
-      ? 'Rifle'
-      : 'Pistol';
-  return '$discipline · ${definition.totalShots} skudd';
+String _categorySubtitle(ProgramCategory category) {
+  final count = ProgramCatalogue.inCategory(category).length;
+  if (count == 0) return category.description;
+  final programs = count == 1 ? '1 program' : '$count programmer';
+  return '${category.description} · $programs';
 }

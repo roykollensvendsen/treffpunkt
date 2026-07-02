@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // System test: the sign-in gate walks signed-out -> signed-in -> signed-out.
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:treffpunkt/bootstrap.dart';
@@ -28,7 +29,11 @@ void main() {
     fake.emit(const SignedIn(AppUser(id: 't', email: 'a@b.no')));
     await tester.pumpAndSettle();
     expect(find.byKey(signInWithGoogleButtonKey), findsNothing);
-    expect(find.text('10 m Luftpistol 60 skudd'), findsWidgets);
+    // Signed in, the picker front page shows the categories (spec 0084).
+    expect(
+      find.byKey(const ValueKey<String>('category-NSF Luft')),
+      findsWidgets,
+    );
 
     fake.emit(const SignedOut());
     await tester.pumpAndSettle();

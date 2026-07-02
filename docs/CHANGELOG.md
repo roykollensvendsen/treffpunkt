@@ -26,6 +26,13 @@ All notable changes to this project are documented here. The format is based on
   applied to the hosted project.
 
 ### Changed
+- **The program picker is grouped into categories**: the "Velg program" front
+  page now shows four categories — **NSF Luft**, **NSF Fin/Grov**, **MIL** and
+  **Felt** — instead of one long list of every program. Tap a category to see
+  its programs: the luftpistol programs under NSF Luft, the 25 m / 50 m fin- og
+  grovpistol programs under NSF Fin/Grov, and the NorgesFelt course under Felt.
+  MIL is the home for the military programs, which are not seeded yet (spec
+  0084).
 - **Composed NorgesFelt holds**: each hold in the course preview is now drawn as
   **one picture matching the official target sheet** — the figures at their real
   relative size and position, white figures knocked out of coloured backing

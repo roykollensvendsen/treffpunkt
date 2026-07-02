@@ -28,8 +28,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Pick the air-pistol program from the catalogue, confirm the session setup
-    // (date/time + place), then score on its target.
+    // Pick the air-pistol program — through its category (spec 0084) — and
+    // confirm the session setup (date/time + place), then score on its target.
+    await tester.tap(find.byKey(const ValueKey<String>('category-NSF Luft')));
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey<String>('program-10 m Luftpistol 60 skudd')),
     );

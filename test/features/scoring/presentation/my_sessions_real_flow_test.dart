@@ -63,8 +63,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The picker is shown. Pick the air-pistol program from the catalogue.
+      // The picker is shown. Pick the air-pistol program from the catalogue,
+      // through its category (spec 0084).
       expect(find.byKey(mySessionsButtonKey), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey<String>('category-NSF Luft')));
+      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(ValueKey<String>('program-${program.name}')),
       );
@@ -96,7 +99,10 @@ void main() {
       // Back to the picker, then open "Mine økter" via the history button.
       await tester.pageBack();
       await tester.pumpAndSettle();
-      // SessionSetupScreen is still on the stack under the series screen.
+      // SessionSetupScreen is still on the stack under the series screen, and
+      // the category page (spec 0084) under that.
+      await tester.pageBack();
+      await tester.pumpAndSettle();
       await tester.pageBack();
       await tester.pumpAndSettle();
       expect(find.byKey(mySessionsButtonKey), findsOneWidget);
