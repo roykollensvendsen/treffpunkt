@@ -26,6 +26,13 @@ All notable changes to this project are documented here. The format is based on
   applied to the hosted project.
 
 ### Added
+- **Statistikk — see if you are improving**: "Mine økter" has a new chart
+  button that opens per-exercise progress curves. Pick an øvelse and see your
+  **poengsum** and **innertreff** per completed session as two coloured
+  curves in one chart with a legend — no time axis, the x-axis is your
+  sessions in order. Tap or drag to read a specific session's numbers; both
+  ring programs and the NorgesFelt course are included, local and synced
+  sessions alike (spec 0090).
 - **Delete a felt round from "Mine økter"**: a NorgesFelt round's card now has
   the same menu (⋮) → **Slett** → confirmation as the ring sessions; deleting
   removes the round from your account (when synced) and the device (spec
