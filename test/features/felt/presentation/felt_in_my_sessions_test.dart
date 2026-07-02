@@ -67,11 +67,61 @@ void main() {
     await tester.tap(find.text('Fullfør'));
     await tester.pumpAndSettle();
 
+    // Fullfør alone saves nothing — the save is the explicit button (0091).
+    expect(await history.load(), isEmpty);
+
+    await tester.tap(find.byKey(feltSaveRoundKey));
+    await tester.pumpAndSettle();
+
     final saved = await history.load();
     expect(saved.length, 1);
     // Treff + figur = 2; the inner hit is the tiebreaker, no point (0085).
     expect(saved.single.points, 2);
     expect(saved.single.tally.inner, 1);
+    expect(find.text('Økta er lagret'), findsOneWidget);
+  });
+
+  testWidgets('walking back and forth never duplicates the round (0091)', (
+    tester,
+  ) async {
+    bigView(tester);
+    final history = InMemoryFeltHistoryStore();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [feltHistoryStoreProvider.overrideWithValue(history)],
+        child: const MaterialApp(home: FeltRecordScreen()),
+      ),
+    );
+    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)));
+    await tester.pumpAndSettle();
+
+    final rect = tester.getRect(find.byKey(feltHoldRecorderKey));
+    await tester.tapAt(
+      rect.topLeft + Offset(38.6 / 151 * rect.width, 97.9 / 145 * rect.height),
+    );
+    await tester.pump();
+    for (var i = 0; i < 7; i++) {
+      await tester.tap(find.text('Neste'));
+      await tester.pumpAndSettle();
+    }
+
+    // The domain expert's exact walk: Fullfør → tilbake → Fullfør → save.
+    await tester.tap(find.text('Fullfør'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fullfør'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(feltSaveRoundKey));
+    await tester.pumpAndSettle();
+
+    // Exactly one saved round — and even a second save press (the screen is
+    // the test's root route, so it cannot pop away) upserts by the round's
+    // stable id instead of duplicating.
+    expect(await history.load(), hasLength(1));
+    await tester.tap(find.byKey(feltSaveRoundKey));
+    await tester.pumpAndSettle();
+    expect(await history.load(), hasLength(1));
   });
 
   testWidgets('a saved felt round shows in Mine økter and opens its card', (
@@ -108,6 +158,8 @@ void main() {
     await tester.tap(find.byKey(feltSessionCard('felt-1')));
     await tester.pumpAndSettle();
     expect(find.byKey(feltScorecardKey), findsOneWidget);
+    // The read-only detail view carries no save button (spec 0091 req 5).
+    expect(find.byKey(feltSaveRoundKey), findsNothing);
   });
 
   Future<void> tapDeleteAndConfirm(WidgetTester tester, String id) async {

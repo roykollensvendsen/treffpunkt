@@ -1,6 +1,7 @@
 # Spec 0082 — Feltskyting: finished rounds in "Mine økter"
 
-- **Status:** Accepted.
+- **Status:** Accepted. The save-on-finish behaviour is superseded by spec
+  0091: the round is saved with the scorecard's explicit «Lagre økt» button.
 - **Related:** 0080 (felt recording), 0081 (felt save/resume), 0026 ("Mine
   økter" list), 0025 (local completed-session store). Local-first; cloud sync is
   a later step.

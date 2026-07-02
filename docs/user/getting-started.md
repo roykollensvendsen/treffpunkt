@@ -51,10 +51,12 @@ are one figure, the dividing lines included).
 programs show inner tens. You get a running total, and the scorecard at the
 end shows the total in the same coloured result box as the ring programs. The round
 is **saved as you go**, so you can leave and pick it up later from **Fortsett
-felt-økt** on the course page, exactly where you left off. When you finish, the
-round is saved and shows up in **Mine økter** together with your ring sessions,
-and — when you're signed in — it syncs to your account so it follows you across
-devices. Like a ring session, a felt round can be **deleted** from Mine økter:
+felt-økt** on the course page, exactly where you left off. When you tap
+**Fullfør** you get the scorecard — check it, and tap **Lagre økt** to save
+the round: it then shows up in **Mine økter** together with your ring
+sessions, and — when you're signed in — it syncs to your account so it
+follows you across devices. Until you save, the round stays resumable, and
+going back and forth never saves it twice. Like a ring session, a felt round can be **deleted** from Mine økter:
 tap the card's menu (⋮) and choose **Slett** — it is removed from your account
 and the device.
 
