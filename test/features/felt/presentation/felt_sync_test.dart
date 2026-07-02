@@ -46,6 +46,16 @@ ProviderContainer _container({
 }
 
 void main() {
+  test('deleteById removes the account round (spec 0089)', () async {
+    final repository = InMemoryFeltSessionRepository();
+    await repository.upload(_record('a'));
+    await repository.upload(_record('b'));
+
+    await repository.deleteById('a');
+
+    expect((await repository.list()).map((r) => r.id), <String>['b']);
+  });
+
   test(
     'uploadAll uploads the local rounds when signed in (spec 0083)',
     () async {

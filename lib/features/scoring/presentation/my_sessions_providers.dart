@@ -63,10 +63,15 @@ class RingSessionItem extends MySessionItem {
 /// A finished felt round in the unified list (spec 0082).
 class FeltSessionItem extends MySessionItem {
   /// Wraps a finished felt [record].
-  const FeltSessionItem(this.record);
+  const FeltSessionItem(this.record, {this.synced = false});
 
   /// The finished felt round.
   final FeltSessionRecord record;
+
+  /// Whether the round is on the account (spec 0089): deleting a synced
+  /// round must remove it from the account too — the ring card's
+  /// `entry.synced` counterpart.
+  final bool synced;
 
   @override
   DateTime? get capturedAt => record.capturedAt;
@@ -93,15 +98,18 @@ List<FeltSessionRecord> mergeFeltRounds({
 }
 
 /// Interleaves the ring [entries] and finished felt [rounds] into one list,
-/// newest-first by date (undated last) — spec 0082. A pure function, so it is
+/// newest-first by date (undated last) — spec 0082. A round whose id is in
+/// [syncedFeltIds] is marked synced (spec 0089). A pure function, so it is
 /// unit-testable without a widget.
 List<MySessionItem> mergeSessionItems({
   required List<MySessionEntry> entries,
   required List<FeltSessionRecord> rounds,
+  Set<String> syncedFeltIds = const <String>{},
 }) {
   final items = <MySessionItem>[
     for (final entry in entries) RingSessionItem(entry),
-    for (final round in rounds) FeltSessionItem(round),
+    for (final round in rounds)
+      FeltSessionItem(round, synced: syncedFeltIds.contains(round.id)),
   ];
   return List<MySessionItem>.unmodifiable(
     items..sort((a, b) {

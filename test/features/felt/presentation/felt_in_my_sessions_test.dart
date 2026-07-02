@@ -110,6 +110,81 @@ void main() {
     expect(find.byKey(feltScorecardKey), findsOneWidget);
   });
 
+  Future<void> tapDeleteAndConfirm(WidgetTester tester, String id) async {
+    await tester.tap(find.byKey(deleteSessionMenuKey(id)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Slett')); // the menu item opens the dialog
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(deleteSessionConfirmKey));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('deleting a local felt round removes it (spec 0089)', (
+    tester,
+  ) async {
+    bigView(tester);
+    final history = InMemoryFeltHistoryStore();
+    await history.save(<FeltSessionRecord>[_record()]);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          feltHistoryStoreProvider.overrideWithValue(history),
+          sessionRepositoryProvider.overrideWithValue(
+            InMemorySessionRepository(),
+          ),
+          pendingUploadsStoreProvider.overrideWithValue(
+            InMemoryPendingUploadsStore(),
+          ),
+        ],
+        child: const MaterialApp(home: MySessionsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(feltSessionCard('felt-1')), findsOneWidget);
+
+    await tapDeleteAndConfirm(tester, 'felt-1');
+
+    // The card is gone and the round is removed from the device.
+    expect(find.byKey(feltSessionCard('felt-1')), findsNothing);
+    expect(await history.load(), isEmpty);
+  });
+
+  testWidgets('deleting a synced felt round also clears the account (0089)', (
+    tester,
+  ) async {
+    bigView(tester);
+    final history = InMemoryFeltHistoryStore();
+    await history.save(<FeltSessionRecord>[_record()]);
+    final repository = InMemoryFeltSessionRepository();
+    await repository.upload(_record());
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          feltHistoryStoreProvider.overrideWithValue(history),
+          feltSessionRepositoryProvider.overrideWithValue(repository),
+          sessionRepositoryProvider.overrideWithValue(
+            InMemorySessionRepository(),
+          ),
+          pendingUploadsStoreProvider.overrideWithValue(
+            InMemoryPendingUploadsStore(),
+          ),
+        ],
+        child: const MaterialApp(home: MySessionsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(feltSessionCard('felt-1')), findsOneWidget);
+
+    await tapDeleteAndConfirm(tester, 'felt-1');
+
+    // Removed from the account and the device; the card is gone.
+    expect(find.byKey(feltSessionCard('felt-1')), findsNothing);
+    expect(await repository.list(), isEmpty);
+    expect(await history.load(), isEmpty);
+  });
+
   testWidgets('a cloud-only felt round shows in Mine økter (spec 0083)', (
     tester,
   ) async {

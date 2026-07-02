@@ -137,7 +137,11 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
         ref.watch(feltSyncedSessionsProvider).value ??
         const <FeltSessionRecord>[];
     final feltRounds = mergeFeltRounds(local: feltLocal, synced: feltSynced);
-    final items = mergeSessionItems(entries: entries, rounds: feltRounds);
+    final items = mergeSessionItems(
+      entries: entries,
+      rounds: feltRounds,
+      syncedFeltIds: <String>{for (final round in feltSynced) round.id},
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -263,55 +267,133 @@ class _SessionsList extends StatelessWidget {
 /// a finished felt round card.
 Widget _itemRow(MySessionItem item) => switch (item) {
   RingSessionItem(:final entry) => _SessionCard(entry: entry),
-  FeltSessionItem(:final record) => _FeltSessionCard(record: record),
+  FeltSessionItem(:final record, :final synced) => _FeltSessionCard(
+    record: record,
+    synced: synced,
+  ),
 };
 
 /// A finished felt round in "Mine økter" (spec 0082): its date, group and total
-/// points; tapping opens the felt scorecard.
-class _FeltSessionCard extends StatelessWidget {
-  const _FeltSessionCard({required this.record});
+/// points; tapping opens the felt scorecard, and a trailing menu can delete the
+/// round (spec 0089) exactly like a ring session's card (spec 0033).
+class _FeltSessionCard extends ConsumerWidget {
+  const _FeltSessionCard({required this.record, required this.synced});
 
   final FeltSessionRecord record;
 
+  /// Whether the round is on the account, so deleting must clear it there too.
+  final bool synced;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final tally = record.tally;
     return Card(
-      child: ListTile(
-        key: feltSessionCard(record.id),
-        leading: const Icon(Icons.my_location),
-        title: const Text('NorgesFelt-løype 2026'),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${_feltDate(record.capturedAt)} · ${tally.group.label}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+      child: Row(
+        children: [
+          // The card body is one "open" button to a screen reader; the menu
+          // beside it is a separate control (outside ExcludeSemantics).
+          Expanded(
+            child: Semantics(
+              button: true,
+              label:
+                  'NorgesFelt-løype 2026. '
+                  '${_feltDate(record.capturedAt)} · ${tally.group.label}. '
+                  '${tally.points} poeng, ${tally.inner} innertreff',
+              onTap: () => unawaited(_open(context)),
+              child: ExcludeSemantics(
+                child: ListTile(
+                  key: feltSessionCard(record.id),
+                  leading: const Icon(Icons.my_location),
+                  title: const Text('NorgesFelt-løype 2026'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_feltDate(record.capturedAt)} · '
+                        '${tally.group.label}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      // Points, then the inner-hit tiebreak count as the same
+                      // ringed X the ring sessions use (specs 0085/0023).
+                      innerTenScoreText(
+                        context: context,
+                        lead: '${tally.points} poeng',
+                        innerTens: tally.inner,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  onTap: () => unawaited(_open(context)),
+                ),
               ),
-            ),
-            // Points, then the inner-hit tiebreak count as the same ringed X
-            // the ring sessions use for inner tens (specs 0085/0023).
-            innerTenScoreText(
-              context: context,
-              lead: '${tally.points} poeng',
-              innerTens: tally.inner,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        onTap: () => unawaited(
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => FeltSessionDetailScreen(record: record),
             ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: PopupMenuButton<_SessionCardAction>(
+              key: deleteSessionMenuKey(record.id),
+              tooltip: 'Flere valg',
+              onSelected: (_) => unawaited(_confirmAndDelete(context, ref)),
+              itemBuilder: (_) => const <PopupMenuEntry<_SessionCardAction>>[
+                PopupMenuItem<_SessionCardAction>(
+                  value: _SessionCardAction.delete,
+                  child: Text('Slett'),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _open(BuildContext context) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => FeltSessionDetailScreen(record: record),
+    ),
+  );
+
+  /// Confirms, then deletes the round from the account (when synced) and the
+  /// device, refreshing the list (spec 0089) — the ring card's flow (spec
+  /// 0033). A failed account delete leaves the card and shows a message.
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref) async {
+    // Captured before the await so no BuildContext is used across the gap.
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Slett økt?'),
+        content: const Text('Handlingen kan ikke angres.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Avbryt'),
+          ),
+          FilledButton(
+            key: deleteSessionConfirmKey,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Slett'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      if (synced) {
+        await ref.read(feltSessionRepositoryProvider).deleteById(record.id);
+      }
+      await deleteFeltRound(ref, record.id);
+      ref.invalidate(feltSyncedSessionsProvider);
+    } on Object {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke slette økta.')),
+      );
+    }
   }
 }
 

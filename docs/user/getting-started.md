@@ -40,19 +40,23 @@ position, in the hold's colour, white figures knocked out of a coloured plate,
 the **black lines dividing the målgrupper**, and each figure's inner-treff
 zone — the ring, or on the three-square stripes of holds 2 and 8 the
 **middle square**. Tap **Skyt løypa** to record a round: choose your
-**group** (which sets 6 or 5 shots per hold), then **place each shot** on the
-hold picture where it hit. The app works out which figure and inner zone each
-shot landed in and scores it the NorgesFelt way — **1 point per hit and 1 per
-figure you hit** (a stripe's three squares are one figure).
+**group** — **Gruppe 1** (6 shots per hold) or **Gruppe 2** (5 per hold) —
+then **place each shot** on the hold picture where it hit. The app works out
+which figure and inner zone each shot landed in and scores it the NorgesFelt
+way — **1 point per hit and 1 per figure you hit** (a stripe's three squares
+are one figure, the dividing lines included).
 **Innertreff** (inner-zone hits) give **no points**: they are the
 **tiebreaker** — with equal points, the shooter with the most inner hits wins
 — and they are shown next to the points as **· N Ⓧ**, the same way the ring
-programs show inner tens. You get a running total and a scorecard at the end. The round
+programs show inner tens. You get a running total, and the scorecard at the
+end shows the total in the same coloured result box as the ring programs. The round
 is **saved as you go**, so you can leave and pick it up later from **Fortsett
 felt-økt** on the course page, exactly where you left off. When you finish, the
 round is saved and shows up in **Mine økter** together with your ring sessions,
 and — when you're signed in — it syncs to your account so it follows you across
-devices.
+devices. Like a ring session, a felt round can be **deleted** from Mine økter:
+tap the card's menu (⋮) and choose **Slett** — it is removed from your account
+and the device.
 
 ## Note where you are shooting
 Before a session starts, the setup step asks for the date, time and **place**.
