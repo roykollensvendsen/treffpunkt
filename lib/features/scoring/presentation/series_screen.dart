@@ -5,6 +5,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/core/presentation/layout.dart';
+import 'package:treffpunkt/core/presentation/nor_date.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/series.dart';
@@ -65,8 +67,6 @@ const double _sideBySideBreakpoint = 900;
 /// Comfortable maximum content width (logical px) so nothing stretches
 /// edge-to-edge on a wide desktop, tablet or browser window. The stacked
 /// layouts cap to this; the side-by-side layout is allowed a little more room.
-const double _maxContentWidth = 700;
-
 /// Maximum content width for the wide, side-by-side shooting layout.
 const double _maxWideContentWidth = 960;
 
@@ -74,7 +74,7 @@ const double _maxWideContentWidth = 960;
 class _CenteredContent extends StatelessWidget {
   const _CenteredContent({
     required this.child,
-    this.maxWidth = _maxContentWidth,
+    this.maxWidth = kMaxContentWidth,
   });
 
   final Widget child;
@@ -117,12 +117,7 @@ String _scoreSemanticsLabel({
 String? _metadataCaption(SessionMetadata? metadata, Weapon? weapon) {
   final parts = <String>[];
   if (metadata != null) {
-    String two(int v) => v.toString().padLeft(2, '0');
-    final date = metadata.capturedAt;
-    parts.add(
-      '${date.year}-${two(date.month)}-${two(date.day)} '
-      '${two(date.hour)}:${two(date.minute)}',
-    );
+    parts.add(norDateTime(metadata.capturedAt));
     final place = metadata.place?.label;
     if (place != null && place.isNotEmpty) parts.add(place);
   }
@@ -305,7 +300,7 @@ class SessionView extends ConsumerWidget {
             // pinch/drag fall through to the target's InteractiveViewer instead
             // of being stolen by the page scroll (spec 0021).
             return _SessionScrollBody(
-              maxWidth: wide ? _maxWideContentWidth : _maxContentWidth,
+              maxWidth: wide ? _maxWideContentWidth : kMaxContentWidth,
               builder: (scrollGuard) => wide
                   ? _wideLayout(
                       header: header,
@@ -576,7 +571,7 @@ class _ShotsList extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Shots',
+                  'Skudd',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -726,7 +721,7 @@ class _SeriesTotalCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'SERIES TOTAL',
+                    'SERIESUM',
                     style: TextStyle(
                       color: onColor,
                       fontSize: 12,
@@ -789,7 +784,7 @@ class _SessionProgress extends StatelessWidget {
       child: ExcludeSemantics(
         child: innerTenScoreText(
           context: context,
-          lead: 'Session so far: $total',
+          lead: 'Økt så langt: $total',
           innerTens: innerTens,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -815,11 +810,11 @@ class _Legend extends StatelessWidget {
         if (hasInnerTen) ...[
           const _InnerTenDot(),
           const SizedBox(width: 6),
-          Text('inner ten (X)', style: style),
+          Text('innertier (X)', style: style),
           const SizedBox(width: 16),
         ],
         Expanded(
-          child: Text('one target face · tap to place each shot', style: style),
+          child: Text('én skive · trykk der skuddet traff', style: style),
         ),
       ],
     );
@@ -889,7 +884,7 @@ class SessionScorecard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Session complete',
+                  'Økt fullført',
                   key: sessionCompleteKey,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
@@ -1177,7 +1172,7 @@ class _GrandTotalCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'SESSION TOTAL',
+                    'ØKTSUM',
                     style: TextStyle(
                       color: onColor,
                       fontSize: 12,

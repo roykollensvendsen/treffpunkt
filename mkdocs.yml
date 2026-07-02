@@ -125,6 +125,8 @@ nav:
       - "0092 — Feltskyting: setup step": specs/0092-felt-session-setup.md
       - "0093 — Konkurranse: detail layout": specs/0093-competition-detail-layout.md
       - "0094 — Varslingssenter": specs/0094-notification-center.md
+      - "0095 — Våpenvalget følger økta": specs/0095-weapon-selection-attaches.md
+      - "0096 — Norsk og konsistens": specs/0096-norwegian-and-consistency.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

@@ -97,13 +97,13 @@ void main() {
       expect(find.byKey(sessionCompleteKey), findsOneWidget);
 
       // Back to the picker, then open "Mine økter" via the history button.
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
       // SessionSetupScreen is still on the stack under the series screen, and
       // the category page (spec 0084) under that.
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton).first);
       await tester.pumpAndSettle();
       expect(find.byKey(mySessionsButtonKey), findsOneWidget);
 

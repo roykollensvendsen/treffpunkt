@@ -6,7 +6,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/core/presentation/layout.dart';
+import 'package:treffpunkt/core/presentation/nor_date.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_session_detail_screen.dart';
@@ -80,8 +83,6 @@ const Key pickProgramButtonKey = ValueKey<String>('pickProgramButton');
 const Key unreadableSessionKey = ValueKey<String>('unreadableSession');
 
 /// Comfortable maximum content width, matching the rest of the app.
-const double _maxContentWidth = 700;
-
 /// The "My sessions" screen (spec 0026): the shooter's saved sessions — synced
 /// to the account (spec 0024) and waiting in the upload queue (spec 0025) —
 /// most recent first, each opening its read-only scorecard.
@@ -175,7 +176,7 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
             child: Column(
               children: [
                 if (syncFailed) const _SyncErrorBanner(),
@@ -328,7 +329,6 @@ class _FeltSessionCard extends ConsumerWidget {
               child: ExcludeSemantics(
                 child: ListTile(
                   key: feltSessionCard(record.id),
-                  leading: const Icon(Icons.my_location),
                   title: const Text('NorgesFelt-løype 2026'),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,12 +428,8 @@ class _FeltSessionCard extends ConsumerWidget {
   }
 }
 
-/// Formats a felt round's date like the ring meta line.
-String _feltDate(DateTime at) {
-  String two(int v) => v.toString().padLeft(2, '0');
-  return '${at.year}-${two(at.month)}-${two(at.day)} '
-      '${two(at.hour)}:${two(at.minute)}';
-}
+/// Formats a felt round's date like the ring meta line (spec 0096).
+String _feltDate(DateTime at) => norDateTime(at);
 
 /// The friendly empty state: a cue that nothing is saved yet, a hint on how to
 /// change that, and a call-to-action back to the program picker.
@@ -446,44 +442,16 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.history_toggle_off,
-              size: 56,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Ingen lagrede økter ennå',
-              key: noSessionsKey,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Fullfør en økt for å se den her.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              key: pickProgramButtonKey,
-              onPressed: () => unawaited(Navigator.of(context).maybePop()),
-              icon: const Icon(Icons.add),
-              label: const Text('Velg program'),
-            ),
-          ],
-        ),
+    return EmptyState(
+      icon: Icons.history_toggle_off,
+      title: 'Ingen lagrede økter ennå',
+      titleKey: noSessionsKey,
+      hint: 'Fullfør en økt for å se den her.',
+      action: FilledButton.icon(
+        key: pickProgramButtonKey,
+        onPressed: () => unawaited(Navigator.of(context).maybePop()),
+        icon: const Icon(Icons.add),
+        label: const Text('Velg program'),
       ),
     );
   }
@@ -703,10 +671,7 @@ class _SessionCard extends ConsumerWidget {
 String? _metaLine(SessionRecord record) {
   final at = record.capturedAt;
   if (at == null) return null;
-  String two(int v) => v.toString().padLeft(2, '0');
-  final date =
-      '${at.year}-${two(at.month)}-${two(at.day)} '
-      '${two(at.hour)}:${two(at.minute)}';
+  final date = norDateTime(at);
   final place = record.placeLabel;
   if (place != null && place.isNotEmpty) return '$date · $place';
   return date;

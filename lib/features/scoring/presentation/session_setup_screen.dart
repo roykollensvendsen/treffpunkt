@@ -6,6 +6,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/layout.dart';
+import 'package:treffpunkt/core/presentation/nor_date.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/domain/place.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
@@ -148,12 +150,7 @@ class _SessionSetupFormState extends ConsumerState<SessionSetupForm> {
     super.dispose();
   }
 
-  String get _formattedDateTime {
-    String two(int v) => v.toString().padLeft(2, '0');
-    return '${_capturedAt.year}-${two(_capturedAt.month)}-'
-        '${two(_capturedAt.day)} '
-        '${two(_capturedAt.hour)}:${two(_capturedAt.minute)}';
-  }
+  String get _formattedDateTime => norDateTime(_capturedAt);
 
   Future<void> _editDateTime() async {
     final date = await showDatePicker(
@@ -251,7 +248,7 @@ class _SessionSetupFormState extends ConsumerState<SessionSetupForm> {
     return SafeArea(
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
+          constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(

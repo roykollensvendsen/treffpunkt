@@ -51,7 +51,20 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Fixed
+- **The highlighted weapon is the weapon that gets recorded**: on the next
+  session of the day the previously chosen weapon looked selected in the
+  setup step but silently fell off the session unless tapped again; the
+  form now attaches what the picker highlights (spec 0095).
+
 ### Changed
+- **Norwegian all the way through**: the shooting screen (Skudd, SERIESUM,
+  ØKTSUM, «Økt fullført» …), the weapon picker («Legg til våpen» …) and
+  sign-in («Logg på med Google») now speak Norwegian, and the date/time
+  pickers follow (Norwegian month names and buttons). Dates show as
+  dd.MM.yyyy everywhere, deleting a forum thread/post and discarding an
+  in-progress round now ask first, empty screens share one friendly
+  pattern, and a handful of colours/labels were aligned (spec 0096).
 - **The competition page leads with the scoreboard**: the invite machinery no
   longer fills the top of the page. One compact action row — **Skyt nå**,
   **Chat** and (for the owner) **Inviter** — sits above **Resultater** and

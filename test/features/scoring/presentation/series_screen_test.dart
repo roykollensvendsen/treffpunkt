@@ -581,7 +581,7 @@ void main() {
 
       expect(find.byKey(sessionCompleteKey), findsOneWidget);
       final caption = tester.widget<Text>(find.byKey(sessionMetadataKey));
-      expect(caption.data, '2026-06-21 14:30 · Løvenskiold skytebane');
+      expect(caption.data, '21.06.2026 14:30 · Løvenskiold skytebane');
     });
 
     testWidgets('shows the timestamp only when the place is empty', (
@@ -598,7 +598,7 @@ void main() {
       await completeAirRifle(tester);
 
       final caption = tester.widget<Text>(find.byKey(sessionMetadataKey));
-      expect(caption.data, '2026-06-21 14:30');
+      expect(caption.data, '21.06.2026 14:30');
       expect(caption.data, isNot(contains('·')));
     });
 
@@ -637,7 +637,7 @@ void main() {
       final caption = tester.widget<Text>(find.byKey(sessionMetadataKey));
       expect(
         caption.data,
-        '2026-06-21 14:30 · Løvenskiold skytebane · My air rifle',
+        '21.06.2026 14:30 · Løvenskiold skytebane · My air rifle',
       );
     });
   });

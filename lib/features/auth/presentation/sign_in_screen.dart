@@ -88,13 +88,13 @@ class SignInScreen extends ConsumerWidget {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.login),
-                      label: const Text('Sign in with Google'),
+                      label: const Text('Logg på med Google'),
                     ),
                     if (action.hasError)
                       Padding(
                         padding: const EdgeInsets.only(top: 16),
                         child: Text(
-                          'Sign-in failed. Please try again.',
+                          'Innlogging feilet. Prøv igjen.',
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.error,
                           ),
@@ -201,7 +201,7 @@ class _OpenInBrowserNotice extends StatelessWidget {
                   ScaffoldMessenger.of(context)
                     ..clearSnackBars()
                     ..showSnackBar(
-                      const SnackBar(content: Text('Lenke kopiert')),
+                      const SnackBar(content: Text('Lenke kopiert.')),
                     );
                 }
               },

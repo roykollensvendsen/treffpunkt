@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/app_scroll_behavior.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
@@ -37,6 +38,14 @@ class TreffpunktApp extends ConsumerWidget {
       ..watch(profileSyncProvider)
       ..watch(feltSyncProvider);
     return MaterialApp(
+      // Norwegian Material strings and pickers (spec 0096).
+      locale: const Locale('nb'),
+      supportedLocales: const [Locale('nb'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       title: 'Treffpunkt',
       // Let the mouse/trackpad drag-scroll horizontal strips on web/desktop
       // (spec 0074).

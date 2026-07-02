@@ -6,7 +6,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
@@ -127,8 +129,6 @@ const Key noResultsKey = ValueKey<String>('noResults');
 
 /// Key for the scoreboard row of the result with the given [id].
 Key resultRowKey(String id) => ValueKey<String>('resultRow-$id');
-
-const double _maxContentWidth = 700;
 
 /// The competitions hub (spec 0011): the shooter's pending invitations (each
 /// acceptable), the competitions they own or have joined, and a way to create a
@@ -273,7 +273,7 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -676,33 +676,13 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: 64),
-      child: Column(
-        children: [
-          Icon(
-            Icons.emoji_events_outlined,
-            size: 56,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Ingen konkurranser ennå',
-            key: noCompetitionsKey,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Lag en konkurranse, eller godta en invitasjon.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
+    return const Padding(
+      padding: EdgeInsets.only(top: 32),
+      child: EmptyState(
+        icon: Icons.emoji_events_outlined,
+        title: 'Ingen konkurranser ennå',
+        titleKey: noCompetitionsKey,
+        hint: 'Lag en konkurranse, eller godta en invitasjon.',
       ),
     );
   }
@@ -800,7 +780,7 @@ class _CreateCompetitionScreenState
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -1037,7 +1017,7 @@ class _CompetitionDetailScreenState
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [

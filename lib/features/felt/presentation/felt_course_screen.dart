@@ -14,6 +14,8 @@ import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart'
+    show confirmDestructiveKey;
 
 /// Key for the "shoot the course" button on the preview (spec 0080), for tests.
 const Key feltShootButtonKey = ValueKey<String>('feltShoot');
@@ -63,7 +65,7 @@ class FeltCourseScreen extends ConsumerWidget {
                 if (saved != null && saved.totalShots > 0)
                   Card(
                     key: feltResumeCardKey,
-                    color: theme.colorScheme.tertiaryContainer,
+                    color: theme.colorScheme.secondaryContainer,
                     child: ListTile(
                       leading: const Icon(Icons.play_circle_outline),
                       title: const Text('Fortsett felt-økt'),
@@ -75,7 +77,7 @@ class FeltCourseScreen extends ConsumerWidget {
                         key: feltDiscardCardKey,
                         icon: const Icon(Icons.delete_outline),
                         tooltip: 'Forkast lagret økt',
-                        onPressed: () => unawaited(_discard(ref)),
+                        onPressed: () => unawaited(_discard(context, ref)),
                       ),
                       onTap: () => unawaited(_resume(context, ref, saved)),
                     ),
@@ -151,7 +153,27 @@ class FeltCourseScreen extends ConsumerWidget {
     ref.invalidate(feltSavedSessionProvider);
   }
 
-  Future<void> _discard(WidgetRef ref) async {
+  /// Discards the saved round after a confirmation (spec 0096).
+  Future<void> _discard(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Forkast lagret økt?'),
+        content: const Text('Handlingen kan ikke angres.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Avbryt'),
+          ),
+          FilledButton(
+            key: confirmDestructiveKey,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Slett'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
     await ref.read(feltSessionStoreProvider).clear();
     ref.invalidate(feltSavedSessionProvider);
   }

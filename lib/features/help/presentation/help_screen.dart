@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/help/domain/manual.dart';
 import 'package:treffpunkt/features/help/presentation/help_providers.dart';
 
@@ -30,7 +31,7 @@ class HelpScreen extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 700),
+            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
             child: ListView(
               padding: const EdgeInsets.all(8),
               children: <Widget>[
@@ -71,7 +72,7 @@ class ManualPageScreen extends ConsumerWidget {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 700),
+            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
             child: markdown.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, _) => const Padding(

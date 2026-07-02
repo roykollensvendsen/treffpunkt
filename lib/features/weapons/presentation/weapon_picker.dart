@@ -98,7 +98,7 @@ class WeaponPicker extends ConsumerWidget {
         if (permitted.isEmpty)
           const Padding(
             padding: EdgeInsets.all(16),
-            child: Text('No weapon yet for this program.'),
+            child: Text('Ingen våpen for dette programmet ennå.'),
           )
         else
           for (final weapon in permitted)
@@ -117,7 +117,7 @@ class WeaponPicker extends ConsumerWidget {
           child: TextButton.icon(
             key: addWeaponKey,
             icon: const Icon(Icons.add),
-            label: const Text('Add weapon'),
+            label: const Text('Legg til våpen'),
             onPressed: () => _addWeapon(context, ref),
           ),
         ),
@@ -160,19 +160,19 @@ class _AddWeaponDialogState extends State<_AddWeaponDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add weapon'),
+      title: const Text('Legg til våpen'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             key: weaponNameFieldKey,
             controller: _name,
-            decoration: const InputDecoration(labelText: 'Name'),
+            decoration: const InputDecoration(labelText: 'Navn'),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<WeaponClass>(
             initialValue: _selectedClass,
-            decoration: const InputDecoration(labelText: 'Class'),
+            decoration: const InputDecoration(labelText: 'Klasse'),
             items: <DropdownMenuItem<WeaponClass>>[
               for (final weaponClass in widget.classes)
                 DropdownMenuItem<WeaponClass>(
@@ -189,12 +189,12 @@ class _AddWeaponDialogState extends State<_AddWeaponDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text('Avbryt'),
         ),
         FilledButton(
           key: saveWeaponKey,
           onPressed: _save,
-          child: const Text('Save'),
+          child: const Text('Lagre'),
         ),
       ],
     );
