@@ -12,9 +12,14 @@ corner of the sign-in screen before you sign in. It works offline.
 - **Phone or tablet:** install the app (coming soon) or open the web version.
 
 ## Record your first shot
-1. You will see a round target.
-2. Tap where your shot hit. A marker appears and the score shows at the top.
-3. The score updates the moment you place the marker.
+1. On the **Velg program** page, pick a **category**: **NSF Luft** (the
+   luftpistol programs), **NSF Fin/Grov** (the 25 m and 50 m fin- og
+   grovpistol programs), **MIL** (military programs — coming later) or
+   **Felt** (field shooting).
+2. Pick the program inside the category and confirm the session setup (date,
+   time and place). You will see a round target.
+3. Tap where your shot hit. A marker appears and the score shows at the top.
+4. The score updates the moment you place the marker.
 
 ### Silhuettpistol (the 5-target bank)
 **25 m Silhuettpistol** is shot one shot at each of **five silhouettes**. The
@@ -27,9 +32,9 @@ camera scan is for the single-face programs.)
 
 ### Feltskyting (field shooting)
 Field shooting is scored by **hits on figures** at different distances, not by
-rings. Under **Feltskyting** in the program list you can open **NorgesFelt-løype
-2026** to preview the whole course — all **8 holds**, each drawn as **one
-picture that matches the official target sheet**: the figures (hare, wolf head,
+rings. Under the **Felt** category on the **Velg program** page you can open
+**NorgesFelt-løype 2026** to preview the whole course — all **8 holds**, each
+drawn as **one picture that matches the official target sheet**: the figures (hare, wolf head,
 ptarmigan, hexagons, triangles, circles …) at their real relative size and
 position, in the hold's colour, white figures knocked out of a coloured plate,
 the **black lines dividing the målgrupper**, and the inner-treff ring on every
@@ -59,7 +64,8 @@ secure `https://` page; the live app provides one.)
 Your session is saved on the device as you shoot — no network needed — so you can
 record a whole session on the firing line with no signal. If you close the app
 mid-session, reopening it shows a **Fortsett økt** ("resume session") card at the
-top of the program list: tap it to return to the exact target you were on, with
+top of the **Velg program** page: tap it to return to the exact target you were
+on, with
 every shot you had already placed still there. A finished session clears itself,
 so the card only appears while a session is in progress.
 

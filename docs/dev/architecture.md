@@ -43,7 +43,8 @@ C4Container
 C4Component
   title Components — scoring feature
   Container(ui, "Presentation")
-  Component(picker, "ProgramPickerScreen", "Widget", "Choose a program")
+  Component(picker, "ProgramPickerScreen", "Widget", "Choose a category")
+  Component(category, "ProgramCategoryScreen", "Widget", "Choose a program in the category")
   Component(screen, "SeriesScreen / SessionView", "ConsumerWidget", "Header, target, totals, scorecard")
   Component(target, "SeriesTarget", "ConsumerWidget", "Tap to place, long-press to move, zoom")
   Component(painter, "SeriesPainter", "CustomPainter", "Draws rings + all shots")
@@ -51,7 +52,9 @@ C4Component
   Component(model, "ProgramCatalogue / Session", "Pure Dart", "Programs, stages, series progression")
   Component(scoring, "ScoringService", "Pure Dart", "Ring, inner-ten, series & session totals")
   Component(geometry, "TargetGeometry", "Pure Dart", "Ring radii, caliber, inner ten")
-  Rel(picker, screen, "Opens")
+  Rel(picker, category, "Opens")
+  Rel(picker, screen, "Opens (resume card)")
+  Rel(category, screen, "Opens")
   Rel(screen, target, "Contains")
   Rel(target, provider, "Reads / writes")
   Rel(target, painter, "Renders with")

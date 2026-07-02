@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:treffpunkt/features/scoring/domain/program_category.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 
@@ -385,19 +386,19 @@ abstract final class ProgramCatalogue {
     ],
   );
 
-  /// All seeded programs **offered to the shooter**, in display order.
-  ///
-  /// Air rifle ([airRifle10m]) is intentionally absent: it is retained as the
-  /// spec-0001 / decimal-scoring reference and test fixture but is not offered
-  /// in the program list at the NSF domain expert's request. It is still
-  /// resolvable by [byName] so a session recorded before the change still
-  /// loads (see [_resolvable]).
-  static const List<ProgramDefinition> all = <ProgramDefinition>[
+  /// The NSF Luft category (spec 0084): the air-pistol programs, in display
+  /// order.
+  static const List<ProgramDefinition> nsfLuft = <ProgramDefinition>[
     airPistol10m,
     airPistol10m40,
     sprintluft,
     storluftDuel,
     storluft55m,
+  ];
+
+  /// The NSF Fin/Grov category (spec 0084): the fin- and grovpistol cartridge
+  /// programs at 25 m and 50 m, in display order.
+  static const List<ProgramDefinition> nsfFinGrov = <ProgramDefinition>[
     standardPistol25m,
     finpistol25m,
     grovpistol25m,
@@ -408,6 +409,33 @@ abstract final class ProgramCatalogue {
     naisGrov25m,
     freePistol50m,
   ];
+
+  /// All seeded programs **offered to the shooter**, in display order — the
+  /// categories concatenated (spec 0084), so every offered program belongs to
+  /// exactly one category.
+  ///
+  /// Air rifle ([airRifle10m]) is intentionally absent: it is retained as the
+  /// spec-0001 / decimal-scoring reference and test fixture but is not offered
+  /// in the program list at the NSF domain expert's request. It is still
+  /// resolvable by [byName] so a session recorded before the change still
+  /// loads (see [_resolvable]).
+  static const List<ProgramDefinition> all = <ProgramDefinition>[
+    ...nsfLuft,
+    ...nsfFinGrov,
+  ];
+
+  /// The ring programs offered under [category], in display order.
+  ///
+  /// Empty for [ProgramCategory.mil] (no military programs are seeded yet)
+  /// and [ProgramCategory.felt] (its content is the felt feature's courses,
+  /// not `ProgramDefinition`s — see spec 0068).
+  static List<ProgramDefinition> inCategory(ProgramCategory category) =>
+      switch (category) {
+        ProgramCategory.nsfLuft => nsfLuft,
+        ProgramCategory.nsfFinGrov => nsfFinGrov,
+        ProgramCategory.mil ||
+        ProgramCategory.felt => const <ProgramDefinition>[],
+      };
 
   /// Every program a stored session may name: the offered [all] plus the
   /// retained-but-not-offered reference programs (air rifle). Used only by

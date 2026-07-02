@@ -114,6 +114,7 @@ nav:
       - "0081 — Feltskyting: save & resume": specs/0081-felt-session-persistence.md
       - "0082 — Feltskyting: rounds in Mine økter": specs/0082-felt-rounds-in-my-sessions.md
       - "0083 — Feltskyting: sync rounds": specs/0083-felt-session-sync.md
+      - "0084 — Program categories": specs/0084-program-categories.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
