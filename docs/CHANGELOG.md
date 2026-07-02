@@ -52,6 +52,12 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Fixed
+- **The felt course preview tells the truth about inner zones**: the
+  header no longer claims «innertreff på alle figurer» — each hold card
+  now derives its coverage from the measured art, and hold 5 says
+  «Innertreff på 1 av 2 figurer (ikke Trekant stor)», matching the
+  official sheet. Scoring already agreed; only the text was wrong
+  (spec 0104, forum report).
 - **The inner-ten ring is drawn on the target**: the faces that have an
   inner ten (luftpistol 5 mm, 25 m presisjon 25 mm, duell 50 mm) now show
   its ring on the drawn target, white on the black like the real sheets —

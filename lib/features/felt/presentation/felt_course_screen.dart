@@ -55,9 +55,9 @@ class FeltCourseScreen extends ConsumerWidget {
                   child: const Padding(
                     padding: EdgeInsets.all(12),
                     child: Text(
-                      '8 hold · innertreff på alle figurer · 10 sek skytetid · '
-                      'maks 80/47 poeng. Hvert hold er tegnet som på den '
-                      'offisielle skiva.',
+                      '8 hold · 10 sek skytetid · maks 80/47 poeng. Hvert '
+                      'hold er tegnet som på den offisielle skiva; hvert '
+                      'kort sier hvilke figurer som har innertreff.',
                     ),
                   ),
                 ),
@@ -115,6 +115,12 @@ class FeltCourseScreen extends ConsumerWidget {
                           Text(
                             'Figurer: '
                             '${hold.figures.map((f) => f.name).join(', ')}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            _innerCaption(_artFor(hold.number), hold),
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -182,3 +188,20 @@ class FeltCourseScreen extends ConsumerWidget {
 /// The composed art for hold [number] (spec 0079).
 FeltHoldArt _artFor(int number) =>
     norgesfelt2026Art.firstWhere((a) => a.number == number);
+
+/// The hold's honest inner-treff line (spec 0104), derived from the measured
+/// art — not asserted: «Innertreff på alle figurer», or the count with the
+/// ring-less figures named (hold 5's big triangle) when the art's scoring
+/// figures line up one-to-one with [hold]'s figure list.
+String _innerCaption(FeltHoldArt art, FeltHoldDef hold) {
+  final inner = art.innerByScoringFigure;
+  final withInner = inner.where((has) => has).length;
+  if (withInner == inner.length) return 'Innertreff på alle figurer';
+  final missing = <String>[
+    if (hold.figures.length == inner.length)
+      for (var i = 0; i < inner.length; i++)
+        if (!inner[i]) hold.figures[i].name ?? 'figur ${i + 1}',
+  ];
+  final counts = 'Innertreff på $withInner av ${inner.length} figurer';
+  return missing.isEmpty ? counts : '$counts (ikke ${missing.join(', ')})';
+}
