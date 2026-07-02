@@ -5,6 +5,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
 
 /// Renders a composed hold [FeltHoldArt] (spec 0079): the paper, the coloured
@@ -143,5 +144,94 @@ class FeltHoldArtView extends StatelessWidget {
         child: CustomPaint(painter: FeltHoldArtPainter(art)),
       ),
     ),
+  );
+}
+
+/// A placed-shot marker, coloured by outcome (specs 0080/0105): red = miss,
+/// green = inner hit, amber = ordinary hit. Shared by the recorder and the
+/// read-only review so the two can never disagree.
+class FeltShotMarker extends StatelessWidget {
+  /// Creates a marker for a shot that [hit] (and was [inner]).
+  const FeltShotMarker({required this.hit, required this.inner, super.key});
+
+  /// Whether the shot hit a figure.
+  final bool hit;
+
+  /// Whether the hit landed in the figure's inner zone.
+  final bool inner;
+
+  /// The marker's diameter in logical pixels; overlays offset by half this.
+  static const double diameter = 14;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = !hit
+        ? Colors.red
+        : inner
+        ? const Color(0xFF19C37D)
+        : Colors.amber;
+    return Container(
+      width: diameter,
+      height: diameter,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(color: Colors.black45, blurRadius: 2),
+        ],
+      ),
+    );
+  }
+}
+
+/// A read-only hold picture with a round's placed [shots] drawn on it
+/// (spec 0105) — the review counterpart of the recorder's overlay, so a
+/// saved round shows *where* every shot landed, not just the counts.
+class FeltHoldShotsView extends StatelessWidget {
+  /// Creates a view of [art] with [shots] marked on it.
+  const FeltHoldShotsView({required this.art, required this.shots, super.key});
+
+  /// The composed hold to draw.
+  final FeltHoldArt art;
+
+  /// The shots placed on this hold, in hold pixel space.
+  final List<FeltPlacedShot> shots;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final w = constraints.maxWidth;
+      final scale = w / art.size.width;
+      final h = art.size.height * scale;
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black12),
+          ),
+          child: SizedBox(
+            width: w,
+            height: h,
+            child: Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: CustomPaint(painter: FeltHoldArtPainter(art)),
+                ),
+                for (final shot in shots)
+                  Positioned(
+                    left: shot.dx * scale - FeltShotMarker.diameter / 2,
+                    top: shot.dy * scale - FeltShotMarker.diameter / 2,
+                    child: FeltShotMarker(
+                      hit: shot.figureIndex != null,
+                      inner: shot.inner,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
   );
 }

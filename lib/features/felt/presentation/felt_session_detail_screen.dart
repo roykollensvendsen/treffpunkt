@@ -45,7 +45,13 @@ class FeltSessionDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
-            Expanded(child: FeltScorecard(session: record.tally)),
+            Expanded(
+              child: FeltScorecard(
+                session: record.tally,
+                // The stored shots drawn where they landed (spec 0105).
+                holds: record.session.holds,
+              ),
+            ),
           ],
         ),
       ),

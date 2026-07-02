@@ -11,6 +11,7 @@ import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
@@ -157,9 +158,16 @@ void main() {
 
     await tester.tap(find.byKey(feltSessionCard('felt-1')));
     await tester.pumpAndSettle();
+    // A taller viewport so the lazy scorecard builds all 8 hold pictures.
+    tester.view.physicalSize = const Size(600, 6000);
+    await tester.pumpAndSettle();
     expect(find.byKey(feltScorecardKey), findsOneWidget);
     // The read-only detail view carries no save button (spec 0091 req 5).
     expect(find.byKey(feltSaveRoundKey), findsNothing);
+    // The stored shots are drawn on the hold pictures (spec 0105): one
+    // picture per hold, the single inner hare hit marked on hold 1.
+    expect(find.byType(FeltHoldShotsView), findsNWidgets(8));
+    expect(find.byType(FeltShotMarker), findsOneWidget);
   });
 
   testWidgets("the felt card shows the round's place and weapon (0092)", (

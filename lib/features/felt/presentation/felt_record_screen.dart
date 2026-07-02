@@ -286,6 +286,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
                 child: FeltScorecard(
                   session: _session,
                   personalBest: _isPersonalBest(),
+                  holds: _snapshot().holds,
                 ),
               ),
               // The explicit save (spec 0091): the round only reaches "Mine
@@ -514,9 +515,12 @@ class _HoldRecorder extends StatelessWidget {
                   ),
                   for (final s in shots)
                     Positioned(
-                      left: s.pos.dx * scale - 7,
-                      top: s.pos.dy * scale - 7,
-                      child: _ShotMarker(shot: s.shot),
+                      left: s.pos.dx * scale - FeltShotMarker.diameter / 2,
+                      top: s.pos.dy * scale - FeltShotMarker.diameter / 2,
+                      child: FeltShotMarker(
+                        hit: s.shot.isHit,
+                        inner: s.shot.inner,
+                      ),
                     ),
                 ],
               ),
@@ -526,32 +530,4 @@ class _HoldRecorder extends StatelessWidget {
       );
     },
   );
-}
-
-/// A placed-shot marker, coloured by outcome (spec 0080).
-class _ShotMarker extends StatelessWidget {
-  const _ShotMarker({required this.shot});
-
-  final FeltShot shot;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = !shot.isHit
-        ? Colors.red
-        : shot.inner
-        ? const Color(0xFF19C37D)
-        : Colors.amber;
-    return Container(
-      width: 14,
-      height: 14,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(color: Colors.black45, blurRadius: 2),
-        ],
-      ),
-    );
-  }
 }
