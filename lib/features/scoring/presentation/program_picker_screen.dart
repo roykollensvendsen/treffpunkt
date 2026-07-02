@@ -332,7 +332,7 @@ class ProgramPickerScreen extends ConsumerWidget {
                         crossAxisCount: 2,
                         mainAxisSpacing: 4,
                         crossAxisSpacing: 8,
-                        childAspectRatio: 1.6,
+                        childAspectRatio: 2.0,
                         children: [
                           for (final category in ProgramCategory.values)
                             _CategoryTile(
@@ -369,15 +369,12 @@ String _resumeSubtitle(SessionRecording recording) {
   return '${recording.session.program.name} · $placed skudd plassert';
 }
 
-/// The compact subtitle on the grid tile (spec 0097): short enough for a
-/// half-width tile on a narrow phone; the full description stays in the
+/// The grid tile's subtitle (spec 0097): only MIL carries one («Kommer
+/// senere» — a state, not a description); the shooters know their
+/// disciplines, so the tiles stay clean. The full description stays in the
 /// tile's semantics label.
-String _categoryTileSubtitle(ProgramCategory category) => switch (category) {
-  ProgramCategory.nsfLuft => 'Luftpistol – 10 m',
-  ProgramCategory.nsfFinGrov => '25 m og 50 m',
-  ProgramCategory.mil => 'Kommer senere',
-  ProgramCategory.felt => 'NorgesFelt-løypa',
-};
+String? _categoryTileSubtitle(ProgramCategory category) =>
+    category == ProgramCategory.mil ? 'Kommer senere' : null;
 
 String _categorySubtitle(ProgramCategory category) {
   final count = ProgramCatalogue.inCategory(category).length;
@@ -414,6 +411,7 @@ class _CategoryTile extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
     final disabled = onTap == null;
+    final subtitle = _categoryTileSubtitle(category);
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Semantics(
@@ -430,6 +428,7 @@ class _CategoryTile extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -439,15 +438,15 @@ class _CategoryTile extends StatelessWidget {
                       color: disabled ? muted.withValues(alpha: 0.6) : null,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Expanded(
-                    child: Text(
-                      _categoryTileSubtitle(category),
-                      maxLines: 2,
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(color: muted),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
