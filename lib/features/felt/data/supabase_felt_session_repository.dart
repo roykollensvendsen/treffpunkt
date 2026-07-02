@@ -54,6 +54,18 @@ final class SupabaseFeltSessionRepository implements FeltSessionRepository {
     }
   }
 
+  @override
+  Future<void> deleteById(String id) async {
+    try {
+      await _client.from(_table).delete().eq('id', id);
+    } on Object catch (error) {
+      if (!kReleaseMode) {
+        debugPrint('Failed to delete the felt round: $error');
+      }
+      throw FeltSyncException(error);
+    }
+  }
+
   FeltSessionRecord _fromRow(Map<String, dynamic> row) => FeltSessionRecord(
     id: row['id'] as String,
     capturedAt: DateTime.parse(row['captured_at'] as String),

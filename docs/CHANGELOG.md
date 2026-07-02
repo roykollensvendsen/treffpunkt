@@ -25,7 +25,24 @@ All notable changes to this project are documented here. The format is based on
   when you're signed in (spec 0083). Needs the `felt_sessions` table migration
   applied to the hosted project.
 
+### Added
+- **Delete a felt round from "Mine økter"**: a NorgesFelt round's card now has
+  the same menu (⋮) → **Slett** → confirmation as the ring sessions; deleting
+  removes the round from your account (when synced) and the device (spec
+  0089).
+
 ### Changed
+- **NorgesFelt: a hit on a stripe's dividing line counts**: a shot placed on
+  the thin white line between two squares of a three-square stripe (Hold 2
+  and 8) previously scored as a miss; it now counts as a hit on the stripe
+  (not an innertreff — only the middle square is, spec 0087).
+- **NorgesFelt: only Gruppe 1 and 2 are offered**: Gruppe 3 is not shot on
+  the course (it is the class for heavier weapons), so the group picker no
+  longer offers it; an already-saved gruppe-3 round still loads (spec 0088).
+- **NorgesFelt: the total in a result box**: the felt scorecard now shows the
+  round's total in the same filled, coloured result card as the ring
+  scorecards — the big points number with the group label and the ringed-X
+  inner count (spec 0089).
 - **NorgesFelt: the three-square stripes score as one figure, middle square =
   innertreff**: on Hold 2 and Hold 8 the stripe figures printed as three
   squares in a row/column now score correctly — hitting two squares of the

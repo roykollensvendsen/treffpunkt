@@ -38,7 +38,9 @@ FeltShot feltHitTest(FeltHoldArt art, Offset p) {
     if (anchor == null) continue;
     final bounds = feltArtFigurePath(figure).getBounds();
     final grown = groupBounds[anchor];
-    groupBounds[anchor] = grown == null ? bounds : grown.expandToInclude(bounds);
+    groupBounds[anchor] = grown == null
+        ? bounds
+        : grown.expandToInclude(bounds);
   }
   for (final group in groupBounds.entries) {
     if (group.value.contains(p)) return FeltShot(figureIndex: group.key);

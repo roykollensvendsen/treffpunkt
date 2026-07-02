@@ -34,7 +34,10 @@ void main() {
       const ProviderScope(child: MaterialApp(home: FeltRecordScreen())),
     );
     // Only gruppe 1 and 2 are offered — gruppe 3 is not shot (spec 0088).
-    expect(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)), findsOneWidget);
+    expect(
+      find.byKey(feltGroupButtonKey(FeltShooterGroup.two)),
+      findsOneWidget,
+    );
     expect(
       find.byKey(feltGroupButtonKey(FeltShooterGroup.three)),
       findsNothing,
@@ -136,10 +139,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(feltScorecardKey), findsOneWidget);
-    // One inner-zone hit on one figure: 2 points, tiebreak 1 (spec 0085).
+    // The total renders in the filled result card, like the ring scorecard
+    // (spec 0089): the group label, the big points number and the ringed-X
+    // inner count (one inner hit on one figure → 2 points · 1 Ⓧ).
+    expect(find.textContaining('TOTALT (GRUPPE 2)'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
     expect(
-      find.textContaining('2 poeng · 1', findRichText: true),
-      findsWidgets,
+      find.textContaining('Poeng · 1', findRichText: true),
+      findsOneWidget,
     );
   });
 }

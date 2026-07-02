@@ -45,6 +45,18 @@ Future<void> saveFeltRound(WidgetRef ref, FeltSessionRecord record) async {
   ref.invalidate(feltHistoryProvider);
 }
 
+/// Removes the finished round [id] from the local history and refreshes
+/// readers (spec 0089).
+Future<void> deleteFeltRound(WidgetRef ref, String id) async {
+  final store = ref.read(feltHistoryStoreProvider);
+  final current = await store.load();
+  await store.save(<FeltSessionRecord>[
+    for (final round in current)
+      if (round.id != id) round,
+  ]);
+  ref.invalidate(feltHistoryProvider);
+}
+
 /// The account's felt-round sync backend (spec 0083). Defaults to in-memory;
 /// `main()` overrides it with the Supabase repository.
 final feltSessionRepositoryProvider = Provider<FeltSessionRepository>(

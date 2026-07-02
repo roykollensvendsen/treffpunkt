@@ -70,6 +70,21 @@ void main() {
     expect((items[2] as RingSessionItem).entry.record.id, 'r2'); // undated last
   });
 
+  test('felt items carry whether the round is synced (spec 0089)', () {
+    // The card needs the flag to know whether deleting must also remove the
+    // round from the account — the ring card's `entry.synced` counterpart.
+    final items = mergeSessionItems(
+      entries: const <MySessionEntry>[],
+      rounds: <FeltSessionRecord>[
+        _felt('local-only', capturedAt: DateTime.utc(2026, 7, 2)),
+        _felt('on-account', capturedAt: DateTime.utc(2026, 7)),
+      ],
+      syncedFeltIds: const <String>{'on-account'},
+    );
+    expect((items[0] as FeltSessionItem).synced, isFalse);
+    expect((items[1] as FeltSessionItem).synced, isTrue);
+  });
+
   test(
     'mergeFeltRounds dedups local and synced by id, newest first (0083)',
     () {

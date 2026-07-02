@@ -117,6 +117,9 @@ nav:
       - "0084 — Program categories": specs/0084-program-categories.md
       - "0085 — Feltskyting: inner as tiebreak": specs/0085-felt-inner-tiebreak.md
       - "0086 — Feltskyting: stripe inner square": specs/0086-felt-stripe-inner-square.md
+      - "0087 — Feltskyting: stripe divider hits": specs/0087-felt-stripe-divider-hits.md
+      - "0088 — Feltskyting: offered groups": specs/0088-felt-offered-groups.md
+      - "0089 — Feltskyting: Mine økter parity": specs/0089-felt-my-sessions-parity.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

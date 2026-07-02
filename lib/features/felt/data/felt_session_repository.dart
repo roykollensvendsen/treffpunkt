@@ -8,15 +8,20 @@ import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 ///
 /// Mirrors the ring `SessionRepository` (spec 0024): the app depends on this
 /// interface, not a concrete engine, so the feature is testable without a
-/// backend. [upload] is best-effort (never throws); [list] throws
-/// [FeltSyncException] on failure so the caller can tell it apart from an empty
-/// account.
+/// backend. [upload] is best-effort (never throws); [list] and [deleteById]
+/// throw [FeltSyncException] on failure so the caller can tell a real failure
+/// apart from an empty account (and never deletes locally what silently
+/// stayed on the account).
 abstract interface class FeltSessionRepository {
   /// Uploads [record], keyed by its id; idempotent; best-effort.
   Future<void> upload(FeltSessionRecord record);
 
   /// The account's felt rounds, most recent first.
   Future<List<FeltSessionRecord>> list();
+
+  /// Deletes the account's round with [id] (spec 0089); idempotent. Throws
+  /// [FeltSyncException] on failure.
+  Future<void> deleteById(String id);
 }
 
 /// Thrown when reading the account's felt rounds fails (spec 0083), so a real
@@ -50,4 +55,7 @@ class InMemoryFeltSessionRepository implements FeltSessionRepository {
       ..sort((a, b) => b.capturedAt.compareTo(a.capturedAt));
     return List<FeltSessionRecord>.unmodifiable(rounds);
   }
+
+  @override
+  Future<void> deleteById(String id) async => _byId.remove(id);
 }

@@ -46,19 +46,75 @@ class FeltScorecard extends StatelessWidget {
                 ),
               ),
             const Divider(),
-            ListTile(
-              title: Text(
-                'Totalt (${session.group.label})',
-                style: theme.textTheme.titleMedium,
-              ),
-              trailing: innerTenScoreText(
-                context: context,
-                lead: '${session.points} poeng',
-                innerTens: session.inner,
-                style: theme.textTheme.titleLarge,
-              ),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: _FeltTotalCard(session: session),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The round's total in the same filled result card the ring scorecard uses
+/// (spec 0089): the group label, the `Poeng · N Ⓧ` line and the big points
+/// number on the primary colour.
+class _FeltTotalCard extends StatelessWidget {
+  const _FeltTotalCard({required this.session});
+
+  final FeltSessionTally session;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final onColor = scheme.onPrimary;
+    return Semantics(
+      label:
+          'Totalt ${session.group.label}: ${session.points} poeng, '
+          '${session.inner} innertreff',
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: scheme.primary,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'TOTALT (${session.group.label.toUpperCase()})',
+                    style: TextStyle(
+                      color: onColor,
+                      fontSize: 12,
+                      letterSpacing: 1,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  innerTenScoreText(
+                    context: context,
+                    lead: 'Poeng',
+                    innerTens: session.inner,
+                    style: TextStyle(color: onColor, fontSize: 18),
+                  ),
+                ],
+              ),
+              Text(
+                '${session.points}',
+                style: TextStyle(
+                  color: onColor,
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
