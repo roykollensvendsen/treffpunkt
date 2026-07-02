@@ -130,6 +130,7 @@ nav:
       - "0097 — Forside: raskere veier": specs/0097-front-page-flow.md
       - "0098 — Skyteskjerm: Fullfør og Angre": specs/0098-series-actions.md
       - "0099 — Feltskyting: husker gruppa": specs/0099-felt-remember-group.md
+      - "0100 — Visuell identitet, del 1": specs/0100-visual-identity.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

@@ -7,6 +7,7 @@
 // the dragged shot keeping its drag styling instead.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
@@ -120,7 +121,7 @@ void main() {
             c.paint.style == PaintingStyle.stroke &&
             c.radius > pelletRadius + 0.5,
       );
-      expect(halo.paint.color, isSameColorAs(Colors.deepOrange));
+      expect(halo.paint.color, isSameColorAs(TreffColors.light.lastShot));
       expect(last.length, greaterThan(earlier.length));
     });
 
@@ -133,7 +134,10 @@ void main() {
       final lastFill = last.firstWhere(
         (c) => c.paint.style == PaintingStyle.fill,
       );
-      expect(lastFill.paint.color, isSameColorAs(Colors.lightBlueAccent));
+      expect(
+        lastFill.paint.color,
+        isSameColorAs(TreffColors.light.draggedShot),
+      );
       expect(lastFill.radius, closeTo(pelletRadius, 0.01));
       // No enlarged halo ring — same circle count as an ordinary marker.
       final earlier = markersNear(canvas, shots.first);

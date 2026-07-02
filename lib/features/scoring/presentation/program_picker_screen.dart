@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
+import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
@@ -310,7 +311,7 @@ class ProgramPickerScreen extends ConsumerWidget {
                                   horizontal: 20,
                                   vertical: 8,
                                 ),
-                                leading: const Icon(Icons.play_arrow, size: 32),
+                                leading: const TargetIcon(size: 30),
                                 title: const Text(
                                   'Skyt igjen',
                                   style: TextStyle(

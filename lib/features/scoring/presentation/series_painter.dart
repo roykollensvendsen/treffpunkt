@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 
@@ -19,6 +20,7 @@ class SeriesPainter extends CustomPainter {
     required this.shots,
     required this.draggingIndex,
     this.highlightLast = true,
+    this.colors = TreffColors.light,
   });
 
   /// The target whose rings are drawn.
@@ -34,9 +36,10 @@ class SeriesPainter extends CustomPainter {
   /// mini-target, whose single shot should not be emphasised (spec 0067).
   final bool highlightLast;
 
-  /// The colour of the outer "halo" ring drawn around the highlighted (most
-  /// recently placed) marker, so the latest shot stands out.
-  static const Color _highlightColor = Colors.deepOrange;
+  /// The theme's sport colours (spec 0100): the latest shot in signal red,
+  /// older shots neutral — the convention of the range monitors shooters
+  /// already know. Callers pass `TreffColors.of(context)`.
+  final TreffColors colors;
 
   /// The index of the shot to emphasise — the most recently placed (highest
   /// index) — or `null` when the series has no shots.
@@ -52,7 +55,7 @@ class SeriesPainter extends CustomPainter {
     final scale = (side / 2) / geometry.maxScoringRadiusMm;
 
     canvas
-      ..drawRect(Offset.zero & size, Paint()..color = Colors.white)
+      ..drawRect(Offset.zero & size, Paint()..color = colors.paper)
       ..drawCircle(
         centre,
         geometry.blackBullDiameterMm / 2 * scale,
@@ -85,7 +88,11 @@ class SeriesPainter extends CustomPainter {
       // Precedence: drag styling wins over the last-shot highlight, which wins
       // over an ordinary marker. A dragged shot is never given the halo.
       final highlighted = !dragging && i == highlightedIndex;
-      final fill = dragging ? Colors.lightBlueAccent : Colors.amber;
+      final fill = dragging
+          ? colors.draggedShot
+          : highlighted
+          ? colors.lastShot
+          : colors.olderShot;
       canvas
         ..drawCircle(markerCentre, radius, Paint()..color = fill)
         ..drawCircle(
@@ -107,7 +114,7 @@ class SeriesPainter extends CustomPainter {
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2
-            ..color = _highlightColor,
+            ..color = colors.lastShot,
         );
       }
     }
@@ -118,5 +125,6 @@ class SeriesPainter extends CustomPainter {
       oldDelegate.draggingIndex != draggingIndex ||
       oldDelegate.geometry != geometry ||
       oldDelegate.highlightLast != highlightLast ||
+      oldDelegate.colors != colors ||
       !listEquals(oldDelegate.shots, shots);
 }
