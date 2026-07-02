@@ -12,9 +12,11 @@ import 'package:treffpunkt/features/auth/domain/auth_repository.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
+import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_providers.dart';
@@ -101,6 +103,8 @@ void runTreffpunkt(
   ForumRepository? forumRepository,
   PushSubscriptionRepository? pushSubscriptionRepository,
   NotificationsRepository? notificationsRepository,
+  FeltGroupStore? feltGroupStore,
+  FeltShooterGroup? initialFeltGroup,
   BrowserEnvironment? browserEnvironment,
   Sharer? sharer,
 }) {
@@ -165,6 +169,10 @@ void runTreffpunkt(
           notificationsRepositoryProvider.overrideWithValue(
             notificationsRepository,
           ),
+        if (feltGroupStore != null)
+          feltGroupStoreProvider.overrideWithValue(feltGroupStore),
+        if (initialFeltGroup != null)
+          initialFeltGroupProvider.overrideWithValue(initialFeltGroup),
         if (browserEnvironment != null)
           browserEnvironmentProvider.overrideWithValue(browserEnvironment),
         if (sharer != null) sharerProvider.overrideWithValue(sharer),

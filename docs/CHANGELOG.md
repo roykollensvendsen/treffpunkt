@@ -52,6 +52,9 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Added
+- **The felt recorder remembers your group**: pick Gruppe 1 or 2 once and
+  the next round starts straight on hold 1; a group button in the top bar
+  lets you change it until the first shot is placed (spec 0099).
 - **Bottom navigation and a cleaner start page**: a bar at the bottom now
   takes you to **Hjem**, **Mine økter**, **Statistikk**, **Stevner**
   (konkurransene) and **Forum** — always visible, with labels. Hjem is all about shooting:

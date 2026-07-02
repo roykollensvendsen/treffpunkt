@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
 
@@ -148,5 +150,48 @@ void main() {
       find.textContaining('Poeng · 1', findRichText: true),
       findsOneWidget,
     );
+  });
+
+  testWidgets('a remembered group skips the picker (spec 0099)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(600, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final store = InMemoryFeltGroupStore(seeded: FeltShooterGroup.two);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          feltGroupStoreProvider.overrideWithValue(store),
+          initialFeltGroupProvider.overrideWithValue(FeltShooterGroup.two),
+        ],
+        child: const MaterialApp(home: FeltRecordScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Straight to hold 1 with gruppe 2's five shots per hold — no picker.
+    expect(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)), findsNothing);
+    expect(find.textContaining('Skudd 0/5'), findsOneWidget);
+
+    // «Bytt gruppe» is offered while no shots are placed…
+    expect(find.byKey(feltChangeGroupKey), findsOneWidget);
+    await tester.tap(find.byKey(feltChangeGroupKey));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(feltGroupButtonKey(FeltShooterGroup.one)),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Skudd 0/6'), findsOneWidget);
+
+    // …and picking persisted the new choice for the next round.
+    expect(await store.load(), FeltShooterGroup.one);
+
+    // After the first shot the change action is gone.
+    await tapRecorder(tester, hareFrac);
+    expect(find.byKey(feltChangeGroupKey), findsNothing);
   });
 }

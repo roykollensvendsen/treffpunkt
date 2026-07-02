@@ -33,6 +33,9 @@ const Key feltHoldPointsKey = ValueKey<String>('feltHoldPoints');
 /// Key for the running session total text (spec 0080).
 const Key feltTotalPointsKey = ValueKey<String>('feltTotalPoints');
 
+/// Key for the "Bytt gruppe" action while no shots are placed (spec 0099).
+const Key feltChangeGroupKey = ValueKey<String>('feltChangeGroup');
+
 /// Key for the scorecard's "Lagre økt" button (spec 0091), for tests.
 const Key feltSaveRoundKey = ValueKey<String>('feltSaveRound');
 
@@ -122,6 +125,9 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
       _latitude = metadata?.place?.latitude;
       _longitude = metadata?.place?.longitude;
       _weaponName = widget.weapon?.name;
+      // The group is a stable property of the shooter: start on hold 1 with
+      // the remembered group and skip the picker (spec 0099).
+      _group = ref.read(initialFeltGroupProvider);
       _shots = List<List<_Placed>>.generate(
         norgesfelt2026Art.length,
         (_) => <_Placed>[],
@@ -175,6 +181,10 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
 
   void _pickGroup(FeltShooterGroup group) {
     setState(() => _group = group);
+    // Remember the choice for the next round (spec 0099); best-effort.
+    unawaited(
+      ref.read(feltGroupStoreProvider).save(group).catchError((Object _) {}),
+    );
     _persist();
   }
 
@@ -277,6 +287,17 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Hold ${hold.number}/${norgesfelt2026.length}'),
+        actions: [
+          // A remembered group skipped the picker (spec 0099); offer a way
+          // back while a change is still safe (no shots placed yet).
+          if (_totalShots == 0)
+            TextButton.icon(
+              key: feltChangeGroupKey,
+              onPressed: () => setState(() => _group = null),
+              icon: const Icon(Icons.group_outlined),
+              label: Text(_group!.label),
+            ),
+        ],
       ),
       body: SafeArea(
         child: Center(
