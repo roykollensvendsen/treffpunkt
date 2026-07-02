@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/scoring/data/contribution_service.dart';
+import 'package:treffpunkt/features/scoring/data/decimal_entry_store.dart';
 import 'package:treffpunkt/features/scoring/data/geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
@@ -54,6 +55,23 @@ final currentWeaponProvider = Provider<Weapon?>((ref) => null);
 /// competition; read at completion to tag the record so the upload queue also
 /// submits a result.
 final currentCompetitionIdProvider = Provider<String?>((ref) => null);
+
+/// Whether the current session records decimal values (spec 0107).
+///
+/// Overridden by the screen that mounts the session with the setup step's
+/// choice; defaults to off.
+final currentDecimalEntryProvider = Provider<bool>((ref) => false);
+
+/// The app's [DecimalEntryStore] remembering the setup toggle (spec 0107).
+/// Defaults to in-memory; `main()` overrides it with the
+/// `shared_preferences`-backed one.
+final decimalEntryStoreProvider = Provider<DecimalEntryStore>(
+  (ref) => InMemoryDecimalEntryStore(),
+);
+
+/// The remembered decimal-entry choice, loaded at launch (spec 0107).
+/// `main()` overrides it; defaults to off.
+final initialDecimalEntryProvider = Provider<bool>((ref) => false);
 
 /// The app's [SessionStore] for offline persistence (spec 0009).
 ///
@@ -217,6 +235,7 @@ class SessionNotifier extends Notifier<SessionRecording> {
       program,
       metadata: metadata,
       weapon: weapon,
+      decimalEntry: ref.watch(currentDecimalEntryProvider),
     );
     return SessionRecording(
       session: session,
@@ -348,15 +367,43 @@ class SessionNotifier extends Notifier<SessionRecording> {
   }
 
   /// Moves the picked-up shot to [shot].
+  ///
+  /// A manually picked decimal tenth (spec 0107) survives a nudge *within*
+  /// the same ring — the transferred Megalink reading is still true — but is
+  /// re-derived when the shot crosses a ring boundary.
   void dragTo(Shot shot) {
     final current = state.current;
     final index = state.draggingIndex;
     if (current == null || index == null) return;
+    final previous = current.shots[index];
+    final keepTenth =
+        previous.tenth != null &&
+        _scoring.integerScore(current.geometry, shot) ==
+            _scoring.integerScore(current.geometry, previous);
+    final moved = Shot(
+      dxMm: shot.dxMm,
+      dyMm: shot.dyMm,
+      tenth: keepTenth ? previous.tenth : null,
+    );
     state = SessionRecording(
       session: state.session,
       id: state.id,
-      current: current.moveShot(index, shot),
+      current: current.moveShot(index, moved),
       draggingIndex: index,
+    );
+    _persist();
+  }
+
+  /// Records the manually picked decimal [tenth] for the shot at [index] in
+  /// the current series (spec 0107), or clears it with null.
+  void setShotTenth(int index, int? tenth) {
+    final current = state.current;
+    if (current == null) return;
+    state = SessionRecording(
+      session: state.session,
+      id: state.id,
+      current: current.setShotTenth(index, tenth),
+      draggingIndex: state.draggingIndex,
     );
     _persist();
   }

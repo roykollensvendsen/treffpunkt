@@ -56,6 +56,18 @@ class ScoringService {
     return tenths / 10;
   }
 
+  /// The shot's decimal value in tenths (e.g. 94 for 9,4) on a face that
+  /// supports decimals (spec 0107): the plotted ring plus the manually
+  /// picked tenth when one is set, otherwise the position-derived decimal
+  /// (spec 0001). A miss is 0 — a picked tenth cannot resurrect it.
+  int decimalTenths(TargetGeometry geometry, Shot shot) {
+    final ring = integerScore(geometry, shot);
+    final tenth = shot.tenth;
+    if (ring == 0) return 0;
+    if (tenth != null) return ring * 10 + tenth;
+    return (decimalScore(geometry, shot) * 10).round();
+  }
+
   /// Whether [shot] counts as an inner ten ("X") on [geometry].
   ///
   /// Always false when the geometry records no inner ten
@@ -68,15 +80,22 @@ class ScoringService {
   /// Scores every placed shot in [series], plus the running total and maximum.
   SeriesScore scoreSeries(Series series) {
     final geometry = series.geometry;
+    final decimal = geometry.supportsDecimalScore;
     final shotScores = <ShotScore>[
       for (final shot in series.shots)
         ShotScore(
           ring: integerScore(geometry, shot),
           isInnerTen: isInnerTen(geometry, shot),
+          decimal: decimal ? decimalTenths(geometry, shot) / 10 : null,
         ),
     ];
     var total = 0;
     var innerTens = 0;
+    // Summed as integer tenths so 60 shots never accumulate float drift.
+    var decimalTenthsTotal = 0;
+    for (final shot in series.shots) {
+      if (decimal) decimalTenthsTotal += decimalTenths(geometry, shot);
+    }
     for (final shotScore in shotScores) {
       total += shotScore.ring;
       if (shotScore.isInnerTen) innerTens++;
@@ -86,6 +105,7 @@ class ScoringService {
       total: total,
       innerTens: innerTens,
       maxTotal: series.capacity * geometry.highestRing,
+      decimalTotal: decimal ? decimalTenthsTotal / 10 : null,
     );
   }
 
@@ -113,6 +133,9 @@ class ScoringService {
           total: total,
           innerTens: innerTens,
           maxTotal: maxTotal,
+          decimalTotal: _decimalSum(
+            seriesScores.map((score) => score.decimalTotal),
+          ),
         ),
       );
       grandTotal += total;
@@ -124,6 +147,22 @@ class ScoringService {
       total: grandTotal,
       innerTens: grandInnerTens,
       maxTotal: grandMaxTotal,
+      decimalTotal: _decimalSum(
+        stageScores.map((score) => score.decimalTotal),
+      ),
     );
+  }
+
+  /// The sum of [parts] in exact tenths, or null when any part has no
+  /// decimal (a stage on a 5–10 face) — a partial decimal sum would lie.
+  static double? _decimalSum(Iterable<double?> parts) {
+    var tenths = 0;
+    var any = false;
+    for (final part in parts) {
+      if (part == null) return null;
+      any = true;
+      tenths += (part * 10).round();
+    }
+    return any ? tenths / 10 : null;
   }
 }

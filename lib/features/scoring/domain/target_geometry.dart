@@ -109,6 +109,11 @@ class TargetGeometry {
   /// The innermost (highest-value) ring number, e.g. 10 for air rifle.
   int get highestRing => lowestRingValue + ringOuterDiametersMm.length - 1;
 
+  /// Whether the face supports decimal scoring (spec 0107): a full, evenly
+  /// spaced 1..N ring face — the assumption `decimalScore` (spec 0001) is
+  /// derived under.
+  bool get supportsDecimalScore => hasUniformRings && lowestRingValue == 1;
+
   /// Whether the rings are evenly spaced (a constant diameter step), which the
   /// decimal scoring model assumes (spec 0001). True for 10 m air rifle.
   bool get hasUniformRings {

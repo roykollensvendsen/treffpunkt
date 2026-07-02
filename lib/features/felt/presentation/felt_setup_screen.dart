@@ -30,7 +30,8 @@ class FeltSetupScreen extends StatelessWidget {
       body: SessionSetupForm(
         now: now,
         discipline: Discipline.pistol,
-        onConfirm: (metadata, weapon) => unawaited(
+        // Felt has no decimal mode; the toggle is not offered (spec 0107).
+        onConfirm: (metadata, weapon, {required decimalEntry}) => unawaited(
           Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) =>

@@ -55,6 +55,7 @@ class CompetitionResultScreen extends StatelessWidget {
       metadata: session.metadata,
       weapon: session.weapon,
       seriesByStage: session.sealedSeriesByStage,
+      showDecimals: session.decimalEntry,
     );
   }
 }

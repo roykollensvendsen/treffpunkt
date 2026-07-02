@@ -69,6 +69,19 @@ class Series {
     return _copyWith(shots: <Shot>[...shots]..[index] = shot);
   }
 
+  /// Returns a new series with the shot at [index] carrying the picked
+  /// decimal [tenth] (spec 0107), or none when [tenth] is null. The shot's
+  /// position is untouched. Throws a [RangeError] if [index] is not a
+  /// placed shot.
+  Series setShotTenth(int index, int? tenth) {
+    RangeError.checkValidIndex(index, shots, 'index', shots.length);
+    final shot = shots[index];
+    return _copyWith(
+      shots: <Shot>[...shots]
+        ..[index] = Shot(dxMm: shot.dxMm, dyMm: shot.dyMm, tenth: tenth),
+    );
+  }
+
   Series _copyWith({List<Shot>? shots}) => Series(
     geometry: geometry,
     capacity: capacity,
