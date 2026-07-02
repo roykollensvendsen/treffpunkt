@@ -62,6 +62,10 @@ in the domain and silently rewrite history.
 - `felt_hold_art_data.dart`: Hold 2's squares 4–6 and 7–9 group to score
   indices 4 and 7 (middles 5 and 8 are inner zones); Hold 8's squares 2–4,
   5–7, 8–10 and 11–13 group to 2, 5, 8 and 11 (middles 3, 6, 9, 12).
+- The grouping lives in the reconstruction **models**
+  (`tool/felt/models/hold-{2,8}.json`, the same `scoreIndex`/`innerZone`
+  fields) and `tool/felt/gen_dart.py` emits it, so regenerating the art data
+  from the models preserves spec-0086 scoring.
 
 ## Verification
 

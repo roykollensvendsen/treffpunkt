@@ -37,10 +37,24 @@ def ring_arg(f):
             f"color: {col(inner['color'])})")
 
 
+def score_args(f):
+    """Multi-shape figure grouping (spec 0086): the tre-kvadrater stripes.
+
+    ``scoreIndex`` names the figure a shape scores as; ``innerZone`` marks the
+    middle square whose hits are innertreff.
+    """
+    out = ''
+    if 'scoreIndex' in f:
+        out += f", scoreIndex: {int(f['scoreIndex'])}"
+    if f.get('innerZone'):
+        out += ', innerZone: true'
+    return out
+
+
 def figure(f):
     p = f['params']
     fill = col(f['fill'])
-    r = ring_arg(f)
+    r = ring_arg(f) + score_args(f)
     t = f['type']
     if t == 'circle':
         return (f"FeltArtFigure(shape: FeltArtShape.circle, cx: {num(p['cx'])}, "

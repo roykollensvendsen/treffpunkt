@@ -478,7 +478,8 @@
     0,
     104,
     63
-   ]
+   ],
+   "scoreIndex": 4
   },
   {
    "type": "polygon",
@@ -506,7 +507,9 @@
     0,
     104,
     63
-   ]
+   ],
+   "scoreIndex": 4,
+   "innerZone": true
   },
   {
    "type": "polygon",
@@ -534,7 +537,8 @@
     0,
     104,
     63
-   ]
+   ],
+   "scoreIndex": 4
   },
   {
    "type": "polygon",
@@ -562,7 +566,8 @@
     0,
     104,
     63
-   ]
+   ],
+   "scoreIndex": 7
   },
   {
    "type": "polygon",
@@ -590,7 +595,9 @@
     0,
     104,
     63
-   ]
+   ],
+   "scoreIndex": 7,
+   "innerZone": true
   },
   {
    "type": "polygon",
@@ -618,7 +625,8 @@
     0,
     104,
     63
-   ]
+   ],
+   "scoreIndex": 7
   }
  ],
  "separators": [
