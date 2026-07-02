@@ -63,4 +63,23 @@ void main() {
     source.add(shot); // mutating the source list...
     expect(series.placedCount, 1); // ...does not change the series
   });
+
+  test('removeLastShot undoes the newest shot, down to empty (0098)', () {
+    var series = Series(
+      geometry: const TargetGeometry.airPistol10m(),
+      capacity: 3,
+    );
+    series = series
+        .placeShot(const Shot(dxMm: 0, dyMm: 0))
+        .placeShot(const Shot(dxMm: 5, dyMm: 5));
+    expect(series.shots, hasLength(2));
+
+    series = series.removeLastShot();
+    expect(series.shots, hasLength(1));
+    expect(series.shots.single, const Shot(dxMm: 0, dyMm: 0));
+
+    series = series.removeLastShot();
+    expect(series.shots, isEmpty);
+    expect(series.removeLastShot, throwsStateError);
+  });
 }

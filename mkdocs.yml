@@ -127,6 +127,8 @@ nav:
       - "0094 — Varslingssenter": specs/0094-notification-center.md
       - "0095 — Våpenvalget følger økta": specs/0095-weapon-selection-attaches.md
       - "0096 — Norsk og konsistens": specs/0096-norwegian-and-consistency.md
+      - "0097 — Forside: raskere veier": specs/0097-front-page-flow.md
+      - "0098 — Skyteskjerm: Fullfør og Angre": specs/0098-series-actions.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

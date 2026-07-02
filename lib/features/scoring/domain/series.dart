@@ -50,6 +50,16 @@ class Series {
     return _copyWith(shots: <Shot>[...shots, shot]);
   }
 
+  /// Returns a new series with the newest shot removed (spec 0098's Angre).
+  ///
+  /// Throws a [StateError] if the series has no shots.
+  Series removeLastShot() {
+    if (shots.isEmpty) {
+      throw StateError('series has no shots');
+    }
+    return _copyWith(shots: shots.sublist(0, shots.length - 1));
+  }
+
   /// Returns a new series with the shot at [index] replaced by [shot].
   ///
   /// Used when a placed shot is moved. Throws a [RangeError] if [index] is not

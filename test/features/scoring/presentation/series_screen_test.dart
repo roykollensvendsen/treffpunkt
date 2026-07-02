@@ -82,8 +82,8 @@ const ProgramDefinition _silhouette3 = ProgramDefinition(
 void main() {
   String totalText(WidgetTester tester) =>
       tester.widget<Text>(find.byKey(seriesTotalKey)).data!;
-  IconButton sealButton(WidgetTester tester) =>
-      tester.widget<IconButton>(find.byKey(sealSeriesKey));
+  FilledButton sealButton(WidgetTester tester) =>
+      tester.widget<FilledButton>(find.byKey(sealSeriesKey));
 
   Future<void> tapTarget(WidgetTester tester) async {
     await tester.tap(find.byKey(seriesTargetKey));
@@ -311,7 +311,8 @@ void main() {
         findsOneWidget,
       );
       // The seal / advance action carries a Norwegian tooltip.
-      expect(find.byTooltip('Fullfør serie'), findsOneWidget);
+      // The seal action is a labelled bottom button now (spec 0098).
+      expect(find.textContaining('Fullfør serie'), findsOneWidget);
 
       handle.dispose();
     });
@@ -751,6 +752,56 @@ void main() {
       expect(find.text('1 / 10'), findsOneWidget);
       expect(totalText(tester), '10');
     });
+  });
+
+  testWidgets('Angre removes the last shot; the count label follows (0098)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+    await tester.pumpAndSettle();
+
+    // Empty series: undo disabled, the button explains itself.
+    expect(find.textContaining('Fullfør serie (0/10)'), findsOneWidget);
+    expect(
+      tester.widget<TextButton>(find.byKey(undoShotKey)).onPressed,
+      isNull,
+    );
+
+    await tapTarget(tester);
+    await tapTarget(tester);
+    expect(find.textContaining('Fullfør serie (2/10)'), findsOneWidget);
+    expect(totalText(tester), '20');
+
+    // Angre removes the newest shot — count and total drop.
+    await tester.tap(find.byKey(undoShotKey));
+    await tester.pump();
+    expect(find.textContaining('Fullfør serie (1/10)'), findsOneWidget);
+    expect(totalText(tester), '10');
+
+    await tester.tap(find.byKey(undoShotKey));
+    await tester.pump();
+    expect(find.textContaining('Fullfør serie (0/10)'), findsOneWidget);
+    expect(
+      tester.widget<TextButton>(find.byKey(undoShotKey)).onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('the action bar is gone on the scorecard (spec 0098)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(ProgramCatalogue.airRifle10m));
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 10; i++) {
+      await tapTarget(tester);
+    }
+    await tester.tap(find.byKey(sealSeriesKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(sessionCompleteKey), findsOneWidget);
+    expect(find.byKey(sealSeriesKey), findsNothing);
+    expect(find.byKey(undoShotKey), findsNothing);
   });
 }
 
