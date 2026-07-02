@@ -10,12 +10,15 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/core/presentation/personal_best_banner.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/domain/place.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
+import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
+import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
@@ -803,6 +806,74 @@ void main() {
     expect(find.byKey(sealSeriesKey), findsNothing);
     expect(find.byKey(undoShotKey), findsNothing);
   });
+
+  group('«Ny pers!» on the live scorecard (spec 0101)', () {
+    SessionRecord prior({
+      required String program,
+      required int total,
+      int inner = 0,
+    }) => SessionRecord(
+      id: 'prior-$program-$total',
+      program: program,
+      total: total,
+      maxTotal: 654,
+      innerTens: inner,
+      payload: const <String, dynamic>{},
+    );
+
+    // Completes a full 10-shot session (all centre hits → 100 points).
+    Future<void> completeSession(
+      WidgetTester tester, {
+      List<SessionRecord>? syncedRecords,
+    }) async {
+      await tester.pumpWidget(
+        _app(ProgramCatalogue.airRifle10m, syncedRecords: syncedRecords),
+      );
+      for (var i = 0; i < 10; i++) {
+        await tapTarget(tester);
+      }
+      await tester.tap(find.byKey(sealSeriesKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(sessionCompleteKey), findsOneWidget);
+    }
+
+    testWidgets('beating the program history shows the banner', (tester) async {
+      await completeSession(
+        tester,
+        syncedRecords: [
+          prior(program: ProgramCatalogue.airRifle10m.name, total: 50),
+        ],
+      );
+      expect(find.byKey(personalBestKey), findsOneWidget);
+      expect(find.text('Ny pers!'), findsOneWidget);
+    });
+
+    testWidgets('a higher prior result hides the banner', (tester) async {
+      await completeSession(
+        tester,
+        syncedRecords: [
+          prior(program: ProgramCatalogue.airRifle10m.name, total: 999),
+        ],
+      );
+      expect(find.byKey(personalBestKey), findsNothing);
+    });
+
+    testWidgets('a first-ever result is not a new best', (tester) async {
+      await completeSession(tester);
+      expect(find.byKey(personalBestKey), findsNothing);
+    });
+
+    testWidgets('history from another program does not count', (tester) async {
+      await completeSession(
+        tester,
+        syncedRecords: [
+          prior(program: ProgramCatalogue.airRifle10m.name, total: 50),
+          prior(program: 'Noe helt annet', total: 999),
+        ],
+      );
+      expect(find.byKey(personalBestKey), findsOneWidget);
+    });
+  });
 }
 
 /// A 1×1 transparent PNG, so the scan screen's `Image.memory` decodes.
@@ -816,6 +887,7 @@ Widget _app(
   SessionMetadata? metadata,
   Weapon? weapon,
   ImageSourceService? imageSource,
+  List<SessionRecord>? syncedRecords,
 }) {
   return ProviderScope(
     overrides: [
@@ -823,6 +895,9 @@ Widget _app(
         imageSourceServiceProvider.overrideWithValue(imageSource),
       // Skip the one-time training-data disclosure (spec 0041) in these tests.
       initialDisclosureShownProvider.overrideWithValue(true),
+      // A seeded account history, for the «Ny pers!» tests (spec 0101).
+      if (syncedRecords != null)
+        syncedSessionsProvider.overrideWith((ref) async => syncedRecords),
     ],
     child: MaterialApp(
       home: SeriesScreen(

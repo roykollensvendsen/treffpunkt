@@ -8,19 +8,24 @@ import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/nor_date.dart';
+import 'package:treffpunkt/core/presentation/personal_best_banner.dart';
+import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/series.dart';
 import 'package:treffpunkt/features/scoring/domain/series_score.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
+import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_score.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
+import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_painter.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/silhouette_series_target.dart';
+import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 /// Key for the "complete series" / advance action in the app bar.
@@ -214,18 +219,50 @@ class SessionView extends ConsumerWidget {
     }
   }
 
+  /// Whether the just-finished session is a new personal best for its
+  /// program (spec 0101): compared against the shooter's other sessions —
+  /// pending and synced, merged exactly as «Mine økter» does — with the
+  /// finished recording's own id excluded (it is already in the upload
+  /// queue by the time the scorecard renders).
+  bool _isPersonalBest(
+    WidgetRef ref,
+    SessionRecording recording,
+    ProgramDefinition program,
+    SessionScore score,
+  ) {
+    final live = ref.watch(uploadQueueProvider);
+    final stored = ref.watch(storedPendingProvider).value ?? const [];
+    final synced =
+        ref.watch(syncedSessionsProvider).value ?? const <SessionRecord>[];
+    final entries = mergeMySessions(
+      synced: synced,
+      pending: [...stored, ...live],
+    );
+    return isNewPersonalBest(
+      result: (points: score.total, inner: score.innerTens),
+      prior: [
+        for (final entry in entries)
+          if (entry.record.program == program.name &&
+              entry.record.id != recording.id)
+            (points: entry.record.total, inner: entry.record.innerTens),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recording = ref.watch(sessionProvider);
     final program = ref.watch(currentProgramDefinitionProvider);
 
     if (recording.isComplete) {
+      final score = _scoring.scoreSession(recording.session);
       return SessionScorecard(
         program: program,
-        score: _scoring.scoreSession(recording.session),
+        score: score,
         metadata: recording.session.metadata,
         weapon: recording.session.weapon,
         seriesByStage: recording.session.sealedSeriesByStage,
+        personalBest: _isPersonalBest(ref, recording, program, score),
         actions: actions,
       );
     }
@@ -874,6 +911,7 @@ class SessionScorecard extends StatelessWidget {
     this.actions,
     this.title,
     this.seriesByStage,
+    this.personalBest = false,
     super.key,
   });
 
@@ -900,6 +938,11 @@ class SessionScorecard extends StatelessWidget {
   /// `sealedSeriesByStage`), or `null` to omit the per-series targets. When
   /// given, each series shows the target with its shots (spec 0058).
   final List<List<Series>>? seriesByStage;
+
+  /// Whether this result is a new personal best for the program (spec 0101),
+  /// celebrated with the «Ny pers!» banner. Only the live completion screen
+  /// sets it; the historical detail view never celebrates again.
+  final bool personalBest;
 
   @override
   Widget build(BuildContext context) {
@@ -933,6 +976,10 @@ class SessionScorecard extends StatelessWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
+                ],
+                if (personalBest) ...[
+                  const SizedBox(height: 12),
+                  const PersonalBestBanner(),
                 ],
                 const SizedBox(height: 12),
                 for (var i = 0; i < program.stages.length; i++)

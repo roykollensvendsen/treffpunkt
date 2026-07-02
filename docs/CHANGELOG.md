@@ -52,6 +52,15 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Added
+- **«Ny pers!» on the scorecard**: finish a session that beats your best
+  earlier result on the same exercise (points, with inner hits as the
+  tiebreak) and the scorecard celebrates it with a signal-red «Ny pers!»
+  field — for the ring programs and the NorgesFelt course (per group)
+  alike. Old sessions in "Mine økter" are never re-celebrated (spec 0101).
+- **Logo mark and category pictograms**: the home title wears the
+  Treffpunkt mark (the target with a red bull), and the four category cards
+  each carry a small pictogram — fine rings for Luft, a heavy bull for
+  Fin/Grov, the silhouette for MIL and felt's figure pair (spec 0101).
 - **A look that says shooting**: the app reseeds from a deep blue-graphite
   with the **signal red of a hit** reserved for the moments that matter —
   the newest shot on the target now pops in red with its halo while older

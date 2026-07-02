@@ -17,7 +17,9 @@ import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
+import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
+import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 /// Key for the group-picker button for [group] (spec 0080), for tests.
@@ -240,6 +242,26 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     unawaited(navigator.maybePop());
   }
 
+  /// Whether the finished round is a new personal best (spec 0101): compared
+  /// against the shooter's other felt rounds *of the same group* — local and
+  /// synced merged as «Mine økter» does — with this round's own id excluded
+  /// (a re-save of the same round must not beat itself).
+  bool _isPersonalBest() {
+    final tally = _session;
+    final rounds = mergeFeltRounds(
+      local: ref.watch(feltHistoryProvider).value ?? const [],
+      synced: ref.watch(feltSyncedSessionsProvider).value ?? const [],
+    );
+    return isNewPersonalBest(
+      result: (points: tally.points, inner: tally.inner),
+      prior: [
+        for (final round in rounds)
+          if (round.id != _roundId && round.session.group == tally.group)
+            (points: round.tally.points, inner: round.tally.inner),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_group == null) {
@@ -254,7 +276,12 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              Expanded(child: FeltScorecard(session: _session)),
+              Expanded(
+                child: FeltScorecard(
+                  session: _session,
+                  personalBest: _isPersonalBest(),
+                ),
+              ),
               // The explicit save (spec 0091): the round only reaches "Mine
               // økter" through this button — deliberate, and exactly once.
               Padding(

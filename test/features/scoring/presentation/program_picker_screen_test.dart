@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
+import 'package:treffpunkt/core/presentation/category_pictograms.dart';
+import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -69,6 +71,21 @@ void main() {
       find.byKey(const ValueKey<String>('felt-norgesfelt-2026')),
       findsNothing,
     );
+  });
+
+  testWidgets('the app bar carries the logo mark and tiles pictograms (0101)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    // The wordmark's target beside the title, plus one on each precision
+    // category tile (Luft and Fin/Grov).
+    expect(find.byType(TargetIcon), findsNWidgets(3));
+    // MIL wears the silhouette its programs are shot on, Felt the
+    // square-and-circle figure pair of its holds.
+    expect(find.byType(SilhouettePictogram), findsOneWidget);
+    expect(find.byType(FeltFiguresPictogram), findsOneWidget);
   });
 
   testWidgets('NSF Luft lists the air programs and opens setup on tap', (
