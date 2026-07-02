@@ -64,4 +64,28 @@ void main() {
       );
     });
   });
+
+  group('bestResult (spec 0102)', () {
+    test('an empty list has no best', () {
+      expect(bestResult(const []), isNull);
+    });
+
+    test('picks the most points', () {
+      expect(
+        bestResult(const [
+          (points: 90, inner: 9),
+          (points: 95, inner: 0),
+          (points: 85, inner: 2),
+        ]),
+        (points: 95, inner: 0),
+      );
+    });
+
+    test('breaks a point tie on inner hits', () {
+      expect(
+        bestResult(const [(points: 90, inner: 2), (points: 90, inner: 5)]),
+        (points: 90, inner: 5),
+      );
+    });
+  });
 }

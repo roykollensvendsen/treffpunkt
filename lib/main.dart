@@ -24,10 +24,12 @@ import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dar
 import 'package:treffpunkt/features/scoring/data/image_picker_image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_target_scanner.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
+import 'package:treffpunkt/features/scoring/data/personal_records_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/data/supabase_contribution_service.dart';
 import 'package:treffpunkt/features/scoring/data/supabase_session_repository.dart';
 import 'package:treffpunkt/features/settings/data/contribution_consent_store.dart';
+import 'package:treffpunkt/features/settings/data/default_place_store.dart';
 import 'package:treffpunkt/features/settings/data/theme_mode_store.dart';
 import 'package:treffpunkt/features/weapons/data/weapon_store.dart';
 
@@ -50,6 +52,10 @@ Future<void> main() async {
   final themeModeStore = SharedPreferencesThemeModeStore(prefs);
   final feltGroupStore = SharedPreferencesFeltGroupStore(prefs);
   final initialFeltGroup = await feltGroupStore.load();
+  final defaultPlaceStore = SharedPreferencesDefaultPlaceStore(prefs);
+  final initialDefaultPlace = await defaultPlaceStore.load();
+  final personalRecordsStore = SharedPreferencesPersonalRecordsStore(prefs);
+  final initialPersonalRecords = await personalRecordsStore.load();
   // Load the saved theme once here too, so the app starts on the right theme
   // without a first-frame flash of the wrong one (spec 0030).
   final initialThemeMode = await themeModeStore.load();
@@ -81,6 +87,10 @@ Future<void> main() async {
     contributionService: SupabaseContributionService(Supabase.instance.client),
     feltGroupStore: feltGroupStore,
     initialFeltGroup: initialFeltGroup,
+    defaultPlaceStore: defaultPlaceStore,
+    initialDefaultPlace: initialDefaultPlace,
+    personalRecordsStore: personalRecordsStore,
+    initialPersonalRecords: initialPersonalRecords,
     themeModeStore: themeModeStore,
     initialThemeMode: initialThemeMode,
     contributionConsentStore: contributionConsentStore,

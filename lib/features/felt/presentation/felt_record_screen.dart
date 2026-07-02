@@ -20,6 +20,7 @@ import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 /// Key for the group-picker button for [group] (spec 0080), for tests.
@@ -245,16 +246,21 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
   /// Whether the finished round is a new personal best (spec 0101): compared
   /// against the shooter's other felt rounds *of the same group* — local and
   /// synced merged as «Mine økter» does — with this round's own id excluded
-  /// (a re-save of the same round must not beat itself).
+  /// (a re-save of the same round must not beat itself). A manual record
+  /// baseline for the group counts as one more prior result (spec 0102).
   bool _isPersonalBest() {
     final tally = _session;
     final rounds = mergeFeltRounds(
       local: ref.watch(feltHistoryProvider).value ?? const [],
       synced: ref.watch(feltSyncedSessionsProvider).value ?? const [],
     );
+    final baseline = ref.watch(
+      personalRecordsProvider,
+    )[feltRecordKey(tally.group)];
     return isNewPersonalBest(
       result: (points: tally.points, inner: tally.inner),
       prior: [
+        ?baseline,
         for (final round in rounds)
           if (round.id != _roundId && round.session.group == tally.group)
             (points: round.tally.points, inner: round.tally.inner),

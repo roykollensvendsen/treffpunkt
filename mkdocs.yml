@@ -132,6 +132,7 @@ nav:
       - "0099 — Feltskyting: husker gruppa": specs/0099-felt-remember-group.md
       - "0100 — Visuell identitet, del 1": specs/0100-visual-identity.md
       - "0101 — «Ny pers!», logo og piktogrammer": specs/0101-personal-best.md
+      - "0102 — Standardsted og rekord-startverdier": specs/0102-defaults-and-records.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

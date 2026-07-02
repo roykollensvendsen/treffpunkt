@@ -32,7 +32,8 @@ of the sign-in screen. It works offline.
    field appears when the finished session's result (points, with
    innertreff as the tiebreak) is better than every earlier session of the
    same exercise — the felt course celebrates too, per group. Your first
-   session of an exercise isn't a «pers» yet; there is nothing beaten.
+   session of an exercise isn't a «pers» yet — unless you have entered a
+   record from before the app under **Rekorder** and just beat it.
 
 ### Silhuettpistol (the 5-target bank)
 **25 m Silhuettpistol** is shot one shot at each of **five silhouettes**. The
@@ -97,14 +98,21 @@ so the card only appears while a session is in progress.
 
 ## See if you are improving (Statistikk)
 
-In **Mine økter**, tap the **chart** button in the top bar to open
-**Statistikk**. Pick an **øvelse** (any program — or the NorgesFelt course —
-you have completed dated sessions of) and you get two curves in one chart:
-your **poengsum** and your **innertreff** per session, each in its own
-colour with a legend. There is no time axis — the x-axis is simply your
-sessions in the order you shot them. Tap or drag on the chart to read a
-specific session's numbers; the latest values are labelled at the end of
-each curve.
+Open the **Statistikk** tab at the bottom. Pick an **øvelse** (any program —
+or the NorgesFelt course — you have completed dated sessions of) and you get
+two curves in one chart: your **poengsum** and your **innertreff** per
+session, each in its own colour with a legend. There is no time axis — the
+x-axis is simply your sessions in the order you shot them. Tap or drag on
+the chart to read a specific session's numbers; the latest values are
+labelled at the end of each curve.
+
+The **trophy** button in the top bar opens **Rekorder**: every exercise with
+your current personal record. Shot for years before you got the app? Tap an
+exercise and enter your record from before — points and innertreff — as a
+**startverdi**. The record shown (and the one «Ny pers!» must beat) is
+always the best of that starting value and the sessions you have recorded,
+so beating it updates it by itself. **Fjern** removes a starting value
+again.
 
 ## Varsler (notifications)
 
@@ -120,8 +128,15 @@ across devices.
 
 Tap the **gear** in the top bar to open **Innstillinger**, where the app's
 settings live in one place: your **account** (**Brukernavn**, e-post and **Logg
-ut**), **Utseende** (theme), **Varsler** (notifications) and **Personvern**
-(training images).
+ut**), **Skyting** (your defaults), **Utseende** (theme), **Varsler**
+(notifications) and **Personvern** (training images).
+
+Under **Skyting** you can set a **Standard sted** — the range you usually
+shoot at. The setup step before every session (felt too) then starts with
+the place already filled in; you can still type something else, clear it, or
+use **Bruk min posisjon** as before. **Personlige rekorder** opens the same
+Rekorder page as the trophy button on Statistikk, so you can enter your
+records from before the app the moment you install it.
 
 Your **Brukernavn** (display name) is the name shown on your chat and forum
 messages. You get a sensible default when you sign in — your Google name, or the

@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/personal_best_banner.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
+import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 import 'package:treffpunkt/features/scoring/domain/place.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
@@ -19,6 +20,7 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
@@ -825,9 +827,14 @@ void main() {
     Future<void> completeSession(
       WidgetTester tester, {
       List<SessionRecord>? syncedRecords,
+      Map<String, ExerciseResult>? baselines,
     }) async {
       await tester.pumpWidget(
-        _app(ProgramCatalogue.airRifle10m, syncedRecords: syncedRecords),
+        _app(
+          ProgramCatalogue.airRifle10m,
+          syncedRecords: syncedRecords,
+          baselines: baselines,
+        ),
       );
       for (var i = 0; i < 10; i++) {
         await tapTarget(tester);
@@ -873,6 +880,28 @@ void main() {
       );
       expect(find.byKey(personalBestKey), findsOneWidget);
     });
+
+    testWidgets('a baseline above the result hides the banner (0102)', (
+      tester,
+    ) async {
+      await completeSession(
+        tester,
+        baselines: {
+          ProgramCatalogue.airRifle10m.name: (points: 999, inner: 0),
+        },
+      );
+      expect(find.byKey(personalBestKey), findsNothing);
+    });
+
+    testWidgets('the first session celebrates when it beats the baseline', (
+      tester,
+    ) async {
+      await completeSession(
+        tester,
+        baselines: {ProgramCatalogue.airRifle10m.name: (points: 50, inner: 0)},
+      );
+      expect(find.byKey(personalBestKey), findsOneWidget);
+    });
   });
 }
 
@@ -888,6 +917,7 @@ Widget _app(
   Weapon? weapon,
   ImageSourceService? imageSource,
   List<SessionRecord>? syncedRecords,
+  Map<String, ExerciseResult>? baselines,
 }) {
   return ProviderScope(
     overrides: [
@@ -898,6 +928,9 @@ Widget _app(
       // A seeded account history, for the «Ny pers!» tests (spec 0101).
       if (syncedRecords != null)
         syncedSessionsProvider.overrideWith((ref) async => syncedRecords),
+      // Seeded manual record baselines (spec 0102).
+      if (baselines != null)
+        initialPersonalRecordsProvider.overrideWithValue(baselines),
     ],
     child: MaterialApp(
       home: SeriesScreen(

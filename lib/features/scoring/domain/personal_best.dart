@@ -26,3 +26,19 @@ bool isNewPersonalBest({
   }
   return any;
 }
+
+/// The lexicographically greatest of [results] — the shooter's *effective*
+/// record when fed the manual baseline plus every recorded session of an
+/// exercise (spec 0102) — or null when [results] is empty.
+ExerciseResult? bestResult(Iterable<ExerciseResult> results) {
+  ExerciseResult? best;
+  for (final r in results) {
+    final b = best;
+    if (b == null ||
+        r.points > b.points ||
+        (r.points == b.points && r.inner > b.inner)) {
+      best = r;
+    }
+  }
+  return best;
+}
