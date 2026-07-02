@@ -17,6 +17,7 @@ import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/statistics_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
 /// Key for the card of the saved session with the given [id], used by tests.
@@ -147,6 +148,18 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
       appBar: AppBar(
         title: const Text('Mine økter'),
         actions: [
+          IconButton(
+            key: statisticsButtonKey,
+            tooltip: 'Statistikk',
+            icon: const Icon(Icons.show_chart),
+            onPressed: () => unawaited(
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const StatisticsScreen(),
+                ),
+              ),
+            ),
+          ),
           IconButton(
             key: calendarToggleKey,
             tooltip: _calendar ? 'Vis liste' : 'Vis kalender',

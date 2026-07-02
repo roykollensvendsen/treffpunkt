@@ -78,6 +78,17 @@ on, with
 every shot you had already placed still there. A finished session clears itself,
 so the card only appears while a session is in progress.
 
+## See if you are improving (Statistikk)
+
+In **Mine økter**, tap the **chart** button in the top bar to open
+**Statistikk**. Pick an **øvelse** (any program — or the NorgesFelt course —
+you have completed dated sessions of) and you get two curves in one chart:
+your **poengsum** and your **innertreff** per session, each in its own
+colour with a legend. There is no time axis — the x-axis is simply your
+sessions in the order you shot them. Tap or drag on the chart to read a
+specific session's numbers; the latest values are labelled at the end of
+each curve.
+
 ## Settings (Innstillinger)
 
 Tap the **gear** in the top bar to open **Innstillinger**, where the app's
