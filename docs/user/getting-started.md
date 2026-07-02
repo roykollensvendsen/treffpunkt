@@ -37,11 +37,13 @@ rings. Under the **Felt** category on the **Velg program** page you can open
 drawn as **one picture that matches the official target sheet**: the figures (hare, wolf head,
 ptarmigan, hexagons, triangles, circles …) at their real relative size and
 position, in the hold's colour, white figures knocked out of a coloured plate,
-the **black lines dividing the målgrupper**, and the inner-treff ring on every
-figure. Tap **Skyt løypa** to record a round: choose your **group** (which sets
-6 or 5 shots per hold), then **place each shot** on the hold picture where it
-hit. The app works out which figure and inner zone each shot landed in and
-scores it the NorgesFelt way — **1 point per hit and 1 per figure you hit**.
+the **black lines dividing the målgrupper**, and each figure's inner-treff
+zone — the ring, or on the three-square stripes of holds 2 and 8 the
+**middle square**. Tap **Skyt løypa** to record a round: choose your
+**group** (which sets 6 or 5 shots per hold), then **place each shot** on the
+hold picture where it hit. The app works out which figure and inner zone each
+shot landed in and scores it the NorgesFelt way — **1 point per hit and 1 per
+figure you hit** (a stripe's three squares are one figure).
 **Innertreff** (inner-zone hits) give **no points**: they are the
 **tiebreaker** — with equal points, the shooter with the most inner hits wins
 — and they are shown next to the points as **· N Ⓧ**, the same way the ring

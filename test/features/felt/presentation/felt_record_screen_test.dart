@@ -58,6 +58,36 @@ void main() {
     expect(find.byType(InnerTenX), findsNWidgets(2));
   });
 
+  testWidgets('a hold-2 stripe scores as one figure, middle inner (0086)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(600, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: FeltRecordScreen())),
+    );
+    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Neste'));
+    await tester.pumpAndSettle();
+
+    // Hold 2 (247×151): the top stripe's left square centre (21, 20.5) and
+    // middle square centre (57.5, 20.5). One figure, the middle is inner —
+    // treff 2 + figur 1 = 3 points and a ringed-X count of 1 (specs
+    // 0085/0086).
+    await tapRecorder(tester, const Offset(21 / 247, 20.5 / 151));
+    await tapRecorder(tester, const Offset(57.5 / 247, 20.5 / 151));
+    expect(
+      find.textContaining(
+        'Treff 2 · Figur 1  =  3 poeng · 1',
+        findRichText: true,
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('placing is capped at the group shot count (spec 0080)', (
     tester,
   ) async {

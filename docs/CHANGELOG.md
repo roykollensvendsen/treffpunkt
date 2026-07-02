@@ -26,6 +26,12 @@ All notable changes to this project are documented here. The format is based on
   applied to the hosted project.
 
 ### Changed
+- **NorgesFelt: the three-square stripes score as one figure, middle square =
+  innertreff**: on Hold 2 and Hold 8 the stripe figures printed as three
+  squares in a row/column now score correctly — hitting two squares of the
+  same stripe credits the figure once, and a hit in the **middle square
+  counts as innertreff** (these figures have no ring). Drawing is unchanged
+  (spec 0086).
 - **NorgesFelt: innertreff is the tiebreaker, not points**: a felt round now
   scores **1 point per hit and 1 per figure hit** — inner-zone hits no longer
   add points (max is 80 for gruppe 1, as on the official course). The inner
