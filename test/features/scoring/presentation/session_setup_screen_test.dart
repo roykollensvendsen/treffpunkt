@@ -275,6 +275,88 @@ void main() {
     expect(find.byKey(seriesTargetKey), findsOneWidget);
     expect(pushedWeapon(tester), rifle);
   });
+
+  testWidgets('an already-selected weapon attaches without a new tap (0095)', (
+    tester,
+  ) async {
+    // The picker highlights the session-scoped selection; the form must
+    // attach the same weapon — what looks chosen IS what is recorded.
+    final rifle = Weapon.fromClass(
+      const WeaponClass(
+        discipline: Discipline.rifle,
+        caliberLabel: '4.5 mm',
+        label: 'Air 4.5 mm',
+      ),
+      id: 'r1',
+      name: 'My air rifle',
+    );
+    final container = ProviderContainer(
+      overrides: [
+        locationServiceProvider.overrideWithValue(FakeLocationService()),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.read(weaponsProvider.notifier).add(rifle);
+    container.read(selectedWeaponProvider.notifier).select(rifle);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: SessionSetupScreen(
+            program: ProgramCatalogue.airRifle10m,
+            now: clock,
+          ),
+        ),
+      ),
+    );
+
+    // No tap on the picker — straight to confirm.
+    await tester.tap(find.byKey(sessionConfirmKey));
+    await tester.pumpAndSettle();
+
+    expect(pushedWeapon(tester), rifle);
+  });
+
+  testWidgets('a non-permitted selection does not attach (spec 0095)', (
+    tester,
+  ) async {
+    // A rifle selected earlier must not ride into a pistol program's session.
+    final rifle = Weapon.fromClass(
+      const WeaponClass(
+        discipline: Discipline.rifle,
+        caliberLabel: '4.5 mm',
+        label: 'Air 4.5 mm',
+      ),
+      id: 'r1',
+      name: 'My air rifle',
+    );
+    final container = ProviderContainer(
+      overrides: [
+        locationServiceProvider.overrideWithValue(FakeLocationService()),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.read(weaponsProvider.notifier).add(rifle);
+    container.read(selectedWeaponProvider.notifier).select(rifle);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: SessionSetupScreen(
+            program: ProgramCatalogue.airPistol10m,
+            now: clock,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(sessionConfirmKey));
+    await tester.pumpAndSettle();
+
+    expect(pushedWeapon(tester), isNull);
+  });
 }
 
 /// A geocoder that always resolves to a fixed [name] (spec 0076).

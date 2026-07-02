@@ -13,6 +13,7 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/presentation/date_time_merge.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/weapons/data/weapons_store.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 import 'package:treffpunkt/features/weapons/presentation/weapon_picker.dart';
 
@@ -125,6 +126,21 @@ class _SessionSetupFormState extends ConsumerState<SessionSetupForm> {
   double? _longitude;
   bool _locating = false;
   Weapon? _weapon;
+
+  @override
+  void initState() {
+    super.initState();
+    // The picker highlights the session-scoped selection — seed the form
+    // from the same provider so what looks chosen IS what gets attached
+    // (spec 0095), but only when it is permitted for this flow.
+    final selected = ref.read(selectedWeaponProvider);
+    if (selected != null &&
+        selected.discipline == widget.discipline &&
+        (widget.classLabels.isEmpty ||
+            widget.classLabels.contains(selected.classLabel))) {
+      _weapon = selected;
+    }
+  }
 
   @override
   void dispose() {
