@@ -52,6 +52,13 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Added
+- **A look that says shooting**: the app reseeds from a deep blue-graphite
+  with the **signal red of a hit** reserved for the moments that matter —
+  the newest shot on the target now pops in red with its halo while older
+  shots recede (the convention of the range monitors), a drawn **target
+  icon** replaces the map icons on every «skyt»-button, score digits are
+  tabular so totals align, the target paper is slightly warm in dark mode,
+  and the scoreboard's top three wear gold, silver and bronze (spec 0100).
 - **The felt recorder remembers your group**: pick Gruppe 1 or 2 once and
   the next round starts straight on hold 1; a group button in the top bar
   lets you change it until the first shot is placed (spec 0099).

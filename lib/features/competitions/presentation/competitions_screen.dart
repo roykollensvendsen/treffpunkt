@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
+import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
@@ -1035,7 +1036,7 @@ class _CompetitionDetailScreenState
                         onPressed: program == null
                             ? null
                             : () => unawaited(_shoot()),
-                        icon: const Icon(Icons.gps_fixed),
+                        icon: const TargetIcon(size: 20),
                         label: const Text('Skyt nå'),
                       ),
                     // The competition's chat — the shared back-channel for
@@ -1163,9 +1164,22 @@ class _ResultRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The podium reads like a stevne result list (spec 0100): gold, silver
+    // and bronze tints on the top three ranks.
+    final podium = switch (rank) {
+      1 => const Color(0xFFE6C15A),
+      2 => const Color(0xFFC0C4CC),
+      3 => const Color(0xFFC98F5E),
+      _ => null,
+    };
     return ListTile(
       key: resultRowKey(result.id),
-      leading: CircleAvatar(radius: 14, child: Text('$rank')),
+      leading: CircleAvatar(
+        radius: 14,
+        backgroundColor: podium,
+        foregroundColor: podium == null ? null : const Color(0xFF2B2B2B),
+        child: Text('$rank'),
+      ),
       title: Text(result.profile?.displayName ?? 'Ukjent skytter'),
       trailing: innerTenScoreText(
         context: context,

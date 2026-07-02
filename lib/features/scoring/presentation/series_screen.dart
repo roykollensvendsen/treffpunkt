@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/nor_date.dart';
@@ -780,6 +781,7 @@ class _SeriesTotalCard extends StatelessWidget {
                       color: onColor,
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                 ],
@@ -1115,6 +1117,7 @@ class _SeriesResultRow extends StatelessWidget {
                                   geometry: shotSeries.geometry,
                                   shots: shotSeries.shots,
                                   draggingIndex: null,
+                                  colors: TreffColors.of(context),
                                 ),
                               ),
                             ),
@@ -1159,6 +1162,7 @@ class _SilhouetteReview extends StatelessWidget {
                 shots: _slice(shots, i * perTarget, perTarget),
                 draggingIndex: null,
                 highlightLast: false,
+                colors: TreffColors.of(context),
               ),
             ),
           ),
@@ -1230,6 +1234,7 @@ class _GrandTotalCard extends StatelessWidget {
                       color: onColor,
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                 ],

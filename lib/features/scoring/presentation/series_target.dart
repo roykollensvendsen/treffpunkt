@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_painter.dart';
@@ -94,6 +95,7 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
                           geometry: geometry,
                           shots: shots,
                           draggingIndex: recording.draggingIndex,
+                          colors: TreffColors.of(context),
                         ),
                       ),
                     ),

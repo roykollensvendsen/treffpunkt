@@ -60,15 +60,20 @@ Widget innerTenScoreText({
   String separator = ' · ',
   String? semanticsLabel,
 }) {
+  // Tabular figures on every score line (spec 0100): the digits align in
+  // lists and never shift width as a total ticks upward.
+  final scoreStyle = (style ?? const TextStyle()).copyWith(
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
   if (innerTens <= 0) {
-    return Text(lead, style: style, semanticsLabel: semanticsLabel);
+    return Text(lead, style: scoreStyle, semanticsLabel: semanticsLabel);
   }
-  final resolved = DefaultTextStyle.of(context).style.merge(style);
+  final resolved = DefaultTextStyle.of(context).style.merge(scoreStyle);
   final fontSize = resolved.fontSize ?? 14;
   final color = resolved.color ?? Theme.of(context).colorScheme.onSurface;
   return Text.rich(
     TextSpan(
-      style: style,
+      style: scoreStyle,
       children: <InlineSpan>[
         TextSpan(text: '$lead$separator$innerTens '),
         WidgetSpan(

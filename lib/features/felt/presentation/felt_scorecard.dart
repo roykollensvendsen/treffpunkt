@@ -111,6 +111,7 @@ class _FeltTotalCard extends StatelessWidget {
                   color: onColor,
                   fontSize: 40,
                   fontWeight: FontWeight.bold,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ],

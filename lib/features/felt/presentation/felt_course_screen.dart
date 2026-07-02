@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
@@ -85,7 +85,7 @@ class FeltCourseScreen extends ConsumerWidget {
                 FilledButton.icon(
                   key: feltShootButtonKey,
                   onPressed: () => unawaited(_shoot(context, ref)),
-                  icon: const Icon(Icons.my_location),
+                  icon: const TargetIcon(size: 20),
                   label: const Text('Skyt løypa'),
                 ),
                 const SizedBox(height: 8),
