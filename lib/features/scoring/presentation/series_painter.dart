@@ -79,6 +79,21 @@ class SeriesPainter extends CustomPainter {
       );
     }
 
+    // The inner-ten ring (spec 0103), on the faces that have one — drawn
+    // like the scoring rings, white on the black bull.
+    final innerTenMm = geometry.innerTenDiameterMm;
+    if (innerTenMm != null) {
+      final onBlack = innerTenMm <= geometry.blackBullDiameterMm;
+      canvas.drawCircle(
+        centre,
+        innerTenMm / 2 * scale,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = onBlack ? Colors.white70 : Colors.black54,
+      );
+    }
+
     final radius = geometry.pelletRadiusMm * scale;
     for (var i = 0; i < shots.length; i++) {
       final shot = shots[i];

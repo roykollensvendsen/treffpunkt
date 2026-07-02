@@ -144,4 +144,51 @@ void main() {
       expect(last.length, earlier.length);
     });
   });
+
+  group('inner-ten ring (spec 0103)', () {
+    List<_CircleCall> centreCircles(_RecordingCanvas canvas) {
+      final centre = Offset(size.width / 2, size.height / 2);
+      return canvas.circles
+          .where((c) => (c.centre - centre).distance < 0.01)
+          .toList();
+    }
+
+    test('a face with an inner ten gets its ring drawn', () {
+      const geometry = TargetGeometry.airPistol10m();
+      final canvas = _RecordingCanvas();
+      const SeriesPainter(
+        geometry: geometry,
+        shots: <Shot>[],
+        draggingIndex: null,
+      ).paint(canvas, size);
+
+      final scale = (size.shortestSide / 2) / geometry.maxScoringRadiusMm;
+      final innerRadius = geometry.innerTenDiameterMm! / 2 * scale;
+      final ring = centreCircles(canvas).where(
+        (c) =>
+            c.paint.style == PaintingStyle.stroke &&
+            (c.radius - innerRadius).abs() < 0.01,
+      );
+      expect(ring, hasLength(1));
+      // 5 mm sits deep inside the 59.5 mm black bull → drawn in white, like
+      // the scoring rings on the black.
+      expect(ring.single.paint.color, isSameColorAs(Colors.white70));
+    });
+
+    test('a face without an inner ten draws only bull + scoring rings', () {
+      const geometry = TargetGeometry.airRifle10m();
+      expect(geometry.hasInnerTen, isFalse);
+      final canvas = _RecordingCanvas();
+      const SeriesPainter(
+        geometry: geometry,
+        shots: <Shot>[],
+        draggingIndex: null,
+      ).paint(canvas, size);
+
+      // The filled bull plus one stroked circle per scoring ring — nothing
+      // more at the centre.
+      final rings = geometry.highestRing - geometry.lowestRingValue + 1;
+      expect(centreCircles(canvas), hasLength(rings + 1));
+    });
+  });
 }

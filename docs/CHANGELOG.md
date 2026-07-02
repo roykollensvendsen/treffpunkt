@@ -51,6 +51,13 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Fixed
+- **The inner-ten ring is drawn on the target**: the faces that have an
+  inner ten (luftpistol 5 mm, 25 m presisjon 25 mm, duell 50 mm) now show
+  its ring on the drawn target, white on the black like the real sheets —
+  so you can see what the ringed-X count refers to while placing shots
+  (spec 0103, forum request).
+
 ### Added
 - **Standard sted**: set the range you usually shoot at under
   **Innstillinger → Skyting**, and the setup step before every session
