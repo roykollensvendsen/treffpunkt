@@ -226,7 +226,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     await ref.read(feltSessionStoreProvider).clear().catchError((Object _) {});
     if (!mounted) return;
     setState(() => _saving = false);
-    messenger.showSnackBar(const SnackBar(content: Text('Økta er lagret')));
+    messenger.showSnackBar(const SnackBar(content: Text('Økta er lagret.')));
     unawaited(navigator.maybePop());
   }
 

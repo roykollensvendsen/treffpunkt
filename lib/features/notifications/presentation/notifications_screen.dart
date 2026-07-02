@@ -6,6 +6,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/empty_state.dart';
+import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_chat_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
@@ -128,16 +130,13 @@ class NotificationsScreen extends ConsumerWidget {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 700),
+            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
             child: notifications.isEmpty
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text(
-                        'Ingen varsler ennå.',
-                        key: noNotificationsKey,
-                      ),
-                    ),
+                ? const EmptyState(
+                    icon: Icons.notifications_none,
+                    title: 'Ingen varsler ennå.',
+                    titleKey: noNotificationsKey,
+                    hint: 'Invitasjoner, meldinger og svar dukker opp her.',
                   )
                 : ListView(
                     padding: const EdgeInsets.all(16),

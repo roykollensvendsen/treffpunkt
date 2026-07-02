@@ -34,7 +34,7 @@ class ThemeModeButton extends ConsumerWidget {
       onSelected: (selected) =>
           ref.read(themeModeProvider.notifier).select(selected),
       itemBuilder: (context) => <PopupMenuEntry<ThemeMode>>[
-        _item(ThemeMode.system, Icons.brightness_auto, 'System'),
+        _item(ThemeMode.system, Icons.brightness_auto, 'Følg systemet'),
         _item(ThemeMode.light, Icons.light_mode, 'Lyst'),
         _item(ThemeMode.dark, Icons.dark_mode, 'Mørkt'),
       ],

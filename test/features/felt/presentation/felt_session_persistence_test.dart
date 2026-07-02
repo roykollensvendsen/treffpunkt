@@ -13,6 +13,8 @@ import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
+import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart'
+    show confirmDestructiveKey;
 
 // A saved round with one inner hit on hare (hold 1), the other holds empty.
 FeltSessionSnapshot _savedHareInner(FeltShooterGroup group) =>
@@ -150,6 +152,9 @@ void main() {
 
     // Discard clears the store and removes the card.
     await tester.tap(find.byKey(feltDiscardCardKey));
+    await tester.pumpAndSettle();
+    // Discarding confirms first (spec 0096).
+    await tester.tap(find.byKey(confirmDestructiveKey));
     await tester.pumpAndSettle();
     expect(find.byKey(feltResumeCardKey), findsNothing);
     expect(await store.load(), isNull);

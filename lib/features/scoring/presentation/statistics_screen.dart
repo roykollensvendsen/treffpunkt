@@ -6,7 +6,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/domain/exercise_progress.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
@@ -127,18 +129,13 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 700),
+            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
             child: selected == null
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text(
-                        'Ingen fullførte økter med dato ennå — fullfør en '
-                        'økt, så dukker kurvene opp her.',
-                        key: noStatisticsKey,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
+                ? const EmptyState(
+                    icon: Icons.show_chart,
+                    title: 'Ingen fullførte økter med dato ennå.',
+                    titleKey: noStatisticsKey,
+                    hint: 'Fullfør en økt, så dukker kurvene opp her.',
                   )
                 : Padding(
                     padding: const EdgeInsets.all(16),

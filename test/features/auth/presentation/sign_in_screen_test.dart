@@ -47,7 +47,7 @@ void main() {
 
     await tester.tap(find.byKey(signInWithGoogleButtonKey));
     await tester.pumpAndSettle();
-    expect(find.textContaining('failed'), findsOneWidget);
+    expect(find.textContaining('feilet'), findsOneWidget);
   });
 
   testWidgets('shows the build-version stamp (spec 0028)', (tester) async {

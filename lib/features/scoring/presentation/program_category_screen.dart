@@ -5,6 +5,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:treffpunkt/core/presentation/empty_state.dart';
+import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/tappable_card_tile.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
@@ -37,7 +39,7 @@ class ProgramCategoryScreen extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 700),
+            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
             child: _body(context),
           ),
         ),
@@ -49,15 +51,11 @@ class ProgramCategoryScreen extends StatelessWidget {
     if (category == ProgramCategory.felt) return _courses(context);
     final programs = ProgramCatalogue.inCategory(category);
     if (programs.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            'Ingen programmer i denne kategorien ennå.',
-            key: emptyCategoryKey,
-            textAlign: TextAlign.center,
-          ),
-        ),
+      return const EmptyState(
+        icon: Icons.gps_fixed,
+        title: 'Ingen programmer i denne kategorien ennå.',
+        titleKey: emptyCategoryKey,
+        hint: 'Programmene kommer i en senere versjon.',
       );
     }
     return ListView(

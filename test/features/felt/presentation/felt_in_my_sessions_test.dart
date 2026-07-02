@@ -78,7 +78,7 @@ void main() {
     // Treff + figur = 2; the inner hit is the tiebreaker, no point (0085).
     expect(saved.single.points, 2);
     expect(saved.single.tally.inner, 1);
-    expect(find.text('Økta er lagret'), findsOneWidget);
+    expect(find.text('Økta er lagret.'), findsOneWidget);
   });
 
   testWidgets('walking back and forth never duplicates the round (0091)', (

@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
+import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/tappable_card_tile.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
@@ -30,6 +31,9 @@ const Key discardSessionKey = ValueKey<String>('discardSession');
 
 /// Key for the "My sessions" app-bar action, used by tests (spec 0026).
 const Key mySessionsButtonKey = ValueKey<String>('mySessionsButton');
+
+/// Key for the confirm action in destructive dialogs (spec 0096), for tests.
+const Key confirmDestructiveKey = ValueKey<String>('confirmDestructive');
 
 /// The front page of the picker: the four program categories (spec 0084) —
 /// NSF Luft, NSF Fin/Grov, MIL and Felt. Tapping a category opens its
@@ -86,10 +90,41 @@ class ProgramPickerScreen extends ConsumerWidget {
     ref.invalidate(savedRecordingProvider);
   }
 
-  /// Discards the saved session (spec 0009 req 4) and refreshes the card away.
-  Future<void> _discard(WidgetRef ref) async {
+  /// Discards the saved session (spec 0009 req 4) after a confirmation
+  /// (spec 0096 — the trash sits beside the resume tap target) and refreshes
+  /// the card away.
+  Future<void> _discard(BuildContext context, WidgetRef ref) async {
+    if (!await _confirmDestructive(context, title: 'Forkast lagret økt?')) {
+      return;
+    }
     await ref.read(sessionStoreProvider).clear();
     ref.invalidate(savedRecordingProvider);
+  }
+
+  /// The app's standard destructive-action confirmation (spec 0096).
+  Future<bool> _confirmDestructive(
+    BuildContext context, {
+    required String title,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: const Text('Handlingen kan ikke angres.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Avbryt'),
+          ),
+          FilledButton(
+            key: confirmDestructiveKey,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Slett'),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 
   /// Opens the "My sessions" history (spec 0026), then refreshes the resume
@@ -192,7 +227,7 @@ class ProgramPickerScreen extends ConsumerWidget {
             Expanded(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 700),
+                  constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
@@ -210,7 +245,8 @@ class ProgramPickerScreen extends ConsumerWidget {
                               key: discardSessionKey,
                               icon: const Icon(Icons.delete_outline),
                               tooltip: 'Forkast lagret økt',
-                              onPressed: () => unawaited(_discard(ref)),
+                              onPressed: () =>
+                                  unawaited(_discard(context, ref)),
                             ),
                             onTap: () =>
                                 unawaited(_resume(context, ref, saved)),

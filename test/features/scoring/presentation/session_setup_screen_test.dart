@@ -51,7 +51,7 @@ void main() {
     expect(find.text('10 m Air Rifle'), findsWidgets);
     expect(find.byKey(sessionConfirmKey), findsOneWidget);
     // The default date/time is seeded from the injected clock.
-    expect(find.textContaining('2026-06-21'), findsOneWidget);
+    expect(find.textContaining('21.06.2026'), findsOneWidget);
   });
 
   // Reads the metadata threaded into the session on the pushed SeriesScreen

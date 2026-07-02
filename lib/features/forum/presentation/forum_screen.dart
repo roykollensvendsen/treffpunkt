@@ -24,6 +24,9 @@ import 'package:uuid/uuid.dart';
 /// Key for the "Forum" action on the program picker (spec 0054).
 const Key forumButtonKey = ValueKey<String>('forum');
 
+/// Key for the confirm action in the forum's delete dialogs (spec 0096).
+const Key confirmForumDeleteKey = ValueKey<String>('confirmForumDelete');
+
 /// Key for the "new thread" action.
 const Key newThreadButtonKey = ValueKey<String>('newThread');
 
@@ -581,13 +584,39 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     }
   }
 
+  /// The forum's destructive-action confirmation (spec 0096) — the same
+  /// dialog the session/competition deletes use.
+  Future<bool> _confirmDelete(String title) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: const Text('Handlingen kan ikke angres.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Avbryt'),
+          ),
+          FilledButton(
+            key: confirmForumDeleteKey,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Slett'),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
   Future<void> _deleteThread() async {
     final navigator = Navigator.of(context);
+    if (!await _confirmDelete('Slett tråd?')) return;
     await ref.read(forumRepositoryProvider).deleteThread(widget.thread.id);
-    navigator.pop();
+    if (mounted) navigator.pop();
   }
 
   Future<void> _deletePost(String postId) async {
+    if (!await _confirmDelete('Slett innlegg?')) return;
     await ref.read(forumRepositoryProvider).deletePost(postId);
   }
 

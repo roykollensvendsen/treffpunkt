@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/material.dart';
+import 'package:treffpunkt/core/presentation/nor_date.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
 
@@ -17,11 +18,7 @@ class FeltSessionDetailScreen extends StatelessWidget {
 
   /// The "date · group[ · place][ · weapon]" caption (spec 0092).
   String get _metaLine {
-    final at = record.capturedAt;
-    String two(int v) => v.toString().padLeft(2, '0');
-    final date =
-        '${at.year}-${two(at.month)}-${two(at.day)} '
-        '${two(at.hour)}:${two(at.minute)}';
+    final date = norDateTime(record.capturedAt);
     final place = record.session.placeLabel;
     return [
       date,

@@ -441,6 +441,9 @@ void main() {
 
     await tester.tap(find.byKey(discardSessionKey));
     await tester.pumpAndSettle();
+    // Discarding confirms first (spec 0096).
+    await tester.tap(find.byKey(confirmDestructiveKey));
+    await tester.pumpAndSettle();
 
     expect(find.byKey(resumeSessionKey), findsNothing);
     expect(await store.load(), isNull);

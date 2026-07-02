@@ -220,6 +220,9 @@ void main() {
     expect(find.byKey(deleteThreadButtonKey), findsOneWidget);
     await tester.tap(find.byKey(deleteThreadButtonKey));
     await tester.pumpAndSettle();
+    // Deleting confirms first (spec 0096).
+    await tester.tap(find.byKey(confirmForumDeleteKey));
+    await tester.pumpAndSettle();
 
     // Back on the list, the thread is gone.
     expect(find.byKey(forumThreadCardKey('t1')), findsNothing);
