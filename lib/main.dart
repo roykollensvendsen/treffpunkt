@@ -16,6 +16,7 @@ import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/data/supabase_felt_session_repository.dart';
 import 'package:treffpunkt/features/forum/data/supabase_forum_repository.dart';
+import 'package:treffpunkt/features/notifications/data/supabase_notifications_repository.dart';
 import 'package:treffpunkt/features/notifications/data/supabase_push_subscription_repository.dart';
 import 'package:treffpunkt/features/scoring/data/big_data_cloud_geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
@@ -84,6 +85,9 @@ Future<void> main() async {
       Supabase.instance.client,
     ),
     forumRepository: SupabaseForumRepository(Supabase.instance.client),
+    notificationsRepository: SupabaseNotificationsRepository(
+      Supabase.instance.client,
+    ),
     pushSubscriptionRepository: SupabasePushSubscriptionRepository(
       Supabase.instance.client,
     ),

@@ -18,8 +18,10 @@ import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_providers.dart';
+import 'package:treffpunkt/features/notifications/data/notifications_repository.dart';
 import 'package:treffpunkt/features/notifications/data/push_subscription_repository.dart';
 import 'package:treffpunkt/features/notifications/presentation/notification_providers.dart';
+import 'package:treffpunkt/features/notifications/presentation/notifications_screen.dart';
 import 'package:treffpunkt/features/scoring/data/contribution_service.dart';
 import 'package:treffpunkt/features/scoring/data/geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
@@ -98,6 +100,7 @@ void runTreffpunkt(
   CompetitionRepository? competitionRepository,
   ForumRepository? forumRepository,
   PushSubscriptionRepository? pushSubscriptionRepository,
+  NotificationsRepository? notificationsRepository,
   BrowserEnvironment? browserEnvironment,
   Sharer? sharer,
 }) {
@@ -157,6 +160,10 @@ void runTreffpunkt(
         if (pushSubscriptionRepository != null)
           pushSubscriptionRepositoryProvider.overrideWithValue(
             pushSubscriptionRepository,
+          ),
+        if (notificationsRepository != null)
+          notificationsRepositoryProvider.overrideWithValue(
+            notificationsRepository,
           ),
         if (browserEnvironment != null)
           browserEnvironmentProvider.overrideWithValue(browserEnvironment),
