@@ -32,7 +32,8 @@ a competition are marked with a dot; tap a day to show only that day's
 competitions, and tap **Vis alle** (or the same day again) to show them all.
 
 ## Invite people
-Open the competition (you must be its owner) and use **Inviter med lenke**:
+Open the competition (you must be its owner) and tap **Inviter** — the invite
+page has both ways in. Under **Inviter med lenke**:
 
 - **Del lenke** opens your device's share sheet, so you can send the join link
   on Messenger, SMS, e-mail or anything else. Whoever opens it joins the
@@ -41,8 +42,8 @@ Open the competition (you must be its owner) and use **Inviter med lenke**:
 - **Lag ny lenke** makes a fresh link and **stops the old one from working** —
   use it if a link has spread too far.
 
-You can also invite a **registered shooter** directly from the list further down
-the screen: tap **Inviter** next to their name. They will see the invitation the
+You can also invite a **registered shooter** from the list on the same page:
+tap **Inviter** next to their name. They will see the invitation the
 next time they open Konkurranser. (Only their name is shown — never their
 e-mail.)
 
@@ -90,16 +91,16 @@ never affects what other participants see. That makes it the way to tidy away a
 competition **someone else created**, which you cannot delete.
 
 - **From the list:** tap the **archive** icon on the competition's card.
-- **From the competition:** open it and tap **Arkiver konkurranse** (available to
-  everyone, whether or not you own it).
+- **From the competition:** open it and pick **Arkiver konkurranse** from the
+  **⋮** menu in the top bar (available to everyone, whether or not you own it).
 
 Archived competitions move into a collapsed **Arkiverte (N)** row at the bottom
 of the list. Tap it to expand, then tap **Gjenopprett** on a competition to
 bring it back to your active list.
 
 ## Delete a competition
-Only the **owner** can delete a competition. Open it and tap **Slett
-konkurranse**; this removes it — and its participants, invitations and results —
+Only the **owner** can delete a competition. Open it and pick **Slett
+konkurranse** from the **⋮** menu in the top bar; this removes it — and its participants, invitations and results —
 for everyone. If it is not yours, archive it instead.
 
 ## Varsler
