@@ -121,6 +121,7 @@ nav:
       - "0088 — Feltskyting: offered groups": specs/0088-felt-offered-groups.md
       - "0089 — Feltskyting: Mine økter parity": specs/0089-felt-my-sessions-parity.md
       - "0090 — Statistikk: progress curves": specs/0090-exercise-progress-charts.md
+      - "0091 — Feltskyting: explicit save": specs/0091-felt-explicit-save.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

@@ -93,7 +93,7 @@ void main() {
     );
   });
 
-  testWidgets('finishing the round clears the store (spec 0081)', (
+  testWidgets('saving the round clears the store; finishing keeps it (0091)', (
     tester,
   ) async {
     bigView(tester);
@@ -111,7 +111,13 @@ void main() {
     await tester.tap(find.text('Fullfør'));
     await tester.pumpAndSettle();
 
+    // Finished but not saved: the round is still resumable, never lost.
     expect(find.byKey(feltScorecardKey), findsOneWidget);
+    expect(await store.load(), isNotNull);
+
+    // Saving clears the in-progress store.
+    await tester.tap(find.byKey(feltSaveRoundKey));
+    await tester.pumpAndSettle();
     expect(await store.load(), isNull);
   });
 

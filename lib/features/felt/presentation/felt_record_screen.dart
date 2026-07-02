@@ -31,6 +31,9 @@ const Key feltHoldPointsKey = ValueKey<String>('feltHoldPoints');
 /// Key for the running session total text (spec 0080).
 const Key feltTotalPointsKey = ValueKey<String>('feltTotalPoints');
 
+/// Key for the scorecard's "Lagre økt" button (spec 0091), for tests.
+const Key feltSaveRoundKey = ValueKey<String>('feltSaveRound');
+
 /// Records a NorgesFelt session (spec 0080): pick a group, then place each shot
 /// on every hold and see the score, ending on a scorecard. The in-progress
 /// round is saved after each change and can be [restored] (spec 0081).
@@ -57,9 +60,18 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
   bool _done = false;
   late List<List<_Placed>> _shots;
 
+  /// The round's id, minted **once** per recorder (spec 0091): however many
+  /// times the shooter walks Fullfør → tilbake → Fullfør, the saved record
+  /// keeps one identity and the history upsert keeps one copy.
+  late final String _roundId;
+
+  /// Guards the save button against double-taps while the save runs.
+  bool _saving = false;
+
   @override
   void initState() {
     super.initState();
+    _roundId = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
     final restored = widget.restored;
     if (restored != null) {
       _group = restored.group;
@@ -110,10 +122,12 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
   );
 
   /// Saves the in-progress round, or clears the store when there is nothing
-  /// worth resuming (no group, no shots, or finished). Best-effort (spec 0081).
+  /// worth resuming (no group or no shots). A **finished** round stays in the
+  /// store until it is explicitly saved (spec 0091), so an unsaved round is
+  /// never lost. Best-effort (spec 0081).
   void _persist() {
     final store = ref.read(feltSessionStoreProvider);
-    final write = (_group == null || _done || _totalShots == 0)
+    final write = (_group == null || _totalShots == 0)
         ? store.clear()
         : store.save(_snapshot());
     unawaited(write.catchError((Object _) {}));
@@ -137,25 +151,41 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     _persist();
   }
 
-  /// Finishes the round: shows the scorecard, clears the in-progress store and
-  /// saves the finished round to history (once, if any shots) — spec 0082.
+  /// Finishes the round: shows the scorecard. Nothing is saved to history
+  /// here — the save is the scorecard's explicit «Lagre økt» button (spec
+  /// 0091), so walking Fullfør → tilbake → Fullfør can never duplicate.
   void _finish() {
     setState(() => _done = true);
     _persist();
-    if (_totalShots > 0) {
-      final record = FeltSessionRecord(
-        id: DateTime.now().microsecondsSinceEpoch.toRadixString(36),
-        capturedAt: DateTime.now(),
-        session: _snapshot(),
-      );
-      unawaited(saveFeltRound(ref, record).catchError((Object _) {}));
-      unawaited(
-        ref
-            .read(feltSyncProvider.notifier)
-            .uploadOne(record)
-            .catchError((Object _) {}),
-      );
-    }
+  }
+
+  /// Saves the finished round — exactly once (spec 0091): the record keeps
+  /// the recorder's stable [_roundId] and the history save upserts by id.
+  /// Uploads best-effort (spec 0083), clears the in-progress store and pops
+  /// back to the course page with a confirmation.
+  Future<void> _save() async {
+    if (_saving || _totalShots == 0) return;
+    setState(() => _saving = true);
+    // Captured before the awaits so no BuildContext is used across the gaps.
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final record = FeltSessionRecord(
+      id: _roundId,
+      capturedAt: DateTime.now(),
+      session: _snapshot(),
+    );
+    await saveFeltRound(ref, record).catchError((Object _) {});
+    unawaited(
+      ref
+          .read(feltSyncProvider.notifier)
+          .uploadOne(record)
+          .catchError((Object _) {}),
+    );
+    await ref.read(feltSessionStoreProvider).clear().catchError((Object _) {});
+    if (!mounted) return;
+    setState(() => _saving = false);
+    messenger.showSnackBar(const SnackBar(content: Text('Økta er lagret')));
+    unawaited(navigator.maybePop());
   }
 
   @override
@@ -169,7 +199,27 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
           title: const Text('Resultat'),
           leading: BackButton(onPressed: () => setState(() => _done = false)),
         ),
-        body: SafeArea(child: FeltScorecard(session: _session)),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(child: FeltScorecard(session: _session)),
+              // The explicit save (spec 0091): the round only reaches "Mine
+              // økter" through this button — deliberate, and exactly once.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    key: feltSaveRoundKey,
+                    onPressed: _saving ? null : () => unawaited(_save()),
+                    icon: const Icon(Icons.save_outlined),
+                    label: const Text('Lagre økt'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
     return _recording(context);

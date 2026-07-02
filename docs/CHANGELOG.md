@@ -39,6 +39,13 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Changed
+- **NorgesFelt: save the round with a button — never duplicates**: finishing
+  a round now shows the scorecard without saving; tap **Lagre økt** to save
+  it — exactly once, however much you walk back and forth (the round keeps
+  one identity, and saving again replaces rather than duplicates). An
+  unsaved finished round stays resumable from **Fortsett felt-økt**, so
+  nothing is lost (spec 0091). Fixes finished rounds getting saved several
+  times when navigating Fullfør → tilbake → Fullfør.
 - **NorgesFelt: a hit on a stripe's dividing line counts**: a shot placed on
   the thin white line between two squares of a three-square stripe (Hold 2
   and 8) previously scored as a miss; it now counts as a hit on the stripe

@@ -37,11 +37,17 @@ final feltHistoryProvider = FutureProvider<List<FeltSessionRecord>>(
 );
 
 /// Prepends [record] to the finished-round history and refreshes readers
-/// (spec 0082).
+/// (spec 0082). Upserts by id (spec 0091): a record saved again — the save
+/// button pressed twice, or any repeated path — replaces its stored copy
+/// instead of duplicating it.
 Future<void> saveFeltRound(WidgetRef ref, FeltSessionRecord record) async {
   final store = ref.read(feltHistoryStoreProvider);
   final current = await store.load();
-  await store.save(<FeltSessionRecord>[record, ...current]);
+  await store.save(<FeltSessionRecord>[
+    record,
+    for (final round in current)
+      if (round.id != record.id) round,
+  ]);
   ref.invalidate(feltHistoryProvider);
 }
 
