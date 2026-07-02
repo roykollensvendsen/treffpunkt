@@ -62,6 +62,7 @@ class SessionSnapshot {
       program,
       metadata: _metadataFrom(json['metadata']),
       weapon: _weaponFrom(json['weapon']),
+      decimalEntry: json['decimalEntry'] as bool? ?? false,
     );
     for (final stageSeries in sealedByStage) {
       for (final series in stageSeries) {
@@ -95,6 +96,7 @@ class SessionSnapshot {
     return <String, dynamic>{
       'id': id,
       'program': session.program.name,
+      'decimalEntry': session.decimalEntry,
       'weapon': _weaponJson(session.weapon),
       'metadata': _metadataJson(session.metadata),
       'sealedSeriesByStage': <List<dynamic>>[
@@ -118,17 +120,19 @@ class SessionSnapshot {
     return series;
   }
 
-  static List<Map<String, double>> _seriesJson(Series series) =>
-      <Map<String, double>>[for (final shot in series.shots) _shotJson(shot)];
+  static List<Map<String, Object>> _seriesJson(Series series) =>
+      <Map<String, Object>>[for (final shot in series.shots) _shotJson(shot)];
 
   static Shot _shotFrom(Map<String, dynamic> json) => Shot(
     dxMm: (json['dxMm'] as num).toDouble(),
     dyMm: (json['dyMm'] as num).toDouble(),
+    tenth: json['tenth'] as int?,
   );
 
-  static Map<String, double> _shotJson(Shot shot) => <String, double>{
+  static Map<String, Object> _shotJson(Shot shot) => <String, Object>{
     'dxMm': shot.dxMm,
     'dyMm': shot.dyMm,
+    if (shot.tenth != null) 'tenth': shot.tenth!,
   };
 
   static Weapon? _weaponFrom(Object? json) {
@@ -217,6 +221,7 @@ class SessionSnapshot {
 
   bool _sessionEquals(Session other) {
     if (session.program.name != other.program.name) return false;
+    if (session.decimalEntry != other.decimalEntry) return false;
     if (session.weapon != other.weapon) return false;
     if (session.metadata != other.metadata) return false;
     final mine = session.sealedSeriesByStage;
@@ -238,7 +243,8 @@ class SessionSnapshot {
     if (a.shots.length != b.shots.length) return false;
     for (var i = 0; i < a.shots.length; i++) {
       if (a.shots[i].dxMm != b.shots[i].dxMm ||
-          a.shots[i].dyMm != b.shots[i].dyMm) {
+          a.shots[i].dyMm != b.shots[i].dyMm ||
+          a.shots[i].tenth != b.shots[i].tenth) {
         return false;
       }
     }

@@ -64,6 +64,9 @@ Key seriesResultRow(int stageIndex, int seriesIndex) =>
 Key seriesReviewTargetKey(int stageIndex, int seriesIndex) =>
     ValueKey<String>('seriesReviewTarget-$stageIndex-$seriesIndex');
 
+/// Key for the last shot's decimal tenth picker (spec 0107), used by tests.
+const Key tenthPickerKey = ValueKey<String>('tenthPicker');
+
 /// Key for the shots-list row of the most recently placed shot, used by tests.
 ///
 /// At most one row carries this key; it moves to the new last row as each
@@ -100,6 +103,10 @@ class _CenteredContent extends StatelessWidget {
     );
   }
 }
+
+/// A decimal score in Norwegian notation (spec 0107): one decimal, comma.
+String _norDecimal(double value) =>
+    value.toStringAsFixed(1).replaceAll('.', ',');
 
 /// The inner-ten count spoken in Norwegian (e.g. "3 indre tiere"), or an empty
 /// string when there are none, so a screen reader reads the X count in words.
@@ -151,6 +158,7 @@ class SeriesScreen extends StatelessWidget {
     this.restored,
     this.actions,
     this.competitionId,
+    this.decimalEntry = false,
     super.key,
   });
 
@@ -172,6 +180,10 @@ class SeriesScreen extends StatelessWidget {
   /// The competition this session is shot for (spec 0012), or `null`.
   final String? competitionId;
 
+  /// Whether the session records decimal values (spec 0107) — the setup
+  /// step's choice. A resumed session takes the flag from its snapshot.
+  final bool decimalEntry;
+
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
@@ -181,6 +193,7 @@ class SeriesScreen extends StatelessWidget {
         currentWeaponProvider.overrideWithValue(weapon),
         restoredRecordingProvider.overrideWithValue(restored),
         currentCompetitionIdProvider.overrideWithValue(competitionId),
+        currentDecimalEntryProvider.overrideWithValue(decimalEntry),
         sessionProvider.overrideWith(SessionNotifier.new),
       ],
       child: SessionView(actions: actions),
@@ -269,6 +282,7 @@ class SessionView extends ConsumerWidget {
         weapon: recording.session.weapon,
         seriesByStage: recording.session.sealedSeriesByStage,
         personalBest: _isPersonalBest(ref, recording, program, score),
+        showDecimals: recording.session.decimalEntry,
         actions: actions,
       );
     }
@@ -356,15 +370,25 @@ class SessionView extends ConsumerWidget {
               placed: current.placedCount,
               capacity: current.capacity,
               score: seriesScore,
+              decimalMode: session.decimalEntry,
+              onTenthPicked: (index, tenth) =>
+                  ref.read(sessionProvider.notifier).setShotTenth(index, tenth),
             );
             final totals = <Widget>[
-              _SeriesTotalCard(score: seriesScore),
+              _SeriesTotalCard(
+                score: seriesScore,
+                showDecimal: session.decimalEntry,
+              ),
               if (multiSeries) ...[
                 const SizedBox(height: 8),
                 _SessionProgress(
                   total: runningTotal,
                   maxTotal: sealedScore.maxTotal,
                   innerTens: runningInnerTens,
+                  decimalTotal: session.decimalEntry
+                      ? (sealedScore.decimalTotal ?? 0) +
+                            (seriesScore.decimalTotal ?? 0)
+                      : null,
                 ),
               ],
             ];
@@ -627,11 +651,19 @@ class _ShotsList extends StatelessWidget {
     required this.placed,
     required this.capacity,
     required this.score,
+    this.decimalMode = false,
+    this.onTenthPicked,
   });
 
   final int placed;
   final int capacity;
   final SeriesScore score;
+
+  /// Whether the session records decimal values (spec 0107).
+  final bool decimalMode;
+
+  /// Called with the 0-based shot index and the picked tenth (spec 0107).
+  final void Function(int index, int tenth)? onTenthPicked;
 
   @override
   Widget build(BuildContext context) {
@@ -686,6 +718,10 @@ class _ShotsList extends StatelessWidget {
             index: i,
             score: i <= placed ? score.shots[i - 1] : null,
             highlighted: placed > 0 && i == placed,
+            decimalMode: decimalMode,
+            onTenthPicked: onTenthPicked == null
+                ? null
+                : (tenth) => onTenthPicked!(i - 1, tenth),
           ),
       ],
     );
@@ -697,6 +733,8 @@ class _ShotRow extends StatelessWidget {
     required this.index,
     required this.score,
     this.highlighted = false,
+    this.decimalMode = false,
+    this.onTenthPicked,
     super.key,
   });
 
@@ -707,15 +745,29 @@ class _ShotRow extends StatelessWidget {
   /// last-shot emphasis (bold, accent) consistent with the target (spec 0020).
   final bool highlighted;
 
+  /// Whether the session records decimal values (spec 0107): the row shows
+  /// the decimal, and the last row swaps it for the tenth picker.
+  final bool decimalMode;
+
+  /// Called with the picked tenth (spec 0107); the picker is only offered
+  /// on the last-placed shot.
+  final ValueChanged<int>? onTenthPicked;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final shotScore = score;
     final pending = shotScore == null;
     final innerTen = shotScore?.isInnerTen ?? false;
+    final decimal = decimalMode ? shotScore?.decimal : null;
+    final valueText = pending
+        ? '–'
+        : decimal != null
+        ? _norDecimal(decimal)
+        : '${shotScore.ring}';
     final label = pending
         ? 'Skudd $index: ikke plassert'
-        : 'Skudd $index: ${shotScore.ring}${innerTen ? ', indre tier' : ''}';
+        : 'Skudd $index: $valueText${innerTen ? ', indre tier' : ''}';
     final Color? ringColor;
     if (highlighted) {
       ringColor = Colors.deepOrange;
@@ -724,6 +776,16 @@ class _ShotRow extends StatelessWidget {
     } else {
       ringColor = null;
     }
+    final valueStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: highlighted ? FontWeight.bold : FontWeight.w600,
+      color: ringColor,
+    );
+    // The last shot's value is the editable one (spec 0107): a compact
+    // dropdown over x,0–x,9 within the plotted ring, preselected on the
+    // position-derived tenth. A miss stays 0,0 — nothing to pick.
+    final ring = shotScore?.ring ?? 0;
+    final pickable =
+        decimal != null && highlighted && onTenthPicked != null && ring > 0;
     return Semantics(
       label: label,
       child: ExcludeSemantics(
@@ -747,13 +809,25 @@ class _ShotRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                pending ? '–' : '${shotScore.ring}',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: highlighted ? FontWeight.bold : FontWeight.w600,
-                  color: ringColor,
-                ),
-              ),
+              if (pickable)
+                DropdownButton<int>(
+                  key: tenthPickerKey,
+                  value: ((decimal * 10).round()) % 10,
+                  isDense: true,
+                  style: valueStyle,
+                  items: [
+                    for (var tenth = 0; tenth <= 9; tenth++)
+                      DropdownMenuItem<int>(
+                        value: tenth,
+                        child: Text('$ring,$tenth'),
+                      ),
+                  ],
+                  onChanged: (tenth) {
+                    if (tenth != null) onTenthPicked!(tenth);
+                  },
+                )
+              else
+                Text(valueText, style: valueStyle),
               if (innerTen) ...[
                 const SizedBox(width: 6),
                 const _InnerTenDot(),
@@ -767,9 +841,12 @@ class _ShotRow extends StatelessWidget {
 }
 
 class _SeriesTotalCard extends StatelessWidget {
-  const _SeriesTotalCard({required this.score});
+  const _SeriesTotalCard({required this.score, this.showDecimal = false});
 
   final SeriesScore score;
+
+  /// Whether to show the decimal series sum (spec 0107).
+  final bool showDecimal;
 
   @override
   Widget build(BuildContext context) {
@@ -812,6 +889,15 @@ class _SeriesTotalCard extends StatelessWidget {
                     innerTens: score.innerTens,
                     style: TextStyle(color: onColor, fontSize: 18),
                   ),
+                  if (showDecimal && score.decimalTotal != null)
+                    Text(
+                      'Desimal ${_norDecimal(score.decimalTotal!)}',
+                      style: TextStyle(
+                        color: onColor,
+                        fontSize: 14,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
                 ],
               ),
               Row(
@@ -842,11 +928,15 @@ class _SessionProgress extends StatelessWidget {
     required this.total,
     required this.maxTotal,
     required this.innerTens,
+    this.decimalTotal,
   });
 
   final int total;
   final int maxTotal;
   final int innerTens;
+
+  /// The running decimal total (spec 0107), or null outside decimal mode.
+  final double? decimalTotal;
 
   @override
   Widget build(BuildContext context) {
@@ -861,7 +951,9 @@ class _SessionProgress extends StatelessWidget {
       child: ExcludeSemantics(
         child: innerTenScoreText(
           context: context,
-          lead: 'Økt så langt: $total',
+          lead: decimalTotal == null
+              ? 'Økt så langt: $total'
+              : 'Økt så langt: $total (${_norDecimal(decimalTotal!)})',
           innerTens: innerTens,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -918,6 +1010,7 @@ class SessionScorecard extends StatelessWidget {
     this.title,
     this.seriesByStage,
     this.personalBest = false,
+    this.showDecimals = false,
     super.key,
   });
 
@@ -949,6 +1042,10 @@ class SessionScorecard extends StatelessWidget {
   /// celebrated with the «Ny pers!» banner. Only the live completion screen
   /// sets it; the historical detail view never celebrates again.
   final bool personalBest;
+
+  /// Whether the session recorded decimal values (spec 0107): the series
+  /// rows and the grand total then show them beside the canonical ints.
+  final bool showDecimals;
 
   @override
   Widget build(BuildContext context) {
@@ -997,9 +1094,10 @@ class SessionScorecard extends StatelessWidget {
                     series: seriesByStage == null || i >= seriesByStage!.length
                         ? null
                         : seriesByStage![i],
+                    showDecimals: showDecimals,
                   ),
                 const SizedBox(height: 16),
-                _GrandTotalCard(score: score),
+                _GrandTotalCard(score: score, showDecimal: showDecimals),
               ],
             ),
           ),
@@ -1016,6 +1114,7 @@ class _StageScoreRow extends StatelessWidget {
     required this.score,
     this.series,
     this.targetsPerSeries = 1,
+    this.showDecimals = false,
   });
 
   /// 0-based index of the stage, used to key its per-series rows.
@@ -1028,6 +1127,9 @@ class _StageScoreRow extends StatelessWidget {
 
   /// Targets per series, so a silhouette series reviews as a bank (spec 0067).
   final int targetsPerSeries;
+
+  /// Whether to show the decimal totals beside the ints (spec 0107).
+  final bool showDecimals;
 
   @override
   Widget build(BuildContext context) {
@@ -1051,7 +1153,9 @@ class _StageScoreRow extends StatelessWidget {
                   Text(name, style: theme.textTheme.titleMedium),
                   innerTenScoreText(
                     context: context,
-                    lead: '${score.total}',
+                    lead: showDecimals && score.decimalTotal != null
+                        ? '${score.total} (${_norDecimal(score.decimalTotal!)})'
+                        : '${score.total}',
                     innerTens: score.innerTens,
                     separator: '  ·  ',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -1073,6 +1177,7 @@ class _StageScoreRow extends StatelessWidget {
             score: score.series[i],
             targetsPerSeries: targetsPerSeries,
             series: series == null || i >= series!.length ? null : series![i],
+            showDecimals: showDecimals,
           ),
       ],
     );
@@ -1089,6 +1194,7 @@ class _SeriesResultRow extends StatelessWidget {
     required this.score,
     this.series,
     this.targetsPerSeries = 1,
+    this.showDecimals = false,
     super.key,
   });
 
@@ -1104,6 +1210,9 @@ class _SeriesResultRow extends StatelessWidget {
 
   /// Targets per series; >1 reviews it as a silhouette bank (spec 0067).
   final int targetsPerSeries;
+
+  /// Whether to show the decimal sum beside the int (spec 0107).
+  final bool showDecimals;
 
   @override
   Widget build(BuildContext context) {
@@ -1133,7 +1242,9 @@ class _SeriesResultRow extends StatelessWidget {
                   Text(label, style: style),
                   innerTenScoreText(
                     context: context,
-                    lead: '${score.total}',
+                    lead: showDecimals && score.decimalTotal != null
+                        ? '${score.total} (${_norDecimal(score.decimalTotal!)})'
+                        : '${score.total}',
                     innerTens: score.innerTens,
                     separator: '  ·  ',
                     style: style,
@@ -1231,9 +1342,12 @@ class _SilhouetteReview extends StatelessWidget {
 }
 
 class _GrandTotalCard extends StatelessWidget {
-  const _GrandTotalCard({required this.score});
+  const _GrandTotalCard({required this.score, this.showDecimal = false});
 
   final SessionScore score;
+
+  /// Whether to show the decimal session sum (spec 0107).
+  final bool showDecimal;
 
   @override
   Widget build(BuildContext context) {
@@ -1276,6 +1390,15 @@ class _GrandTotalCard extends StatelessWidget {
                     innerTens: score.innerTens,
                     style: TextStyle(color: onColor, fontSize: 18),
                   ),
+                  if (showDecimal && score.decimalTotal != null)
+                    Text(
+                      'Desimalsum ${_norDecimal(score.decimalTotal!)}',
+                      style: TextStyle(
+                        color: onColor,
+                        fontSize: 14,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
                 ],
               ),
               Row(

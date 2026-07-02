@@ -26,6 +26,7 @@ import 'package:treffpunkt/features/notifications/data/push_subscription_reposit
 import 'package:treffpunkt/features/notifications/presentation/notification_providers.dart';
 import 'package:treffpunkt/features/notifications/presentation/notifications_screen.dart';
 import 'package:treffpunkt/features/scoring/data/contribution_service.dart';
+import 'package:treffpunkt/features/scoring/data/decimal_entry_store.dart';
 import 'package:treffpunkt/features/scoring/data/geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
@@ -116,6 +117,8 @@ void runTreffpunkt(
   String? initialDefaultPlace,
   PersonalRecordsStore? personalRecordsStore,
   Map<String, ExerciseResult>? initialPersonalRecords,
+  DecimalEntryStore? decimalEntryStore,
+  bool? initialDecimalEntry,
   BrowserEnvironment? browserEnvironment,
   Sharer? sharer,
 }) {
@@ -196,6 +199,10 @@ void runTreffpunkt(
           initialPersonalRecordsProvider.overrideWithValue(
             initialPersonalRecords,
           ),
+        if (decimalEntryStore != null)
+          decimalEntryStoreProvider.overrideWithValue(decimalEntryStore),
+        if (initialDecimalEntry != null)
+          initialDecimalEntryProvider.overrideWithValue(initialDecimalEntry),
         if (browserEnvironment != null)
           browserEnvironmentProvider.overrideWithValue(browserEnvironment),
         if (sharer != null) sharerProvider.overrideWithValue(sharer),

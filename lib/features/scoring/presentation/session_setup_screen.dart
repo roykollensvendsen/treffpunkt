@@ -32,6 +32,9 @@ const Key placeFieldKey = ValueKey<String>('placeField');
 /// Key for the date / time field, used by tests.
 const Key dateTimeKey = ValueKey<String>('dateTime');
 
+/// Key for the decimal-entry toggle (spec 0107), used by tests.
+const Key decimalEntryToggleKey = ValueKey<String>('decimalEntryToggle');
+
 /// Key for the "open settings" action shown when location is permanently
 /// denied, used by tests.
 const Key openLocationSettingsKey = ValueKey<String>('openLocationSettings');
@@ -74,7 +77,8 @@ class SessionSetupScreen extends StatelessWidget {
         now: now,
         discipline: program.discipline,
         classLabels: program.weaponClasses,
-        onConfirm: (metadata, weapon) => unawaited(
+        offerDecimalEntry: program.supportsDecimalEntry,
+        onConfirm: (metadata, weapon, {required decimalEntry}) => unawaited(
           Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) => SeriesScreen(
@@ -82,6 +86,7 @@ class SessionSetupScreen extends StatelessWidget {
                 metadata: metadata,
                 weapon: weapon,
                 competitionId: competitionId,
+                decimalEntry: decimalEntry,
               ),
             ),
           ),
@@ -102,6 +107,7 @@ class SessionSetupForm extends ConsumerStatefulWidget {
     required this.discipline,
     required this.onConfirm,
     this.classLabels = const <String>[],
+    this.offerDecimalEntry = false,
     super.key,
   });
 
@@ -115,8 +121,19 @@ class SessionSetupForm extends ConsumerStatefulWidget {
   /// [discipline].
   final List<String> classLabels;
 
-  /// Called on confirm with the metadata and the chosen weapon (or null).
-  final void Function(SessionMetadata metadata, Weapon? weapon) onConfirm;
+  /// Called on confirm with the metadata, the chosen weapon (or null) and
+  /// whether the shooter turned on decimal entry (spec 0107; always false
+  /// when the toggle is not offered).
+  final void Function(
+    SessionMetadata metadata,
+    Weapon? weapon, {
+    required bool decimalEntry,
+  })
+  onConfirm;
+
+  /// Whether to offer the decimal-entry toggle (spec 0107): only the
+  /// programs whose faces support it.
+  final bool offerDecimalEntry;
 
   @override
   ConsumerState<SessionSetupForm> createState() => _SessionSetupFormState();
@@ -129,6 +146,7 @@ class _SessionSetupFormState extends ConsumerState<SessionSetupForm> {
   double? _longitude;
   bool _locating = false;
   Weapon? _weapon;
+  late bool _decimalEntry = ref.read(initialDecimalEntryProvider);
 
   @override
   void initState() {
@@ -245,6 +263,19 @@ class _SessionSetupFormState extends ConsumerState<SessionSetupForm> {
     widget.onConfirm(
       SessionMetadata(capturedAt: _capturedAt, place: _buildPlace()),
       _weapon,
+      decimalEntry: widget.offerDecimalEntry && _decimalEntry,
+    );
+  }
+
+  /// Flips the decimal toggle and remembers the choice (spec 0107),
+  /// best-effort like the felt group (spec 0099).
+  void _setDecimalEntry(bool enabled) {
+    setState(() => _decimalEntry = enabled);
+    unawaited(
+      ref
+          .read(decimalEntryStoreProvider)
+          .save(enabled: enabled)
+          .catchError((Object _) {}),
     );
   }
 
@@ -304,6 +335,19 @@ class _SessionSetupFormState extends ConsumerState<SessionSetupForm> {
                   classLabels: widget.classLabels,
                   onSelected: (weapon) => setState(() => _weapon = weapon),
                 ),
+                if (widget.offerDecimalEntry) ...[
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    key: decimalEntryToggleKey,
+                    value: _decimalEntry,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Desimalpoeng (elektronisk skive)'),
+                    subtitle: const Text(
+                      'Velg tidelen per skudd, som på Megalink.',
+                    ),
+                    onChanged: _setDecimalEntry,
+                  ),
+                ],
                 const SizedBox(height: 24),
                 FilledButton.icon(
                   key: sessionConfirmKey,

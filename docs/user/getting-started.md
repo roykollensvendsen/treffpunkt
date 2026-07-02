@@ -29,7 +29,13 @@ of the sign-in screen. It works offline.
 4. The score updates the moment you place the marker. When the series is
    full, the big **Fullfør serie (10/10)** button at the bottom seals it and
    moves on.
-5. Beat your own record and the scorecard says so: a red **«Ny pers!»**
+5. Shooting on an electronic target (Megalink)? In the setup step of the
+   luft programs you can switch on **Desimalpoeng**: every shot then gets
+   a decimal value — the last shot's row has a dropdown (e.g. 9,0–9,9)
+   preselected from where you tapped, so you can enter the exact reading.
+   Decimal sums show beside the ordinary points; records and statistics
+   keep counting whole points.
+6. Beat your own record and the scorecard says so: a red **«Ny pers!»**
    field appears when the finished session's result (points, with
    innertreff as the tiebreak) is better than every earlier session of the
    same exercise — the felt course celebrates too, per group. Your first

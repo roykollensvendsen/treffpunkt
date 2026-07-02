@@ -13,6 +13,7 @@ class StageScore {
     required this.total,
     required this.innerTens,
     required this.maxTotal,
+    this.decimalTotal,
   });
 
   /// The score of each series (skive) in the stage, in firing order.
@@ -29,6 +30,10 @@ class StageScore {
 
   /// The highest total the stage could reach (its shots × the highest ring).
   final int maxTotal;
+
+  /// The decimal total (spec 0107), or null when any part of it is on a
+  /// face without decimals.
+  final double? decimalTotal;
 }
 
 /// The score of a whole session: each stage plus the grand totals.
@@ -39,6 +44,7 @@ class SessionScore {
     required this.total,
     required this.innerTens,
     required this.maxTotal,
+    this.decimalTotal,
   });
 
   /// The score of each stage, in order.
@@ -52,4 +58,8 @@ class SessionScore {
 
   /// The highest total the whole session could reach.
   final int maxTotal;
+
+  /// The decimal total (spec 0107), or null when any part of it is on a
+  /// face without decimals.
+  final double? decimalTotal;
 }

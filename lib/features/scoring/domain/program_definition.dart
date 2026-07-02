@@ -75,6 +75,7 @@ class ProgramDefinition {
     required this.discipline,
     required this.stages,
     this.weaponClasses = const <String>[],
+    this.supportsDecimalEntry = false,
   });
 
   /// Human-readable program name shown to the shooter.
@@ -88,6 +89,13 @@ class ProgramDefinition {
 
   /// Permitted weapon class / calibre label(s), or empty if unrestricted.
   final List<String> weaponClasses;
+
+  /// Whether the setup step offers decimal entry (spec 0107). Explicitly
+  /// opted in per program — only the luft programs on the uniform 1–10
+  /// face — rather than derived from the geometry, so the 25 m programs
+  /// (whose face would technically qualify) are not surprisingly offered
+  /// decimals nobody asked for.
+  final bool supportsDecimalEntry;
 
   /// Total shots across every stage.
   int get totalShots => stages.fold(0, (sum, stage) => sum + stage.totalShots);

@@ -18,19 +18,24 @@ class Session {
     required this.sealedSeriesByStage,
     this.metadata,
     this.weapon,
+    this.decimalEntry = false,
   });
 
   /// Starts an empty session for [program], optionally tagged with [metadata]
-  /// (when and where it was shot — spec 0008) and the [weapon] it is shot with.
+  /// (when and where it was shot — spec 0008) and the [weapon] it is shot
+  /// with. [decimalEntry] turns on decimal scoring for the session
+  /// (spec 0107).
   factory Session.start(
     ProgramDefinition program, {
     SessionMetadata? metadata,
     Weapon? weapon,
+    bool decimalEntry = false,
   }) {
     return Session._(
       program: program,
       metadata: metadata,
       weapon: weapon,
+      decimalEntry: decimalEntry,
       sealedSeriesByStage: List<List<Series>>.unmodifiable(
         List<List<Series>>.filled(program.stages.length, const <Series>[]),
       ),
@@ -45,6 +50,10 @@ class Session {
 
   /// The weapon the session was shot with, or `null` if not recorded.
   final Weapon? weapon;
+
+  /// Whether the session records decimal values (spec 0107): the shooter
+  /// opted in at setup, on a program whose faces support it.
+  final bool decimalEntry;
 
   /// Sealed series grouped by stage index (outer length is
   /// `program.stages.length`); both levels are unmodifiable.
@@ -103,6 +112,7 @@ class Session {
       program: program,
       metadata: metadata,
       weapon: weapon,
+      decimalEntry: decimalEntry,
       sealedSeriesByStage: List<List<Series>>.unmodifiable(next),
     );
   }

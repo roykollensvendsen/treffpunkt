@@ -42,6 +42,7 @@ abstract final class ProgramCatalogue {
     name: '10 m Luftpistol 60 skudd',
     discipline: Discipline.pistol,
     weaponClasses: <String>['Air 4.5 mm'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: 'Match',
@@ -58,6 +59,7 @@ abstract final class ProgramCatalogue {
     name: '10 m Luftpistol 40 skudd',
     discipline: Discipline.pistol,
     weaponClasses: <String>['Air 4.5 mm'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: 'Match',
@@ -113,6 +115,7 @@ abstract final class ProgramCatalogue {
     name: 'Storluft (5,5 m)',
     discipline: Discipline.pistol,
     weaponClasses: <String>['Air 4.5 mm'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: 'Match',

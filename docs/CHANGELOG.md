@@ -65,6 +65,17 @@ All notable changes to this project are documented here. The format is based on
   (spec 0103, forum request).
 
 ### Added
+- **Desimalpoeng på luftskivene**: turn on «Desimalpoeng (elektronisk
+  skive)» in the setup step of the luft programs and every shot gets a
+  decimal value, Megalink-style — plot the shot as usual and the last
+  shot's row shows a dropdown (9,0–9,9 in the plotted ring), preselected
+  from where you tapped, so transferring the readings is one optional
+  tap per shot. Decimal sums show beside the ordinary points on the
+  shooting screen and every scorecard; records, statistics and
+  scoreboards keep counting whole points. The choice is remembered, and
+  the tenths survive save/resume and sync (spec 0107, forum idea).
+
+### Added
 - **Sikkerhetskopi**: under **Innstillinger → Sikkerhetskopi** you can
   export everything — ring sessions, felt rounds, weapons, record
   baselines and the default place — as one JSON file through the share

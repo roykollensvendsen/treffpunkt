@@ -21,6 +21,7 @@ import 'package:treffpunkt/features/forum/data/supabase_forum_repository.dart';
 import 'package:treffpunkt/features/notifications/data/supabase_notifications_repository.dart';
 import 'package:treffpunkt/features/notifications/data/supabase_push_subscription_repository.dart';
 import 'package:treffpunkt/features/scoring/data/big_data_cloud_geocoder.dart';
+import 'package:treffpunkt/features/scoring/data/decimal_entry_store.dart';
 import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_picker_image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_target_scanner.dart';
@@ -57,6 +58,8 @@ Future<void> main() async {
   final initialDefaultPlace = await defaultPlaceStore.load();
   final personalRecordsStore = SharedPreferencesPersonalRecordsStore(prefs);
   final initialPersonalRecords = await personalRecordsStore.load();
+  final decimalEntryStore = SharedPreferencesDecimalEntryStore(prefs);
+  final initialDecimalEntry = await decimalEntryStore.load() ?? false;
   // Load the saved theme once here too, so the app starts on the right theme
   // without a first-frame flash of the wrong one (spec 0030).
   final initialThemeMode = await themeModeStore.load();
@@ -93,6 +96,8 @@ Future<void> main() async {
     initialDefaultPlace: initialDefaultPlace,
     personalRecordsStore: personalRecordsStore,
     initialPersonalRecords: initialPersonalRecords,
+    decimalEntryStore: decimalEntryStore,
+    initialDecimalEntry: initialDecimalEntry,
     themeModeStore: themeModeStore,
     initialThemeMode: initialThemeMode,
     contributionConsentStore: contributionConsentStore,
