@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/core/presentation/personal_best_banner.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 
 /// Key for the scorecard body (specs 0080/0082), for tests.
@@ -15,10 +16,19 @@ const Key feltScorecardKey = ValueKey<String>('feltScorecard');
 /// and from the "Mine økter" detail view.
 class FeltScorecard extends StatelessWidget {
   /// Creates a scorecard for [session].
-  const FeltScorecard({required this.session, super.key});
+  const FeltScorecard({
+    required this.session,
+    this.personalBest = false,
+    super.key,
+  });
 
   /// The scored session to show.
   final FeltSessionTally session;
+
+  /// Whether this round is a new personal best for its group (spec 0101),
+  /// celebrated with the «Ny pers!» banner. Only the live finished-round
+  /// screen sets it; the historical detail view never celebrates again.
+  final bool personalBest;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +40,11 @@ class FeltScorecard extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: <Widget>[
+            if (personalBest)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: PersonalBestBanner(),
+              ),
             for (var i = 0; i < session.holds.length; i++)
               ListTile(
                 dense: true,

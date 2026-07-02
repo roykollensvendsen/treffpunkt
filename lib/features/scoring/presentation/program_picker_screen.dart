@@ -6,7 +6,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
+import 'package:treffpunkt/core/presentation/category_pictograms.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
@@ -222,7 +224,20 @@ class ProgramPickerScreen extends ConsumerWidget {
     final last = _lastExercise(ref);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Treffpunkt'),
+        // The logo mark (spec 0101): the target beside the wordmark, its
+        // bull in the signal red of a hit (spec 0100).
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TargetIcon(
+              size: 22,
+              color: Theme.of(context).colorScheme.primary,
+              bullColor: TreffColors.of(context).lastShot,
+            ),
+            const SizedBox(width: 8),
+            const Text('Treffpunkt'),
+          ],
+        ),
         actions: [
           // The bell (spec 0094): a live unread badge; tapping opens Varsler.
           IconButton(
@@ -399,6 +414,16 @@ class _LastExercise {
   final bool isFelt;
 }
 
+/// The category's pictogram (spec 0101): what its programs are shot at —
+/// fine rings for air, the heavy 25 m bull for fin/grov, the silhouette for
+/// MIL and felt's square-and-circle figure pair.
+Widget _categoryPictogram(ProgramCategory category) => switch (category) {
+  ProgramCategory.nsfLuft => const TargetIcon(),
+  ProgramCategory.nsfFinGrov => const TargetIcon(bullFraction: 0.45),
+  ProgramCategory.mil => const SilhouettePictogram(),
+  ProgramCategory.felt => const FeltFiguresPictogram(),
+};
+
 /// One compact category tile in the 2×2 grid (spec 0097): the label on top,
 /// the description under, disabled (muted) when [onTap] is null (MIL).
 class _CategoryTile extends StatelessWidget {
@@ -428,26 +453,45 @@ class _CategoryTile extends StatelessWidget {
             onTap: onTap,
             child: Padding(
               padding: const EdgeInsets.all(14),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    category.label,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: disabled ? muted.withValues(alpha: 0.6) : null,
+                  // The category's pictogram (spec 0101).
+                  IconTheme(
+                    data: IconThemeData(
+                      size: 26,
+                      color: disabled ? muted.withValues(alpha: 0.6) : muted,
+                    ),
+                    child: _categoryPictogram(category),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.label,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: disabled
+                                ? muted.withValues(alpha: 0.6)
+                                : null,
+                          ),
+                        ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: muted,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                    ),
-                  ],
                 ],
               ),
             ),

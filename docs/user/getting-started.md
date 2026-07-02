@@ -28,6 +28,11 @@ of the sign-in screen. It works offline.
 4. The score updates the moment you place the marker. When the series is
    full, the big **Fullfør serie (10/10)** button at the bottom seals it and
    moves on.
+5. Beat your own record and the scorecard says so: a red **«Ny pers!»**
+   field appears when the finished session's result (points, with
+   innertreff as the tiebreak) is better than every earlier session of the
+   same exercise — the felt course celebrates too, per group. Your first
+   session of an exercise isn't a «pers» yet; there is nothing beaten.
 
 ### Silhuettpistol (the 5-target bank)
 **25 m Silhuettpistol** is shot one shot at each of **five silhouettes**. The

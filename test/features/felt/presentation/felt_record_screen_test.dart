@@ -7,8 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/core/presentation/personal_best_banner.dart';
 import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
@@ -193,5 +196,85 @@ void main() {
     // After the first shot the change action is gone.
     await tapRecorder(tester, hareFrac);
     expect(find.byKey(feltChangeGroupKey), findsNothing);
+  });
+
+  group('«Ny pers!» on the finished round (spec 0101)', () {
+    // A prior round with [hits] shots on hold 1's first figure:
+    // 0 hits → 0 points, 2 hits → treff 2 + figur 1 = 3 points.
+    FeltSessionRecord prior({
+      required String id,
+      required FeltShooterGroup group,
+      required int hits,
+    }) => FeltSessionRecord(
+      id: id,
+      capturedAt: DateTime(2026, 6, 1, 12),
+      session: FeltSessionSnapshot(
+        group: group,
+        currentHold: 7,
+        holds: <List<FeltPlacedShot>>[
+          <FeltPlacedShot>[
+            for (var i = 0; i < hits; i++)
+              FeltPlacedShot(dx: 10.0 + i, dy: 10, figureIndex: 0),
+          ],
+          for (var h = 1; h < 8; h++) const <FeltPlacedShot>[],
+        ],
+      ),
+    );
+
+    // Finishes a gruppe-2 round with one hare inner hit (2 points · 1 Ⓧ).
+    Future<void> finishRound(
+      WidgetTester tester,
+      List<FeltSessionRecord> history,
+    ) async {
+      tester.view.physicalSize = const Size(600, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            feltHistoryProvider.overrideWith((ref) async => history),
+            feltSyncedSessionsProvider.overrideWith(
+              (ref) async => const <FeltSessionRecord>[],
+            ),
+          ],
+          child: const MaterialApp(home: FeltRecordScreen()),
+        ),
+      );
+      await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)));
+      await tester.pumpAndSettle();
+
+      await tapRecorder(tester, hareFrac);
+      for (var i = 0; i < 7; i++) {
+        await tester.tap(find.text('Neste'));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text('Fullfør'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(feltScorecardKey), findsOneWidget);
+    }
+
+    testWidgets('beating the group history shows the banner', (tester) async {
+      await finishRound(tester, [
+        prior(id: 'p1', group: FeltShooterGroup.two, hits: 0),
+      ]);
+      expect(find.byKey(personalBestKey), findsOneWidget);
+      expect(find.text('Ny pers!'), findsOneWidget);
+    });
+
+    testWidgets('a higher prior round hides the banner', (tester) async {
+      await finishRound(tester, [
+        prior(id: 'p1', group: FeltShooterGroup.two, hits: 2),
+      ]);
+      expect(find.byKey(personalBestKey), findsNothing);
+    });
+
+    testWidgets('rounds of the other group do not count', (tester) async {
+      await finishRound(tester, [
+        prior(id: 'p1', group: FeltShooterGroup.one, hits: 2),
+        prior(id: 'p2', group: FeltShooterGroup.two, hits: 0),
+      ]);
+      expect(find.byKey(personalBestKey), findsOneWidget);
+    });
   });
 }

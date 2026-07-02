@@ -12,13 +12,28 @@ import 'package:flutter/material.dart';
 /// takes the ambient [IconTheme] colour and size like a real [Icon].
 class TargetIcon extends StatelessWidget {
   /// Creates the icon; [size] and [color] fall back to the [IconTheme].
-  const TargetIcon({this.size, this.color, super.key});
+  const TargetIcon({
+    this.size,
+    this.color,
+    this.bullColor,
+    this.bullFraction = 0.24,
+    super.key,
+  });
 
   /// Diameter, defaulting to the ambient icon size (24).
   final double? size;
 
   /// Colour, defaulting to the ambient icon colour.
   final Color? color;
+
+  /// The bull's colour, defaulting to [color] — set it to the signal red for
+  /// the logo mark (spec 0101).
+  final Color? bullColor;
+
+  /// The bull's radius as a fraction of the icon radius. The default reads
+  /// as a fine-ringed precision target; a heavier bull (≈0.45) reads as the
+  /// large black of a 25 m target (spec 0101).
+  final double bullFraction;
 
   @override
   Widget build(BuildContext context) {
@@ -28,15 +43,23 @@ class TargetIcon extends StatelessWidget {
     return SizedBox(
       width: side,
       height: side,
-      child: CustomPaint(painter: _TargetPainter(paintColor)),
+      child: CustomPaint(
+        painter: _TargetPainter(
+          paintColor,
+          bullColor ?? paintColor,
+          bullFraction,
+        ),
+      ),
     );
   }
 }
 
 class _TargetPainter extends CustomPainter {
-  const _TargetPainter(this.color);
+  const _TargetPainter(this.color, this.bullColor, this.bullFraction);
 
   final Color color;
+  final Color bullColor;
+  final double bullFraction;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -49,9 +72,12 @@ class _TargetPainter extends CustomPainter {
     canvas
       ..drawCircle(centre, r * 0.92, stroke)
       ..drawCircle(centre, r * 0.58, stroke)
-      ..drawCircle(centre, r * 0.24, Paint()..color = color);
+      ..drawCircle(centre, r * bullFraction, Paint()..color = bullColor);
   }
 
   @override
-  bool shouldRepaint(_TargetPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(_TargetPainter oldDelegate) =>
+      oldDelegate.color != color ||
+      oldDelegate.bullColor != bullColor ||
+      oldDelegate.bullFraction != bullFraction;
 }
