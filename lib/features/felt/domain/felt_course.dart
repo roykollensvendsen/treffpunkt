@@ -38,7 +38,9 @@ class FeltHoldDef {
 }
 
 /// The NorgesFelt 2026 course (spec 0068), reconstructed from norgesfelt.no:
-/// 8 holds, inner zone on every figure, 10 s shooting time, max 80/47 points.
+/// 8 holds, inner zone on every figure, 10 s shooting time. Max points
+/// (treff + figur, spec 0085): 80 for gruppe 1, 70 for gruppe 2–3 — the
+/// official 80 confirms inner hits score nothing.
 final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
   FeltHoldDef(
     number: 1,

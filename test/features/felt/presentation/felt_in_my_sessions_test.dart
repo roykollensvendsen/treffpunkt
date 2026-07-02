@@ -69,7 +69,9 @@ void main() {
 
     final saved = await history.load();
     expect(saved.length, 1);
-    expect(saved.single.points, 3); // treff + figur + inner
+    // Treff + figur = 2; the inner hit is the tiebreaker, no point (0085).
+    expect(saved.single.points, 2);
+    expect(saved.single.tally.inner, 1);
   });
 
   testWidgets('a saved felt round shows in Mine økter and opens its card', (
@@ -97,7 +99,11 @@ void main() {
 
     expect(find.byKey(feltSessionCard('felt-1')), findsOneWidget);
     expect(find.textContaining('NorgesFelt-løype 2026'), findsWidgets);
-    expect(find.textContaining('3 poeng'), findsWidgets);
+    // Points and the ringed-X tiebreak count, like the ring programs (0085).
+    expect(
+      find.textContaining('2 poeng · 1', findRichText: true),
+      findsWidgets,
+    );
 
     await tester.tap(find.byKey(feltSessionCard('felt-1')));
     await tester.pumpAndSettle();

@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
@@ -35,13 +36,26 @@ void main() {
     await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
     await tester.pumpAndSettle();
 
-    // A hit in the hare's inner zone scores treff + figur + inner = 3.
+    // A hit in the hare's inner zone scores treff + figur = 2; the inner hit
+    // is shown as the ringed-X tiebreak count, not as a point (spec 0085).
     await tapRecorder(tester, hareFrac);
     expect(
-      find.textContaining('Treff 1 · Figur 1 · Inner 1  =  3 poeng'),
+      find.textContaining(
+        'Treff 1 · Figur 1  =  2 poeng · 1',
+        findRichText: true,
+      ),
       findsOneWidget,
     );
-    expect(find.textContaining('Totalt så langt: 3 poeng'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'Totalt så langt: 2 poeng · 1',
+        findRichText: true,
+      ),
+      findsOneWidget,
+    );
+    // The inner count is drawn with the same ringed X as the ring programs'
+    // inner tens (spec 0023) — one on the hold line, one on the total.
+    expect(find.byType(InnerTenX), findsNWidgets(2));
   });
 
   testWidgets('placing is capped at the group shot count (spec 0080)', (
@@ -86,6 +100,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(feltScorecardKey), findsOneWidget);
-    expect(find.textContaining('3 poeng'), findsWidgets);
+    // One inner-zone hit on one figure: 2 points, tiebreak 1 (spec 0085).
+    expect(
+      find.textContaining('2 poeng · 1', findRichText: true),
+      findsWidgets,
+    );
   });
 }

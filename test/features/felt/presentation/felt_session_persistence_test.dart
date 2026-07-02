@@ -78,8 +78,19 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('Inner 1'), findsOneWidget);
-    expect(find.textContaining('Totalt så langt: 3 poeng'), findsOneWidget);
+    // The restored inner hit shows as the ringed-X tiebreak count, and the
+    // corrected total counts treff + figur only (spec 0085).
+    expect(
+      find.textContaining(
+        'Treff 1 · Figur 1  =  2 poeng · 1',
+        findRichText: true,
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Totalt så langt: 2 poeng · 1', findRichText: true),
+      findsOneWidget,
+    );
   });
 
   testWidgets('finishing the round clears the store (spec 0081)', (
@@ -116,10 +127,17 @@ void main() {
     expect(find.byKey(feltResumeCardKey), findsOneWidget);
     expect(find.textContaining('Gruppe 2'), findsWidgets);
 
-    // Resume restores the round with its score.
+    // Resume restores the round with its score (spec 0085: 2 points and the
+    // ringed-X inner count).
     await tester.tap(find.byKey(feltResumeCardKey));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Inner 1'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'Treff 1 · Figur 1  =  2 poeng · 1',
+        findRichText: true,
+      ),
+      findsOneWidget,
+    );
 
     await tester.pageBack();
     await tester.pumpAndSettle();
