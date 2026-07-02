@@ -15,6 +15,7 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/presentation/date_time_merge.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/settings/presentation/default_place_providers.dart';
 import 'package:treffpunkt/features/weapons/data/weapons_store.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 import 'package:treffpunkt/features/weapons/presentation/weapon_picker.dart';
@@ -132,6 +133,11 @@ class _SessionSetupFormState extends ConsumerState<SessionSetupForm> {
   @override
   void initState() {
     super.initState();
+    // The shooter's default place pre-fills the field (spec 0102); typing
+    // over it or clearing it works as before, and «Bruk min posisjon» only
+    // ever fills an *empty* field, so the default is never overwritten.
+    final defaultPlace = ref.read(defaultPlaceProvider);
+    if (defaultPlace != null) _placeController.text = defaultPlace;
     // The picker highlights the session-scoped selection — seed the form
     // from the same provider so what looks chosen IS what gets attached
     // (spec 0095), but only when it is permitted for this flow.

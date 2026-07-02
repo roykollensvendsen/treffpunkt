@@ -15,6 +15,7 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
+import 'package:treffpunkt/features/settings/presentation/default_place_providers.dart';
 import 'package:treffpunkt/features/weapons/data/weapons_store.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon_class.dart';
@@ -28,11 +29,14 @@ void main() {
     FakeLocationService location, {
     ProgramDefinition? program,
     Geocoder? geocoder,
+    String? defaultPlace,
   }) {
     return ProviderScope(
       overrides: [
         locationServiceProvider.overrideWithValue(location),
         if (geocoder != null) geocoderProvider.overrideWithValue(geocoder),
+        if (defaultPlace != null)
+          initialDefaultPlaceProvider.overrideWithValue(defaultPlace),
       ],
       child: MaterialApp(
         home: SessionSetupScreen(
@@ -42,6 +46,30 @@ void main() {
       ),
     );
   }
+
+  testWidgets('the place field starts pre-filled from the default (0102)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      app(FakeLocationService(), defaultPlace: 'Løvenskioldbanen'),
+    );
+
+    final field = tester.widget<TextField>(find.byKey(placeFieldKey));
+    expect(field.controller!.text, 'Løvenskioldbanen');
+
+    // The pre-filled default rides into the session metadata on confirm.
+    await tester.tap(find.byKey(sessionConfirmKey));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('the place field starts empty without a default (0102)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(FakeLocationService()));
+
+    final field = tester.widget<TextField>(find.byKey(placeFieldKey));
+    expect(field.controller!.text, isEmpty);
+  });
 
   testWidgets('shows the program name, the default date and a confirm action', (
     tester,

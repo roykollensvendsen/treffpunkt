@@ -29,13 +29,18 @@ import 'package:treffpunkt/features/scoring/data/geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
+import 'package:treffpunkt/features/scoring/data/personal_records_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/data/target_scanner.dart';
+import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
+import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/settings/data/contribution_consent_store.dart';
+import 'package:treffpunkt/features/settings/data/default_place_store.dart';
 import 'package:treffpunkt/features/settings/data/theme_mode_store.dart';
 import 'package:treffpunkt/features/settings/presentation/contribution_providers.dart';
+import 'package:treffpunkt/features/settings/presentation/default_place_providers.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
 import 'package:treffpunkt/features/weapons/data/weapon_store.dart';
 import 'package:treffpunkt/features/weapons/data/weapons_store.dart';
@@ -105,6 +110,10 @@ void runTreffpunkt(
   NotificationsRepository? notificationsRepository,
   FeltGroupStore? feltGroupStore,
   FeltShooterGroup? initialFeltGroup,
+  DefaultPlaceStore? defaultPlaceStore,
+  String? initialDefaultPlace,
+  PersonalRecordsStore? personalRecordsStore,
+  Map<String, ExerciseResult>? initialPersonalRecords,
   BrowserEnvironment? browserEnvironment,
   Sharer? sharer,
 }) {
@@ -173,6 +182,16 @@ void runTreffpunkt(
           feltGroupStoreProvider.overrideWithValue(feltGroupStore),
         if (initialFeltGroup != null)
           initialFeltGroupProvider.overrideWithValue(initialFeltGroup),
+        if (defaultPlaceStore != null)
+          defaultPlaceStoreProvider.overrideWithValue(defaultPlaceStore),
+        if (initialDefaultPlace != null)
+          initialDefaultPlaceProvider.overrideWithValue(initialDefaultPlace),
+        if (personalRecordsStore != null)
+          personalRecordsStoreProvider.overrideWithValue(personalRecordsStore),
+        if (initialPersonalRecords != null)
+          initialPersonalRecordsProvider.overrideWithValue(
+            initialPersonalRecords,
+          ),
         if (browserEnvironment != null)
           browserEnvironmentProvider.overrideWithValue(browserEnvironment),
         if (sharer != null) sharerProvider.overrideWithValue(sharer),

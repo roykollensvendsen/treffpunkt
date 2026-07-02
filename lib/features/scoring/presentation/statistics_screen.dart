@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import 'package:treffpunkt/features/scoring/domain/exercise_progress.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/personal_records_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
 /// Key for the "Statistikk" app-bar action on "Mine økter" (spec 0090).
@@ -28,13 +30,17 @@ const Key progressChartKey = ValueKey<String>('progressChart');
 /// Key for the no-statistics empty state (spec 0090), for tests.
 const Key noStatisticsKey = ValueKey<String>('noStatistics');
 
+/// Key for the «Rekorder» app-bar action (spec 0102), for tests.
+const Key statisticsRecordsKey = ValueKey<String>('statisticsRecords');
+
 /// The felt course's exercise name in the statistics (spec 0090).
 const String _feltExercise = 'NorgesFelt-løype 2026';
 
 /// The series colours (spec 0090), validated with the dataviz palette
-/// validator against the app's light (#F4FBF8) and dark (#0E1513) surfaces.
-/// Aqua-on-light sits below 3:1 contrast, so the chart always direct-labels
-/// the last value of each series in text ink (the relief rule).
+/// validator against the app's light (#F9F9FF) and dark (#111318) surfaces
+/// (re-run for the spec-0100 reseed). Aqua-on-light sits below 3:1 contrast,
+/// so the chart always direct-labels the last value of each series in text
+/// ink (the relief rule).
 Color _pointsColor(Brightness brightness) => brightness == Brightness.dark
     ? const Color(0xFF3987E5)
     : const Color(0xFF2A78D6);
@@ -125,7 +131,24 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         : (exercises.isEmpty ? null : exercises.first);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistikk')),
+      appBar: AppBar(
+        title: const Text('Statistikk'),
+        actions: [
+          // The records page (spec 0102): startverdier and current pers.
+          IconButton(
+            key: statisticsRecordsKey,
+            icon: const Icon(Icons.emoji_events_outlined),
+            tooltip: 'Rekorder',
+            onPressed: () => unawaited(
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PersonalRecordsScreen(),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

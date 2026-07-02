@@ -19,7 +19,9 @@ import 'package:treffpunkt/features/notifications/data/push_subscription_reposit
 import 'package:treffpunkt/features/notifications/data/web_push.dart';
 import 'package:treffpunkt/features/notifications/domain/push_subscription.dart';
 import 'package:treffpunkt/features/notifications/presentation/notification_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/personal_records_screen.dart';
 import 'package:treffpunkt/features/settings/presentation/contribution_providers.dart';
+import 'package:treffpunkt/features/settings/presentation/default_place_providers.dart';
 import 'package:treffpunkt/features/settings/presentation/settings_screen.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
 
@@ -112,6 +114,40 @@ void main() {
     expect(find.byKey(settingsSignOutKey), findsOneWidget);
   });
 
+  testWidgets('the Skyting section edits the default place (0102)', (
+    tester,
+  ) async {
+    final container = _container();
+    addTearDown(container.dispose);
+    await _pump(tester, container);
+
+    expect(find.text('Skyting'), findsOneWidget);
+    await tester.tap(find.byKey(settingsDefaultPlaceKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(settingsDefaultPlaceFieldKey),
+      'Løvenskioldbanen',
+    );
+    await tester.tap(find.text('Lagre'));
+    await tester.pumpAndSettle();
+
+    expect(container.read(defaultPlaceProvider), 'Løvenskioldbanen');
+    expect(find.text('Løvenskioldbanen'), findsOneWidget);
+  });
+
+  testWidgets('Personlige rekorder opens the records page (0102)', (
+    tester,
+  ) async {
+    final container = _container();
+    addTearDown(container.dispose);
+    await _pump(tester, container);
+
+    await tester.tap(find.byKey(settingsRecordsKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PersonalRecordsScreen), findsOneWidget);
+  });
+
   testWidgets('selecting a theme writes the theme provider', (tester) async {
     final container = _container();
     addTearDown(container.dispose);
@@ -166,7 +202,15 @@ void main() {
     await _pump(tester, container);
 
     expect(container.read(displayNameProvider), isEmpty);
-    expect(find.text('Ikke satt'), findsOneWidget);
+    // Scoped to the username tile — «Standard sted» also reads «Ikke satt»
+    // until one is chosen (spec 0102).
+    expect(
+      find.descendant(
+        of: find.byKey(settingsUsernameKey),
+        matching: find.text('Ikke satt'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(settingsUsernameKey));
     await tester.pumpAndSettle();

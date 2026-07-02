@@ -13,7 +13,9 @@ import 'package:treffpunkt/features/competitions/presentation/competition_provid
 import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/notifications/presentation/notification_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/personal_records_screen.dart';
 import 'package:treffpunkt/features/settings/presentation/contribution_providers.dart';
+import 'package:treffpunkt/features/settings/presentation/default_place_providers.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
 
 /// Key for the "Innstillinger" app-bar action that opens [SettingsScreen].
@@ -42,6 +44,17 @@ const Key settingsThemeOptionDarkKey = ValueKey<String>(
 
 /// Key for the notifications switch on the settings page.
 const Key settingsNotificationsKey = ValueKey<String>('settingsNotifications');
+
+/// Key for the "Standard sted" tile on the settings page (spec 0102).
+const Key settingsDefaultPlaceKey = ValueKey<String>('settingsDefaultPlace');
+
+/// Key for the text field in the default-place dialog (spec 0102).
+const Key settingsDefaultPlaceFieldKey = ValueKey<String>(
+  'settingsDefaultPlaceField',
+);
+
+/// Key for the "Personlige rekorder" tile on the settings page (spec 0102).
+const Key settingsRecordsKey = ValueKey<String>('settingsRecords');
 
 /// Key for the training-image contribution switch on the settings page.
 const Key settingsContributionKey = ValueKey<String>('settingsContribution');
@@ -84,6 +97,9 @@ class SettingsScreen extends ConsumerWidget {
               children: <Widget>[
                 _SectionHeader('Konto', style: theme.textTheme.titleSmall),
                 const _AccountSection(),
+                const Divider(),
+                _SectionHeader('Skyting', style: theme.textTheme.titleSmall),
+                const _ShootingSection(),
                 const Divider(),
                 _SectionHeader('Utseende', style: theme.textTheme.titleSmall),
                 const _ThemeSection(),
@@ -182,6 +198,106 @@ class _AccountSection extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// The shooting defaults (spec 0102): the default place that pre-fills the
+/// setup step, and the personal-record baselines.
+class _ShootingSection extends ConsumerWidget {
+  const _ShootingSection();
+
+  Future<void> _editPlace(
+    BuildContext context,
+    WidgetRef ref,
+    String? current,
+  ) async {
+    final saved = await showDialog<String>(
+      context: context,
+      builder: (_) => _DefaultPlaceDialog(current: current),
+    );
+    // An emptied field clears the default; the notifier trims and nulls it.
+    if (saved != null) ref.read(defaultPlaceProvider.notifier).set(saved);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final place = ref.watch(defaultPlaceProvider);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        ListTile(
+          key: settingsDefaultPlaceKey,
+          leading: const Icon(Icons.place_outlined),
+          title: const Text('Standard sted'),
+          subtitle: Text(place ?? 'Ikke satt'),
+          trailing: const Icon(Icons.edit_outlined),
+          onTap: () => unawaited(_editPlace(context, ref, place)),
+        ),
+        ListTile(
+          key: settingsRecordsKey,
+          leading: const Icon(Icons.emoji_events_outlined),
+          title: const Text('Personlige rekorder'),
+          subtitle: const Text('Startverdier og gjeldende pers per øvelse'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => unawaited(
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PersonalRecordsScreen(),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The default-place editor (spec 0102): pops with the typed text on Lagre
+/// (blank clears the default), or null on Avbryt. Owns its controller so it
+/// outlives the route's exit animation.
+class _DefaultPlaceDialog extends StatefulWidget {
+  const _DefaultPlaceDialog({required this.current});
+
+  final String? current;
+
+  @override
+  State<_DefaultPlaceDialog> createState() => _DefaultPlaceDialogState();
+}
+
+class _DefaultPlaceDialogState extends State<_DefaultPlaceDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.current ?? '',
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Standard sted'),
+    content: TextField(
+      key: settingsDefaultPlaceFieldKey,
+      controller: _controller,
+      autofocus: true,
+      decoration: const InputDecoration(
+        labelText: 'Sted',
+        hintText: 'F.eks. banen du trener på',
+        border: OutlineInputBorder(),
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Avbryt'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.of(context).pop(_controller.text),
+        child: const Text('Lagre'),
+      ),
+    ],
+  );
 }
 
 class _ThemeSection extends ConsumerWidget {

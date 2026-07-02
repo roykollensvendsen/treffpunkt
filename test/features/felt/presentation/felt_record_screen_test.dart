@@ -15,6 +15,8 @@ import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
+import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
+import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 
 void main() {
   // Hold 1's hare inner-zone centre as a fraction of the hold (151×145 px).
@@ -224,8 +226,9 @@ void main() {
     // Finishes a gruppe-2 round with one hare inner hit (2 points · 1 Ⓧ).
     Future<void> finishRound(
       WidgetTester tester,
-      List<FeltSessionRecord> history,
-    ) async {
+      List<FeltSessionRecord> history, {
+      Map<String, ExerciseResult>? baselines,
+    }) async {
       tester.view.physicalSize = const Size(600, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -237,6 +240,8 @@ void main() {
             feltSyncedSessionsProvider.overrideWith(
               (ref) async => const <FeltSessionRecord>[],
             ),
+            if (baselines != null)
+              initialPersonalRecordsProvider.overrideWithValue(baselines),
           ],
           child: const MaterialApp(home: FeltRecordScreen()),
         ),
@@ -274,6 +279,33 @@ void main() {
         prior(id: 'p1', group: FeltShooterGroup.one, hits: 2),
         prior(id: 'p2', group: FeltShooterGroup.two, hits: 0),
       ]);
+      expect(find.byKey(personalBestKey), findsOneWidget);
+    });
+
+    testWidgets('a same-group baseline above the round hides it (0102)', (
+      tester,
+    ) async {
+      await finishRound(
+        tester,
+        const [],
+        baselines: {
+          feltRecordKey(FeltShooterGroup.two): (points: 60, inner: 0),
+        },
+      );
+      expect(find.byKey(personalBestKey), findsNothing);
+    });
+
+    testWidgets("the other group's baseline is ignored (0102)", (
+      tester,
+    ) async {
+      await finishRound(
+        tester,
+        const [],
+        baselines: {
+          feltRecordKey(FeltShooterGroup.one): (points: 60, inner: 0),
+          feltRecordKey(FeltShooterGroup.two): (points: 0, inner: 0),
+        },
+      );
       expect(find.byKey(personalBestKey), findsOneWidget);
     });
   });

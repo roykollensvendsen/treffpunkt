@@ -52,6 +52,16 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Added
+- **Standard sted**: set the range you usually shoot at under
+  **Innstillinger → Skyting**, and the setup step before every session
+  (felt too) starts with the place pre-filled — still editable, and **Bruk
+  min posisjon** works as before (spec 0102).
+- **Personlige rekorder with starting values**: a new **Rekorder** page
+  (from Innstillinger → Skyting, or the trophy on Statistikk) lists every
+  exercise with your current record. Enter the record you had *before* the
+  app as a starting value — «Ny pers!» then only celebrates when you beat
+  the best of that value and your recorded sessions, and the shown record
+  updates by itself when you do (spec 0102).
 - **«Ny pers!» on the scorecard**: finish a session that beats your best
   earlier result on the same exercise (points, with inner hits as the
   tiebreak) and the scorecard celebrates it with a signal-red «Ny pers!»

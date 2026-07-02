@@ -20,6 +20,7 @@ import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_score.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_painter.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
@@ -223,7 +224,10 @@ class SessionView extends ConsumerWidget {
   /// program (spec 0101): compared against the shooter's other sessions —
   /// pending and synced, merged exactly as «Mine økter» does — with the
   /// finished recording's own id excluded (it is already in the upload
-  /// queue by the time the scorecard renders).
+  /// queue by the time the scorecard renders). A manual record baseline for
+  /// the program counts as one more prior result (spec 0102), so the first
+  /// recorded session celebrates only if it beats what the shooter brought
+  /// with them.
   bool _isPersonalBest(
     WidgetRef ref,
     SessionRecording recording,
@@ -238,9 +242,11 @@ class SessionView extends ConsumerWidget {
       synced: synced,
       pending: [...stored, ...live],
     );
+    final baseline = ref.watch(personalRecordsProvider)[program.name];
     return isNewPersonalBest(
       result: (points: score.total, inner: score.innerTens),
       prior: [
+        ?baseline,
         for (final entry in entries)
           if (entry.record.program == program.name &&
               entry.record.id != recording.id)
