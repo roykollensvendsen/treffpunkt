@@ -8,15 +8,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
+import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
+import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
-import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
-import 'package:treffpunkt/features/help/presentation/help_screen.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
+import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
+import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
-import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_category_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
@@ -49,14 +53,12 @@ void main() {
     for (final card in cards) {
       expect(card, findsOneWidget);
     }
+    // A 2×2 grid (spec 0097): Luft/Fin-Grov on the first row, MIL/Felt on
+    // the second.
     final tops = <double>[for (final card in cards) tester.getTopLeft(card).dy];
-    for (var i = 0; i + 1 < tops.length; i++) {
-      expect(
-        tops[i],
-        lessThan(tops[i + 1]),
-        reason: 'category card $i must sit above card ${i + 1}',
-      );
-    }
+    expect(tops[0], tops[1]);
+    expect(tops[2], tops[3]);
+    expect(tops[0], lessThan(tops[2]));
 
     // The front page carries no individual program tiles any more.
     expect(
@@ -130,71 +132,32 @@ void main() {
     expect(find.text('50 m Fripistol'), findsWidgets);
   });
 
-  testWidgets('MIL shows an empty state until programs are seeded', (
+  testWidgets('MIL is disabled and marked kommer senere (spec 0097)', (
     tester,
   ) async {
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
+    expect(find.textContaining('kommer senere'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey<String>('category-MIL')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(emptyCategoryKey), findsOneWidget);
-    expect(
-      find.text('Ingen programmer i denne kategorien ennå.'),
-      findsOneWidget,
-    );
+    // No dead-end page opens — still on the front page.
+    expect(find.byType(ProgramPickerScreen), findsOneWidget);
+    expect(find.byKey(emptyCategoryKey), findsNothing);
   });
 
-  testWidgets('Felt lists the NorgesFelt course and opens the preview', (
+  testWidgets('Felt opens the course preview directly (spec 0097)', (
     tester,
   ) async {
-    final handle = tester.ensureSemantics();
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey<String>('category-Felt')));
     await tester.pumpAndSettle();
 
-    final course = find.byKey(const ValueKey<String>('felt-norgesfelt-2026'));
-    expect(course, findsOneWidget);
-    // The course card is a screen-reader button too, like every picker tile.
-    expect(
-      tester.getSemantics(
-        find.bySemanticsLabel(RegExp('^Velg løype: NorgesFelt-løype 2026')),
-      ),
-      isSemantics(isButton: true, hasTapAction: true),
-    );
-    await tester.tap(course);
-    await tester.pumpAndSettle();
-
+    // One course exists, so the category skips the list (spec 0097 req 4).
     expect(find.byType(FeltCourseScreen), findsOneWidget);
-    handle.dispose();
-  });
-
-  testWidgets('opens the forum from the forum action (spec 0054)', (
-    tester,
-  ) async {
-    await tester.pumpWidget(app(InMemorySessionStore()));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(forumButtonKey));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(ForumScreen), findsOneWidget);
-    expect(find.text('Forum'), findsWidgets);
-  });
-
-  testWidgets('opens the user manual from the help action', (tester) async {
-    await tester.pumpWidget(app(InMemorySessionStore()));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(helpButtonKey));
-    await tester.pumpAndSettle();
-
-    // The manual's contents screen, listing its pages.
-    expect(find.text('Brukerveiledning'), findsOneWidget);
-    expect(find.byKey(manualPageTileKey('competitions.md')), findsOneWidget);
   });
 
   testWidgets('labels each category card as a button for screen readers', (
@@ -299,46 +262,6 @@ void main() {
     expect(find.byKey(buildVersionKey), findsOneWidget);
     expect(find.textContaining('build '), findsOneWidget);
   });
-
-  testWidgets('the "My sessions" action opens the history screen (spec 0026)', (
-    tester,
-  ) async {
-    await tester.pumpWidget(app(InMemorySessionStore()));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(mySessionsButtonKey), findsOneWidget);
-    expect(find.byTooltip('Mine økter'), findsOneWidget);
-
-    await tester.tap(find.byKey(mySessionsButtonKey));
-    await tester.pumpAndSettle();
-
-    // Navigated to the "Mine økter" screen; an empty store shows its empty
-    // state rather than crashing.
-    expect(find.byType(MySessionsScreen), findsOneWidget);
-    expect(find.byKey(noSessionsKey), findsOneWidget);
-  });
-
-  testWidgets(
-    'the empty-state "Velg program" button returns to the picker (spec 0026)',
-    (tester) async {
-      await tester.pumpWidget(app(InMemorySessionStore()));
-      await tester.pumpAndSettle();
-
-      // Open the empty "Mine økter" history.
-      await tester.tap(find.byKey(mySessionsButtonKey));
-      await tester.pumpAndSettle();
-      expect(find.byType(MySessionsScreen), findsOneWidget);
-      expect(find.byKey(pickProgramButtonKey), findsOneWidget);
-
-      // Tapping the call to action pops back to the program picker.
-      await tester.tap(find.byKey(pickProgramButtonKey));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(MySessionsScreen), findsNothing);
-      expect(find.byType(ProgramPickerScreen), findsOneWidget);
-      expect(find.text('Velg program'), findsWidgets);
-    },
-  );
 
   testWidgets('resumes a saved session restored to its shots', (tester) async {
     final session = Session.start(ProgramCatalogue.airRifle10m);
@@ -447,5 +370,89 @@ void main() {
 
     expect(find.byKey(resumeSessionKey), findsNothing);
     expect(await store.load(), isNull);
+  });
+
+  testWidgets('Skyt igjen names the last exercise and opens setup (0097)', (
+    tester,
+  ) async {
+    // One completed, dated session on the account.
+    final repository = InMemorySessionRepository();
+    await repository.upload(
+      SessionRecord(
+        id: 'r1',
+        program: '10 m Luftpistol 60 skudd',
+        capturedAt: DateTime.utc(2026, 7, 1, 18),
+        total: 560,
+        maxTotal: 600,
+        innerTens: 14,
+        payload: const <String, dynamic>{},
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
+          sessionRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: const MaterialApp(home: ProgramPickerScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The quick-start card names the exercise; one tap reaches its setup.
+    expect(find.byKey(shootAgainKey), findsOneWidget);
+    expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
+    await tester.tap(find.byKey(shootAgainKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(sessionConfirmKey), findsOneWidget);
+  });
+
+  testWidgets('no history means no Skyt igjen card (spec 0097)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(shootAgainKey), findsNothing);
+  });
+
+  testWidgets('a saved felt round resumes from the front page (0097)', (
+    tester,
+  ) async {
+    final feltStore = InMemoryFeltSessionStore();
+    await feltStore.save(
+      const FeltSessionSnapshot(
+        group: FeltShooterGroup.two,
+        currentHold: 1,
+        holds: <List<FeltPlacedShot>>[
+          <FeltPlacedShot>[FeltPlacedShot(dx: 1, dy: 1, figureIndex: 0)],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+        ],
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
+          feltSessionStoreProvider.overrideWithValue(feltStore),
+        ],
+        child: const MaterialApp(home: ProgramPickerScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(feltResumeSessionKey), findsOneWidget);
+    await tester.tap(find.byKey(feltResumeSessionKey));
+    await tester.pumpAndSettle();
+
+    // Straight into the recorder, restored (spec 0097 req 3).
+    expect(find.byType(FeltRecordScreen), findsOneWidget);
+    expect(find.textContaining('Skudd 0/5'), findsOneWidget);
   });
 }

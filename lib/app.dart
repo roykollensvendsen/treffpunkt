@@ -11,7 +11,7 @@ import 'package:treffpunkt/features/auth/presentation/auth_gate.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/join_link_handler.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
-import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/home_shell.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 import 'package:treffpunkt/features/settings/presentation/settings_screen.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
@@ -57,9 +57,7 @@ class TreffpunktApp extends ConsumerWidget {
       themeMode: ref.watch(themeModeProvider),
       home: AuthGate(
         signedInBuilder: (user) => const JoinLinkHandler(
-          child: ProgramPickerScreen(
-            actions: [SettingsButton()],
-          ),
+          child: HomeShell(actions: [SettingsButton()]),
         ),
       ),
     );

@@ -3,23 +3,31 @@
 Treffpunkt runs in your web browser and on Android and iOS. It scores the
 official Norwegian Shooting Federation pistol programs.
 
-You can open this guide any time **from inside the app**: tap the **?** (help)
-button — in the top bar of the program picker once you are signed in, or in the
-corner of the sign-in screen before you sign in. It works offline.
+You can open this guide any time **from inside the app**: under
+**Innstillinger → Hjelp** once you are signed in, or the **?** in the corner
+of the sign-in screen. It works offline.
 
 ## Open the app
 - **Web:** open the Treffpunkt URL in any modern browser.
 - **Phone or tablet:** install the app (coming soon) or open the web version.
 
 ## Record your first shot
-1. On the **Velg program** page, pick a **category**: **NSF Luft** (the
-   luftpistol programs), **NSF Fin/Grov** (the 25 m and 50 m fin- og
-   grovpistol programs), **MIL** (military programs — coming later) or
-   **Felt** (field shooting).
+1. The bar at the bottom takes you everywhere: **Hjem**, **Mine økter**,
+   **Statistikk**, **Konkurranser** and **Forum** — always visible, with
+   labels. On **Hjem**, pick a **category**: **NSF Luft** (the luftpistol
+   programs), **NSF Fin/Grov** (the 25 m and 50 m fin- og grovpistol
+   programs) or **Felt** (field shooting — opens the course directly); MIL
+   is marked «kommer senere». Shot before? The **Skyt igjen** card at the
+   top restarts your latest exercise in one tap, and Hjem also shows
+   **Fortsett økt** / **Fortsett felt-økt** cards for anything in progress.
+   The bell (varsler) and Innstillinger sit in the top bar.
 2. Pick the program inside the category and confirm the session setup (date,
    time and place). You will see a round target.
-3. Tap where your shot hit. A marker appears and the score shows at the top.
-4. The score updates the moment you place the marker.
+3. Tap where your shot hit. A marker appears and the score shows at the top;
+   **Angre** (bottom left) removes the last shot if you mistapped.
+4. The score updates the moment you place the marker. When the series is
+   full, the big **Fullfør serie (10/10)** button at the bottom seals it and
+   moves on.
 
 ### Silhuettpistol (the 5-target bank)
 **25 m Silhuettpistol** is shot one shot at each of **five silhouettes**. The

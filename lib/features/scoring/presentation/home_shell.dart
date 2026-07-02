@@ -1,0 +1,108 @@
+// SPDX-FileCopyrightText: 2026 Roy Kollen Svendsen
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
+import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
+import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/statistics_screen.dart';
+
+/// The app's five tabs (spec 0097): every top destination one thumb-reach
+/// tap with a permanent label. The Hjem tab is the shooting start page; the
+/// others are the existing screens unchanged.
+class HomeShell extends ConsumerStatefulWidget {
+  /// Creates the shell with optional extra app-bar [actions] for the Hjem
+  /// tab (e.g. the settings button).
+  const HomeShell({this.actions, super.key});
+
+  /// Extra actions shown in the Hjem tab's app bar.
+  final List<Widget>? actions;
+
+  @override
+  ConsumerState<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends ConsumerState<HomeShell> {
+  int _index = 0;
+
+  /// Switches tab, refreshing the destination's background reads exactly
+  /// like the old push-navigation helpers did (specs 0011/0026/0082/0083).
+  void _select(int index) {
+    switch (index) {
+      case 0:
+        ref
+          ..invalidate(savedRecordingProvider)
+          ..invalidate(feltSavedSessionProvider);
+      case 1:
+        ref
+          ..invalidate(syncedSessionsProvider)
+          ..invalidate(storedPendingProvider)
+          ..invalidate(feltHistoryProvider)
+          ..invalidate(feltSyncedSessionsProvider);
+      case 3:
+        ref
+          ..invalidate(myCompetitionsProvider)
+          ..invalidate(myInvitationsProvider);
+      default:
+        break;
+    }
+    setState(() => _index = index);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: switch (_index) {
+        0 => ProgramPickerScreen(actions: widget.actions),
+        1 => const MySessionsScreen(),
+        2 => const StatisticsScreen(),
+        3 => const CompetitionsScreen(),
+        _ => const ForumScreen(),
+      },
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: _select,
+        destinations: const [
+          NavigationDestination(
+            key: homeTabKey,
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Hjem',
+          ),
+          NavigationDestination(
+            key: mySessionsButtonKey,
+            icon: Icon(Icons.history),
+            label: 'Mine økter',
+          ),
+          NavigationDestination(
+            key: statisticsButtonKey,
+            icon: Icon(Icons.show_chart),
+            label: 'Statistikk',
+          ),
+          NavigationDestination(
+            key: competitionsButtonKey,
+            icon: Icon(Icons.emoji_events_outlined),
+            selectedIcon: Icon(Icons.emoji_events),
+            label: 'Konkurranser',
+          ),
+          NavigationDestination(
+            key: forumButtonKey,
+            icon: Icon(Icons.forum_outlined),
+            selectedIcon: Icon(Icons.forum),
+            label: 'Forum',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Key for the Hjem destination in the bottom bar (spec 0097), for tests.
+const Key homeTabKey = ValueKey<String>('homeTab');

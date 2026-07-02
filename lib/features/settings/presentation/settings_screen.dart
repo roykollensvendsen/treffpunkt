@@ -11,6 +11,7 @@ import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
+import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 import 'package:treffpunkt/features/notifications/presentation/notification_providers.dart';
 import 'package:treffpunkt/features/settings/presentation/contribution_providers.dart';
 import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
@@ -92,6 +93,21 @@ class SettingsScreen extends ConsumerWidget {
                 const Divider(),
                 _SectionHeader('Personvern', style: theme.textTheme.titleSmall),
                 const _ContributionSection(),
+                const Divider(),
+                _SectionHeader('Hjelp', style: theme.textTheme.titleSmall),
+                ListTile(
+                  key: helpButtonKey,
+                  leading: const Icon(Icons.help_outline),
+                  title: const Text('Brukerveiledning'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => unawaited(
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const HelpScreen(),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

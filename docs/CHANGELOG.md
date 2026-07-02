@@ -51,6 +51,20 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Added
+- **Bottom navigation and a cleaner start page**: a bar at the bottom now
+  takes you to **Hjem**, **Mine økter**, **Statistikk**, **Konkurranser**
+  and **Forum** — always visible, with labels. Hjem is all about shooting:
+  a highlighted **Skyt igjen** card restarts your latest exercise in one
+  tap, in-progress rounds show as **Fortsett økt** / **Fortsett felt-økt**
+  cards, and the categories sit in a compact grid — **Felt** opens the
+  course directly and **MIL** is marked «kommer senere».
+  Brukerveiledningen moved to Innstillinger (spec 0097).
+- **Angre and a real «Fullfør serie» button while shooting**: a bottom bar
+  on the shooting screen carries **Angre** (removes the last shot) and a
+  full-width **Fullfør serie (n/N)** button that always shows how far the
+  series is — replacing the small icon in the top bar (spec 0098).
+
 ### Fixed
 - **The highlighted weapon is the weapon that gets recorded**: on the next
   session of the day the previously chosen weapon looked selected in the

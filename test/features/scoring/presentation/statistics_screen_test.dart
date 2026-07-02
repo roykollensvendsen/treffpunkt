@@ -14,7 +14,6 @@ import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
-import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/statistics_screen.dart';
 
@@ -89,22 +88,6 @@ void main() {
       inner: 17,
     ),
   ];
-
-  testWidgets('the Mine økter action opens the statistics screen (0090)', (
-    tester,
-  ) async {
-    await tester.pumpWidget(await _app(home: const MySessionsScreen()));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(statisticsButtonKey), findsOneWidget);
-    await tester.tap(find.byKey(statisticsButtonKey));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(StatisticsScreen), findsOneWidget);
-    expect(find.text('Statistikk'), findsWidgets);
-    // No dated sessions at all: the empty state, not an empty chart.
-    expect(find.byKey(noStatisticsKey), findsOneWidget);
-  });
 
   testWidgets('plots the exercise curves with a legend (spec 0090)', (
     tester,
