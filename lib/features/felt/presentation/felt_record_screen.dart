@@ -17,6 +17,8 @@ import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
+import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
+import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 /// Key for the group-picker button for [group] (spec 0080), for tests.
 Key feltGroupButtonKey(FeltShooterGroup group) =>
@@ -36,13 +38,27 @@ const Key feltSaveRoundKey = ValueKey<String>('feltSaveRound');
 
 /// Records a NorgesFelt session (spec 0080): pick a group, then place each shot
 /// on every hold and see the score, ending on a scorecard. The in-progress
-/// round is saved after each change and can be [restored] (spec 0081).
+/// round is saved after each change and can be [restored] (spec 0081). The
+/// setup step's [metadata] and [weapon] (spec 0092) ride along on every
+/// snapshot and the saved record.
 class FeltRecordScreen extends ConsumerStatefulWidget {
   /// Creates the recorder, optionally resuming a saved [restored] round.
-  const FeltRecordScreen({this.restored, super.key});
+  const FeltRecordScreen({
+    this.restored,
+    this.metadata,
+    this.weapon,
+    super.key,
+  });
 
   /// A saved round to resume into, or null to start fresh (spec 0081).
   final FeltSessionSnapshot? restored;
+
+  /// The setup step's date/time and place (spec 0092), or null. A resumed
+  /// round carries its own metadata in [restored].
+  final SessionMetadata? metadata;
+
+  /// The weapon chosen in the setup step (spec 0092), or null.
+  final Weapon? weapon;
 
   @override
   ConsumerState<FeltRecordScreen> createState() => _FeltRecordScreenState();
@@ -68,6 +84,14 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
   /// Guards the save button against double-taps while the save runs.
   bool _saving = false;
 
+  /// The round's metadata (spec 0092): the chosen date/time, place and
+  /// weapon — from the setup step, or from the restored snapshot on resume.
+  DateTime? _capturedAt;
+  String? _placeLabel;
+  double? _latitude;
+  double? _longitude;
+  String? _weaponName;
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +100,11 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     if (restored != null) {
       _group = restored.group;
       _hold = restored.currentHold;
+      _capturedAt = restored.capturedAt;
+      _placeLabel = restored.placeLabel;
+      _latitude = restored.latitude;
+      _longitude = restored.longitude;
+      _weaponName = restored.weaponName;
       _shots = <List<_Placed>>[
         for (final hold in restored.holds)
           <_Placed>[
@@ -87,6 +116,12 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
           ],
       ];
     } else {
+      final metadata = widget.metadata;
+      _capturedAt = metadata?.capturedAt;
+      _placeLabel = metadata?.place?.label;
+      _latitude = metadata?.place?.latitude;
+      _longitude = metadata?.place?.longitude;
+      _weaponName = widget.weapon?.name;
       _shots = List<List<_Placed>>.generate(
         norgesfelt2026Art.length,
         (_) => <_Placed>[],
@@ -107,6 +142,11 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
   FeltSessionSnapshot _snapshot() => FeltSessionSnapshot(
     group: _group!,
     currentHold: _hold,
+    capturedAt: _capturedAt,
+    placeLabel: _placeLabel,
+    latitude: _latitude,
+    longitude: _longitude,
+    weaponName: _weaponName,
     holds: <List<FeltPlacedShot>>[
       for (final hold in _shots)
         <FeltPlacedShot>[
@@ -169,9 +209,11 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     // Captured before the awaits so no BuildContext is used across the gaps.
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    // The record's capturedAt is the setup step's chosen date (spec 0092);
+    // a round without one (pre-0092 resume) falls back to the save moment.
     final record = FeltSessionRecord(
       id: _roundId,
-      capturedAt: DateTime.now(),
+      capturedAt: _capturedAt ?? DateTime.now(),
       session: _snapshot(),
     );
     await saveFeltRound(ref, record).catchError((Object _) {});
