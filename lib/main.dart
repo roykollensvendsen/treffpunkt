@@ -11,6 +11,7 @@ import 'package:treffpunkt/config/app_config.dart';
 import 'package:treffpunkt/core/platform/browser_environment.dart';
 import 'package:treffpunkt/core/platform/share_plus_sharer.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
+import 'package:treffpunkt/features/backup/data/backup_file_source.dart';
 import 'package:treffpunkt/features/competitions/data/supabase_competition_repository.dart';
 import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
@@ -87,6 +88,7 @@ Future<void> main() async {
     contributionService: SupabaseContributionService(Supabase.instance.client),
     feltGroupStore: feltGroupStore,
     initialFeltGroup: initialFeltGroup,
+    backupFileSource: const FilePickerBackupFileSource(),
     defaultPlaceStore: defaultPlaceStore,
     initialDefaultPlace: initialDefaultPlace,
     personalRecordsStore: personalRecordsStore,

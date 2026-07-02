@@ -111,6 +111,7 @@ void main() {
     expect(find.text('Utseende'), findsOneWidget);
     expect(find.text('Varsler'), findsOneWidget);
     expect(find.text('Personvern'), findsOneWidget);
+    expect(find.text('Sikkerhetskopi'), findsOneWidget);
     expect(find.byKey(settingsSignOutKey), findsOneWidget);
   });
 

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/backup/presentation/backup_section.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 import 'package:treffpunkt/features/help/presentation/help_screen.dart';
@@ -100,6 +101,12 @@ class SettingsScreen extends ConsumerWidget {
                 const Divider(),
                 _SectionHeader('Skyting', style: theme.textTheme.titleSmall),
                 const _ShootingSection(),
+                const Divider(),
+                _SectionHeader(
+                  'Sikkerhetskopi',
+                  style: theme.textTheme.titleSmall,
+                ),
+                const BackupSection(),
                 const Divider(),
                 _SectionHeader('Utseende', style: theme.textTheme.titleSmall),
                 const _ThemeSection(),

@@ -65,6 +65,15 @@ All notable changes to this project are documented here. The format is based on
   (spec 0103, forum request).
 
 ### Added
+- **Sikkerhetskopi**: under **Innstillinger → Sikkerhetskopi** you can
+  export everything — ring sessions, felt rounds, weapons, record
+  baselines and the default place — as one JSON file through the share
+  sheet, and restore from such a file on any device. Restoring is
+  additive: nothing you already have is touched, and restored sessions
+  also upload to your account on the next sync (spec 0106, forum
+  request).
+
+### Added
 - **Felt rounds replay on the targets**: open a saved NorgesFelt round
   (the end-of-round scorecard or "Mine økter") and every hold now shows
   its picture with the shots marked where they landed — green for inner

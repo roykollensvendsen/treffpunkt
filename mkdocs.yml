@@ -136,6 +136,7 @@ nav:
       - "0103 — Innertier-ringen tegnes på skiva": specs/0103-inner-ten-ring.md
       - "0104 — Felt: ærlig innertreff-tekst": specs/0104-felt-inner-coverage-text.md
       - "0105 — Felt: treffbilder ved gjennomsyn": specs/0105-felt-review-shots.md
+      - "0106 — Sikkerhetskopi og gjenoppretting": specs/0106-backup-and-restore.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

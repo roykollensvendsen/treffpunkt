@@ -135,6 +135,13 @@ settings live in one place: your **account** (**Brukernavn**, e-post and **Logg
 ut**), **Skyting** (your defaults), **Utseende** (theme), **Varsler**
 (notifications) and **Personvern** (training images).
 
+Under **Sikkerhetskopi** you can **export** everything you have — your
+sessions (ring and felt), weapons, records and default place — as one
+JSON file through the share sheet (a download in the browser), and
+**import** such a file again on any device. Importing only ever *adds*:
+what you already have is kept, and restored sessions sync to your
+account as usual.
+
 Under **Skyting** you can set a **Standard sted** — the range you usually
 shoot at. The setup step before every session (felt too) then starts with
 the place already filled in; you can still type something else, clear it, or

@@ -50,6 +50,12 @@ class WeaponsNotifier extends Notifier<List<Weapon>> {
     _persist();
   }
 
+  /// Replaces the whole list — a backup restore (spec 0106) — and persists.
+  void replaceAll(List<Weapon> weapons) {
+    state = List<Weapon>.unmodifiable(weapons);
+    _persist();
+  }
+
   void _persist() {
     final write = ref.read(weaponStoreProvider).save(state);
     // Persistence is best-effort and off the happy path (losing one save is not

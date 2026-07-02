@@ -65,6 +65,13 @@ class _RecordingSharer implements Sharer {
   final List<String> shared = <String>[];
   @override
   Future<void> share(String text) async => shared.add(text);
+
+  @override
+  Future<void> shareFile({
+    required String filename,
+    required String mimeType,
+    required Uint8List bytes,
+  }) async {}
 }
 
 void main() {
