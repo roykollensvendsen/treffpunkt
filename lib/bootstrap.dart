@@ -10,6 +10,7 @@ import 'package:treffpunkt/core/platform/browser_environment.dart';
 import 'package:treffpunkt/core/platform/sharer.dart';
 import 'package:treffpunkt/features/auth/domain/auth_repository.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/backup/data/backup_file_source.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
@@ -110,6 +111,7 @@ void runTreffpunkt(
   NotificationsRepository? notificationsRepository,
   FeltGroupStore? feltGroupStore,
   FeltShooterGroup? initialFeltGroup,
+  BackupFileSource? backupFileSource,
   DefaultPlaceStore? defaultPlaceStore,
   String? initialDefaultPlace,
   PersonalRecordsStore? personalRecordsStore,
@@ -182,6 +184,8 @@ void runTreffpunkt(
           feltGroupStoreProvider.overrideWithValue(feltGroupStore),
         if (initialFeltGroup != null)
           initialFeltGroupProvider.overrideWithValue(initialFeltGroup),
+        if (backupFileSource != null)
+          backupFileSourceProvider.overrideWithValue(backupFileSource),
         if (defaultPlaceStore != null)
           defaultPlaceStoreProvider.overrideWithValue(defaultPlaceStore),
         if (initialDefaultPlace != null)

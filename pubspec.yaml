@@ -8,6 +8,7 @@ environment:
 
 dependencies:
   cupertino_icons: ^1.0.8
+  file_picker: ^3.0.4
   flutter:
     sdk: flutter
   flutter_localizations:
