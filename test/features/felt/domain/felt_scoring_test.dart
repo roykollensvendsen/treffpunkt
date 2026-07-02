@@ -13,21 +13,25 @@ void main() {
     expect(FeltShooterGroup.three.shotsPerHold, 5);
   });
 
-  test('hold scores treff + distinct figures + inner (spec 0080)', () {
-    // Six hits across five figures, all six in an inner zone → 6 + 5 + 6 = 17.
-    const tally = FeltHoldTally(<FeltShot>[
-      FeltShot(figureIndex: 0, inner: true),
-      FeltShot(figureIndex: 0, inner: true),
-      FeltShot(figureIndex: 1, inner: true),
-      FeltShot(figureIndex: 2, inner: true),
-      FeltShot(figureIndex: 3, inner: true),
-      FeltShot(figureIndex: 4, inner: true),
-    ]);
-    expect(tally.treff, 6);
-    expect(tally.figures, 5);
-    expect(tally.inner, 6);
-    expect(tally.points, 17);
-  });
+  test(
+    'hold scores treff + distinct figures; inner adds nothing (spec 0085)',
+    () {
+      // Six hits across five figures, all six in an inner zone → 6 + 5 = 11.
+      // The inner hits are counted (the tiebreaker) but give no points.
+      const tally = FeltHoldTally(<FeltShot>[
+        FeltShot(figureIndex: 0, inner: true),
+        FeltShot(figureIndex: 0, inner: true),
+        FeltShot(figureIndex: 1, inner: true),
+        FeltShot(figureIndex: 2, inner: true),
+        FeltShot(figureIndex: 3, inner: true),
+        FeltShot(figureIndex: 4, inner: true),
+      ]);
+      expect(tally.treff, 6);
+      expect(tally.figures, 5);
+      expect(tally.inner, 6);
+      expect(tally.points, 11);
+    },
+  );
 
   test(
     'a miss scores nothing; a plain hit scores treff + figure (spec 0080)',
@@ -43,16 +47,19 @@ void main() {
     },
   );
 
-  test('session totals the holds (spec 0080)', () {
+  test('session totals the holds and sums the tiebreak inner (spec 0085)', () {
     const session = FeltSessionTally(
       group: FeltShooterGroup.one,
       holds: <FeltHoldTally>[
         FeltHoldTally(<FeltShot>[FeltShot(figureIndex: 0, inner: true)]),
         FeltHoldTally(<FeltShot>[FeltShot(figureIndex: 1)]),
+        FeltHoldTally(<FeltShot>[FeltShot(figureIndex: 0, inner: true)]),
       ],
     );
-    expect(session.holds.first.points, 3);
+    expect(session.holds.first.points, 2);
     expect(session.holds.last.points, 2);
-    expect(session.points, 5);
+    expect(session.points, 6);
+    // The session-level inner count — the tiebreaker when points are equal.
+    expect(session.inner, 2);
   });
 }

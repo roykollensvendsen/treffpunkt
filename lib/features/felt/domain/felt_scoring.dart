@@ -42,8 +42,9 @@ class FeltShot {
   bool get isHit => figureIndex != null;
 }
 
-/// The NorgesFelt score of one hold's [shots] (spec 0080): one point per hit,
-/// one per distinct figure hit, and one per inner-zone hit.
+/// The NorgesFelt score of one hold's [shots] (specs 0080/0085): one point
+/// per hit and one per distinct figure hit. Inner-zone hits give **no**
+/// points — they are counted as the tiebreaker (spec 0085).
 @immutable
 class FeltHoldTally {
   /// Creates a hold tally over its recorded shots.
@@ -59,11 +60,11 @@ class FeltHoldTally {
   int get figures =>
       shots.where((s) => s.isHit).map((s) => s.figureIndex).toSet().length;
 
-  /// Inner-zone hits.
+  /// Inner-zone hits — the tiebreaker, worth no points (spec 0085).
   int get inner => shots.where((s) => s.inner).length;
 
-  /// Total points: [treff] + [figures] + [inner].
-  int get points => treff + figures + inner;
+  /// Points: [treff] + [figures]. [inner] deliberately adds nothing.
+  int get points => treff + figures;
 }
 
 /// A whole felt session (spec 0080): the shooter's [group] and the per-hold
@@ -81,4 +82,8 @@ class FeltSessionTally {
 
   /// The session total across all holds.
   int get points => holds.fold(0, (sum, h) => sum + h.points);
+
+  /// Inner-zone hits across all holds — the tiebreaker when two shooters
+  /// have equal [points]: the most inner hits wins (spec 0085).
+  int get inner => holds.fold(0, (sum, h) => sum + h.inner);
 }

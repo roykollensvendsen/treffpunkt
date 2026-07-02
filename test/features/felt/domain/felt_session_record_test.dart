@@ -36,11 +36,15 @@ void main() {
     expect(restored.capturedAt, DateTime.utc(2026, 7, 1, 12, 30));
   });
 
-  test('scores its tally from the snapshot (spec 0082)', () {
-    // Hold 1: two hits over two figures, one inner → 2 + 2 + 1 = 5.
+  test('scores its tally from the snapshot (specs 0082/0085)', () {
+    // Hold 1: two hits over two figures → 2 + 2 = 4; the inner hit is the
+    // tiebreaker, not a point (spec 0085) — and because the points are
+    // recomputed from the snapshot, a round recorded under the old formula
+    // shows the corrected total with no migration.
     expect(record.tally.holds.first.treff, 2);
     expect(record.tally.holds.first.figures, 2);
     expect(record.tally.holds.first.inner, 1);
-    expect(record.points, 5);
+    expect(record.points, 4);
+    expect(record.tally.inner, 1);
   });
 }

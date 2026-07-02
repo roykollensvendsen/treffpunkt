@@ -1,6 +1,7 @@
 # Spec 0080 — Feltskyting: recording hits and NorgesFelt scoring
 
-- **Status:** Accepted.
+- **Status:** Accepted. The scoring formula is superseded by spec 0085:
+  inner-zone hits give no points — they are the tiebreaker.
 - **Related:** 0068 (feltskyting figures & course), 0079 (composed holds). This
   adds recording and scoring on top of them.
 

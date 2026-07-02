@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
@@ -211,17 +212,29 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
                   onPlace: (p) => _place(art, p),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                // Inner hits give no points (spec 0085): the hold line shows
+                // the treff + figur breakdown, then the inner count as the
+                // ringed X the ring programs use for inner tens (spec 0023).
+                KeyedSubtree(
                   key: feltHoldPointsKey,
-                  'Treff ${tally.treff} · Figur ${tally.figures} · '
-                  'Inner ${tally.inner}  =  ${tally.points} poeng',
-                  style: theme.textTheme.titleSmall,
+                  child: innerTenScoreText(
+                    context: context,
+                    lead:
+                        'Treff ${tally.treff} · Figur ${tally.figures}'
+                        '  =  ${tally.points} poeng',
+                    innerTens: tally.inner,
+                    style: theme.textTheme.titleSmall,
+                  ),
                 ),
-                Text(
+                KeyedSubtree(
                   key: feltTotalPointsKey,
-                  'Totalt så langt: ${_session.points} poeng',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  child: innerTenScoreText(
+                    context: context,
+                    lead: 'Totalt så langt: ${_session.points} poeng',
+                    innerTens: _session.inner,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),

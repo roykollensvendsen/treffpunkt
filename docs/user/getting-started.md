@@ -41,8 +41,11 @@ the **black lines dividing the målgrupper**, and the inner-treff ring on every
 figure. Tap **Skyt løypa** to record a round: choose your **group** (which sets
 6 or 5 shots per hold), then **place each shot** on the hold picture where it
 hit. The app works out which figure and inner zone each shot landed in and
-scores it the NorgesFelt way — **1 point per hit, 1 per figure you hit, 1 per
-inner-zone hit** — with a running total and a scorecard at the end. The round
+scores it the NorgesFelt way — **1 point per hit and 1 per figure you hit**.
+**Innertreff** (inner-zone hits) give **no points**: they are the
+**tiebreaker** — with equal points, the shooter with the most inner hits wins
+— and they are shown next to the points as **· N Ⓧ**, the same way the ring
+programs show inner tens. You get a running total and a scorecard at the end. The round
 is **saved as you go**, so you can leave and pick it up later from **Fortsett
 felt-økt** on the course page, exactly where you left off. When you finish, the
 round is saved and shows up in **Mine økter** together with your ring sessions,

@@ -26,6 +26,14 @@ All notable changes to this project are documented here. The format is based on
   applied to the hosted project.
 
 ### Changed
+- **NorgesFelt: innertreff is the tiebreaker, not points**: a felt round now
+  scores **1 point per hit and 1 per figure hit** — inner-zone hits no longer
+  add points (max is 80 for gruppe 1, as on the official course). The inner
+  hits are counted separately as the tiebreaker (most inner wins on equal
+  points) and shown next to the points as **· N Ⓧ**, the same ringed X the
+  ring programs use for inner tens — on the recording screen, the scorecard
+  and in "Mine økter". Already-saved rounds show the corrected totals
+  automatically (spec 0085).
 - **The program picker is grouped into categories**: the "Velg program" front
   page now shows four categories — **NSF Luft**, **NSF Fin/Grov**, **MIL** and
   **Felt** — instead of one long list of every program. Tap a category to see

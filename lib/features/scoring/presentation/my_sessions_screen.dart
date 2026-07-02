@@ -291,8 +291,12 @@ class _FeltSessionCard extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            Text(
-              '${tally.points} poeng',
+            // Points, then the inner-hit tiebreak count as the same ringed X
+            // the ring sessions use for inner tens (specs 0085/0023).
+            innerTenScoreText(
+              context: context,
+              lead: '${tally.points} poeng',
+              innerTens: tally.inner,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
