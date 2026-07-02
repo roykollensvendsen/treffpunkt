@@ -86,6 +86,10 @@ class FeltArtSeparator {
 
 /// One figure of a composed hold (spec 0079): a [shape] with a [fill] and an
 /// optional inner [ring]. Only the fields for [shape] are meaningful.
+///
+/// A figure printed as several shapes — the tre-kvadrater stripes on holds 2
+/// and 8 (spec 0086) — keeps one entry per drawn shape; the parts share a
+/// [scoreIndex] and the middle square carries [innerZone].
 @immutable
 class FeltArtFigure {
   /// Creates a figure. Provide the parameters for [shape].
@@ -101,6 +105,8 @@ class FeltArtFigure {
     this.b = 0,
     this.thetaDeg = 0,
     this.ring,
+    this.scoreIndex,
+    this.innerZone = false,
   });
 
   /// Which kind of shape this is.
@@ -135,6 +141,15 @@ class FeltArtFigure {
 
   /// The inner-treff ring, if the figure has one.
   final FeltArtRing? ring;
+
+  /// The index of the figure this shape **scores as** (spec 0086), for
+  /// figures printed as several shapes: every square of a stripe carries the
+  /// first square's index. Unset means the shape scores as itself.
+  final int? scoreIndex;
+
+  /// Whether a hit on this shape is an inner-zone hit (spec 0086): the
+  /// middle square of a stripe. These figures have no [ring].
+  final bool innerZone;
 }
 
 /// A whole hold drawn as composed vector art (spec 0079): [plates] and black

@@ -256,6 +256,8 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           color: Color(0xFFFFFFFF),
         ),
       ),
+      // The two Stor striper: three squares each scoring as one figure, the
+      // middle square is the innertreff (spec 0086).
       FeltArtFigure(
         shape: FeltArtShape.polygon,
         points: <Offset>[
@@ -265,6 +267,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(3, 38),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 4,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -275,6 +278,8 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(40, 38),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 4,
+        innerZone: true,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -285,6 +290,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(76, 38),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 4,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -295,6 +301,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(3, 148),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 7,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -305,6 +312,8 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(40, 148),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 7,
+        innerZone: true,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -315,6 +324,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(76, 148),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 7,
       ),
     ],
     separators: <FeltArtSeparator>[
@@ -878,6 +888,8 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           color: Color(0xFFFFFFFF),
         ),
       ),
+      // The Stor stripe: a column of three squares scoring as one figure,
+      // the middle square is the innertreff (spec 0086).
       FeltArtFigure(
         shape: FeltArtShape.polygon,
         points: <Offset>[
@@ -887,6 +899,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(103, 53),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 2,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -897,6 +910,8 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(103, 104),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 2,
+        innerZone: true,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -907,7 +922,10 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(103, 155),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 2,
       ),
+      // The three Små striper: rows of three squares, each scoring as one
+      // figure with the middle square as the innertreff (spec 0086).
       FeltArtFigure(
         shape: FeltArtShape.polygon,
         points: <Offset>[
@@ -917,6 +935,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(174, 38),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 5,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -927,6 +946,8 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(198, 38),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 5,
+        innerZone: true,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -937,6 +958,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(221, 38),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 5,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -947,6 +969,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(174, 94),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 8,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -957,6 +980,8 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(198, 94),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 8,
+        innerZone: true,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -967,6 +992,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(221, 94),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 8,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -977,6 +1003,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(174, 151),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 11,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -987,6 +1014,8 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(198, 151),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 11,
+        innerZone: true,
       ),
       FeltArtFigure(
         shape: FeltArtShape.polygon,
@@ -997,6 +1026,7 @@ const List<FeltHoldArt> norgesfelt2026Art = <FeltHoldArt>[
           Offset(221, 151),
         ],
         fill: Color(0xFF00683F),
+        scoreIndex: 11,
       ),
     ],
     separators: <FeltArtSeparator>[
