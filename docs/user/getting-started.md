@@ -54,7 +54,8 @@ ptarmigan, hexagons, triangles, circles …) at their real relative size and
 position, in the hold's colour, white figures knocked out of a coloured plate,
 the **black lines dividing the målgrupper**, and each figure's inner-treff
 zone — the ring, or on the three-square stripes of holds 2 and 8 the
-**middle square**. Tap **Skyt løypa** to record a round: first the same
+**middle square** (every figure has one except the big triangle on hold 5;
+each hold card says which). Tap **Skyt løypa** to record a round: first the same
 setup step as the other programs — **date and time**, **place** (type it or
 tap **Bruk min posisjon**) and your **weapon** — then choose your **group**
 — **Gruppe 1** (6 shots per hold) or **Gruppe 2** (5 per hold) — and

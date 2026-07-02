@@ -40,6 +40,38 @@ void main() {
     expect(find.textContaining('Hold 8'), findsOneWidget);
   });
 
+  testWidgets('tells the truth about inner zones per hold (spec 0104)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 6000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: FeltCourseScreen())),
+    );
+    await tester.pumpAndSettle();
+
+    // The blanket claim is gone — hold 5's big triangle has no inner zone.
+    expect(find.textContaining('innertreff på alle figurer'), findsNothing);
+
+    // Each hold states its own inner coverage instead.
+    expect(
+      find.descendant(
+        of: find.byKey(feltHoldCardKey(1)),
+        matching: find.text('Innertreff på alle figurer'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(feltHoldCardKey(5)),
+        matching: find.text('Innertreff på 1 av 2 figurer (ikke Trekant stor)'),
+      ),
+      findsOneWidget,
+    );
+  });
+
   test(
     'holds are coloured black / green / red as on the course (spec 0078)',
     () {

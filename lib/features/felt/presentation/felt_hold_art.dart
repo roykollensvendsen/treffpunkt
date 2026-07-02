@@ -183,4 +183,21 @@ class FeltHoldArt {
 
   /// The black vertical separators between målgrupper, drawn on top.
   final List<FeltArtSeparator> separators;
+
+  /// Whether each *scoring* figure has an inner-treff zone (spec 0104), in
+  /// figure order: shapes sharing a [FeltArtFigure.scoreIndex] (a stripe's
+  /// squares, spec 0086) count as one figure, which has inner when any of
+  /// its shapes carries a [FeltArtFigure.ring] or is an
+  /// [FeltArtFigure.innerZone] square. On the official sheets one figure —
+  /// hold 5's big triangle — has no inner zone at all.
+  List<bool> get innerByScoringFigure {
+    final byScore = <int, bool>{};
+    for (var i = 0; i < figures.length; i++) {
+      final figure = figures[i];
+      final key = figure.scoreIndex ?? i;
+      byScore[key] =
+          (byScore[key] ?? false) || figure.ring != null || figure.innerZone;
+    }
+    return List<bool>.unmodifiable(byScore.values);
+  }
 }

@@ -134,6 +134,7 @@ nav:
       - "0101 — «Ny pers!», logo og piktogrammer": specs/0101-personal-best.md
       - "0102 — Standardsted og rekord-startverdier": specs/0102-defaults-and-records.md
       - "0103 — Innertier-ringen tegnes på skiva": specs/0103-inner-ten-ring.md
+      - "0104 — Felt: ærlig innertreff-tekst": specs/0104-felt-inner-coverage-text.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
