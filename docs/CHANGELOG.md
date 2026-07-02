@@ -26,6 +26,13 @@ All notable changes to this project are documented here. The format is based on
   applied to the hosted project.
 
 ### Added
+- **Varsler — a notification center**: the program picker's top bar has a
+  **bell** with a live unread badge. It collects competition invitations,
+  new chat messages in your competitions and new replies in forum threads
+  you take part in; tapping a notification jumps straight to the
+  invitation, chat or thread and marks it read (or **Marker alle som
+  lest**). Read status follows your account. Needs the `notifications`
+  table migration applied to the hosted project (spec 0094).
 - **NorgesFelt rounds get time, place and weapon**: "Skyt løypa" now starts
   with the same setup step as the other programs — date and time, place
   (typed or from **Bruk min posisjon**) and your weapon — before the group

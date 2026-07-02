@@ -13,6 +13,7 @@ import 'package:treffpunkt/features/competitions/presentation/competitions_scree
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
 import 'package:treffpunkt/features/help/presentation/help_screen.dart';
+import 'package:treffpunkt/features/notifications/presentation/notifications_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_category.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
@@ -130,6 +131,26 @@ class ProgramPickerScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Velg program'),
         actions: [
+          // The bell (spec 0094): a live unread badge; tapping opens Varsler.
+          IconButton(
+            key: notificationsBellKey,
+            icon: Badge.count(
+              key: notificationsBadgeKey,
+              count: ref.watch(unreadNotificationsCountProvider),
+              isLabelVisible: ref.watch(unreadNotificationsCountProvider) > 0,
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            tooltip: 'Varsler',
+            onPressed: () => unawaited(
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const NotificationsScreen(),
+                    ),
+                  )
+                  .then((_) => ref.invalidate(notificationsProvider)),
+            ),
+          ),
           IconButton(
             key: competitionsButtonKey,
             icon: const Icon(Icons.emoji_events_outlined),

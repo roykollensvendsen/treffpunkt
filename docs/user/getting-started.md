@@ -93,6 +93,16 @@ sessions in the order you shot them. Tap or drag on the chart to read a
 specific session's numbers; the latest values are labelled at the end of
 each curve.
 
+## Varsler (notifications)
+
+Tap the **bell** in the top bar of the program picker. A badge on the bell
+shows how many **unread** notifications you have: competition
+**invitations**, new **chat messages** in your competitions and new
+**replies** in forum threads you take part in. Tap a notification to go
+**straight to** the invitation, the chat or the thread — it is then marked
+read — or use **Marker alle som lest**. Read status follows your account
+across devices.
+
 ## Settings (Innstillinger)
 
 Tap the **gear** in the top bar to open **Innstillinger**, where the app's
