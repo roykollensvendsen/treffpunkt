@@ -13,6 +13,17 @@ void main() {
     expect(FeltShooterGroup.three.shotsPerHold, 5);
   });
 
+  test('only gruppe 1 and 2 are offered; 3 stays resolvable (spec 0088)', () {
+    // Gruppe 3 is not shot on NorgesFelt (heavier weapons) so the recorder
+    // does not offer it — but a stored round with it must keep loading.
+    expect(FeltShooterGroup.offered, <FeltShooterGroup>[
+      FeltShooterGroup.one,
+      FeltShooterGroup.two,
+    ]);
+    expect(FeltShooterGroup.values, contains(FeltShooterGroup.three));
+    expect(FeltShooterGroup.values.byName('three'), FeltShooterGroup.three);
+  });
+
   test(
     'hold scores treff + distinct figures; inner adds nothing (spec 0085)',
     () {

@@ -13,10 +13,16 @@ enum FeltShooterGroup {
   /// Group 2 — five shots per hold.
   two('Gruppe 2', 5),
 
-  /// Group 3 — five shots per hold.
+  /// Group 3 — five shots per hold. **Not offered** in the recorder: it is
+  /// the class for heavier weapons and is not shot on NorgesFelt (spec
+  /// 0088). Kept so a stored round with it still resolves by name.
   three('Gruppe 3', 5);
 
   const FeltShooterGroup(this.label, this.shotsPerHold);
+
+  /// The groups the recorder offers (spec 0088): Gruppe 3 is retained for
+  /// stored rounds but not offered.
+  static const List<FeltShooterGroup> offered = <FeltShooterGroup>[one, two];
 
   /// The Norwegian label.
   final String label;
