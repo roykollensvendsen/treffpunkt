@@ -25,6 +25,9 @@ import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 /// Key for the "complete series" / advance action in the app bar.
 const Key sealSeriesKey = ValueKey<String>('sealSeries');
 
+/// Key for the "Angre siste skudd" action (spec 0098), used by tests.
+const Key undoShotKey = ValueKey<String>('undoShot');
+
 /// Key for the "Skann skive" (camera scan) action in the app bar (spec 0039).
 const Key scanTargetActionKey = ValueKey<String>('scanTargetAction');
 
@@ -250,16 +253,45 @@ class SessionView extends ConsumerWidget {
                   ? null
                   : () => _scanTarget(context, ref, current),
             ),
-          IconButton(
-            key: sealSeriesKey,
-            icon: const Icon(Icons.check),
-            tooltip: 'Fullfør serie',
-            onPressed: current.isComplete
-                ? () => ref.read(sessionProvider.notifier).advance()
-                : null,
-          ),
           ...?actions,
         ],
+      ),
+      // The most frequent actions live in a big bottom bar (spec 0098):
+      // Angre for the last shot, and «Fullfør serie (n/N)» — always showing
+      // why it is disabled — instead of a small app-bar icon.
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          child: Row(
+            children: [
+              TextButton.icon(
+                key: undoShotKey,
+                onPressed: current.shots.isEmpty
+                    ? null
+                    : () => ref.read(sessionProvider.notifier).undoShot(),
+                icon: const Icon(Icons.undo),
+                label: const Text('Angre'),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  key: sealSeriesKey,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                  ),
+                  onPressed: current.isComplete
+                      ? () => ref.read(sessionProvider.notifier).advance()
+                      : null,
+                  icon: const Icon(Icons.check),
+                  label: Text(
+                    'Fullfør serie '
+                    '(${current.shots.length}/${current.capacity})',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       body: SafeArea(
         child: LayoutBuilder(

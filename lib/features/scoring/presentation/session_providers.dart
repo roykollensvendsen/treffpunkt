@@ -299,6 +299,18 @@ class SessionNotifier extends Notifier<SessionRecording> {
     _persist();
   }
 
+  /// Removes the last placed shot of the current series (spec 0098's Angre).
+  void undoShot() {
+    final current = state.current;
+    if (current == null || current.shots.isEmpty) return;
+    state = SessionRecording(
+      session: state.session,
+      id: state.id,
+      current: current.removeLastShot(),
+    );
+    _persist();
+  }
+
   /// Appends [shots] to the current series in firing order, stopping when it is
   /// full (spec 0039). Persists once and never seals/advances on its own.
   ///
