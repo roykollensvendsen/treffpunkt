@@ -308,7 +308,7 @@ class _GroupPicker extends StatelessWidget {
                 padding: EdgeInsets.all(16),
                 child: Text('Velg gruppe — den bestemmer skudd per hold.'),
               ),
-              for (final g in FeltShooterGroup.values)
+              for (final g in FeltShooterGroup.offered)
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,

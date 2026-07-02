@@ -35,4 +35,19 @@ void main() {
     expect(restored.holds[0][1].figureIndex, isNull);
     expect(restored.holds[0][0].inner, isTrue);
   });
+
+  test('a stored gruppe-3 round still loads (spec 0088)', () {
+    // Gruppe 3 is no longer offered in the recorder, but a round saved with
+    // it must keep resolving — same retained-but-not-offered rule as retired
+    // programs (spec 0036).
+    const snapshot = FeltSessionSnapshot(
+      group: FeltShooterGroup.three,
+      currentHold: 0,
+      holds: <List<FeltPlacedShot>>[<FeltPlacedShot>[]],
+    );
+    final restored = FeltSessionSnapshot.fromJson(
+      jsonDecode(jsonEncode(snapshot.toJson())) as Map<String, dynamic>,
+    );
+    expect(restored.group, FeltShooterGroup.three);
+  });
 }

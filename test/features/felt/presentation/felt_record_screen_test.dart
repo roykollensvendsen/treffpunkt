@@ -33,6 +33,12 @@ void main() {
     await tester.pumpWidget(
       const ProviderScope(child: MaterialApp(home: FeltRecordScreen())),
     );
+    // Only gruppe 1 and 2 are offered — gruppe 3 is not shot (spec 0088).
+    expect(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)), findsOneWidget);
+    expect(
+      find.byKey(feltGroupButtonKey(FeltShooterGroup.three)),
+      findsNothing,
+    );
     await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
     await tester.pumpAndSettle();
 
