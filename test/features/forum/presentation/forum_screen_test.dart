@@ -15,6 +15,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
+import 'package:treffpunkt/core/presentation/mention_picker.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
@@ -785,6 +786,49 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ny tittel'), findsOneWidget);
+  });
+  testWidgets('typing @ offers participants and Robot Hood (spec 0120)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    final other = repo.asUser(userId: 'other')..setDisplayName('other', 'Kari');
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+    await other.postReply(
+      const ForumPost(
+        id: 'p1',
+        threadId: 't1',
+        body: 'hei',
+        authorId: 'other',
+      ),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(forumReplyFieldKey), '@');
+    await tester.pumpAndSettle();
+
+    // The sheet offers the other participant and Robot Hood — never myself.
+    expect(find.byKey(mentionSheetKey), findsOneWidget);
+    expect(find.byKey(mentionOptionKey('Kari')), findsOneWidget);
+    expect(find.byKey(mentionOptionKey('Robot Hood')), findsOneWidget);
+    expect(find.byKey(mentionOptionKey('Me')), findsNothing);
+
+    // Picking inserts the marker; the sent reply renders highlighted @Kari.
+    await tester.tap(find.byKey(mentionOptionKey('Kari')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumReplySendKey));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('@Kari', findRichText: true), findsOneWidget);
+    expect(
+      find.textContaining('@[Kari]', findRichText: true),
+      findsNothing,
+    );
   });
 }
 

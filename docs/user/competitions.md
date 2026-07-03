@@ -67,6 +67,9 @@ newest at the bottom, with the sender's name.
 
 - Type in the box at the bottom and tap **send**. Each message shows a small
   **timestamp** of when it was sent.
+- **Tag someone**: type **@** and pick a member from the list — they get a
+  notification in **Varsler** that takes them straight to the chat, and the
+  tag shows as a highlighted **@Name** in the message.
 - **Attach a picture**: tap the **image** button to the left of the box, pick a
   photo, and it posts to the chat. Supported formats are **JPG, PNG and GIF** —
   anything else is refused with a short message. Images are private to the

@@ -15,6 +15,10 @@ enum AppNotificationKind {
 
   /// A reply in a forum thread I participate in → that thread.
   forumReply,
+
+  /// Someone tagged me with an `@[Navn]` marker (spec 0120) → the thread or
+  /// the chat where it happened.
+  mention,
 }
 
 /// One in-app notification (spec 0094): what happened, where it leads and
@@ -40,6 +44,7 @@ class AppNotification {
         kind: switch (json['kind'] as String) {
           'invitation' => AppNotificationKind.invitation,
           'competition_message' => AppNotificationKind.competitionMessage,
+          'mention' => AppNotificationKind.mention,
           _ => AppNotificationKind.forumReply,
         },
         title: json['title'] as String,

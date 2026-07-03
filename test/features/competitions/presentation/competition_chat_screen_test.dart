@@ -16,6 +16,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
+import 'package:treffpunkt/core/presentation/mention_picker.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
@@ -524,6 +525,42 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(chatTimestampKey('m1')), findsOneWidget);
+  });
+
+  testWidgets('typing @ offers the members, never Robot Hood (spec 0120)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(_competition);
+    final other = repo.asUser(userId: 'other', email: 'other@example.com');
+    await other.upsertOwnProfile(
+      const Profile(id: 'other', displayName: 'Kari'),
+    );
+    await repo.invite('c1', 'other@example.com');
+    await other.acceptInvitation('c1');
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(chatComposerFieldKey), 'Hei @');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(mentionSheetKey), findsOneWidget);
+    expect(find.byKey(mentionOptionKey('Kari')), findsOneWidget);
+    expect(find.byKey(mentionOptionKey('Robot Hood')), findsNothing);
+
+    // Picking inserts the marker; sending renders the highlighted @Kari
+    // with the raw marker hidden.
+    await tester.tap(find.byKey(mentionOptionKey('Kari')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(chatSendButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('@Kari', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.textContaining('@[Kari]', findRichText: true), findsNothing);
   });
 }
 
