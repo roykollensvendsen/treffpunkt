@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Widget tests for the decimal-entry flow (spec 0107): the setup toggle,
-// the tenth picker on the last shot and the decimal totals.
+// Widget tests for the decimal-entry flow (specs 0107/0115): the setup
+// toggle, the tenth picker on every placed shot and the decimal totals.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -149,7 +149,7 @@ void main() {
 
       // A centre tap derives 10,9 (spec 0001's cap).
       final picker = tester.widget<DropdownButton<int>>(
-        find.byKey(tenthPickerKey),
+        find.byKey(tenthPickerKey(1)),
       );
       expect(picker.value, 9);
       expect(find.text('10,9'), findsWidgets);
@@ -162,7 +162,7 @@ void main() {
       await tester.pumpWidget(app());
       await tapCentre(tester);
 
-      await tester.tap(find.byKey(tenthPickerKey));
+      await tester.tap(find.byKey(tenthPickerKey(1)));
       await tester.pumpAndSettle();
       await tester.tap(find.text('10,4').last);
       await tester.pumpAndSettle();
@@ -175,22 +175,50 @@ void main() {
       );
     });
 
-    testWidgets('a second shot moves the picker; the first keeps its pick', (
+    testWidgets('every placed shot keeps its picker (spec 0115)', (
       tester,
     ) async {
       tallView(tester);
       await tester.pumpWidget(app());
       await tapCentre(tester);
-      await tester.tap(find.byKey(tenthPickerKey));
+      await tester.tap(find.byKey(tenthPickerKey(1)));
       await tester.pumpAndSettle();
       await tester.tap(find.text('10,2').last);
       await tester.pumpAndSettle();
 
       await tapCentre(tester);
-      // One picker (the new last shot); the first shot's pick shows as text.
-      expect(find.byKey(tenthPickerKey), findsOneWidget);
+      // Both rows carry a picker now; the first keeps its pick.
+      expect(find.byKey(tenthPickerKey(1)), findsOneWidget);
+      expect(find.byKey(tenthPickerKey(2)), findsOneWidget);
       expect(find.text('10,2'), findsOneWidget);
       expect(find.text('Desimal 21,1'), findsOneWidget);
+    });
+
+    testWidgets("an earlier shot's tenth can be adjusted (spec 0115)", (
+      tester,
+    ) async {
+      tallView(tester);
+      await tester.pumpWidget(app());
+      await tapCentre(tester);
+      await tapCentre(tester);
+      expect(find.text('Desimal 21,8'), findsOneWidget);
+
+      // Adjust the FIRST shot down to 10,3 — the sum follows and the
+      // shot itself moves to match (spec 0110); the second is untouched.
+      await tester.tap(find.byKey(tenthPickerKey(1)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('10,3').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Desimal 21,2'), findsOneWidget);
+      final first = tester.widget<DropdownButton<int>>(
+        find.byKey(tenthPickerKey(1)),
+      );
+      expect(first.value, 3);
+      final second = tester.widget<DropdownButton<int>>(
+        find.byKey(tenthPickerKey(2)),
+      );
+      expect(second.value, 9);
     });
 
     testWidgets('outside decimal mode nothing changes', (tester) async {
@@ -198,7 +226,7 @@ void main() {
       await tester.pumpWidget(app(decimalEntry: false));
       await tapCentre(tester);
 
-      expect(find.byKey(tenthPickerKey), findsNothing);
+      expect(find.byKey(tenthPickerKey(1)), findsNothing);
       expect(find.text('Desimal 10,9'), findsNothing);
     });
 

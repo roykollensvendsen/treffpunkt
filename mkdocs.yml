@@ -145,6 +145,7 @@ nav:
       - "0112 — Robot-innlegg i forumet": specs/0112-robot-posts.md
       - "0113 — Ringtall på skivene": specs/0113-ring-labels.md
       - "0114 — Desimaler på alle ringskiver": specs/0114-decimal-all-ring-faces.md
+      - "0115 — Juster tidligere skudds desimaler": specs/0115-edit-earlier-shot-tenths.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

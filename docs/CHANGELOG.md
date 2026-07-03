@@ -51,6 +51,14 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Changed
+- **Adjust the decimals of earlier shots**: in decimal mode every shot
+  in the current series keeps its tenth dropdown, not just the last one
+  — notice a mistyped reading a few shots later and correct it on the
+  spot. Picking a value moves that shot's marker to match, exactly as
+  on the last shot; sealed series stay read-only (spec 0115, forum
+  request).
+
 ### Added
 - **Decimals on every ring face**: the «Desimalpoeng» toggle is now
   offered on all ring programs — Sprintluft, Storluft, Hurtigpistol,
