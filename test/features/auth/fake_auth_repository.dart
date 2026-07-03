@@ -91,6 +91,15 @@ class FakeAuthRepository implements AuthRepository {
     emit(const SignedOut());
   }
 
+  /// How many times [deleteAccount] was called.
+  int deleteAccountCallCount = 0;
+
+  @override
+  Future<void> deleteAccount() async {
+    deleteAccountCallCount++;
+    emit(const SignedOut());
+  }
+
   /// Emits [status] as the new current status.
   void emit(AuthStatus status) {
     _current = status;

@@ -52,6 +52,15 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Added
+- **Delete your own profile**: Innstillinger's account section has a
+  «Slett profilen min» action that erases the account and everything
+  synced to it — sessions, felt rounds, competitions you own (for
+  their members too), forum posts and notifications — after an
+  explicit confirmation, then signs you out. On-device data stays on
+  the device. Needs the `delete_own_account` migration applied to the
+  hosted project (spec 0126).
+
+### Added
 - **Zoom and pan the felt hold pictures**: the NorgesFelt recorder now
   zooms (1–6×) and pans exactly like the ring targets — pinch,
   two-finger trackpad scroll or the on-picture ＋/−/reset buttons — so

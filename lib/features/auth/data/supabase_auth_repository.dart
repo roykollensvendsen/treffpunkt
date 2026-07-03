@@ -14,9 +14,12 @@ import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 /// automated tests (no real credentials) and verified by the manual checklist
 /// in spec 0003.
 final class SupabaseAuthRepository implements AuthRepository {
-  /// Creates a repository wrapping the given Supabase auth client.
-  SupabaseAuthRepository(this._auth);
+  /// Creates a repository wrapping the given Supabase [client].
+  SupabaseAuthRepository(SupabaseClient client)
+    : _client = client,
+      _auth = client.auth;
 
+  final SupabaseClient _client;
   final GoTrueClient _auth;
 
   /// Deep link the OAuth flow returns to on mobile (configured per platform).
@@ -58,6 +61,13 @@ final class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() => _auth.signOut();
+
+  @override
+  Future<void> deleteAccount() async {
+    await _client.rpc<void>('delete_own_account');
+    // The account is gone; drop the now-orphaned local session.
+    await _auth.signOut();
+  }
 
   AuthStatus _statusFor(Session? session) {
     final user = session?.user;

@@ -73,7 +73,7 @@ Future<void> main() async {
   final initialDisclosureShown = await contributionConsentStore
       .loadDisclosureShown();
   runTreffpunkt(
-    SupabaseAuthRepository(Supabase.instance.client.auth),
+    SupabaseAuthRepository(Supabase.instance.client),
     sessionStore: SharedPreferencesSessionStore(prefs),
     feltSessionStore: SharedPreferencesFeltSessionStore(prefs),
     feltHistoryStore: SharedPreferencesFeltHistoryStore(prefs),

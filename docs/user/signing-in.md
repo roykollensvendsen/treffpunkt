@@ -43,3 +43,11 @@ sign-in works.
 ## Sign out
 Use the sign-out icon in the top-right of the app bar to return to the sign-in
 screen. Your session is remembered, so you won't need to sign in every time.
+
+## Delete your profile
+**Innstillinger → Konto → Slett profilen min** erases your account and
+everything synced to it: sessions and felt rounds, competitions you **own**
+(they disappear for the participants too), your forum posts and your
+notifications. The action is final and confirms first. Data stored only on
+this device stays here — take a **backup** first (Innstillinger →
+Sikkerhetskopi) if you want to keep anything.

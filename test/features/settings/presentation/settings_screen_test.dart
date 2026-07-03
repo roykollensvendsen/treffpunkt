@@ -242,6 +242,37 @@ void main() {
     expect(auth.signOutCallCount, 1);
   });
 
+  testWidgets('deleting the profile confirms, then deletes (spec 0126)', (
+    tester,
+  ) async {
+    final auth = FakeAuthRepository(
+      initial: const SignedIn(AppUser(id: 'me', email: 'frode@example.no')),
+    );
+    final container = _container(auth: auth);
+    addTearDown(container.dispose);
+    await _pump(tester, container);
+
+    await tester.scrollUntilVisible(
+      find.byKey(settingsDeleteAccountKey),
+      200,
+    );
+    await tester.tap(find.byKey(settingsDeleteAccountKey));
+    await tester.pumpAndSettle();
+
+    // Cancelling deletes nothing.
+    await tester.tap(find.text('Avbryt'));
+    await tester.pumpAndSettle();
+    expect(auth.deleteAccountCallCount, 0);
+
+    // Confirming deletes exactly once and the auth state ends signed out.
+    await tester.tap(find.byKey(settingsDeleteAccountKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(confirmDeleteAccountKey));
+    await tester.pumpAndSettle();
+    expect(auth.deleteAccountCallCount, 1);
+    expect(auth.currentStatus, const SignedOut());
+  });
+
   testWidgets('Brukerveiledning opens the manual (spec 0097)', (tester) async {
     final container = _container();
     addTearDown(container.dispose);

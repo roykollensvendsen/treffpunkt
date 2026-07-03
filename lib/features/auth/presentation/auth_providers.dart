@@ -76,6 +76,14 @@ class AuthController extends Notifier<AsyncValue<void>> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(ref.read(authRepositoryProvider).signOut);
   }
+
+  /// Deletes the signed-in user's account (spec 0126) and signs out.
+  Future<void> deleteAccount() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      ref.read(authRepositoryProvider).deleteAccount,
+    );
+  }
 }
 
 /// The [AuthController] provider.
