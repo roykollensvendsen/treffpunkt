@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/core/platform/image_format.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
 import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
@@ -340,6 +341,21 @@ final class SupabaseForumRepository implements ForumRepository {
       return path;
     } on Object catch (error) {
       throw ForumException(error);
+    }
+  }
+
+  @override
+  Future<DateTime?> robotSeenAt() async {
+    try {
+      final row = await _client
+          .from('robot_presence')
+          .select('seen_at')
+          .maybeSingle();
+      final seenAt = row?['seen_at'] as String?;
+      return seenAt == null ? null : parseWireTime(seenAt);
+    } on Object {
+      // Presence is decoration (spec 0122): unreachable reads as absent.
+      return null;
     }
   }
 }

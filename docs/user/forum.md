@@ -91,3 +91,9 @@ melder fra når den setter i gang, eller sier ifra når noe er deployet.
 Slike innlegg vises med et **robotikon** og navnet **Robot Hood** —
 svar på dem som på alle andre innlegg, så plukkes svaret opp
 automatisk.
+
+Øverst i forumet ser du om roboten lytter akkurat nå: en **grønn
+prikk** og «Robot Hood er på vakt», eller en grå prikk og «Robot Hood
+er ikke her nå — svar kommer når roboten våkner». Du kan skrive og
+tagge som vanlig uansett; roboten tar igjen det som har skjedd når den
+kommer tilbake.

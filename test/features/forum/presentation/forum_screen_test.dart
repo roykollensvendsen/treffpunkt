@@ -830,6 +830,30 @@ void main() {
       findsNothing,
     );
   });
+  testWidgets('a fresh heartbeat shows Robot Hood on duty (spec 0122)', (
+    tester,
+  ) async {
+    final repo = _meRepo()..robotHeartbeat = DateTime.now();
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(robotPresenceKey), findsOneWidget);
+    expect(find.text('Robot Hood er på vakt'), findsOneWidget);
+  });
+
+  testWidgets('a stale or missing heartbeat is honest (spec 0122)', (
+    tester,
+  ) async {
+    final repo = _meRepo()
+      ..robotHeartbeat = DateTime.now().subtract(const Duration(minutes: 10));
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Robot Hood er ikke her nå'),
+      findsOneWidget,
+    );
+  });
 }
 
 /// A clipboard watcher whose paste stream the test drives.

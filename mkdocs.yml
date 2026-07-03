@@ -152,6 +152,7 @@ nav:
       - "0119 — Robot Hood": specs/0119-robot-hood.md
       - "0120 — Tagging med @ (mentions)": specs/0120-mentions.md
       - "0121 — Luftduellskivas svarte felt": specs/0121-airduel-face-black.md
+      - "0122 — Er Robot Hood her? (presence)": specs/0122-robot-presence.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

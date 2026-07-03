@@ -77,6 +77,10 @@ abstract interface class ForumRepository {
   /// Uploads [bytes] as a forum image and returns its storage path, to set as a
   /// thread's or reply's `imagePath` (spec 0056). Throws [ForumException].
   Future<String> uploadForumImage(Uint8List bytes, {String fileExtension});
+
+  /// Robot Hood's last heartbeat (spec 0122), or `null` when it has never
+  /// beaten. Fresh means the robot is listening; see `robotHoodPresent`.
+  Future<DateTime?> robotSeenAt();
 }
 
 /// A [ForumRepository] kept entirely in memory — the default binding and the
@@ -91,6 +95,7 @@ class InMemoryForumRepository implements ForumRepository {
       _admins = <String>{},
       _reactions = <String, List<ForumReaction>>{},
       _seq = <int>[0],
+      _heartbeat = <DateTime?>[null],
       _changed = StreamController<void>.broadcast();
 
   InMemoryForumRepository._shared(
@@ -101,6 +106,7 @@ class InMemoryForumRepository implements ForumRepository {
     this._admins,
     this._reactions,
     this._seq,
+    this._heartbeat,
     this._changed,
   );
 
@@ -114,6 +120,7 @@ class InMemoryForumRepository implements ForumRepository {
   // '<type>:<id>' -> reactions, in insertion order (spec 0055).
   final Map<String, List<ForumReaction>> _reactions;
   final List<int> _seq; // monotonic createdAt stamp
+  final List<DateTime?> _heartbeat; // Robot Hood's last beat (spec 0122)
   final StreamController<void> _changed;
 
   /// A view of the same store acting as a different user.
@@ -126,8 +133,16 @@ class InMemoryForumRepository implements ForumRepository {
         _admins,
         _reactions,
         _seq,
+        _heartbeat,
         _changed,
       );
+
+  /// Seeds Robot Hood's heartbeat for tests (spec 0122).
+  // ignore: avoid_setters_without_getters
+  set robotHeartbeat(DateTime? at) => _heartbeat[0] = at;
+
+  @override
+  Future<DateTime?> robotSeenAt() async => _heartbeat[0];
 
   /// Seeds a user's display name (mirrors the `profiles` the real backend
   /// reads), so threads/replies show a name.
