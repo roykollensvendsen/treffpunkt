@@ -51,6 +51,12 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Added
+- **Remove notifications**: swipe a varsel away to delete it, or use the
+  new **Fjern alle** action (with a confirmation) to clear the list —
+  deletions follow your account. Needs the notifications-delete
+  migration applied to the hosted project (spec 0109, user report).
+
 ### Fixed
 - **«Skyt igjen» no longer needs a refresh**: the card follows your
   latest session the moment it completes — it now watches the live

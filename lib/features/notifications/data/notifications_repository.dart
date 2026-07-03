@@ -17,6 +17,12 @@ abstract interface class NotificationsRepository {
 
   /// Marks every unread notification read.
   Future<void> markAllRead();
+
+  /// Deletes the notification [id]; idempotent (spec 0109).
+  Future<void> delete(String id);
+
+  /// Deletes every notification of the recipient (spec 0109).
+  Future<void> deleteAll();
 }
 
 /// In-memory fake — the default binding and the test double.
@@ -50,4 +56,10 @@ class InMemoryNotificationsRepository implements NotificationsRepository {
       _byId[entry.key] = entry.value.markRead(now);
     }
   }
+
+  @override
+  Future<void> delete(String id) async => _byId.remove(id);
+
+  @override
+  Future<void> deleteAll() async => _byId.clear();
 }

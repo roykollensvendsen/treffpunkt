@@ -98,4 +98,49 @@ void main() {
 
     expect(find.byKey(noNotificationsKey), findsOneWidget);
   });
+
+  testWidgets('swiping a varsel away deletes it (spec 0109)', (tester) async {
+    final repository = InMemoryNotificationsRepository(
+      seeded: <AppNotification>[
+        _invitation('n1'),
+        _invitation('n2', at: DateTime.utc(2026, 6, 30)),
+      ],
+    );
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+
+    await tester.drag(
+      find.byKey(notificationTileKey('n1')),
+      const Offset(-600, 0),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(notificationTileKey('n1')), findsNothing);
+    expect(find.byKey(notificationTileKey('n2')), findsOneWidget);
+    expect(await repository.list(), hasLength(1));
+  });
+
+  testWidgets('Fjern alle clears the list after confirmation (spec 0109)', (
+    tester,
+  ) async {
+    final repository = InMemoryNotificationsRepository(
+      seeded: <AppNotification>[
+        _invitation('n1'),
+        _invitation('n2', at: DateTime.utc(2026, 6, 30)),
+      ],
+    );
+    await tester.pumpWidget(_app(repository));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(clearNotificationsKey));
+    await tester.pumpAndSettle();
+    // Nothing is deleted before the confirmation.
+    expect(await repository.list(), hasLength(2));
+
+    await tester.tap(find.byKey(clearNotificationsConfirmKey));
+    await tester.pumpAndSettle();
+
+    expect(await repository.list(), isEmpty);
+    expect(find.byKey(noNotificationsKey), findsOneWidget);
+  });
 }
