@@ -14,10 +14,20 @@ void main() {
       expect(BuildInfo.formatLabel('abc1234', ''), 'build abc1234');
     });
 
-    test('joins the sha and time with a middot when a time is given', () {
+    test('joins the sha and the LOCAL build time with a middot (0118)', () {
+      final local = DateTime.utc(2026, 6, 23, 17, 30).toLocal();
+      String two(int v) => v.toString().padLeft(2, '0');
       expect(
         BuildInfo.formatLabel('abc1234', '2026-06-23T17:30Z'),
-        'build abc1234 · 2026-06-23T17:30Z',
+        'build abc1234 · ${two(local.day)}.${two(local.month)}.${local.year} '
+        '${two(local.hour)}:${two(local.minute)}',
+      );
+    });
+
+    test('an unparseable time is shown as-is (never crash the footer)', () {
+      expect(
+        BuildInfo.formatLabel('abc1234', 'garbage'),
+        'build abc1234 · garbage',
       );
     });
   });

@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:treffpunkt/core/presentation/nor_date.dart';
+
 /// The build version injected at deploy time via `--dart-define` (see spec 0028
 /// and ADR-0010), so a user can read the running build back to a commit and
 /// confirm they are not on a stale page.
@@ -25,8 +27,14 @@ abstract final class BuildInfo {
 
   /// Composes the build label from a [sha] and an optional [time].
   ///
-  /// Pure (it reads no environment values) so it is unit-testable — the `const`
-  /// `String.fromEnvironment` values above cannot be overridden from a test.
-  static String formatLabel(String sha, String time) =>
-      time.isEmpty ? 'build $sha' : 'build $sha · $time';
+  /// The UTC build minute is shown as the phone's local `dd.MM.yyyy HH:mm`
+  /// (spec 0118); an unparseable time falls back to the raw string so the
+  /// footer never crashes. Pure (it reads no environment values) so it is
+  /// unit-testable — the `const` `String.fromEnvironment` values above cannot
+  /// be overridden from a test.
+  static String formatLabel(String sha, String time) {
+    if (time.isEmpty) return 'build $sha';
+    final at = DateTime.tryParse(time);
+    return 'build $sha · ${at == null ? time : norDateTime(at)}';
+  }
 }

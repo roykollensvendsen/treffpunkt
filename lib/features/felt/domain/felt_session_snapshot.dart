@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 
 /// One placed shot on a hold, for persistence (spec 0081): its position
@@ -91,7 +92,7 @@ class FeltSessionSnapshot {
         ],
         capturedAt: json['capturedAt'] == null
             ? null
-            : DateTime.parse(json['capturedAt'] as String),
+            : parseWireTime(json['capturedAt'] as String),
         placeLabel: json['placeLabel'] as String?,
         latitude: (json['latitude'] as num?)?.toDouble(),
         longitude: (json['longitude'] as num?)?.toDouble(),

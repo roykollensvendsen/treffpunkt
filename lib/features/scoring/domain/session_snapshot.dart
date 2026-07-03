@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/scoring/domain/place.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
@@ -168,7 +169,7 @@ class SessionSnapshot {
     if (json == null) return null;
     final map = json as Map<String, dynamic>;
     return SessionMetadata(
-      capturedAt: DateTime.parse(map['capturedAt'] as String),
+      capturedAt: parseWireTime(map['capturedAt'] as String),
       place: _placeFrom(map['place']),
     );
   }

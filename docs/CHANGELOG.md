@@ -51,6 +51,16 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Fixed
+- **Local time everywhere**: dates on «Mine økter» could show the wrong
+  day because uploads dropped the timezone and the stored moment was
+  read as UTC («Zulu tid»). Sessions now upload the true instant, every
+  timestamp entering the app is converted to the phone's local time,
+  and the build stamp on the front page shows the build minute as local
+  `dd.MM.yyyy HH:mm`. A one-time migration repairs the already-stored
+  session times (spec 0118, forum request). Needs the
+  `captured_at_local_repair` migration applied to the hosted project.
+
 ### Added
 - **«Jobber med» — a thread status for work in progress**: forum threads
   can now show an amber badge between «Planlagt» and «Ferdig», so the

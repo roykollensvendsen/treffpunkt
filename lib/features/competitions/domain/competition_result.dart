@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 
@@ -61,9 +62,9 @@ class CompetitionResult {
       total: (json['total'] as num).toInt(),
       maxTotal: (json['max_total'] as num).toInt(),
       innerTens: (json['inner_tens'] as num).toInt(),
-      capturedAt: capturedAt == null ? null : DateTime.parse(capturedAt),
+      capturedAt: capturedAt == null ? null : parseWireTime(capturedAt),
       payload: json['payload'] as Map<String, dynamic>,
-      createdAt: createdAt == null ? null : DateTime.parse(createdAt),
+      createdAt: createdAt == null ? null : parseWireTime(createdAt),
     );
   }
 

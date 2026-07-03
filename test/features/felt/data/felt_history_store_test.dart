@@ -13,7 +13,7 @@ import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 List<FeltSessionRecord> _records() => <FeltSessionRecord>[
   FeltSessionRecord(
     id: 'r1',
-    capturedAt: DateTime.utc(2026, 7, 1, 12),
+    capturedAt: DateTime.utc(2026, 7, 1, 12).toLocal(),
     session: const FeltSessionSnapshot(
       group: FeltShooterGroup.two,
       currentHold: 0,

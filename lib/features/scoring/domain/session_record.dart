@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
 import 'package:treffpunkt/features/scoring/domain/session_score.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
@@ -77,7 +78,7 @@ class SessionRecord {
     return SessionRecord(
       id: json['id'] as String,
       program: json['program'] as String,
-      capturedAt: capturedAt == null ? null : DateTime.parse(capturedAt),
+      capturedAt: capturedAt == null ? null : parseWireTime(capturedAt),
       placeLabel: json['placeLabel'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 
 /// What a notification is about (spec 0094) — decides where tapping it goes.
 enum AppNotificationKind {
@@ -43,12 +44,12 @@ class AppNotification {
         },
         title: json['title'] as String,
         body: json['body'] as String? ?? '',
-        createdAt: DateTime.parse(json['created_at'] as String),
+        createdAt: parseWireTime(json['created_at'] as String),
         competitionId: json['competition_id'] as String?,
         threadId: json['thread_id'] as String?,
         readAt: json['read_at'] == null
             ? null
-            : DateTime.parse(json['read_at'] as String),
+            : parseWireTime(json['read_at'] as String),
       );
 
   /// Stable id.

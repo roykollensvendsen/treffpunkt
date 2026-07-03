@@ -21,7 +21,8 @@ of the sign-in screen. It works offline.
    top restarts your latest exercise in one tap, and Hjem also shows
    **Fortsett økt** / **Fortsett felt-økt** cards for anything in progress —
    each with a trash button to discard the saved session (after a
-   confirmation).
+   confirmation). All dates and times in the app — session lists, the
+   scorecards, the build stamp at the bottom — are your phone's local time.
    The bell (varsler) and Innstillinger sit in the top bar.
 2. Pick the program inside the category and confirm the session setup (date,
    time and place). You will see a round target, drawn like the official

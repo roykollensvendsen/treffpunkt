@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
 /// A participant in a competition (spec 0010): the [userId] that joined, with
@@ -30,7 +31,7 @@ class CompetitionMember {
     return CompetitionMember(
       competitionId: json['competition_id'] as String,
       userId: json['user_id'] as String,
-      joinedAt: joinedAt == null ? null : DateTime.parse(joinedAt),
+      joinedAt: joinedAt == null ? null : parseWireTime(joinedAt),
     );
   }
 
