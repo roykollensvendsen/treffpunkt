@@ -20,6 +20,7 @@ import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
 import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
 import 'package:treffpunkt/features/forum/domain/forum_thread.dart';
+import 'package:treffpunkt/features/forum/domain/robot_presence.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_providers.dart';
 import 'package:uuid/uuid.dart';
 
@@ -139,6 +140,9 @@ const List<String> forumReactionPalette = <String>[
   '😢',
 ];
 
+/// Key for the Robot Hood presence line (spec 0122), for tests.
+const Key robotPresenceKey = ValueKey<String>('robotPresence');
+
 const double _maxWidth = 700;
 
 String _byline(String? author, ForumCategory category) =>
@@ -182,6 +186,7 @@ class _ForumScreenState extends ConsumerState<ForumScreen> {
                   selected: _filter,
                   onSelect: (c) => setState(() => _filter = c),
                 ),
+                const _RobotPresenceLine(),
                 Expanded(
                   child: threads.when(
                     loading: () =>
@@ -246,6 +251,54 @@ class _ForumScreenState extends ConsumerState<ForumScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Whether Robot Hood is listening right now (spec 0122): a green dot and
+/// «på vakt» while the watch's heartbeat is fresh, a grey dot and an honest
+/// «ikke her nå» otherwise.
+class _RobotPresenceLine extends ConsumerWidget {
+  const _RobotPresenceLine();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final seenAt = ref.watch(robotSeenAtProvider).value;
+    final present = robotHoodPresent(seenAt: seenAt, now: DateTime.now());
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        key: robotPresenceKey,
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(
+            Icons.circle,
+            size: 10,
+            color: present ? Colors.green : theme.colorScheme.outline,
+          ),
+          const SizedBox(width: 6),
+          Icon(
+            Icons.smart_toy_outlined,
+            size: 16,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              present
+                  ? 'Robot Hood er på vakt'
+                  : 'Robot Hood er ikke her nå — svar kommer når roboten '
+                        'våkner',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

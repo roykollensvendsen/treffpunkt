@@ -51,6 +51,14 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Added
+- **Er Robot Hood her?**: the forum now shows whether the owner's
+  automation is listening right now — a green dot and «Robot Hood er
+  på vakt», or an honest grey «ikke her nå — svar kommer når roboten
+  våkner» when its heartbeat is older than five minutes (machine off,
+  robot asleep). Needs the `robot_presence` migration applied to the
+  hosted project (spec 0122).
+
 ### Fixed
 - **The luftduell face wears its own black**: Sprintluft/Storluft's
   10 m luftduellskive was drawn all black like the 25 m duel face —

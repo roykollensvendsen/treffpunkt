@@ -28,6 +28,11 @@ final forumIsAdminProvider = FutureProvider<bool>(
   (ref) => ref.watch(forumRepositoryProvider).isAdmin(),
 );
 
+/// Robot Hood's last heartbeat (spec 0122), refreshed with the forum list.
+final robotSeenAtProvider = FutureProvider<DateTime?>(
+  (ref) => ref.watch(forumRepositoryProvider).robotSeenAt(),
+);
+
 /// The live list of all forum threads, newest first (spec 0054).
 final forumThreadsProvider = StreamProvider<List<ForumThread>>(
   (ref) => ref.watch(forumRepositoryProvider).watchThreads(),
