@@ -23,7 +23,9 @@ of the sign-in screen. It works offline.
    The bell (varsler) and Innstillinger sit in the top bar.
 2. Pick the program inside the category and confirm the session setup (date,
    time and place). You will see a round target, drawn like the official
-   sheet — the **innertier ring** included on the faces that have one.
+   sheet — the **innertier ring** and the printed **ring values** included
+   on the faces that have them (the duell face gets its white sighting
+   lines instead of side values, as on the real sheet).
 3. Tap where your shot hit. A marker appears and the score shows at the top;
    **Angre** (bottom left) removes the last shot if you mistapped.
 4. The score updates the moment you place the marker. When the series is

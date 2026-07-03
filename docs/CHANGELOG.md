@@ -52,6 +52,16 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Added
+- **Ring values on the targets**: the drawn faces now print the zone
+  values exactly as the official gtr-2026 sheets do — 1–8 on the
+  luftpistol face, 1–9 on 25 m presisjon/50 m (both along both axes),
+  5–9 vertically on the duell and luftduell faces, which also get their
+  white sighting lines (125 × 5 mm and 42,5 × 3 mm). Zones above stay
+  unnumbered, digits are sheet-true in size and skipped on tiny review
+  targets where they would smudge (spec 0113, forum request; sourced
+  from gtr-2026 and nasjonalt regelverk § 5.1.18 on skyting.no).
+
+### Added
 - **Robot posts wear a robot identity**: when the owner's automation
   asks a clarifying question on a forum thread (a reply starting with
   «Robot: »), the bubble now shows a robot icon and the name «Robot»
