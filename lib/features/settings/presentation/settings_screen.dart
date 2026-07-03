@@ -22,6 +22,14 @@ import 'package:treffpunkt/features/settings/presentation/theme_providers.dart';
 /// Key for the "Innstillinger" app-bar action that opens [SettingsScreen].
 const Key settingsButtonKey = ValueKey<String>('settingsButton');
 
+/// Key for the «Slett profilen min» tile (spec 0126), for tests.
+const Key settingsDeleteAccountKey = ValueKey<String>(
+  'settingsDeleteAccount',
+);
+
+/// Key for the confirm action in the delete-account dialog (spec 0126).
+const Key confirmDeleteAccountKey = ValueKey<String>('confirmDeleteAccount');
+
 /// Key for the "Logg ut" tile on the settings page.
 const Key settingsSignOutKey = ValueKey<String>('settingsSignOut');
 
@@ -202,8 +210,55 @@ class _AccountSection extends ConsumerWidget {
           onTap: () =>
               unawaited(ref.read(authControllerProvider.notifier).signOut()),
         ),
+        ListTile(
+          key: settingsDeleteAccountKey,
+          leading: Icon(
+            Icons.delete_forever_outlined,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          title: Text(
+            'Slett profilen min',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          onTap: () => unawaited(_deleteAccount(context, ref)),
+        ),
       ],
     );
+  }
+
+  /// Deletes the account after an explicit consequence-listing confirmation
+  /// (specs 0126/0096); the auth gate takes over once signed out.
+  Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Slette profilen din?'),
+        content: const Text(
+          'Dette sletter kontoen din og alt som er synkronisert til den: '
+          'økter og feltrunder, konkurranser du EIER (de forsvinner også '
+          'for deltakerne), innleggene dine i forumet og varslene dine. '
+          'Handlingen kan ikke angres.\n\n'
+          'Data lagret kun på denne enheten blir liggende her — ta gjerne '
+          'en sikkerhetskopi først (Innstillinger → Sikkerhetskopi).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Avbryt'),
+          ),
+          FilledButton(
+            key: confirmDeleteAccountKey,
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Slett profilen min'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(authControllerProvider.notifier).deleteAccount();
   }
 }
 

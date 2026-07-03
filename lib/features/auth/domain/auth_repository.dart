@@ -31,4 +31,9 @@ abstract interface class AuthRepository {
 
   /// Signs the current user out.
   Future<void> signOut();
+
+  /// Deletes the signed-in user's account and everything synced to it
+  /// (spec 0126), then signs out. The server RPC is scoped to the caller,
+  /// so exactly one account can be deleted: your own.
+  Future<void> deleteAccount();
 }
