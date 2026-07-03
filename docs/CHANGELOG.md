@@ -51,6 +51,12 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Changed
+- **The robot has a name — Robot Hood**: the automation's forum posts
+  now carry the byline «Robot Hood» (after history's most famous
+  marksman) instead of the plain «Robot»; the icon and behaviour are
+  unchanged (spec 0119).
+
 ### Fixed
 - **Local time everywhere**: dates on «Mine økter» could show the wrong
   day because uploads dropped the timezone and the stored moment was

@@ -545,8 +545,8 @@ void main() {
     await tester.tap(find.byKey(forumThreadCardKey('t1')));
     await tester.pumpAndSettle();
 
-    // Robot byline with the icon; the prefix itself is not shown.
-    expect(find.text('Robot'), findsOneWidget);
+    // Robot Hood byline with the icon; the prefix itself is not shown.
+    expect(find.text('Robot Hood'), findsOneWidget);
     expect(find.byIcon(Icons.smart_toy_outlined), findsOneWidget);
     expect(find.text('Hvilken skive?'), findsOneWidget);
     expect(find.textContaining('Robot: '), findsNothing);

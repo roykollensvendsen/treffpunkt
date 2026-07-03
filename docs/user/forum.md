@@ -76,8 +76,11 @@ varsel (om de har slått på **bjella** og bruker Android eller PC) — slik at 
 meldt bug eller et ønske ikke blir oversett. Du varsles ikke om dine egne
 innlegg.
 
-## Robot-innlegg
+## Robot Hood
 
-Nå og da stiller eierens automatisering et oppklaringsspørsmål i en
-tråd. Slike svar vises med et **robotikon** og navnet **Robot** — svar
-på dem som på alle andre innlegg, så plukkes svaret opp automatisk.
+Nå og da stiller eierens automatisering — **Robot Hood**, oppkalt etter
+historiens mest treffsikre skytter — et oppklaringsspørsmål i en tråd,
+melder fra når den setter i gang, eller sier ifra når noe er deployet.
+Slike innlegg vises med et **robotikon** og navnet **Robot Hood** —
+svar på dem som på alle andre innlegg, så plukkes svaret opp
+automatisk.
