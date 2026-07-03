@@ -30,7 +30,9 @@ of the sign-in screen. It works offline.
    full, the big **Fullfør serie (10/10)** button at the bottom seals it and
    moves on.
 5. Shooting on an electronic target (Megalink)? In the setup step of the
-   luft programs you can switch on **Desimalpoeng**: every shot then gets
+   luft programs — and the 25/50 m programs on the precision face
+   (Standard, Fin-/Grovpistol, Fripistol) — you can switch on
+   **Desimalpoeng**: every shot then gets
    a decimal value — the last shot's row has a dropdown (e.g. 9,0–9,9)
    preselected from where you tapped, so you can enter the exact reading —
    and the marker slides in or out from the centre to match the value you

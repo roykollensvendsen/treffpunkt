@@ -385,9 +385,11 @@ class SessionView extends ConsumerWidget {
                   total: runningTotal,
                   maxTotal: sealedScore.maxTotal,
                   innerTens: runningInnerTens,
+                  // Hidden the moment a non-decimal series is involved (a
+                  // mixed program's duell stage, spec 0111) — a partial
+                  // running decimal would lie.
                   decimalTotal: session.decimalEntry
-                      ? (sealedScore.decimalTotal ?? 0) +
-                            (seriesScore.decimalTotal ?? 0)
+                      ? _scoring.runningDecimalTotal(session, current)
                       : null,
                 ),
               ],

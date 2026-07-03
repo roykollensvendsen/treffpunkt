@@ -49,6 +49,37 @@ void main() {
       expect(toggle.value, isFalse);
     });
 
+    testWidgets('is offered on the precision-face 25/50 m programs (0111)', (
+      tester,
+    ) async {
+      for (final program in [
+        ProgramCatalogue.standardPistol25m,
+        ProgramCatalogue.finpistol25m,
+      ]) {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              locationServiceProvider.overrideWithValue(
+                FakeLocationService(),
+              ),
+            ],
+            child: MaterialApp(
+              home: SessionSetupScreen(
+                program: program,
+                now: DateTime(2026, 7, 3, 10),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(decimalEntryToggleKey),
+          findsOneWidget,
+          reason: program.name,
+        );
+      }
+    });
+
     testWidgets('is not offered on a 5–10 face program', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
