@@ -60,6 +60,14 @@ All notable changes to this project are documented here. The format is based on
   hosted project (spec 0122).
 
 ### Fixed
+- **Digits, not stripes, on the luftduell face**: the domain expert
+  checked the physical Sprintluft sheet — it carries ordinary values
+  5–9 on both axes and no white sighting lines (the rulebook's own
+  figure agrees; its text does not). The face now prints the digits
+  horizontally too and the stripes are gone; the 25 m duel face keeps
+  its lines (spec 0123, forum follow-up).
+
+### Fixed
 - **The luftduell face wears its own black**: Sprintluft/Storluft's
   10 m luftduellskive was drawn all black like the 25 m duel face —
   indistinguishable on screen. Per the rulebook figure

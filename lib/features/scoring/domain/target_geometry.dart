@@ -95,13 +95,15 @@ class TargetGeometry {
       blackBullDiameterMm = 76.0,
       innerTenDiameterMm = 11.5,
       lowestRingValue = 5,
-      // Nasjonalt regelverk 5.1.18.1.2 (10 m luftduellskive): values 5–9
-      // vertically only, digits ≤ 2 mm, sighting lines 42,5 × 3 mm.
+      // Nasjonalt regelverk 5.1.18.1.2's figure and the physical sheet
+      // (spec 0123, domain-expert verified): values 5–9 on both axes,
+      // digits ≤ 2 mm, no sighting lines — the rulebook TEXT's 42,5 mm
+      // stripes do not exist on the real Sprintluft sheet.
       ringLabelMaxValue = 9,
-      ringLabelsBothAxes = false,
+      ringLabelsBothAxes = true,
       ringLabelHeightMm = 2,
-      sightingLineLengthMm = 42.5,
-      sightingLineWidthMm = 3;
+      sightingLineLengthMm = null,
+      sightingLineWidthMm = 5;
 
   /// Human-readable discipline name, e.g. `'10 m Air Rifle'`.
   final String name;
