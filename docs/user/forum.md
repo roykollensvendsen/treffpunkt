@@ -62,9 +62,13 @@ delete anyone's — that keeps the forum tidy — but only the author can edit.
 
 ## Status på en tråd
 En **moderator** kan sette status på en tråd via **flagg-knappen** øverst på
-tråden: **Åpen**, **Planlagt**, **Ferdig** eller **Avvist**. Statusen vises som et
-lite, farget merke på tråden (i lista og inne i tråden), så det er lett å se hva
-som er gjort eller avvist. Bare moderatorer endrer status.
+tråden: **Åpen**, **Planlagt**, **Jobber med**, **Ferdig** eller **Avvist**.
+Statusen vises som et lite, farget merke på tråden (i lista og inne i tråden),
+så det er lett å se hvor saken står. Bare moderatorer endrer status.
+
+**Jobber med** (oransje) betyr at en planlagt oppgave er under arbeid — roboten
+setter den når den starter på tråden din, og flytter den til **Ferdig** når
+løsningen er deployet.
 
 ## Varsler til moderator
 Når noen starter en **ny tråd** eller skriver et **svar**, får moderatoren et

@@ -51,6 +51,14 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Added
+- **«Jobber med» — a thread status for work in progress**: forum threads
+  can now show an amber badge between «Planlagt» and «Ferdig», so the
+  list tells you a planned task is being worked on. The robot sets it
+  when it starts on a thread and moves it to «Ferdig» when the fix is
+  deployed (spec 0117). Needs the `forum_thread_in_progress` migration
+  applied to the hosted project.
+
 ### Changed
 - **One «Fortsett felt-økt» card**: resuming an in-progress felt round
   now lives on the front page alone — the duplicate card on the course

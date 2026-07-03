@@ -42,6 +42,10 @@ enum ForumThreadStatus {
   /// Accepted and planned.
   planned('planned', 'Planlagt'),
 
+  /// Being worked on right now (spec 0117): set with the start-notice,
+  /// moved to [done] when the fix is deployed.
+  inProgress('in_progress', 'Jobber med'),
+
   /// Fixed or implemented.
   done('done', 'Ferdig'),
 
