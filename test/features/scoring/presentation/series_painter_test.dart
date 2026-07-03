@@ -240,31 +240,26 @@ void main() {
       expect(canvas.rects, hasLength(3));
     });
 
-    test('the luftduell face prints 5–9 vertically plus its lines', () {
-      // Nasjonalt regelverk 5.1.18.1.2: like the 25 m duel face, with its
-      // own 42,5 × 3 mm sighting lines. The 2 mm digits are readable here
+    test('the luftduell face prints 5–9 on both axes, no stripes (0123)', () {
+      // The physical sheet and the § 5.1.18.1.2 figure: ordinary digits on
+      // both axes, no sighting lines. The 2 mm digits are readable here
       // because the small face maps to a large mm scale.
       final canvas = paintFace(const TargetGeometry.airDuel10m());
-      expect(canvas.paragraphs, hasLength(5 * 2));
-      expect(canvas.rects, hasLength(3)); // paper + the two lines
+      expect(canvas.paragraphs, hasLength(5 * 4));
+      expect(canvas.rects, hasLength(1)); // the paper only
     });
 
-    test(
-      'the luftduell lines run from the face edge into the black (0121)',
-      () {
-        const geometry = TargetGeometry.airDuel10m();
-        final canvas = paintFace(geometry);
-        final centre = size.width / 2;
-        final scale = (size.shortestSide / 2) / geometry.maxScoringRadiusMm;
-        final lines = canvas.rects.skip(1).toList(); // paper rect first
-        final left = lines.reduce((a, b) => a.left < b.left ? a : b);
-        // Outer end at the outermost ring's edge (155,5/2 mm out) …
-        expect(left.left, closeTo(centre - 155.5 / 2 * scale, 0.01));
-        // … running 42,5 mm inward, past the black's edge (76/2 mm out).
-        expect(left.right, closeTo(centre - (155.5 / 2 - 42.5) * scale, 0.01));
-        expect(left.right, greaterThan(centre - 76 / 2 * scale));
-      },
-    );
+    test('the 25 m duel lines anchor at the outermost ring (0121)', () {
+      const geometry = TargetGeometry.pistol25mRapid();
+      final canvas = paintFace(geometry, at: const Size(700, 700));
+      const centre = 700 / 2;
+      final scale = (700 / 2) / geometry.maxScoringRadiusMm;
+      final lines = canvas.rects.skip(1).toList(); // paper rect first
+      final left = lines.reduce((a, b) => a.left < b.left ? a : b);
+      // Outer end at the outermost ring's edge (500/2 mm out), 125 mm in.
+      expect(left.left, closeTo(centre - 250 * scale, 0.01));
+      expect(left.right, closeTo(centre - (250 - 125) * scale, 0.01));
+    });
 
     test('labels are skipped when they would be unreadably small', () {
       // A scorecard mini-target: 2 mm digits at this scale would be smudge.

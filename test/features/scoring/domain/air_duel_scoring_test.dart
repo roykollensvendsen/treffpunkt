@@ -27,6 +27,13 @@ void main() {
     expect(geometry.blackBullDiameterMm, 76.0);
   });
 
+  test('digits on both axes, no stripes (spec 0123)', () {
+    // The physical sheet (domain-expert verified) and the rulebook figure:
+    // ordinary values 5–9 horizontally AND vertically, no sighting lines.
+    expect(geometry.ringLabelsBothAxes, isTrue);
+    expect(geometry.sightingLineLengthMm, isNull);
+  });
+
   test('a centre shot is a ten and an inner ten', () {
     const centre = Shot(dxMm: 0, dyMm: 0);
     expect(scoring.integerScore(geometry, centre), 10);
