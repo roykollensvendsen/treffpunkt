@@ -142,6 +142,7 @@ nav:
       - "0109 — Fjern varsler": specs/0109-remove-notifications.md
       - "0110 — Desimalen flytter skuddet": specs/0110-decimal-repositions-shot.md
       - "0111 — Desimaler på 25/50 m presisjon": specs/0111-decimal-precision-programs.md
+      - "0112 — Robot-innlegg i forumet": specs/0112-robot-posts.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
