@@ -1003,12 +1003,20 @@ class _ReplyTile extends StatelessWidget {
     );
   }
 
+  /// The agent's clarifying questions are posted from the owner's account
+  /// with this prefix (spec 0112); the UI renders them as the robot.
+  static const String _robotPrefix = 'Robot: ';
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isRobot = post.body.startsWith(_robotPrefix);
+    final body = isRobot ? post.body.substring(_robotPrefix.length) : post.body;
     // Mirror the competition chat: your own replies sit on the right in an
-    // accent bubble, others' on the left (spec 0063).
-    final mine = post.authorId == myUserId;
+    // accent bubble, others' on the left (spec 0063). A robot post reads as
+    // the robot for everyone — the account owner included — so it never
+    // takes the "mine" styling (spec 0112).
+    final mine = post.authorId == myUserId && !isRobot;
     final colour = mine
         ? theme.colorScheme.primaryContainer
         : theme.colorScheme.surfaceContainerHighest;
@@ -1036,7 +1044,26 @@ class _ReplyTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  if (!mine)
+                  if (isRobot)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(
+                          Icons.smart_toy_outlined,
+                          size: 14,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Robot',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    )
+                  else if (!mine)
                     Text(
                       post.authorName ?? 'Ukjent',
                       style: theme.textTheme.labelSmall?.copyWith(
@@ -1049,12 +1076,12 @@ class _ReplyTile extends StatelessWidget {
                       const SizedBox(height: 4),
                     _ForumImage(id: post.id, url: url),
                   ],
-                  if (post.body.isNotEmpty)
+                  if (body.isNotEmpty)
                     Padding(
                       padding: EdgeInsets.only(
                         top: post.imageUrl != null ? 6 : 0,
                       ),
-                      child: Text(post.body, style: theme.textTheme.bodyMedium),
+                      child: Text(body, style: theme.textTheme.bodyMedium),
                     ),
                   if (post.createdAt case final at?)
                     Padding(

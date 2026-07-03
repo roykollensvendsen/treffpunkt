@@ -71,3 +71,9 @@ Når noen starter en **ny tråd** eller skriver et **svar**, får moderatoren et
 varsel (om de har slått på **bjella** og bruker Android eller PC) — slik at en
 meldt bug eller et ønske ikke blir oversett. Du varsles ikke om dine egne
 innlegg.
+
+## Robot-innlegg
+
+Nå og da stiller eierens automatisering et oppklaringsspørsmål i en
+tråd. Slike svar vises med et **robotikon** og navnet **Robot** — svar
+på dem som på alle andre innlegg, så plukkes svaret opp automatisk.

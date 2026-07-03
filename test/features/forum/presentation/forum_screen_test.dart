@@ -527,6 +527,35 @@ void main() {
     expect(find.text('feil tekst'), findsNothing);
   });
 
+  testWidgets('a Robot-prefixed reply wears the robot identity (0112)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+    // The agent's clarifying questions are posted from Roy's own account
+    // with the «Robot: » prefix; the UI turns that into a robot identity.
+    await repo.postReply(
+      const ForumPost(id: 'p1', threadId: 't1', body: 'Robot: Hvilken skive?'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    // Robot byline with the icon; the prefix itself is not shown.
+    expect(find.text('Robot'), findsOneWidget);
+    expect(find.byIcon(Icons.smart_toy_outlined), findsOneWidget);
+    expect(find.text('Hvilken skive?'), findsOneWidget);
+    expect(find.textContaining('Robot: '), findsNothing);
+    // Even the author's own robot posts read as the robot, not as "mine":
+    // the bubble sits on the left like any other participant's.
+    final bubble = tester.getTopLeft(find.byKey(forumPostKey('p1')));
+    expect(bubble.dx, lessThan(200));
+  });
+
   testWidgets('long-pressing a reply copies its text (spec 0069)', (
     tester,
   ) async {
