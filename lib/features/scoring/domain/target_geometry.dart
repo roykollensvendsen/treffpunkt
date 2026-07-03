@@ -16,6 +16,11 @@ class TargetGeometry {
     required this.blackBullDiameterMm,
     this.innerTenDiameterMm,
     this.lowestRingValue = 1,
+    this.ringLabelMaxValue,
+    this.ringLabelsBothAxes = true,
+    this.ringLabelHeightMm = 5,
+    this.sightingLineLengthMm,
+    this.sightingLineWidthMm = 5,
   });
 
   /// The ISSF / NSF 10 m air-rifle target (see spec 0001).
@@ -25,7 +30,12 @@ class TargetGeometry {
       ringOuterDiametersMm = _airRifle10mRingDiametersMm,
       blackBullDiameterMm = 30.5,
       innerTenDiameterMm = null,
-      lowestRingValue = 1;
+      lowestRingValue = 1,
+      ringLabelMaxValue = 8,
+      ringLabelsBothAxes = true,
+      ringLabelHeightMm = 2,
+      sightingLineLengthMm = null,
+      sightingLineWidthMm = 5;
 
   /// The ISSF 25 m pistol precision target (rings 1–10, inner ten 25 mm); see
   /// `docs/reference/program-catalogue.md`. Calibre defaults to .22 (5.6 mm).
@@ -35,7 +45,12 @@ class TargetGeometry {
       ringOuterDiametersMm = _pistol25mPrecisionRingDiametersMm,
       blackBullDiameterMm = 200,
       innerTenDiameterMm = 25,
-      lowestRingValue = 1;
+      lowestRingValue = 1,
+      ringLabelMaxValue = 9,
+      ringLabelsBothAxes = true,
+      ringLabelHeightMm = 10,
+      sightingLineLengthMm = null,
+      sightingLineWidthMm = 5;
 
   /// The ISSF 10 m air-pistol target (rings 1–10, inner ten 5 mm); see the
   /// program catalogue.
@@ -45,7 +60,12 @@ class TargetGeometry {
       ringOuterDiametersMm = _airPistol10mRingDiametersMm,
       blackBullDiameterMm = 59.5,
       innerTenDiameterMm = 5,
-      lowestRingValue = 1;
+      lowestRingValue = 1,
+      ringLabelMaxValue = 8,
+      ringLabelsBothAxes = true,
+      ringLabelHeightMm = 2,
+      sightingLineLengthMm = null,
+      sightingLineWidthMm = 5;
 
   /// The ISSF 25 m rapid-fire / silhouette target (rings 5–10 only, inner ten
   /// 50 mm) used for the duel stage; see the program catalogue. Calibre
@@ -56,7 +76,12 @@ class TargetGeometry {
       ringOuterDiametersMm = _pistol25mRapidRingDiametersMm,
       blackBullDiameterMm = 500,
       innerTenDiameterMm = 50,
-      lowestRingValue = 5;
+      lowestRingValue = 5,
+      ringLabelMaxValue = 9,
+      ringLabelsBothAxes = false,
+      ringLabelHeightMm = 5,
+      sightingLineLengthMm = 125,
+      sightingLineWidthMm = 5;
 
   /// The NSF 10 m air sprint / duel ("Sprintluft") face: rings 5–10 on a face
   /// larger than the standard air-pistol target (10-ring ⌀ 23 mm), inner ten
@@ -67,7 +92,14 @@ class TargetGeometry {
       ringOuterDiametersMm = _airDuel10mRingDiametersMm,
       blackBullDiameterMm = 155.5,
       innerTenDiameterMm = 11.5,
-      lowestRingValue = 5;
+      lowestRingValue = 5,
+      // Nasjonalt regelverk 5.1.18.1.2 (10 m luftduellskive): values 5–9
+      // vertically only, digits ≤ 2 mm, sighting lines 42,5 × 3 mm.
+      ringLabelMaxValue = 9,
+      ringLabelsBothAxes = false,
+      ringLabelHeightMm = 2,
+      sightingLineLengthMm = 42.5,
+      sightingLineWidthMm = 3;
 
   /// Human-readable discipline name, e.g. `'10 m Air Rifle'`.
   final String name;
@@ -113,6 +145,29 @@ class TargetGeometry {
   /// spaced 1..N ring face — the assumption `decimalScore` (spec 0001) is
   /// derived under.
   bool get supportsDecimalScore => hasUniformRings && lowestRingValue == 1;
+
+  /// The highest ring whose value is printed on the face (spec 0113,
+  /// gtr-2026), or null when the face carries no printed values (the
+  /// luftduell face, unconfirmed). The rings above it are unnumbered on
+  /// the official sheets.
+  final int? ringLabelMaxValue;
+
+  /// Whether the printed values run along both axes (horizontal and
+  /// vertical, at right angles) or only vertically — the duel face prints
+  /// them vertically and replaces the side values with sighting lines
+  /// (spec 0113, gtr-2026).
+  final bool ringLabelsBothAxes;
+
+  /// The printed digit height in millimetres (gtr-2026).
+  final double ringLabelHeightMm;
+
+  /// The duel faces' white horizontal sighting lines: their length in mm,
+  /// or null on faces without them (gtr-2026 / nasjonalt regelverk).
+  final double? sightingLineLengthMm;
+
+  /// The sighting lines' width in mm (5 on the 25 m duel face, 3 on the
+  /// luftduell face).
+  final double sightingLineWidthMm;
 
   /// Whether the rings are evenly spaced (a constant diameter step), which the
   /// decimal scoring model assumes (spec 0001). True for 10 m air rifle.

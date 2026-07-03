@@ -5,6 +5,8 @@
 // Unit tests for the series painter: the last-shot highlight rule and a
 // render proof that the most recently placed marker is drawn emphasised, with
 // the dragged shot keeping its drag styling instead.
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
@@ -31,20 +33,31 @@ class _CircleCall {
   final Paint paint;
 }
 
-/// A [Canvas] that records `drawCircle` calls so a test can assert how each
-/// marker was drawn without producing a real picture.
+/// A [Canvas] that records `drawCircle`, `drawParagraph` and `drawRect`
+/// calls so a test can assert how each marker, ring label and sighting
+/// line was drawn without producing a real picture.
 class _RecordingCanvas implements Canvas {
   final List<_CircleCall> circles = <_CircleCall>[];
+  final List<Offset> paragraphs = <Offset>[];
+  final List<Rect> rects = <Rect>[];
 
   @override
   void drawCircle(Offset c, double radius, Paint paint) =>
       circles.add(_CircleCall(c, radius, paint));
 
   @override
+  void drawParagraph(ui.Paragraph paragraph, Offset offset) =>
+      paragraphs.add(offset);
+
+  @override
+  void drawRect(Rect rect, Paint paint) => rects.add(rect);
+
+  @override
   void noSuchMethod(Invocation invocation) {}
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   const size = Size(400, 400);
   // The plain pellet radius the painter draws for an ordinary marker.
   final scale = (size.shortestSide / 2) / _geometry.maxScoringRadiusMm;
@@ -189,6 +202,60 @@ void main() {
       // more at the centre.
       final rings = geometry.highestRing - geometry.lowestRingValue + 1;
       expect(centreCircles(canvas), hasLength(rings + 1));
+    });
+  });
+
+  group('ring labels (spec 0113)', () {
+    _RecordingCanvas paintFace(TargetGeometry geometry, {Size at = size}) {
+      final canvas = _RecordingCanvas();
+      SeriesPainter(
+        geometry: geometry,
+        shots: const <Shot>[],
+        draggingIndex: null,
+      ).paint(canvas, at);
+      return canvas;
+    }
+
+    test('air pistol prints 1–8 in all four directions', () {
+      // Digits 1–8, horizontal and vertical (gtr-2026); 9/10 unnumbered.
+      final canvas = paintFace(const TargetGeometry.airPistol10m());
+      expect(canvas.paragraphs, hasLength(8 * 4));
+    });
+
+    test('the precision face prints 1–9 in all four directions', () {
+      final canvas = paintFace(const TargetGeometry.pistol25mPrecision());
+      expect(canvas.paragraphs, hasLength(9 * 4));
+    });
+
+    test('the duel face prints 5–9 vertically plus the sighting lines', () {
+      // A shooting-screen-sized canvas: the 5 mm digits are readable here.
+      final canvas = paintFace(
+        const TargetGeometry.pistol25mRapid(),
+        at: const Size(700, 700),
+      );
+      expect(canvas.paragraphs, hasLength(5 * 2));
+      // The two white horizontal sighting lines replace the side digits
+      // (125 × 5 mm each on the real sheet). The paper rect is also a
+      // drawRect — so exactly paper + 2 lines.
+      expect(canvas.rects, hasLength(3));
+    });
+
+    test('the luftduell face prints 5–9 vertically plus its lines', () {
+      // Nasjonalt regelverk 5.1.18.1.2: like the 25 m duel face, with its
+      // own 42,5 × 3 mm sighting lines. The 2 mm digits are readable here
+      // because the small face maps to a large mm scale.
+      final canvas = paintFace(const TargetGeometry.airDuel10m());
+      expect(canvas.paragraphs, hasLength(5 * 2));
+      expect(canvas.rects, hasLength(3)); // paper + the two lines
+    });
+
+    test('labels are skipped when they would be unreadably small', () {
+      // A scorecard mini-target: 2 mm digits at this scale would be smudge.
+      final canvas = paintFace(
+        const TargetGeometry.airPistol10m(),
+        at: const Size(120, 120),
+      );
+      expect(canvas.paragraphs, isEmpty);
     });
   });
 }
