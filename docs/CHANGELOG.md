@@ -51,6 +51,14 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Fixed
+- **The 25 m duel face shows its ring values**: the values were drawn
+  sheet-true (5 mm on a 50 cm face ≈ 3,5 px on a phone) and fell under
+  the legibility threshold, so the face looked unnumbered. Ring values
+  now floor at a readable 10 px on every face, and a digit is skipped
+  only when it cannot fit its own ring band — so the scorecard
+  mini-targets stay clean (spec 0127, forum request).
+
 ### Added
 - **Delete your own profile**: Innstillinger's account section has a
   «Slett profilen min» action that erases the account and everything
