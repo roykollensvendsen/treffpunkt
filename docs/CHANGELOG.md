@@ -52,6 +52,13 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Changed
+- **One «Fortsett felt-økt» card**: resuming an in-progress felt round
+  now lives on the front page alone — the duplicate card on the course
+  page is gone, and the front-page card gains the trash button to
+  discard the saved round (with the usual confirmation) that used to
+  sit only on the course page (spec 0116, forum request).
+
+### Changed
 - **Adjust the decimals of earlier shots**: in decimal mode every shot
   in the current series keeps its tenth dropdown, not just the last one
   — notice a mistyped reading a few shots later and correct it on the

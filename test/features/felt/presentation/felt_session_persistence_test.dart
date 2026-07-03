@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Widget tests for saving and resuming a felt round (spec 0081).
+// Widget tests for saving and resuming a felt round (specs 0081/0116).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,8 +13,6 @@ import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
-import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart'
-    show confirmDestructiveKey;
 
 // A saved round with one inner hit on hare (hold 1), the other holds empty.
 FeltSessionSnapshot _savedHareInner(FeltShooterGroup group) =>
@@ -123,7 +121,7 @@ void main() {
     expect(await store.load(), isNull);
   });
 
-  testWidgets('the course preview resumes and discards a saved round (0081)', (
+  testWidgets('the course preview no longer offers resume (spec 0116)', (
     tester,
   ) async {
     bigView(tester);
@@ -132,31 +130,9 @@ void main() {
     await tester.pumpWidget(appWith(store, const FeltCourseScreen()));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(feltResumeCardKey), findsOneWidget);
-    expect(find.textContaining('Gruppe 2'), findsWidgets);
-
-    // Resume restores the round with its score (spec 0085: 2 points and the
-    // ringed-X inner count).
-    await tester.tap(find.byKey(feltResumeCardKey));
-    await tester.pumpAndSettle();
-    expect(
-      find.textContaining(
-        'Treff 1 · Figur 1  =  2 poeng · 1',
-        findRichText: true,
-      ),
-      findsOneWidget,
-    );
-
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-
-    // Discard clears the store and removes the card.
-    await tester.tap(find.byKey(feltDiscardCardKey));
-    await tester.pumpAndSettle();
-    // Discarding confirms first (spec 0096).
-    await tester.tap(find.byKey(confirmDestructiveKey));
-    await tester.pumpAndSettle();
-    expect(find.byKey(feltResumeCardKey), findsNothing);
-    expect(await store.load(), isNull);
+    // The single resume card lives on the front page (spec 0116); the
+    // course page keeps «Skyt løypa» and the hold previews only.
+    expect(find.text('Fortsett felt-økt'), findsNothing);
+    expect(find.byKey(feltShootButtonKey), findsOneWidget);
   });
 }

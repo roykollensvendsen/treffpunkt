@@ -43,6 +43,9 @@ const Key confirmDestructiveKey = ValueKey<String>('confirmDestructive');
 /// Key for the front page's "Fortsett felt-økt" card (spec 0097), for tests.
 const Key feltResumeSessionKey = ValueKey<String>('feltResumeSession');
 
+/// Key for the felt resume card's discard button (spec 0116), for tests.
+const Key feltDiscardSessionKey = ValueKey<String>('feltDiscardSession');
+
 /// Key for the «Skyt igjen» quick-start card (spec 0097), for tests.
 const Key shootAgainKey = ValueKey<String>('shootAgain');
 
@@ -206,6 +209,15 @@ class ProgramPickerScreen extends ConsumerWidget {
     ref.invalidate(savedRecordingProvider);
   }
 
+  /// Discards the saved felt round (spec 0116) after the same confirmation.
+  Future<void> _discardFelt(BuildContext context, WidgetRef ref) async {
+    if (!await _confirmDestructive(context, title: 'Forkast lagret økt?')) {
+      return;
+    }
+    await ref.read(feltSessionStoreProvider).clear();
+    ref.invalidate(feltSavedSessionProvider);
+  }
+
   /// The app's standard destructive-action confirmation (spec 0096).
   Future<bool> _confirmDestructive(
     BuildContext context, {
@@ -320,6 +332,13 @@ class ProgramPickerScreen extends ConsumerWidget {
                             subtitle: Text(
                               'NorgesFelt-løype 2026 · '
                               '${feltSaved.totalShots} skudd plassert',
+                            ),
+                            trailing: IconButton(
+                              key: feltDiscardSessionKey,
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: 'Forkast lagret økt',
+                              onPressed: () =>
+                                  unawaited(_discardFelt(context, ref)),
                             ),
                             onTap: () => unawaited(
                               _resumeFelt(context, ref, feltSaved),

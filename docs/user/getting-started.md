@@ -19,7 +19,9 @@ of the sign-in screen. It works offline.
    programs) or **Felt** (field shooting — opens the course directly); MIL
    is marked «kommer senere». Shot before? The **Skyt igjen** card at the
    top restarts your latest exercise in one tap, and Hjem also shows
-   **Fortsett økt** / **Fortsett felt-økt** cards for anything in progress.
+   **Fortsett økt** / **Fortsett felt-økt** cards for anything in progress —
+   each with a trash button to discard the saved session (after a
+   confirmation).
    The bell (varsler) and Innstillinger sit in the top bar.
 2. Pick the program inside the category and confirm the session setup (date,
    time and place). You will see a round target, drawn like the official
