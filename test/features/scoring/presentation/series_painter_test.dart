@@ -249,6 +249,23 @@ void main() {
       expect(canvas.rects, hasLength(3)); // paper + the two lines
     });
 
+    test(
+      'the luftduell lines run from the face edge into the black (0121)',
+      () {
+        const geometry = TargetGeometry.airDuel10m();
+        final canvas = paintFace(geometry);
+        final centre = size.width / 2;
+        final scale = (size.shortestSide / 2) / geometry.maxScoringRadiusMm;
+        final lines = canvas.rects.skip(1).toList(); // paper rect first
+        final left = lines.reduce((a, b) => a.left < b.left ? a : b);
+        // Outer end at the outermost ring's edge (155,5/2 mm out) …
+        expect(left.left, closeTo(centre - 155.5 / 2 * scale, 0.01));
+        // … running 42,5 mm inward, past the black's edge (76/2 mm out).
+        expect(left.right, closeTo(centre - (155.5 / 2 - 42.5) * scale, 0.01));
+        expect(left.right, greaterThan(centre - 76 / 2 * scale));
+      },
+    );
+
     test('labels are skipped when they would be unreadably small', () {
       // A scorecard mini-target: 2 mm digits at this scale would be smudge.
       final canvas = paintFace(
