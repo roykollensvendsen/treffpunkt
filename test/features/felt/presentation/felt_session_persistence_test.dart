@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/core/presentation/zoom_controls.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -119,6 +120,37 @@ void main() {
     await tester.tap(find.byKey(feltSaveRoundKey));
     await tester.pumpAndSettle();
     expect(await store.load(), isNull);
+  });
+
+  testWidgets('the hold picture zooms with the shared buttons (0125)', (
+    tester,
+  ) async {
+    bigView(tester);
+    final store = InMemoryFeltSessionStore();
+    await tester.pumpWidget(appWith(store, const FeltRecordScreen()));
+    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
+    await tester.pumpAndSettle();
+
+    final controller = tester
+        .widget<InteractiveViewer>(find.byType(InteractiveViewer))
+        .transformationController!;
+    expect(controller.value.getMaxScaleOnAxis(), 1.0);
+
+    await tester.tap(find.byKey(zoomInKey));
+    await tester.pump();
+    expect(controller.value.getMaxScaleOnAxis(), greaterThan(1.0));
+
+    // A tap at the visual centre after a CENTRED zoom is the same picture
+    // point as without zoom (spec 0125): the shot lands where the finger
+    // points, and the stored fraction is unaffected by the transform.
+    final rect = tester.getRect(find.byKey(feltHoldRecorderKey));
+    await tester.tapAt(rect.center);
+    await tester.pump();
+    expect(find.textContaining('Skudd 1/6'), findsOneWidget);
+
+    await tester.tap(find.byKey(zoomResetKey));
+    await tester.pump();
+    expect(controller.value.getMaxScaleOnAxis(), closeTo(1.0, 1e-6));
   });
 
   testWidgets('the course preview no longer offers resume (spec 0116)', (

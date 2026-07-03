@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
+import 'package:treffpunkt/core/presentation/zoom_controls.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_painter.dart';
@@ -104,7 +105,7 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
                 Positioned(
                   right: 8,
                   bottom: 8,
-                  child: _ZoomControls(
+                  child: ZoomControls(
                     onZoomIn: () => _zoomTo(_currentScale * 1.6, side),
                     onZoomOut: () => _zoomTo(_currentScale / 1.6, side),
                     onReset: () => _zoomTo(1, side),
@@ -178,49 +179,5 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
   void _drag(TargetGeometry geometry, Offset px, double side) {
     if (!ref.read(sessionProvider).isDragging) return;
     ref.read(sessionProvider.notifier).dragTo(_toShot(geometry, px, side));
-  }
-}
-
-/// The ＋ / − / reset zoom buttons overlaid on the target.
-class _ZoomControls extends StatelessWidget {
-  const _ZoomControls({
-    required this.onZoomIn,
-    required this.onZoomOut,
-    required this.onReset,
-  });
-
-  final VoidCallback onZoomIn;
-  final VoidCallback onZoomOut;
-  final VoidCallback onReset;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: const StadiumBorder(),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            key: const ValueKey<String>('zoomIn'),
-            icon: const Icon(Icons.add),
-            tooltip: 'Zoom inn',
-            onPressed: onZoomIn,
-          ),
-          IconButton(
-            key: const ValueKey<String>('zoomReset'),
-            icon: const Icon(Icons.center_focus_strong),
-            tooltip: 'Nullstill zoom',
-            onPressed: onReset,
-          ),
-          IconButton(
-            key: const ValueKey<String>('zoomOut'),
-            icon: const Icon(Icons.remove),
-            tooltip: 'Zoom ut',
-            onPressed: onZoomOut,
-          ),
-        ],
-      ),
-    );
   }
 }

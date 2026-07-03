@@ -155,6 +155,7 @@ nav:
       - "0122 — Er Robot Hood her? (presence)": specs/0122-robot-presence.md
       - "0123 — Tall, ikke striper, på luftduellskiva": specs/0123-airduel-digits-not-stripes.md
       - "0124 — Desimalen er hovedtallet": specs/0124-decimal-emphasis.md
+      - "0125 — Zoom og panorering på felt-skivene": specs/0125-felt-zoom.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
