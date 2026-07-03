@@ -26,6 +26,7 @@ import 'package:treffpunkt/features/scoring/presentation/program_category_screen
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
 /// Key for the "resume saved session" card, used by tests.
 const Key resumeSessionKey = ValueKey<String>('resumeSession');
@@ -80,7 +81,21 @@ class ProgramPickerScreen extends ConsumerWidget {
         ),
       ),
     );
-    ref.invalidate(savedRecordingProvider);
+    _refreshHome(ref);
+  }
+
+  /// Refreshes everything the front page derives from stored state (spec
+  /// 0108): the resume cards AND the «Skyt igjen» history — a flow may have
+  /// completed a session or saved a felt round, and the cached background
+  /// reads would otherwise show it only after a tab switch or full reload.
+  void _refreshHome(WidgetRef ref) {
+    ref
+      ..invalidate(savedRecordingProvider)
+      ..invalidate(feltSavedSessionProvider)
+      ..invalidate(storedPendingProvider)
+      ..invalidate(syncedSessionsProvider)
+      ..invalidate(feltHistoryProvider)
+      ..invalidate(feltSyncedSessionsProvider);
   }
 
   /// Opens [category]'s page, then refreshes the resume cards on return.
@@ -101,9 +116,7 @@ class ProgramPickerScreen extends ConsumerWidget {
             : ProgramCategoryScreen(category: category),
       ),
     );
-    ref
-      ..invalidate(savedRecordingProvider)
-      ..invalidate(feltSavedSessionProvider);
+    _refreshHome(ref);
   }
 
   /// Resumes the saved felt round straight from the front page (spec 0097).
@@ -117,7 +130,7 @@ class ProgramPickerScreen extends ConsumerWidget {
         builder: (_) => FeltRecordScreen(restored: saved),
       ),
     );
-    ref.invalidate(feltSavedSessionProvider);
+    _refreshHome(ref);
   }
 
   /// The most recent completed exercise, for the «Skyt igjen» card (spec
@@ -127,6 +140,10 @@ class ProgramPickerScreen extends ConsumerWidget {
     DateTime? bestAt;
     _LastExercise? best;
     final ring = <SessionRecord>[
+      // The live queue first (spec 0108): a session that completed seconds
+      // ago is here before any store or server read — the card follows the
+      // moment it lands, with no refresh.
+      ...ref.watch(uploadQueueProvider),
       ...?ref.watch(storedPendingProvider).value,
       ...?ref.watch(syncedSessionsProvider).value,
     ];
@@ -175,9 +192,7 @@ class ProgramPickerScreen extends ConsumerWidget {
         ),
       );
     }
-    ref
-      ..invalidate(savedRecordingProvider)
-      ..invalidate(feltSavedSessionProvider);
+    _refreshHome(ref);
   }
 
   /// Discards the saved session (spec 0009 req 4) after a confirmation

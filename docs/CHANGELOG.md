@@ -52,6 +52,11 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Fixed
+- **«Skyt igjen» no longer needs a refresh**: the card follows your
+  latest session the moment it completes — it now watches the live
+  upload queue, and coming back to Hjem (or switching to the tab)
+  refreshes the history it derives from, felt rounds included
+  (spec 0108, user report).
 - **The felt course preview tells the truth about inner zones**: the
   header no longer claims «innertreff på alle figurer» — each hold card
   now derives its coverage from the measured art, and hold 5 says
