@@ -132,6 +132,7 @@ abstract final class ProgramCatalogue {
     name: '25 m Standard Pistol',
     discipline: Discipline.pistol,
     weaponClasses: <String>['.22 LR'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: '150 s',
@@ -162,6 +163,7 @@ abstract final class ProgramCatalogue {
     name: '25 m Finpistol',
     discipline: Discipline.pistol,
     weaponClasses: <String>['.22 LR'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: 'Presisjon',
@@ -183,6 +185,7 @@ abstract final class ProgramCatalogue {
     name: '25 m Grovpistol',
     discipline: Discipline.pistol,
     weaponClasses: <String>['Centre-fire 7.62–9.65 mm'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: 'Presisjon',
@@ -379,6 +382,7 @@ abstract final class ProgramCatalogue {
     name: '50 m Fripistol',
     discipline: Discipline.pistol,
     weaponClasses: <String>['.22 LR'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: 'Match',

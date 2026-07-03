@@ -51,6 +51,14 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Added
+- **Decimals on the 25/50 m precision programs**: the «Desimalpoeng»
+  toggle is now offered on 25 m Standard Pistol, 25 m Finpistol,
+  25 m Grovpistol and 50 m Fripistol too. On Fin-/Grovpistol the
+  precision series get the full decimal treatment while the duel
+  series honestly stay in whole points — no partial decimal sums are
+  ever shown (spec 0111, forum request).
+
 ### Changed
 - **Picking a decimal moves the shot**: in decimal mode, choosing e.g.
   9,7 now slides the marker in/out from the centre so its position *is*

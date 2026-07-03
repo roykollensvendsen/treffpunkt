@@ -183,6 +183,26 @@ class ScoringService {
     );
   }
 
+  /// The running decimal total of a session in progress (spec 0111): the
+  /// sealed series plus the [current] one, in exact tenths — or null the
+  /// moment any involved series is on a face without decimals (a mixed
+  /// program's duel stage), where a partial "running decimal" would lie.
+  double? runningDecimalTotal(Session session, Series? current) {
+    var tenths = 0;
+    for (final stage in session.sealedSeriesByStage) {
+      for (final series in stage) {
+        final part = scoreSeries(series).decimalTotal;
+        if (part == null) return null;
+        tenths += (part * 10).round();
+      }
+    }
+    final currentPart = current == null
+        ? 0.0
+        : scoreSeries(current).decimalTotal;
+    if (currentPart == null) return null;
+    return (tenths + (currentPart * 10).round()) / 10;
+  }
+
   /// The sum of [parts] in exact tenths, or null when any part has no
   /// decimal (a stage on a 5–10 face) — a partial decimal sum would lie.
   static double? _decimalSum(Iterable<double?> parts) {

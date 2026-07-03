@@ -192,6 +192,80 @@ void main() {
     });
   });
 
+  group('the precision-face programs offer decimals (spec 0111)', () {
+    test('every all-decimal or mixed precision program is flagged', () {
+      expect(ProgramCatalogue.standardPistol25m.supportsDecimalEntry, isTrue);
+      expect(ProgramCatalogue.freePistol50m.supportsDecimalEntry, isTrue);
+      // Mixed programs (presisjon + duell) offer it too: the precision
+      // series get decimals, the duel series stay integer.
+      expect(ProgramCatalogue.finpistol25m.supportsDecimalEntry, isTrue);
+      expect(ProgramCatalogue.grovpistol25m.supportsDecimalEntry, isTrue);
+    });
+
+    test('the 5–10-face programs still do not', () {
+      expect(ProgramCatalogue.sprintluft.supportsDecimalEntry, isFalse);
+      expect(ProgramCatalogue.storluftDuel.supportsDecimalEntry, isFalse);
+      expect(
+        ProgramCatalogue.hurtigpistolFin25m.supportsDecimalEntry,
+        isFalse,
+      );
+      expect(ProgramCatalogue.silhuettpistol25m.supportsDecimalEntry, isFalse);
+    });
+  });
+
+  group('runningDecimalTotal (spec 0111)', () {
+    test('sums sealed and current series on decimal faces', () {
+      var session = Session.start(
+        ProgramCatalogue.airPistol10m,
+        decimalEntry: true,
+      );
+      final sealed = Series(
+        geometry: airPistol,
+        capacity: 5,
+      ).placeShot(const Shot(dxMm: 0, dyMm: 0)); // 10,9
+      session = session.sealSeries(sealed);
+      final current = Series(
+        geometry: airPistol,
+        capacity: 5,
+      ).placeShot(const Shot(dxMm: 10, dyMm: 0, tenth: 4)); // 9,4
+      expect(scoring.runningDecimalTotal(session, current), 20.3);
+    });
+
+    test('goes silent the moment a non-decimal series is involved', () {
+      var session = Session.start(
+        ProgramCatalogue.finpistol25m,
+        decimalEntry: true,
+      );
+      final precision = Series(
+        geometry: const TargetGeometry.pistol25mPrecision(),
+        capacity: 5,
+      ).placeShot(const Shot(dxMm: 0, dyMm: 0));
+      session = session.sealSeries(precision);
+      // The current series is on the duel face: a partial "running decimal"
+      // would lie, so there is none.
+      final duel = Series(
+        geometry: const TargetGeometry.pistol25mRapid(),
+        capacity: 5,
+      ).placeShot(const Shot(dxMm: 0, dyMm: 0));
+      expect(scoring.runningDecimalTotal(session, duel), isNull);
+    });
+
+    test('an empty current series still reports the sealed total', () {
+      var session = Session.start(
+        ProgramCatalogue.airPistol10m,
+        decimalEntry: true,
+      );
+      session = session.sealSeries(
+        Series(
+          geometry: airPistol,
+          capacity: 5,
+        ).placeShot(const Shot(dxMm: 0, dyMm: 0)),
+      );
+      final empty = Series(geometry: airPistol, capacity: 5);
+      expect(scoring.runningDecimalTotal(session, empty), 10.9);
+    });
+  });
+
   group('Session.decimalEntry (spec 0107)', () {
     test('defaults off and survives sealSeries', () {
       const program = ProgramCatalogue.airRifle10m;
