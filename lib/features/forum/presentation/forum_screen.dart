@@ -1366,6 +1366,10 @@ class _ThreadStatusBadge extends StatelessWidget {
         dark ? Colors.blue.shade900 : Colors.blue.shade100,
         dark ? Colors.blue.shade100 : Colors.blue.shade900,
       ),
+      ForumThreadStatus.inProgress => (
+        dark ? Colors.orange.shade900 : Colors.orange.shade100,
+        dark ? Colors.orange.shade100 : Colors.orange.shade900,
+      ),
       ForumThreadStatus.done => (
         dark ? Colors.green.shade900 : Colors.green.shade100,
         dark ? Colors.green.shade100 : Colors.green.shade900,

@@ -660,6 +660,28 @@ void main() {
     expect(find.text('Ferdig'), findsWidgets);
   });
 
+  testWidgets('«Jobber med» is offered and badged (spec 0117)', (
+    tester,
+  ) async {
+    final repo = _meRepo()..addAdmin('me');
+    await repo.createThread(
+      const ForumThread(id: 't1', category: ForumCategory.bug, title: 'T'),
+    );
+
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumThreadCardKey('t1')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(forumStatusMenuKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(forumStatusOptionKey('in_progress')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(forumStatusBadgeKey('t1')), findsOneWidget);
+    expect(find.text('Jobber med'), findsWidgets);
+  });
+
   testWidgets('a non-moderator sees no status menu (spec 0066)', (
     tester,
   ) async {
