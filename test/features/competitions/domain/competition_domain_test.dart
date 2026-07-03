@@ -52,7 +52,7 @@ void main() {
       expect(c.program, '25 m NAIS fin');
       expect(c.ownerId, 'u1');
       expect(c.isPublic, isTrue);
-      expect(c.createdAt, DateTime.utc(2026, 6, 23, 10));
+      expect(c.createdAt, DateTime.utc(2026, 6, 23, 10).toLocal());
       expect(c.eventDate, DateTime(2026, 7)); // 2026-07-01, date-only
 
       final noFlag = Competition.fromJson(const <String, dynamic>{

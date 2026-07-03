@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
 
 /// What a forum thread is about (spec 0054).
@@ -98,7 +99,7 @@ class ForumThread {
       title: json['title'] as String,
       body: (json['body'] as String?) ?? '',
       status: ForumThreadStatus.fromWire(json['status'] as String?),
-      createdAt: createdAt == null ? null : DateTime.parse(createdAt),
+      createdAt: createdAt == null ? null : parseWireTime(createdAt),
       imagePath: json['image_path'] as String?,
     );
   }

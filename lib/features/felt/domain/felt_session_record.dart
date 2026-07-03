@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 
@@ -22,7 +23,7 @@ class FeltSessionRecord {
   factory FeltSessionRecord.fromJson(Map<String, dynamic> json) =>
       FeltSessionRecord(
         id: json['id'] as String,
-        capturedAt: DateTime.parse(json['capturedAt'] as String),
+        capturedAt: parseWireTime(json['capturedAt'] as String),
         session: FeltSessionSnapshot.fromJson(
           json['session'] as Map<String, dynamic>,
         ),

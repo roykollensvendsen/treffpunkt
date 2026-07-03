@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 
 /// A competition: a contest that **fixes a program** at creation, so every
 /// entrant shoots the same structure (spec 0010 / ROADMAP increment 2).
@@ -33,8 +34,8 @@ class Competition {
       program: json['program'] as String,
       ownerId: json['owner_id'] as String,
       isPublic: (json['is_public'] as bool?) ?? false,
-      createdAt: createdAt == null ? null : DateTime.parse(createdAt),
-      eventDate: eventDate == null ? null : DateTime.parse(eventDate),
+      createdAt: createdAt == null ? null : parseWireTime(createdAt),
+      eventDate: eventDate == null ? null : parseWireTime(eventDate),
     );
   }
 

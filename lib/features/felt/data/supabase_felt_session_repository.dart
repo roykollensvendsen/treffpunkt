@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -26,7 +27,7 @@ final class SupabaseFeltSessionRepository implements FeltSessionRepository {
     try {
       await _client.from(_table).upsert(<String, dynamic>{
         'id': record.id,
-        'captured_at': record.capturedAt.toIso8601String(),
+        'captured_at': record.capturedAt.toUtc().toIso8601String(),
         'group_name': record.session.group.name,
         'points': record.points,
         'payload': record.session.toJson(),
@@ -68,7 +69,7 @@ final class SupabaseFeltSessionRepository implements FeltSessionRepository {
 
   FeltSessionRecord _fromRow(Map<String, dynamic> row) => FeltSessionRecord(
     id: row['id'] as String,
-    capturedAt: DateTime.parse(row['captured_at'] as String),
+    capturedAt: parseWireTime(row['captured_at'] as String),
     session: FeltSessionSnapshot.fromJson(
       row['payload'] as Map<String, dynamic>,
     ),

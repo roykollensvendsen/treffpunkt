@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 
@@ -34,7 +35,7 @@ final class SupabaseSessionRepository implements SessionRepository {
       await _client.from(_table).upsert(<String, dynamic>{
         'id': record.id,
         'program': record.program,
-        'captured_at': record.capturedAt?.toIso8601String(),
+        'captured_at': record.capturedAt?.toUtc().toIso8601String(),
         'place_label': record.placeLabel,
         'latitude': record.latitude,
         'longitude': record.longitude,
@@ -98,7 +99,7 @@ final class SupabaseSessionRepository implements SessionRepository {
     return SessionRecord(
       id: row['id'] as String,
       program: row['program'] as String,
-      capturedAt: capturedAt == null ? null : DateTime.parse(capturedAt),
+      capturedAt: capturedAt == null ? null : parseWireTime(capturedAt),
       placeLabel: row['place_label'] as String?,
       latitude: (row['latitude'] as num?)?.toDouble(),
       longitude: (row['longitude'] as num?)?.toDouble(),

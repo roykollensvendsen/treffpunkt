@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
 
 /// One reply in a forum thread (spec 0054): who said it ([authorId]), the
@@ -30,7 +31,7 @@ class ForumPost {
       threadId: json['thread_id'] as String,
       authorId: json['author_id'] as String?,
       body: json['body'] as String,
-      createdAt: createdAt == null ? null : DateTime.parse(createdAt),
+      createdAt: createdAt == null ? null : parseWireTime(createdAt),
       imagePath: json['image_path'] as String?,
     );
   }

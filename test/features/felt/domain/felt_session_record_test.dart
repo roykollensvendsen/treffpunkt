@@ -13,7 +13,7 @@ import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 void main() {
   final record = FeltSessionRecord(
     id: 'abc',
-    capturedAt: DateTime.utc(2026, 7, 1, 12, 30),
+    capturedAt: DateTime.utc(2026, 7, 1, 12, 30).toLocal(),
     session: const FeltSessionSnapshot(
       group: FeltShooterGroup.one,
       currentHold: 1,
@@ -33,7 +33,7 @@ void main() {
     );
     expect(restored, record);
     expect(restored.id, 'abc');
-    expect(restored.capturedAt, DateTime.utc(2026, 7, 1, 12, 30));
+    expect(restored.capturedAt, DateTime.utc(2026, 7, 1, 12, 30).toLocal());
   });
 
   test('scores its tally from the snapshot (specs 0082/0085)', () {

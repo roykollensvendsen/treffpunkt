@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 
 /// An invitation to a competition (spec 0010): the owner invites a person by
@@ -35,7 +36,7 @@ class CompetitionInvitation {
       invitedEmail: json['invited_email'] as String,
       invitedBy: json['invited_by'] as String?,
       status: (json['status'] as String?) ?? 'pending',
-      createdAt: createdAt == null ? null : DateTime.parse(createdAt),
+      createdAt: createdAt == null ? null : parseWireTime(createdAt),
       competition: embedded is Map<String, dynamic>
           ? Competition.fromJson(embedded)
           : null,

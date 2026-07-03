@@ -148,6 +148,7 @@ nav:
       - "0115 — Juster tidligere skudds desimaler": specs/0115-edit-earlier-shot-tenths.md
       - "0116 — Ett Fortsett felt-økt-kort": specs/0116-felt-resume-front-page-only.md
       - "0117 — Jobber med-status i forumet": specs/0117-forum-in-progress-status.md
+      - "0118 — Lokaltid overalt": specs/0118-local-time-everywhere.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

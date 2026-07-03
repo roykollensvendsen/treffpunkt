@@ -41,7 +41,7 @@ void main() {
       group: FeltShooterGroup.one,
       currentHold: 0,
       holds: const <List<FeltPlacedShot>>[<FeltPlacedShot>[]],
-      capturedAt: DateTime.utc(2026, 7, 2, 18, 30),
+      capturedAt: DateTime.utc(2026, 7, 2, 18, 30).toLocal(),
       placeLabel: 'Løvenskiold',
       latitude: 59.96,
       longitude: 10.63,
@@ -53,7 +53,7 @@ void main() {
     );
 
     expect(restored, snapshot);
-    expect(restored.capturedAt, DateTime.utc(2026, 7, 2, 18, 30));
+    expect(restored.capturedAt, DateTime.utc(2026, 7, 2, 18, 30).toLocal());
     expect(restored.placeLabel, 'Løvenskiold');
     expect(restored.latitude, 59.96);
     expect(restored.longitude, 10.63);

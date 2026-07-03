@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:meta/meta.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/competitions/domain/message_reaction.dart';
 import 'package:treffpunkt/features/competitions/domain/profile.dart';
 
@@ -38,7 +39,7 @@ class CompetitionMessage {
       competitionId: json['competition_id'] as String,
       userId: json['user_id'] as String?,
       body: json['body'] as String,
-      createdAt: createdAt == null ? null : DateTime.parse(createdAt),
+      createdAt: createdAt == null ? null : parseWireTime(createdAt),
       imagePath: json['image_path'] as String?,
     );
   }
