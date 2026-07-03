@@ -10,12 +10,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/core/presentation/category_pictograms.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
+import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
+import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
@@ -29,6 +32,7 @@ import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
+import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
 void main() {
   Widget app(SessionStore store) {
@@ -431,6 +435,95 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(shootAgainKey), findsNothing);
+  });
+
+  testWidgets('Skyt igjen appears the moment a session completes (0108)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
+          pendingUploadsStoreProvider.overrideWithValue(
+            InMemoryPendingUploadsStore(),
+          ),
+        ],
+        child: const MaterialApp(home: ProgramPickerScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(shootAgainKey), findsNothing);
+
+    // A session completes elsewhere in the app: it lands on the live upload
+    // queue. The card must follow without any refresh (the reported bug).
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ProgramPickerScreen)),
+    );
+    await container
+        .read(uploadQueueProvider.notifier)
+        .enqueue(
+          SessionRecord(
+            id: 'live-1',
+            program: '10 m Luftpistol 60 skudd',
+            capturedAt: DateTime.utc(2026, 7, 3, 9),
+            total: 92,
+            maxTotal: 600,
+            innerTens: 1,
+            payload: const <String, dynamic>{},
+          ),
+        );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(shootAgainKey), findsOneWidget);
+    expect(find.text('10 m Luftpistol 60 skudd'), findsOneWidget);
+  });
+
+  testWidgets('a felt round saved during the flow shows on return (0108)', (
+    tester,
+  ) async {
+    final history = InMemoryFeltHistoryStore();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
+          feltHistoryStoreProvider.overrideWithValue(history),
+        ],
+        child: const MaterialApp(home: ProgramPickerScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(shootAgainKey), findsNothing);
+
+    // Into the felt flow…
+    await tester.tap(find.byKey(const ValueKey<String>('category-Felt')));
+    await tester.pumpAndSettle();
+    // …where a round gets saved (what «Lagre økt» does)…
+    await history.save([
+      FeltSessionRecord(
+        id: 'f-new',
+        capturedAt: DateTime.utc(2026, 7, 3, 10),
+        session: const FeltSessionSnapshot(
+          group: FeltShooterGroup.two,
+          currentHold: 7,
+          holds: <List<FeltPlacedShot>>[
+            <FeltPlacedShot>[FeltPlacedShot(dx: 1, dy: 1, figureIndex: 0)],
+            <FeltPlacedShot>[],
+            <FeltPlacedShot>[],
+            <FeltPlacedShot>[],
+            <FeltPlacedShot>[],
+            <FeltPlacedShot>[],
+            <FeltPlacedShot>[],
+            <FeltPlacedShot>[],
+          ],
+        ),
+      ),
+    ]);
+    // …and back to Hjem: the card must be there without a refresh.
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(shootAgainKey), findsOneWidget);
+    expect(find.textContaining('NorgesFelt-løype 2026'), findsWidgets);
   });
 
   testWidgets('a saved felt round resumes from the front page (0097)', (

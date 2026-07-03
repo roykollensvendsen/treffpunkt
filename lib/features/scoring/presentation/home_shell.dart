@@ -37,9 +37,15 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   void _select(int index) {
     switch (index) {
       case 0:
+        // Hjem derives «Skyt igjen» from the same history Mine økter shows
+        // (spec 0108) — refresh it too, not just the resume cards.
         ref
           ..invalidate(savedRecordingProvider)
-          ..invalidate(feltSavedSessionProvider);
+          ..invalidate(feltSavedSessionProvider)
+          ..invalidate(syncedSessionsProvider)
+          ..invalidate(storedPendingProvider)
+          ..invalidate(feltHistoryProvider)
+          ..invalidate(feltSyncedSessionsProvider);
       case 1:
         ref
           ..invalidate(syncedSessionsProvider)
