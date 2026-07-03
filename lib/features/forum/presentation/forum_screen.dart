@@ -11,6 +11,8 @@ import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
+import 'package:treffpunkt/core/presentation/mention_picker.dart';
+import 'package:treffpunkt/core/presentation/mention_text.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
@@ -429,6 +431,11 @@ class _NewThreadScreenState extends ConsumerState<NewThreadScreen> {
                   controller: _body,
                   minLines: 4,
                   maxLines: 10,
+                  // A fresh thread has no participants yet; @ offers
+                  // Robot Hood (spec 0120).
+                  onChanged: (_) => unawaited(
+                    maybeOfferMentions(context, _body, const ['Robot Hood']),
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Melding',
                     border: OutlineInputBorder(),
@@ -509,6 +516,23 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
   void _onImagePasted(PastedImage image) {
     if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
     unawaited(_sendImageBytes(image.bytes));
+  }
+
+  /// Who @ can tag here (spec 0120): the thread's participants by display
+  /// name — yourself excluded — and always Robot Hood, last.
+  List<String> _mentionCandidates() {
+    final uid = ref.read(forumCurrentUserIdProvider);
+    final posts = ref.read(forumPostsProvider(widget.thread.id)).value ?? [];
+    final names = <String>{
+      if (widget.thread.authorId != uid && widget.thread.authorName != null)
+        widget.thread.authorName!,
+      for (final post in posts)
+        if (post.authorId != uid &&
+            post.authorName != null &&
+            !post.body.startsWith('Robot: '))
+          post.authorName!,
+    }.toList()..sort();
+    return [...names, 'Robot Hood'];
   }
 
   Future<void> _send() async {
@@ -825,8 +849,13 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                                   behavior: HitTestBehavior.opaque,
                                   onLongPress: () =>
                                       _showThreadActions(thread.body),
-                                  child: Text(
-                                    thread.body,
+                                  child: Text.rich(
+                                    TextSpan(
+                                      children: mentionSpans(
+                                        thread.body,
+                                        accent: theme.colorScheme.primary,
+                                      ),
+                                    ),
                                     style: theme.textTheme.bodyMedium,
                                   ),
                                 ),
@@ -912,6 +941,15 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                           maxLines: 4,
                           textInputAction: TextInputAction.send,
                           onSubmitted: (_) => unawaited(_send()),
+                          // Typing @ offers the thread's participants and
+                          // Robot Hood (spec 0120).
+                          onChanged: (_) => unawaited(
+                            maybeOfferMentions(
+                              context,
+                              _reply,
+                              _mentionCandidates(),
+                            ),
+                          ),
                           decoration: const InputDecoration(
                             hintText: 'Skriv et svar …',
                             border: OutlineInputBorder(),
@@ -1081,7 +1119,17 @@ class _ReplyTile extends StatelessWidget {
                       padding: EdgeInsets.only(
                         top: post.imageUrl != null ? 6 : 0,
                       ),
-                      child: Text(body, style: theme.textTheme.bodyMedium),
+                      child: Text.rich(
+                        TextSpan(
+                          children: mentionSpans(
+                            body,
+                            accent: mine
+                                ? theme.colorScheme.onPrimaryContainer
+                                : theme.colorScheme.primary,
+                          ),
+                        ),
+                        style: theme.textTheme.bodyMedium,
+                      ),
                     ),
                   if (post.createdAt case final at?)
                     Padding(

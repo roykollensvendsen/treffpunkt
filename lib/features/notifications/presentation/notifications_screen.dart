@@ -122,6 +122,38 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 : ForumThreadScreen(thread: thread),
           ),
         );
+      case AppNotificationKind.mention:
+        // A mention points wherever it happened (spec 0120): a forum
+        // thread when thread_id is set, else the competition's chat.
+        if (notification.threadId != null) {
+          final threads = ref.read(forumThreadsProvider).value ?? const [];
+          final thread = threads
+              .where((t) => t.id == notification.threadId)
+              .firstOrNull;
+          await navigator.push(
+            MaterialPageRoute<void>(
+              builder: (_) => thread == null
+                  ? const ForumScreen()
+                  : ForumThreadScreen(thread: thread),
+            ),
+          );
+        } else {
+          final competitions = await ref
+              .read(myCompetitionsProvider.future)
+              .catchError(
+                (Object _) => ref.read(myCompetitionsProvider).value ?? [],
+              );
+          final competition = competitions
+              .where((c) => c.id == notification.competitionId)
+              .firstOrNull;
+          await navigator.push(
+            MaterialPageRoute<void>(
+              builder: (_) => competition == null
+                  ? const CompetitionsScreen()
+                  : CompetitionChatScreen(competition: competition),
+            ),
+          );
+        }
     }
   }
 
@@ -229,6 +261,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                                   Icons.chat_bubble_outline,
                                 AppNotificationKind.forumReply =>
                                   Icons.forum_outlined,
+                                AppNotificationKind.mention =>
+                                  Icons.alternate_email,
                               },
                             ),
                             title: Text(

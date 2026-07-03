@@ -12,6 +12,8 @@ import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
+import 'package:treffpunkt/core/presentation/mention_picker.dart';
+import 'package:treffpunkt/core/presentation/mention_text.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
 import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
@@ -276,6 +278,16 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
   Widget build(BuildContext context) {
     final chat = ref.watch(competitionChatProvider(widget.competition.id));
     final uid = ref.watch(currentUserIdProvider);
+    // Who @ can tag here (spec 0120): the members and the owner by display
+    // name, yourself excluded. Robot Hood is forum-only by design. Watched
+    // so the list is warm before the first @ is typed.
+    final members =
+        ref.watch(competitionMembersProvider(widget.competition.id)).value ??
+        const [];
+    final mentionNames = <String>{
+      for (final member in members)
+        if (member.userId != uid) ?member.profile?.displayName,
+    }.toList()..sort();
     final isOwner = uid == widget.competition.ownerId;
 
     return Scaffold(
@@ -337,6 +349,11 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
                   sending: _sending,
                   onSend: () => unawaited(_send()),
                   onAttach: () => unawaited(_pickAndSendImage()),
+                  // Typing @ offers the competition's members (spec 0120);
+                  // Robot Hood is forum-only by design.
+                  onChanged: (_) => unawaited(
+                    maybeOfferMentions(context, _composer, mentionNames),
+                  ),
                 ),
               ],
             ),
@@ -494,7 +511,17 @@ class _MessageBubble extends StatelessWidget {
                       ),
                     ),
                   if (message.body.isNotEmpty)
-                    Text(message.body, style: theme.textTheme.bodyMedium),
+                    Text.rich(
+                      TextSpan(
+                        children: mentionSpans(
+                          message.body,
+                          accent: mine
+                              ? theme.colorScheme.onPrimaryContainer
+                              : theme.colorScheme.primary,
+                        ),
+                      ),
+                      style: theme.textTheme.bodyMedium,
+                    ),
                   if (message.createdAt case final at?)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
@@ -643,12 +670,14 @@ class _Composer extends StatelessWidget {
     required this.sending,
     required this.onSend,
     required this.onAttach,
+    this.onChanged,
   });
 
   final TextEditingController controller;
   final bool sending;
   final VoidCallback onSend;
   final VoidCallback onAttach;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -670,6 +699,7 @@ class _Composer extends StatelessWidget {
               maxLines: 4,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => onSend(),
+              onChanged: onChanged,
               decoration: const InputDecoration(
                 hintText: 'Skriv en melding …',
                 border: OutlineInputBorder(),

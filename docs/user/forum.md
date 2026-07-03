@@ -76,6 +76,13 @@ varsel (om de har slått på **bjella** og bruker Android eller PC) — slik at 
 meldt bug eller et ønske ikke blir oversett. Du varsles ikke om dine egne
 innlegg.
 
+## Tagge noen (@)
+
+Skriv **@** i svarfeltet, så får du en navnevelger med trådens deltakere —
+og **Robot Hood**. Den du tagger får et varsel i **Varsler** som tar dem
+rett til tråden. Tagger du **@Robot Hood**, leser roboten tråden og svarer
+der. Taggen vises som en uthevet **@Navn** i meldingen.
+
 ## Robot Hood
 
 Nå og da stiller eierens automatisering — **Robot Hood**, oppkalt etter

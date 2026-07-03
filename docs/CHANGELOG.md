@@ -51,6 +51,16 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Added
+- **Tag people with @**: type **@** in a forum reply, a new thread or a
+  competition chat message and pick a name — the tag renders as a
+  highlighted **@Navn** and the tagged person gets a **Varsler**
+  notification that takes them straight there (and they are not
+  notified twice for the same message). In forum threads you can also
+  tag **@Robot Hood** to have the robot read the thread and answer
+  (spec 0120, forum request). Needs the `mentions` migration applied
+  to the hosted project.
+
 ### Changed
 - **The robot has a name — Robot Hood**: the automation's forum posts
   now carry the byline «Robot Hood» (after history's most famous
