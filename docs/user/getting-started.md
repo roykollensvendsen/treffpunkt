@@ -31,9 +31,8 @@ of the sign-in screen. It works offline.
 4. The score updates the moment you place the marker. When the series is
    full, the big **Fullfør serie (10/10)** button at the bottom seals it and
    moves on.
-5. Shooting on an electronic target (Megalink)? In the setup step of the
-   luft programs — and the 25/50 m programs on the precision face
-   (Standard, Fin-/Grovpistol, Fripistol) — you can switch on
+5. Shooting on an electronic target (Megalink)? In the setup step of
+   every ring program you can switch on
    **Desimalpoeng**: every shot then gets
    a decimal value — the last shot's row has a dropdown (e.g. 9,0–9,9)
    preselected from where you tapped, so you can enter the exact reading —

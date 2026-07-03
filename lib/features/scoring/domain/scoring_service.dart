@@ -33,27 +33,23 @@ class ScoringService {
 
   /// Decimal score (e.g. 10.4) for [shot], capped at 10.9, or 0.0 for a miss.
   ///
-  /// Assumes evenly spaced rings, which holds for 10 m air rifle (spec 0001);
-  /// the assert guards against misuse on a non-uniform target (e.g. pistol).
+  /// The tenth subdivides the shot's own scoring band into ten equal parts
+  /// (spec 0114), so `floor(decimal) == integerScore` holds on **every**
+  /// face by construction — the gauge rule can make the innermost band a
+  /// different width from the rest (25 m faces), which the spec-0001
+  /// fixed-step model did not account for. On the 10 m air faces, where
+  /// the bands are all one step wide, this is exactly the spec-0001 model.
   double decimalScore(TargetGeometry geometry, Shot shot) {
-    assert(
-      geometry.hasUniformRings && geometry.lowestRingValue == 1,
-      'decimalScore assumes a full, evenly spaced 1..N ring face (spec 0001)',
-    );
-    final d = shot.distanceMm;
-    if (d > geometry.maxScoringRadiusMm) {
-      return 0;
-    }
-    final highest = geometry.highestRing;
-    // Width of one ring in centre-distance terms (e.g. 2.5 mm for air rifle).
-    final ringWidthMm =
-        geometry.scoringRadiusMm(1) - geometry.scoringRadiusMm(2);
-    final stepMm = ringWidthMm / 10;
-    final step = (d / stepMm).ceil();
-    final referenceTenths = (highest + 1) * 10; // 110 -> 11.0 for air rifle
-    final maxTenths = highest * 10 + 9; // 109 -> 10.9 for air rifle
-    final tenths = (referenceTenths - step).clamp(0, maxTenths);
-    return tenths / 10;
+    final ring = integerScore(geometry, shot);
+    if (ring == 0) return 0;
+    final bandOuterMm = geometry.scoringRadiusMm(ring);
+    final bandInnerMm = ring == geometry.highestRing
+        ? 0.0
+        : geometry.scoringRadiusMm(ring + 1);
+    final fraction =
+        (bandOuterMm - shot.distanceMm) / (bandOuterMm - bandInnerMm);
+    final tenth = (fraction * 10).floor().clamp(0, 9);
+    return (ring * 10 + tenth) / 10;
   }
 
   /// The shot's decimal value in tenths (e.g. 94 for 9,4) on a face that
@@ -75,19 +71,15 @@ class ScoringService {
   /// shot is given a direction (straight up); a miss is returned untouched —
   /// there is nothing to position. The moved shot carries [tenth].
   Shot shotAtDecimalTenth(TargetGeometry geometry, Shot shot, int tenth) {
-    assert(
-      geometry.supportsDecimalScore,
-      'shotAtDecimalTenth needs a uniform 1..N ring face (spec 0107)',
-    );
     final ring = integerScore(geometry, shot);
     if (ring == 0) return shot;
-    final tenths = ring * 10 + tenth;
-    final step = (geometry.highestRing + 1) * 10 - tenths;
-    final ringWidthMm =
-        geometry.scoringRadiusMm(1) - geometry.scoringRadiusMm(2);
-    final stepMm = ringWidthMm / 10;
-    // The band's midpoint: ceil(d / stepMm) reads back as exactly [step].
-    final distanceMm = (step - 0.5) * stepMm;
+    final bandOuterMm = geometry.scoringRadiusMm(ring);
+    final bandInnerMm = ring == geometry.highestRing
+        ? 0.0
+        : geometry.scoringRadiusMm(ring + 1);
+    // The midpoint of the tenth's sub-band: reads back as exactly [tenth].
+    final distanceMm =
+        bandOuterMm - (tenth + 0.5) / 10 * (bandOuterMm - bandInnerMm);
     final currentDistance = shot.distanceMm;
     final dirX = currentDistance > 0 ? shot.dxMm / currentDistance : 0.0;
     final dirY = currentDistance > 0 ? shot.dyMm / currentDistance : -1.0;

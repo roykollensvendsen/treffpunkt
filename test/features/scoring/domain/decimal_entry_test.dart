@@ -27,12 +27,12 @@ void main() {
       );
     });
 
-    test('false for the 5–10 faces', () {
+    test('true for the 5–10 faces too — their bands are uniform (0114)', () {
       expect(
         const TargetGeometry.pistol25mRapid().supportsDecimalScore,
-        isFalse,
+        isTrue,
       );
-      expect(const TargetGeometry.airDuel10m().supportsDecimalScore, isFalse);
+      expect(const TargetGeometry.airDuel10m().supportsDecimalScore, isTrue);
     });
   });
 
@@ -96,6 +96,24 @@ void main() {
     test('a miss is 0,0 — a picked tenth cannot resurrect it', () {
       const miss = Shot(dxMm: 500, dyMm: 0, tenth: 9);
       expect(scoring.decimalTenths(airPistol, miss), 0);
+    });
+
+    test('the 5–10 duel faces derive decimals too (spec 0114)', () {
+      const rapid = TargetGeometry.pistol25mRapid();
+      // Dead centre → the cap, 10,9.
+      expect(scoring.decimalTenths(rapid, const Shot(dxMm: 0, dyMm: 0)), 109);
+      // The derived decimal floors to the plotted ring across the face.
+      for (final dx in const [30.0, 90.0, 150.0, 210.0, 249.0]) {
+        final shot = Shot(dxMm: dx, dyMm: 0);
+        expect(
+          scoring.decimalTenths(rapid, shot) ~/ 10,
+          scoring.integerScore(rapid, shot),
+          reason: 'dx $dx',
+        );
+      }
+      // The outermost edge of ring 5 reads 5,0 — never below the ring.
+      const edge = Shot(dxMm: 252, dyMm: 0);
+      expect(scoring.decimalTenths(rapid, edge), 50);
     });
   });
 
@@ -166,14 +184,14 @@ void main() {
       expect(score.decimalTotal, closeTo(20.3, 1e-9));
     });
 
-    test('a series on a 5–10 face has no decimal total', () {
+    test('a series on a 5–10 face sums decimals too (spec 0114)', () {
       final series = Series(
         geometry: const TargetGeometry.pistol25mRapid(),
         capacity: 5,
       ).placeShot(const Shot(dxMm: 0, dyMm: 0));
       final score = scoring.scoreSeries(series);
-      expect(score.decimalTotal, isNull);
-      expect(score.shots.single.decimal, isNull);
+      expect(score.decimalTotal, 10.9);
+      expect(score.shots.single.decimal, 10.9);
     });
 
     test('the session rolls the decimal totals up', () {
@@ -202,14 +220,15 @@ void main() {
       expect(ProgramCatalogue.grovpistol25m.supportsDecimalEntry, isTrue);
     });
 
-    test('the 5–10-face programs still do not', () {
-      expect(ProgramCatalogue.sprintluft.supportsDecimalEntry, isFalse);
-      expect(ProgramCatalogue.storluftDuel.supportsDecimalEntry, isFalse);
+    test('the 5–10-face programs offer it too (spec 0114)', () {
+      expect(ProgramCatalogue.sprintluft.supportsDecimalEntry, isTrue);
+      expect(ProgramCatalogue.storluftDuel.supportsDecimalEntry, isTrue);
       expect(
         ProgramCatalogue.hurtigpistolFin25m.supportsDecimalEntry,
-        isFalse,
+        isTrue,
       );
-      expect(ProgramCatalogue.silhuettpistol25m.supportsDecimalEntry, isFalse);
+      expect(ProgramCatalogue.silhuettpistol25m.supportsDecimalEntry, isTrue);
+      expect(ProgramCatalogue.naisFin25m.supportsDecimalEntry, isTrue);
     });
   });
 
@@ -231,7 +250,7 @@ void main() {
       expect(scoring.runningDecimalTotal(session, current), 20.3);
     });
 
-    test('goes silent the moment a non-decimal series is involved', () {
+    test('a mixed program sums across both faces (spec 0114)', () {
       var session = Session.start(
         ProgramCatalogue.finpistol25m,
         decimalEntry: true,
@@ -241,13 +260,12 @@ void main() {
         capacity: 5,
       ).placeShot(const Shot(dxMm: 0, dyMm: 0));
       session = session.sealSeries(precision);
-      // The current series is on the duel face: a partial "running decimal"
-      // would lie, so there is none.
       final duel = Series(
         geometry: const TargetGeometry.pistol25mRapid(),
         capacity: 5,
       ).placeShot(const Shot(dxMm: 0, dyMm: 0));
-      expect(scoring.runningDecimalTotal(session, duel), isNull);
+      // Both faces carry decimals now: 10,9 + 10,9.
+      expect(scoring.runningDecimalTotal(session, duel), 21.8);
     });
 
     test('an empty current series still reports the sealed total', () {

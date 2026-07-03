@@ -79,6 +79,7 @@ abstract final class ProgramCatalogue {
     name: 'Sprintluft',
     discipline: Discipline.pistol,
     weaponClasses: <String>['Air 4.5 mm'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: 'Match',
@@ -98,6 +99,7 @@ abstract final class ProgramCatalogue {
     name: 'Storluft (luftduell-skive)',
     discipline: Discipline.pistol,
     weaponClasses: <String>['Air 4.5 mm'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: 'Match',
@@ -209,6 +211,7 @@ abstract final class ProgramCatalogue {
     name: '25 m Hurtigpistol fin',
     discipline: Discipline.pistol,
     weaponClasses: <String>['.22 LR'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: '10 s',
@@ -240,6 +243,7 @@ abstract final class ProgramCatalogue {
     name: '25 m Hurtigpistol grov',
     discipline: Discipline.pistol,
     weaponClasses: <String>['Centre-fire 7.62–9.65 mm'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: '10 s',
@@ -274,6 +278,7 @@ abstract final class ProgramCatalogue {
     name: '25 m Silhuettpistol',
     discipline: Discipline.pistol,
     weaponClasses: <String>['.22 LR'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: '8 s',
@@ -309,6 +314,7 @@ abstract final class ProgramCatalogue {
     name: '25 m NAIS fin',
     discipline: Discipline.pistol,
     weaponClasses: <String>['.22 LR'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: 'Presisjon 150 s',
@@ -346,6 +352,7 @@ abstract final class ProgramCatalogue {
     name: '25 m NAIS grov',
     discipline: Discipline.pistol,
     weaponClasses: <String>['Centre-fire 7.62–9.65 mm'],
+    supportsDecimalEntry: true,
     stages: <StageDefinition>[
       StageDefinition(
         name: 'Presisjon 150 s',

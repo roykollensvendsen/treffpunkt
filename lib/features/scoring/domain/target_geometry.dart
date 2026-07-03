@@ -141,10 +141,11 @@ class TargetGeometry {
   /// The innermost (highest-value) ring number, e.g. 10 for air rifle.
   int get highestRing => lowestRingValue + ringOuterDiametersMm.length - 1;
 
-  /// Whether the face supports decimal scoring (spec 0107): a full, evenly
-  /// spaced 1..N ring face — the assumption `decimalScore` (spec 0001) is
-  /// derived under.
-  bool get supportsDecimalScore => hasUniformRings && lowestRingValue == 1;
+  /// Whether the face supports decimal scoring. Since spec 0114 the tenth
+  /// subdivides the shot's own scoring band, which needs no assumption
+  /// about ring spacing — every ring face qualifies. Kept as a named gate
+  /// for readability at the call sites.
+  bool get supportsDecimalScore => true;
 
   /// The highest ring whose value is printed on the face (spec 0113,
   /// gtr-2026), or null when the face carries no printed values (the
