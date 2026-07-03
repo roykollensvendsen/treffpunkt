@@ -891,9 +891,11 @@ class _SeriesTotalCard extends StatelessWidget {
                     innerTens: score.innerTens,
                     style: TextStyle(color: onColor, fontSize: 18),
                   ),
+                  // In decimal mode the decimal is the headline (spec
+                  // 0124); the official integer drops to this line.
                   if (showDecimal && score.decimalTotal != null)
                     Text(
-                      'Desimal ${_norDecimal(score.decimalTotal!)}',
+                      'Heltall ${score.total}',
                       style: TextStyle(
                         color: onColor,
                         fontSize: 14,
@@ -906,7 +908,9 @@ class _SeriesTotalCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '${score.total}',
+                    showDecimal && score.decimalTotal != null
+                        ? _norDecimal(score.decimalTotal!)
+                        : '${score.total}',
                     key: seriesTotalKey,
                     style: TextStyle(
                       color: onColor,
@@ -955,7 +959,7 @@ class _SessionProgress extends StatelessWidget {
           context: context,
           lead: decimalTotal == null
               ? 'Økt så langt: $total'
-              : 'Økt så langt: $total (${_norDecimal(decimalTotal!)})',
+              : 'Økt så langt: ${_norDecimal(decimalTotal!)} ($total)',
           innerTens: innerTens,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -1156,7 +1160,7 @@ class _StageScoreRow extends StatelessWidget {
                   innerTenScoreText(
                     context: context,
                     lead: showDecimals && score.decimalTotal != null
-                        ? '${score.total} (${_norDecimal(score.decimalTotal!)})'
+                        ? '${_norDecimal(score.decimalTotal!)} (${score.total})'
                         : '${score.total}',
                     innerTens: score.innerTens,
                     separator: '  ·  ',
@@ -1245,7 +1249,7 @@ class _SeriesResultRow extends StatelessWidget {
                   innerTenScoreText(
                     context: context,
                     lead: showDecimals && score.decimalTotal != null
-                        ? '${score.total} (${_norDecimal(score.decimalTotal!)})'
+                        ? '${_norDecimal(score.decimalTotal!)} (${score.total})'
                         : '${score.total}',
                     innerTens: score.innerTens,
                     separator: '  ·  ',
@@ -1394,7 +1398,7 @@ class _GrandTotalCard extends StatelessWidget {
                   ),
                   if (showDecimal && score.decimalTotal != null)
                     Text(
-                      'Desimalsum ${_norDecimal(score.decimalTotal!)}',
+                      'Heltall ${score.total}',
                       style: TextStyle(
                         color: onColor,
                         fontSize: 14,
@@ -1407,7 +1411,9 @@ class _GrandTotalCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '${score.total}',
+                    showDecimal && score.decimalTotal != null
+                        ? _norDecimal(score.decimalTotal!)
+                        : '${score.total}',
                     style: TextStyle(
                       color: onColor,
                       fontSize: 40,

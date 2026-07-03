@@ -41,7 +41,8 @@ of the sign-in screen. It works offline.
    (e.g. 9,0–9,9) preselected from where you tapped, so you can enter the
    exact reading, and correct an earlier shot if you notice a slip —
    the marker slides in or out from the centre to match the value you
-   pick. Decimal sums show beside the ordinary points; records and
+   pick. The decimal sum is the big number on the series card and the
+   scorecard, with the whole-point total beside it; records and
    statistics keep counting whole points.
 6. Beat your own record and the scorecard says so: a red **«Ny pers!»**
    field appears when the finished session's result (points, with

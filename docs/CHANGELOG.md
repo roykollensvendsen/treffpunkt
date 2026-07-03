@@ -51,6 +51,15 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Changed
+- **The decimal is the headline in decimal mode**: on a decimal-mode
+  session the big number on the series-sum and grand-total cards is
+  now the decimal sum, and the running line and scorecard rows lead
+  with it («Økt så langt: 109,0 (100)») — the integer drops to a
+  «Heltall N» line. Records, statistics and scoreboards still count
+  whole points, and sessions without decimal mode look exactly as
+  before (spec 0124, forum request).
+
 ### Added
 - **Er Robot Hood her?**: the forum now shows whether the owner's
   automation is listening right now — a green dot and «Robot Hood er
