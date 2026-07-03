@@ -167,12 +167,10 @@ void main() {
       await tester.tap(find.text('10,4').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('Desimal 10,4'), findsOneWidget);
-      // The canonical int total is untouched.
-      expect(
-        tester.widget<Text>(find.byKey(seriesTotalKey)).data,
-        '10',
-      );
+      // The decimal is the headline (spec 0124); the int is demoted but
+      // untouched in the domain.
+      expect(tester.widget<Text>(find.byKey(seriesTotalKey)).data, '10,4');
+      expect(find.text('Heltall 10'), findsOneWidget);
     });
 
     testWidgets('every placed shot keeps its picker (spec 0115)', (
@@ -191,7 +189,7 @@ void main() {
       expect(find.byKey(tenthPickerKey(1)), findsOneWidget);
       expect(find.byKey(tenthPickerKey(2)), findsOneWidget);
       expect(find.text('10,2'), findsOneWidget);
-      expect(find.text('Desimal 21,1'), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(seriesTotalKey)).data, '21,1');
     });
 
     testWidgets("an earlier shot's tenth can be adjusted (spec 0115)", (
@@ -201,7 +199,7 @@ void main() {
       await tester.pumpWidget(app());
       await tapCentre(tester);
       await tapCentre(tester);
-      expect(find.text('Desimal 21,8'), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(seriesTotalKey)).data, '21,8');
 
       // Adjust the FIRST shot down to 10,3 — the sum follows and the
       // shot itself moves to match (spec 0110); the second is untouched.
@@ -210,7 +208,7 @@ void main() {
       await tester.tap(find.text('10,3').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('Desimal 21,2'), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(seriesTotalKey)).data, '21,2');
       final first = tester.widget<DropdownButton<int>>(
         find.byKey(tenthPickerKey(1)),
       );
@@ -227,7 +225,8 @@ void main() {
       await tapCentre(tester);
 
       expect(find.byKey(tenthPickerKey(1)), findsNothing);
-      expect(find.text('Desimal 10,9'), findsNothing);
+      expect(find.text('Heltall 10'), findsNothing);
+      expect(tester.widget<Text>(find.byKey(seriesTotalKey)).data, '10');
     });
 
     test('picking a tenth moves the shot to match it (spec 0110)', () {
@@ -272,11 +271,14 @@ void main() {
       for (var i = 0; i < 10; i++) {
         await tapCentre(tester);
       }
-      expect(find.text('Desimal 109,0'), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(seriesTotalKey)).data, '109,0');
       await tester.tap(find.byKey(sealSeriesKey));
       await tester.pumpAndSettle();
       // Second series: the running session line carries the decimal.
-      expect(find.textContaining('Økt så langt: 100 (109,0)'), findsOneWidget);
+      expect(
+        find.textContaining('Økt så langt: 109,0 (100)'),
+        findsOneWidget,
+      );
     });
   });
 }

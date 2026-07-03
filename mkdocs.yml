@@ -154,6 +154,7 @@ nav:
       - "0121 — Luftduellskivas svarte felt": specs/0121-airduel-face-black.md
       - "0122 — Er Robot Hood her? (presence)": specs/0122-robot-presence.md
       - "0123 — Tall, ikke striper, på luftduellskiva": specs/0123-airduel-digits-not-stripes.md
+      - "0124 — Desimalen er hovedtallet": specs/0124-decimal-emphasis.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
