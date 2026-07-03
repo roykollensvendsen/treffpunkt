@@ -1055,7 +1055,7 @@ class _ReplyTile extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Robot',
+                          'Robot Hood',
                           style: theme.textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: theme.colorScheme.onSurfaceVariant,
