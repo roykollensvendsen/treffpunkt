@@ -64,8 +64,9 @@ Key seriesResultRow(int stageIndex, int seriesIndex) =>
 Key seriesReviewTargetKey(int stageIndex, int seriesIndex) =>
     ValueKey<String>('seriesReviewTarget-$stageIndex-$seriesIndex');
 
-/// Key for the last shot's decimal tenth picker (spec 0107), used by tests.
-const Key tenthPickerKey = ValueKey<String>('tenthPicker');
+/// Key for a shot's decimal tenth picker (specs 0107/0115), by its
+/// 1-based display index; used by tests.
+Key tenthPickerKey(int shot) => ValueKey<String>('tenthPicker-$shot');
 
 /// Key for the shots-list row of the most recently placed shot, used by tests.
 ///
@@ -747,12 +748,12 @@ class _ShotRow extends StatelessWidget {
   /// last-shot emphasis (bold, accent) consistent with the target (spec 0020).
   final bool highlighted;
 
-  /// Whether the session records decimal values (spec 0107): the row shows
-  /// the decimal, and the last row swaps it for the tenth picker.
+  /// Whether the session records decimal values (spec 0107): the row swaps
+  /// its static value for the tenth picker.
   final bool decimalMode;
 
-  /// Called with the picked tenth (spec 0107); the picker is only offered
-  /// on the last-placed shot.
+  /// Called with the picked tenth (spec 0107); offered on every placed
+  /// scoring shot in the current series (spec 0115).
   final ValueChanged<int>? onTenthPicked;
 
   @override
@@ -782,12 +783,11 @@ class _ShotRow extends StatelessWidget {
       fontWeight: highlighted ? FontWeight.bold : FontWeight.w600,
       color: ringColor,
     );
-    // The last shot's value is the editable one (spec 0107): a compact
+    // Every placed shot's value is editable (specs 0107/0115): a compact
     // dropdown over x,0–x,9 within the plotted ring, preselected on the
     // position-derived tenth. A miss stays 0,0 — nothing to pick.
     final ring = shotScore?.ring ?? 0;
-    final pickable =
-        decimal != null && highlighted && onTenthPicked != null && ring > 0;
+    final pickable = decimal != null && onTenthPicked != null && ring > 0;
     return Semantics(
       label: label,
       child: ExcludeSemantics(
@@ -813,7 +813,7 @@ class _ShotRow extends StatelessWidget {
               const SizedBox(width: 12),
               if (pickable)
                 DropdownButton<int>(
-                  key: tenthPickerKey,
+                  key: tenthPickerKey(index),
                   value: ((decimal * 10).round()) % 10,
                   isDense: true,
                   style: valueStyle,
