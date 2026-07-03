@@ -80,7 +80,9 @@ void main() {
       }
     });
 
-    testWidgets('is not offered on a 5–10 face program', (tester) async {
+    testWidgets('is offered on the 5–10 face programs too (0114)', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -94,7 +96,7 @@ void main() {
           ),
         ),
       );
-      expect(find.byKey(decimalEntryToggleKey), findsNothing);
+      expect(find.byKey(decimalEntryToggleKey), findsOneWidget);
     });
 
     testWidgets('remembers the choice through the store', (tester) async {

@@ -52,6 +52,15 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Added
+- **Decimals on every ring face**: the «Desimalpoeng» toggle is now
+  offered on all ring programs — Sprintluft, Storluft, Hurtigpistol,
+  Silhuettpistol and NAIS included — and Fin-/Grovpistol sums decimals
+  across both its faces. Under the hood the tenth now subdivides the
+  shot's own scoring band, which also fixes a subtle mismatch the old
+  model had near band edges on the 25 m faces (spec 0114, forum
+  request).
+
+### Added
 - **Ring values on the targets**: the drawn faces now print the zone
   values exactly as the official gtr-2026 sheets do — 1–8 on the
   luftpistol face, 1–9 on 25 m presisjon/50 m (both along both axes),
