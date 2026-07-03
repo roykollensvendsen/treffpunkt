@@ -8,6 +8,18 @@ import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 
+/// The on-screen size for a ring value (spec 0127), or `null` to skip it.
+///
+/// A paper sheet is read from metres away; a phone from 30 cm — so the
+/// sheet-true size ([sheetPx]) floors at 10 px for legibility. A digit
+/// that cannot fit inside its own ring band ([bandPx]) would smudge
+/// across rings and is skipped, which keeps mini review targets clean.
+@visibleForTesting
+double? ringLabelFontPx({required double sheetPx, required double bandPx}) {
+  final floored = sheetPx < 10 ? 10.0 : sheetPx;
+  return floored > bandPx ? null : floored;
+}
+
 /// Paints a shooting target and the shots of a series.
 ///
 /// Target millimetres are mapped to pixels so the full scoring area fits the
@@ -94,52 +106,55 @@ class SeriesPainter extends CustomPainter {
       );
     }
 
-    // The printed ring values (spec 0113, gtr-2026): each numbered ring's
+    // The printed ring values (specs 0113/0127): each numbered ring's
     // digit centred in its band — along both axes, or vertically only on
-    // the duel face — white on the black like the real sheets. Skipped
-    // when the sheet-true size would be unreadably small (mini targets).
+    // the duel face — white on the black like the real sheets. On screen
+    // the sheet-true size floors at 10 px for legibility, and a digit
+    // that cannot fit its own band is skipped (mini review targets).
     final labelMax = geometry.ringLabelMaxValue;
     if (labelMax != null) {
-      final fontSize = geometry.ringLabelHeightMm * scale;
-      if (fontSize >= 4) {
-        for (var ring = geometry.lowestRingValue; ring <= labelMax; ring++) {
-          final outerRadiusMm = geometry.outerDiameterMm(ring) / 2;
-          final innerRadiusMm = ring == geometry.highestRing
-              ? 0.0
-              : geometry.outerDiameterMm(ring + 1) / 2;
-          final bandMidMm = (outerRadiusMm + innerRadiusMm) / 2;
-          final onBlack = bandMidMm * 2 <= geometry.blackBullDiameterMm;
-          final label = TextPainter(
-            text: TextSpan(
-              text: '$ring',
-              style: TextStyle(
-                color: onBlack ? Colors.white70 : Colors.black54,
-                fontSize: fontSize,
-                height: 1,
-                // The app's default face, pinned so the digits render the
-                // same in golden/screenshot harnesses that load it.
-                fontFamily: 'Roboto',
-              ),
+      for (var ring = geometry.lowestRingValue; ring <= labelMax; ring++) {
+        final outerRadiusMm = geometry.outerDiameterMm(ring) / 2;
+        final innerRadiusMm = ring == geometry.highestRing
+            ? 0.0
+            : geometry.outerDiameterMm(ring + 1) / 2;
+        final fontSize = ringLabelFontPx(
+          sheetPx: geometry.ringLabelHeightMm * scale,
+          bandPx: (outerRadiusMm - innerRadiusMm) * scale,
+        );
+        if (fontSize == null) continue;
+        final bandMidMm = (outerRadiusMm + innerRadiusMm) / 2;
+        final onBlack = bandMidMm * 2 <= geometry.blackBullDiameterMm;
+        final label = TextPainter(
+          text: TextSpan(
+            text: '$ring',
+            style: TextStyle(
+              color: onBlack ? Colors.white70 : Colors.black54,
+              fontSize: fontSize,
+              height: 1,
+              // The app's default face, pinned so the digits render the
+              // same in golden/screenshot harnesses that load it.
+              fontFamily: 'Roboto',
             ),
-            textDirection: TextDirection.ltr,
-          )..layout();
-          final radius = bandMidMm * scale;
-          final positions = <Offset>[
-            Offset(centre.dx, centre.dy - radius),
-            Offset(centre.dx, centre.dy + radius),
-            if (geometry.ringLabelsBothAxes) ...[
-              Offset(centre.dx - radius, centre.dy),
-              Offset(centre.dx + radius, centre.dy),
-            ],
-          ];
-          for (final position in positions) {
-            label.paint(
-              canvas,
-              position - Offset(label.width / 2, label.height / 2),
-            );
-          }
-          label.dispose();
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        final radius = bandMidMm * scale;
+        final positions = <Offset>[
+          Offset(centre.dx, centre.dy - radius),
+          Offset(centre.dx, centre.dy + radius),
+          if (geometry.ringLabelsBothAxes) ...[
+            Offset(centre.dx - radius, centre.dy),
+            Offset(centre.dx + radius, centre.dy),
+          ],
+        ];
+        for (final position in positions) {
+          label.paint(
+            canvas,
+            position - Offset(label.width / 2, label.height / 2),
+          );
         }
+        label.dispose();
       }
     }
 

@@ -157,6 +157,7 @@ nav:
       - "0124 — Desimalen er hovedtallet": specs/0124-decimal-emphasis.md
       - "0125 — Zoom og panorering på felt-skivene": specs/0125-felt-zoom.md
       - "0126 — Slett din egen profil": specs/0126-delete-own-account.md
+      - "0127 — Lesbare ringtall på skjermen": specs/0127-readable-ring-labels.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

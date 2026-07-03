@@ -261,6 +261,23 @@ void main() {
       expect(left.right, closeTo(centre - (250 - 125) * scale, 0.01));
     });
 
+    test('the duel face shows its values at phone size (spec 0127)', () {
+      // 5 mm digits on a 50 cm face are ~3,5 px at the default size — the
+      // old sheet-true rule hid them all (the bug report). The 10 px floor
+      // shows them; the band-fit rule still applies.
+      final canvas = paintFace(const TargetGeometry.pistol25mRapid());
+      expect(canvas.paragraphs, hasLength(5 * 2));
+    });
+
+    test('the label size floors at 10 px and fits the band (spec 0127)', () {
+      // Sheet-true above the floor passes through …
+      expect(ringLabelFontPx(sheetPx: 14, bandPx: 40), 14);
+      // … below it, the floor wins …
+      expect(ringLabelFontPx(sheetPx: 3.5, bandPx: 20), 10);
+      // … and a digit that cannot fit its own band is skipped.
+      expect(ringLabelFontPx(sheetPx: 2, bandPx: 6), isNull);
+    });
+
     test('labels are skipped when they would be unreadably small', () {
       // A scorecard mini-target: 2 mm digits at this scale would be smudge.
       final canvas = paintFace(
