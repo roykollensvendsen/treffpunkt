@@ -51,6 +51,13 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Added
+- **Zoom and pan the felt hold pictures**: the NorgesFelt recorder now
+  zooms (1–6×) and pans exactly like the ring targets — pinch,
+  two-finger trackpad scroll or the on-picture ＋/−/reset buttons — so
+  a shot can be placed precisely on the small figures. Placement is
+  unaffected by the zoom (spec 0125).
+
 ### Changed
 - **The decimal is the headline in decimal mode**: on a decimal-mode
   session the big number on the series-sum and grand-total cards is

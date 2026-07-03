@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/core/presentation/zoom_controls.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
@@ -476,7 +477,7 @@ class _GroupPicker extends StatelessWidget {
 }
 
 /// The composed hold with tap-to-place shot markers (spec 0080).
-class _HoldRecorder extends StatelessWidget {
+class _HoldRecorder extends StatefulWidget {
   const _HoldRecorder({
     required this.art,
     required this.shots,
@@ -489,43 +490,112 @@ class _HoldRecorder extends StatelessWidget {
   final ValueChanged<Offset> onPlace;
 
   @override
+  State<_HoldRecorder> createState() => _HoldRecorderState();
+}
+
+class _HoldRecorderState extends State<_HoldRecorder> {
+  // The ring target's zoom range (spec 0125): shared feel across targets.
+  static const double _minScale = 1;
+  static const double _maxScale = 6;
+
+  final TransformationController _transform = TransformationController();
+
+  @override
+  void dispose() {
+    _transform.dispose();
+    super.dispose();
+  }
+
+  double get _currentScale => _transform.value.getMaxScaleOnAxis();
+
+  /// Sets a centred zoom level, clamped to [_minScale]..[_maxScale]. The
+  /// hold picture is not square, so the centre translate is per axis:
+  /// scaling by `s` about `c` gives `x' = s·x + c·(1 - s)`.
+  void _zoomTo(double target, Size viewport) {
+    final clamped = target.clamp(_minScale, _maxScale);
+    _transform.value = Matrix4.identity()
+      ..setEntry(0, 0, clamped)
+      ..setEntry(1, 1, clamped)
+      ..setEntry(0, 3, (viewport.width / 2) * (1 - clamped))
+      ..setEntry(1, 3, (viewport.height / 2) * (1 - clamped));
+  }
+
+  @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
+      final art = widget.art;
       final w = constraints.maxWidth;
       final scale = w / art.size.width;
       final h = art.size.height * scale;
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (d) => onPlace(
-          Offset(d.localPosition.dx / scale, d.localPosition.dy / scale),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black12),
-            ),
-            child: SizedBox(
-              width: w,
-              height: h,
-              child: Stack(
-                children: <Widget>[
-                  Positioned.fill(
-                    child: CustomPaint(painter: FeltHoldArtPainter(art)),
+      final viewport = Size(w, h);
+      return SizedBox(
+        width: w,
+        height: h,
+        child: Stack(
+          children: <Widget>[
+            // Zoom and pan like the ring target (spec 0125): the tap
+            // gesture sits INSIDE the viewer, so its localPosition is
+            // already in picture space and the fraction maths is
+            // untouched by the zoom.
+            InteractiveViewer(
+              transformationController: _transform,
+              minScale: _minScale,
+              maxScale: _maxScale,
+              trackpadScrollCausesScale: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapDown: (d) => widget.onPlace(
+                  Offset(
+                    d.localPosition.dx / scale,
+                    d.localPosition.dy / scale,
                   ),
-                  for (final s in shots)
-                    Positioned(
-                      left: s.pos.dx * scale - FeltShotMarker.diameter / 2,
-                      top: s.pos.dy * scale - FeltShotMarker.diameter / 2,
-                      child: FeltShotMarker(
-                        hit: s.shot.isHit,
-                        inner: s.shot.inner,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black12),
+                    ),
+                    child: SizedBox(
+                      width: w,
+                      height: h,
+                      child: Stack(
+                        children: <Widget>[
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: FeltHoldArtPainter(art),
+                            ),
+                          ),
+                          for (final s in widget.shots)
+                            Positioned(
+                              left:
+                                  s.pos.dx * scale -
+                                  FeltShotMarker.diameter / 2,
+                              top:
+                                  s.pos.dy * scale -
+                                  FeltShotMarker.diameter / 2,
+                              child: FeltShotMarker(
+                                hit: s.shot.isHit,
+                                inner: s.shot.inner,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                ],
+                  ),
+                ),
               ),
             ),
-          ),
+            Positioned(
+              right: 8,
+              bottom: 8,
+              child: ZoomControls(
+                onZoomIn: () => _zoomTo(_currentScale * 1.6, viewport),
+                onZoomOut: () => _zoomTo(_currentScale / 1.6, viewport),
+                onReset: () => _zoomTo(1, viewport),
+              ),
+            ),
+          ],
         ),
       );
     },
