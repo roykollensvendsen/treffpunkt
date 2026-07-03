@@ -140,6 +140,7 @@ nav:
       - "0107 — Desimalpoeng på luftskivene": specs/0107-decimal-entry.md
       - "0108 — «Skyt igjen» uten refresh": specs/0108-shoot-again-freshness.md
       - "0109 — Fjern varsler": specs/0109-remove-notifications.md
+      - "0110 — Desimalen flytter skuddet": specs/0110-decimal-repositions-shot.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

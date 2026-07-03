@@ -368,41 +368,43 @@ class SessionNotifier extends Notifier<SessionRecording> {
 
   /// Moves the picked-up shot to [shot].
   ///
-  /// A manually picked decimal tenth (spec 0107) survives a nudge *within*
-  /// the same ring — the transferred Megalink reading is still true — but is
-  /// re-derived when the shot crosses a ring boundary.
+  /// The position is the truth (spec 0110): a manual drag re-derives the
+  /// decimal from where the shot lands, dropping any earlier picked tenth.
   void dragTo(Shot shot) {
     final current = state.current;
     final index = state.draggingIndex;
     if (current == null || index == null) return;
-    final previous = current.shots[index];
-    final keepTenth =
-        previous.tenth != null &&
-        _scoring.integerScore(current.geometry, shot) ==
-            _scoring.integerScore(current.geometry, previous);
-    final moved = Shot(
-      dxMm: shot.dxMm,
-      dyMm: shot.dyMm,
-      tenth: keepTenth ? previous.tenth : null,
-    );
     state = SessionRecording(
       session: state.session,
       id: state.id,
-      current: current.moveShot(index, moved),
+      current: current.moveShot(index, shot),
       draggingIndex: index,
     );
     _persist();
   }
 
   /// Records the manually picked decimal [tenth] for the shot at [index] in
-  /// the current series (spec 0107), or clears it with null.
+  /// the current series (spec 0107) — and moves the shot radially so its
+  /// position matches the picked value (spec 0110): the marker, the decimal
+  /// and the inner-ten flag can never disagree. Null clears the pick,
+  /// leaving the position as-is.
   void setShotTenth(int index, int? tenth) {
     final current = state.current;
     if (current == null) return;
+    final next = tenth == null
+        ? current.setShotTenth(index, null)
+        : current.moveShot(
+            index,
+            _scoring.shotAtDecimalTenth(
+              current.geometry,
+              current.shots[index],
+              tenth,
+            ),
+          );
     state = SessionRecording(
       session: state.session,
       id: state.id,
-      current: current.setShotTenth(index, tenth),
+      current: next,
       draggingIndex: state.draggingIndex,
     );
     _persist();

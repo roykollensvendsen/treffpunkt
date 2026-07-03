@@ -9,7 +9,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/scoring/data/decimal_entry_store.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
+import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
+import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_target.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
@@ -167,7 +169,7 @@ void main() {
       expect(find.text('Desimal 10,9'), findsNothing);
     });
 
-    test('moving keeps the pick within the ring, re-derives across', () {
+    test('picking a tenth moves the shot to match it (spec 0110)', () {
       final container = ProviderContainer(
         overrides: [
           currentProgramDefinitionProvider.overrideWithValue(
@@ -178,22 +180,24 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
+      const scoring = ScoringService();
+      const geometry = TargetGeometry.airPistol10m();
       final notifier = container.read(sessionProvider.notifier)
         ..placeShot(const Shot(dxMm: 10, dyMm: 0)) // ring 9
-        ..setShotTenth(0, 4)
+        ..setShotTenth(0, 4);
+      final picked = container.read(sessionProvider).current!.shots.single;
+      // The position now *is* 9,4 — the marker moved radially to match.
+      expect(scoring.decimalTenths(geometry, picked), 94);
+      expect(picked.dxMm, isNot(10));
+      expect(picked.dyMm, 0);
+
+      // A manual drag afterwards makes the position the truth again.
+      notifier
         ..pickUp(0)
-        // A nudge within ring 9: the transferred reading is still true.
-        ..dragTo(const Shot(dxMm: 12, dyMm: 0));
-      expect(
-        container.read(sessionProvider).current!.shots.single.tenth,
-        4,
-      );
-      // Across the ring boundary: the pick no longer applies; re-derive.
-      notifier.dragTo(const Shot(dxMm: 30, dyMm: 0)); // ring 8
-      expect(
-        container.read(sessionProvider).current!.shots.single.tenth,
-        isNull,
-      );
+        ..dragTo(const Shot(dxMm: 30, dyMm: 0)); // ring 7 (24–32 mm)
+      final dragged = container.read(sessionProvider).current!.shots.single;
+      expect(dragged.tenth, isNull);
+      expect(scoring.integerScore(geometry, dragged), 7);
     });
 
     testWidgets('the scorecard shows the decimal totals (spec 0107)', (

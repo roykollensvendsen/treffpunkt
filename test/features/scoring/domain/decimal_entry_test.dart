@@ -99,6 +99,62 @@ void main() {
     });
   });
 
+  group('shotAtDecimalTenth (spec 0110)', () {
+    test('moves the shot to the picked decimal, ring and angle kept', () {
+      const shot = Shot(dxMm: 10, dyMm: 0); // ring 9, due east
+      final ring = scoring.integerScore(airPistol, shot);
+      final moved = scoring.shotAtDecimalTenth(airPistol, shot, 4);
+
+      // The position now *is* the picked value.
+      expect(scoring.decimalTenths(airPistol, moved), ring * 10 + 4);
+      expect(scoring.integerScore(airPistol, moved), ring);
+      // Radial move only: still due east.
+      expect(moved.dyMm, 0);
+      expect(moved.dxMm, greaterThan(0));
+      expect(moved.tenth, 4);
+    });
+
+    test('every tenth of the ring round-trips through the position', () {
+      const shot = Shot(dxMm: 10, dyMm: 0); // ring 9
+      for (var tenth = 0; tenth <= 9; tenth++) {
+        final moved = scoring.shotAtDecimalTenth(airPistol, shot, tenth);
+        expect(
+          scoring.decimalTenths(airPistol, moved),
+          90 + tenth,
+          reason: 'tenth $tenth',
+        );
+      }
+    });
+
+    test('a higher decimal sits closer to the centre', () {
+      const shot = Shot(dxMm: 10, dyMm: 0);
+      final at94 = scoring.shotAtDecimalTenth(airPistol, shot, 4);
+      final at97 = scoring.shotAtDecimalTenth(airPistol, shot, 7);
+      expect(at97.distanceMm, lessThan(at94.distanceMm));
+    });
+
+    test('a dead-centre shot still gets a position for its tenth', () {
+      const centre = Shot(dxMm: 0, dyMm: 0); // ring 10, no direction
+      final moved = scoring.shotAtDecimalTenth(airPistol, centre, 4);
+      expect(moved.distanceMm, greaterThan(0));
+      expect(scoring.decimalTenths(airPistol, moved), 104);
+    });
+
+    test('picking 10,9 lands inside the inner ten (the Megalink truth)', () {
+      const shot = Shot(dxMm: 7, dyMm: 0); // ring 10, outside the X-ring
+      expect(scoring.isInnerTen(airPistol, shot), isFalse);
+      final moved = scoring.shotAtDecimalTenth(airPistol, shot, 9);
+      expect(scoring.isInnerTen(airPistol, moved), isTrue);
+    });
+
+    test('a miss is untouched — nothing to position', () {
+      const miss = Shot(dxMm: 500, dyMm: 0);
+      final moved = scoring.shotAtDecimalTenth(airPistol, miss, 9);
+      expect(moved.dxMm, 500);
+      expect(scoring.decimalTenths(airPistol, moved), 0);
+    });
+  });
+
   group('decimal totals on the score rollup (spec 0107)', () {
     test('a series on a decimal face sums the tenths exactly', () {
       final series = Series(geometry: airPistol, capacity: 5)
