@@ -51,6 +51,13 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Changed
+- **Picking a decimal moves the shot**: in decimal mode, choosing e.g.
+  9,7 now slides the marker in/out from the centre so its position *is*
+  the picked value — a picked 10,9 lands inside the innertier ring, and
+  dragging a shot afterwards re-derives the decimal from where it lands
+  (spec 0110, user request).
+
 ### Added
 - **Remove notifications**: swipe a varsel away to delete it, or use the
   new **Fjern alle** action (with a confirmation) to clear the list —

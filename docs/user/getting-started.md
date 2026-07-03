@@ -32,9 +32,10 @@ of the sign-in screen. It works offline.
 5. Shooting on an electronic target (Megalink)? In the setup step of the
    luft programs you can switch on **Desimalpoeng**: every shot then gets
    a decimal value — the last shot's row has a dropdown (e.g. 9,0–9,9)
-   preselected from where you tapped, so you can enter the exact reading.
-   Decimal sums show beside the ordinary points; records and statistics
-   keep counting whole points.
+   preselected from where you tapped, so you can enter the exact reading —
+   and the marker slides in or out from the centre to match the value you
+   pick. Decimal sums show beside the ordinary points; records and
+   statistics keep counting whole points.
 6. Beat your own record and the scorecard says so: a red **«Ny pers!»**
    field appears when the finished session's result (points, with
    innertreff as the tiebreak) is better than every earlier session of the

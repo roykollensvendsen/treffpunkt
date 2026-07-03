@@ -68,6 +68,36 @@ class ScoringService {
     return (decimalScore(geometry, shot) * 10).round();
   }
 
+  /// Returns [shot] moved radially so its position *is* the picked decimal
+  /// (spec 0110): the centre distance of the [tenth]'s band within the
+  /// shot's plotted ring (its midpoint, so the derived decimal reads back
+  /// exactly), along the shot's own direction from the centre. A dead-centre
+  /// shot is given a direction (straight up); a miss is returned untouched —
+  /// there is nothing to position. The moved shot carries [tenth].
+  Shot shotAtDecimalTenth(TargetGeometry geometry, Shot shot, int tenth) {
+    assert(
+      geometry.supportsDecimalScore,
+      'shotAtDecimalTenth needs a uniform 1..N ring face (spec 0107)',
+    );
+    final ring = integerScore(geometry, shot);
+    if (ring == 0) return shot;
+    final tenths = ring * 10 + tenth;
+    final step = (geometry.highestRing + 1) * 10 - tenths;
+    final ringWidthMm =
+        geometry.scoringRadiusMm(1) - geometry.scoringRadiusMm(2);
+    final stepMm = ringWidthMm / 10;
+    // The band's midpoint: ceil(d / stepMm) reads back as exactly [step].
+    final distanceMm = (step - 0.5) * stepMm;
+    final currentDistance = shot.distanceMm;
+    final dirX = currentDistance > 0 ? shot.dxMm / currentDistance : 0.0;
+    final dirY = currentDistance > 0 ? shot.dyMm / currentDistance : -1.0;
+    return Shot(
+      dxMm: dirX * distanceMm,
+      dyMm: dirY * distanceMm,
+      tenth: tenth,
+    );
+  }
+
   /// Whether [shot] counts as an inner ten ("X") on [geometry].
   ///
   /// Always false when the geometry records no inner ten
