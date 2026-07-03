@@ -51,6 +51,15 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Fixed
+- **The luftduell face wears its own black**: Sprintluft/Storluft's
+  10 m luftduellskive was drawn all black like the 25 m duel face —
+  indistinguishable on screen. Per the rulebook figure
+  (§ 5.1.18.1.2) its black covers only the 8-zone (⌀ 76 mm): 8 and 9
+  now sit white on black, 5–7 on white paper, and the white sighting
+  lines run from the face's edge in through the rings, notching the
+  black. The 25 m duel face is unchanged (spec 0121, forum request).
+
 ### Added
 - **Tag people with @**: type **@** in a forum reply, a new thread or a
   competition chat message and pick a name — the tag renders as a

@@ -85,12 +85,14 @@ class TargetGeometry {
 
   /// The NSF 10 m air sprint / duel ("Sprintluft") face: rings 5–10 on a face
   /// larger than the standard air-pistol target (10-ring ⌀ 23 mm), inner ten
-  /// 11.5 mm. Used by Storluft (spec 0043). Air calibre 4.5 mm.
+  /// 11.5 mm. The aiming black covers the 8-zone only (spec 0121, the
+  /// § 5.1.18.1.2 figure — 8/9 sit white on black, 7 and out on white).
+  /// Used by Storluft (spec 0043). Air calibre 4.5 mm.
   const TargetGeometry.airDuel10m()
     : name = '10 m Luftduell',
       caliberMm = 4.5,
       ringOuterDiametersMm = _airDuel10mRingDiametersMm,
-      blackBullDiameterMm = 155.5,
+      blackBullDiameterMm = 76.0,
       innerTenDiameterMm = 11.5,
       lowestRingValue = 5,
       // Nasjonalt regelverk 5.1.18.1.2 (10 m luftduellskive): values 5–9

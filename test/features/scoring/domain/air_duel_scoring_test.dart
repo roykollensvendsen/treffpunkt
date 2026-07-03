@@ -21,6 +21,12 @@ void main() {
     expect(geometry.outerDiameterMm(10), 23);
   });
 
+  test('the black covers the 8-zone, not the face (spec 0121)', () {
+    // Nasjonalt regelverk 5.1.18.1.2's figure: 8 and 9 sit white on the
+    // black, 7 and outward black on white — the black is the 8-zone.
+    expect(geometry.blackBullDiameterMm, 76.0);
+  });
+
   test('a centre shot is a ten and an inner ten', () {
     const centre = Shot(dxMm: 0, dyMm: 0);
     expect(scoring.integerScore(geometry, centre), 10);

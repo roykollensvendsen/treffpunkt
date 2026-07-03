@@ -143,29 +143,32 @@ class SeriesPainter extends CustomPainter {
       }
     }
 
-    // The duel face's white sighting lines (spec 0113): 5 mm wide bars
-    // running inward from the black's edge, replacing the side values.
+    // The duel faces' white sighting lines (specs 0113/0121): bars running
+    // inward from the outermost ring's edge, replacing the side values and
+    // notching the black where they reach it (the § 5.1.18.1.2 figure). On
+    // the all-black 25 m face the black IS the outermost ring, so this is
+    // the same anchor as ever.
     final sightingLengthMm = geometry.sightingLineLengthMm;
     if (sightingLengthMm != null) {
-      final blackRadius = geometry.blackBullDiameterMm / 2 * scale;
+      final outerRadius = geometry.ringOuterDiametersMm.first / 2 * scale;
       final halfWidth = geometry.sightingLineWidthMm / 2 * scale;
       final length = sightingLengthMm * scale;
       final white = Paint()..color = Colors.white;
       canvas
         ..drawRect(
           Rect.fromLTRB(
-            centre.dx - blackRadius,
+            centre.dx - outerRadius,
             centre.dy - halfWidth,
-            centre.dx - blackRadius + length,
+            centre.dx - outerRadius + length,
             centre.dy + halfWidth,
           ),
           white,
         )
         ..drawRect(
           Rect.fromLTRB(
-            centre.dx + blackRadius - length,
+            centre.dx + outerRadius - length,
             centre.dy - halfWidth,
-            centre.dx + blackRadius,
+            centre.dx + outerRadius,
             centre.dy + halfWidth,
           ),
           white,
