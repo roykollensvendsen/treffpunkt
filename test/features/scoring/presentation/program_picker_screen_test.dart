@@ -565,4 +565,52 @@ void main() {
     expect(find.byType(FeltRecordScreen), findsOneWidget);
     expect(find.textContaining('Skudd 0/5'), findsOneWidget);
   });
+
+  testWidgets('the felt card discards with confirmation (spec 0116)', (
+    tester,
+  ) async {
+    final feltStore = InMemoryFeltSessionStore();
+    await feltStore.save(
+      const FeltSessionSnapshot(
+        group: FeltShooterGroup.two,
+        currentHold: 1,
+        holds: <List<FeltPlacedShot>>[
+          <FeltPlacedShot>[FeltPlacedShot(dx: 1, dy: 1, figureIndex: 0)],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+        ],
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
+          feltSessionStoreProvider.overrideWithValue(feltStore),
+        ],
+        child: const MaterialApp(home: ProgramPickerScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Cancelling the confirmation keeps the card and the round.
+    await tester.tap(find.byKey(feltDiscardSessionKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Avbryt'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(feltResumeSessionKey), findsOneWidget);
+    expect(await feltStore.load(), isNotNull);
+
+    // Confirming clears the store and refreshes the card away.
+    await tester.tap(find.byKey(feltDiscardSessionKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(confirmDestructiveKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(feltResumeSessionKey), findsNothing);
+    expect(await feltStore.load(), isNull);
+  });
 }
