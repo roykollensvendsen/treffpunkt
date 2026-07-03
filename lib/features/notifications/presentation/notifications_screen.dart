@@ -25,6 +25,14 @@ const Key notificationsBadgeKey = ValueKey<String>('notificationsBadge');
 /// Key for the "marker alle som lest" action, for tests.
 const Key markAllReadKey = ValueKey<String>('markAllRead');
 
+/// Key for the "fjern alle" action (spec 0109), for tests.
+const Key clearNotificationsKey = ValueKey<String>('clearNotifications');
+
+/// Key for the clear-all confirmation's confirm button, for tests.
+const Key clearNotificationsConfirmKey = ValueKey<String>(
+  'clearNotificationsConfirm',
+);
+
 /// Key for the empty state, for tests.
 const Key noNotificationsKey = ValueKey<String>('noNotifications');
 
@@ -51,9 +59,21 @@ final unreadNotificationsCountProvider = Provider<int>((ref) {
 
 /// The Varsler page (spec 0094): the notifications newest first; tapping one
 /// marks it read and navigates straight to what it is about.
-class NotificationsScreen extends ConsumerWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   /// Creates the notifications page.
   const NotificationsScreen({super.key});
+
+  @override
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  /// Ids swiped away this build cycle (spec 0109): a [Dismissible] must be
+  /// out of the tree the frame its dismissal completes, but the provider
+  /// keeps its previous value while it reloads — so the removal is applied
+  /// locally first and the reload catches up.
+  final Set<String> _removed = <String>{};
 
   /// Marks [notification] read and opens its target (spec 0094 req 4).
   Future<void> _open(
@@ -110,11 +130,47 @@ class NotificationsScreen extends ConsumerWidget {
     ref.invalidate(notificationsProvider);
   }
 
+  /// Deletes one swiped-away notification (spec 0109): removed from the
+  /// visible list at once, then from the backend.
+  Future<void> _delete(WidgetRef ref, String id) async {
+    setState(() => _removed.add(id));
+    await ref.read(notificationsRepositoryProvider).delete(id);
+    ref.invalidate(notificationsProvider);
+  }
+
+  /// Clears the whole list after a confirmation (spec 0109) — destructive,
+  /// so it asks first (spec 0096).
+  Future<void> _clearAll(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Fjern alle varsler?'),
+        content: const Text('Handlingen kan ikke angres.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Avbryt'),
+          ),
+          FilledButton(
+            key: clearNotificationsConfirmKey,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Fjern alle'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(notificationsRepositoryProvider).deleteAll();
+    ref.invalidate(notificationsProvider);
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final notifications =
-        ref.watch(notificationsProvider).value ?? const <AppNotification>[];
+        (ref.watch(notificationsProvider).value ?? const <AppNotification>[])
+            .where((notification) => !_removed.contains(notification.id))
+            .toList();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Varsler'),
@@ -125,6 +181,13 @@ class NotificationsScreen extends ConsumerWidget {
             icon: const Icon(Icons.done_all),
             onPressed: () => unawaited(_markAllRead(ref)),
           ),
+          if (notifications.isNotEmpty)
+            IconButton(
+              key: clearNotificationsKey,
+              tooltip: 'Fjern alle',
+              icon: const Icon(Icons.delete_sweep_outlined),
+              onPressed: () => unawaited(_clearAll(context, ref)),
+            ),
         ],
       ),
       body: SafeArea(
@@ -141,41 +204,56 @@ class NotificationsScreen extends ConsumerWidget {
                 : ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
+                      // Swipe a notification away to delete it (spec 0109).
                       for (final notification in notifications)
-                        ListTile(
+                        Dismissible(
                           key: notificationTileKey(notification.id),
-                          leading: Icon(
-                            switch (notification.kind) {
-                              AppNotificationKind.invitation =>
-                                Icons.emoji_events_outlined,
-                              AppNotificationKind.competitionMessage =>
-                                Icons.chat_bubble_outline,
-                              AppNotificationKind.forumReply =>
-                                Icons.forum_outlined,
-                            },
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            color: theme.colorScheme.errorContainer,
+                            child: Icon(
+                              Icons.delete_outline,
+                              color: theme.colorScheme.onErrorContainer,
+                            ),
                           ),
-                          title: Text(
-                            notification.title,
-                            style: notification.unread
-                                ? const TextStyle(fontWeight: FontWeight.w700)
+                          onDismissed: (_) =>
+                              unawaited(_delete(ref, notification.id)),
+                          child: ListTile(
+                            leading: Icon(
+                              switch (notification.kind) {
+                                AppNotificationKind.invitation =>
+                                  Icons.emoji_events_outlined,
+                                AppNotificationKind.competitionMessage =>
+                                  Icons.chat_bubble_outline,
+                                AppNotificationKind.forumReply =>
+                                  Icons.forum_outlined,
+                              },
+                            ),
+                            title: Text(
+                              notification.title,
+                              style: notification.unread
+                                  ? const TextStyle(fontWeight: FontWeight.w700)
+                                  : null,
+                            ),
+                            subtitle: notification.body.isEmpty
+                                ? null
+                                : Text(
+                                    notification.body,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                            trailing: notification.unread
+                                ? Icon(
+                                    Icons.circle,
+                                    size: 10,
+                                    color: theme.colorScheme.primary,
+                                  )
                                 : null,
+                            onTap: () =>
+                                unawaited(_open(context, ref, notification)),
                           ),
-                          subtitle: notification.body.isEmpty
-                              ? null
-                              : Text(
-                                  notification.body,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                          trailing: notification.unread
-                              ? Icon(
-                                  Icons.circle,
-                                  size: 10,
-                                  color: theme.colorScheme.primary,
-                                )
-                              : null,
-                          onTap: () =>
-                              unawaited(_open(context, ref, notification)),
                         ),
                     ],
                   ),

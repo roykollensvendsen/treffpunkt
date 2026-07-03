@@ -132,7 +132,9 @@ shows how many **unread** notifications you have: competition
 **replies** in forum threads you take part in. Tap a notification to go
 **straight to** the invitation, the chat or the thread — it is then marked
 read — or use **Marker alle som lest**. Read status follows your account
-across devices.
+across devices. To get rid of a varsel, **swipe it** off the list — or
+tap **Fjern alle** (with a confirmation) to clear everything; deletions
+follow your account too.
 
 ## Settings (Innstillinger)
 

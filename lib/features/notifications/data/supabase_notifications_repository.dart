@@ -53,6 +53,30 @@ class SupabaseNotificationsRepository implements NotificationsRepository {
   }
 
   @override
+  Future<void> delete(String id) async {
+    try {
+      await _client.from(_table).delete().eq('id', id);
+    } on Object catch (error) {
+      if (!kReleaseMode) {
+        debugPrint('Failed to delete the notification: $error');
+      }
+    }
+  }
+
+  @override
+  Future<void> deleteAll() async {
+    try {
+      // RLS scopes the delete to the recipient's own rows; the always-true
+      // filter is only there because PostgREST refuses an unfiltered delete.
+      await _client.from(_table).delete().gte('created_at', '1970-01-01');
+    } on Object catch (error) {
+      if (!kReleaseMode) {
+        debugPrint('Failed to delete the notifications: $error');
+      }
+    }
+  }
+
+  @override
   Future<void> markAllRead() async {
     try {
       await _client
