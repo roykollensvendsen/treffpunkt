@@ -186,6 +186,7 @@ class _ForumScreenState extends ConsumerState<ForumScreen> {
         ),
       ),
       body: SafeArea(
+        bottom: false,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: _maxWidth),
@@ -219,7 +220,14 @@ class _ForumScreenState extends ConsumerState<ForumScreen> {
                         );
                       }
                       return ListView.builder(
-                        padding: const EdgeInsets.all(8),
+                        // The list slides under the frosted navigation bar
+                        // (spec 0132); the header above stays put.
+                        padding: EdgeInsets.fromLTRB(
+                          8,
+                          8,
+                          8,
+                          MediaQuery.paddingOf(context).bottom + 8,
+                        ),
                         itemCount: list.length,
                         itemBuilder: (context, i) {
                           final thread = list[i];

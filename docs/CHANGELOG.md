@@ -51,6 +51,13 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Changed
+- **Clearer glass**: the frosted bars are now noticeably more
+  transparent (55 % instead of 72 % surface opacity) — the blur, not
+  the tint, keeps their labels readable — and the forum's thread list
+  now scrolls beneath the navigation bar like the other pages
+  (spec 0132).
+
 ### Fixed
 - **«Ny tråd» and «Ny konkurranse» float above the bottom bar again**:
   the frosted-edge work slid the two floating buttons in behind the
