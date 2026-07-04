@@ -20,6 +20,13 @@ double? ringLabelFontPx({required double sheetPx, required double bandPx}) {
   return floored > bandPx ? null : floored;
 }
 
+/// The on-screen radius of a shot marker (spec 0137): calibre-true where
+/// that is visible, floored at 5 px (a 10 px hole) where the big 25/50 m
+/// faces would shrink the bullet to invisibility — the marker counterpart
+/// of spec 0127's digit floor.
+@visibleForTesting
+double shotMarkerRadiusPx(double calibrePx) => calibrePx < 5 ? 5 : calibrePx;
+
 /// Paints a shooting target and the shots of a series.
 ///
 /// Target millimetres are mapped to pixels so the full scoring area fits the
@@ -190,7 +197,7 @@ class SeriesPainter extends CustomPainter {
         );
     }
 
-    final radius = geometry.pelletRadiusMm * scale;
+    final radius = shotMarkerRadiusPx(geometry.pelletRadiusMm * scale);
     for (var i = 0; i < shots.length; i++) {
       final shot = shots[i];
       final markerCentre =
