@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:treffpunkt/features/notifications/domain/app_notification.dart';
 
 /// The account's notifications (spec 0094): list newest first and mark read.
@@ -11,6 +13,11 @@ import 'package:treffpunkt/features/notifications/domain/app_notification.dart';
 abstract interface class NotificationsRepository {
   /// The recipient's notifications, newest first.
   Future<List<AppNotification>> list();
+
+  /// The notifications as a live stream (spec 0134): the current list on
+  /// listen, then again on every arrival/change — the shot-sound trigger
+  /// and the live badge.
+  Stream<List<AppNotification>> watch();
 
   /// Marks the notification [id] read; idempotent.
   Future<void> markRead(String id);
@@ -35,6 +42,23 @@ class InMemoryNotificationsRepository implements NotificationsRepository {
        };
 
   final Map<String, AppNotification> _byId;
+  final StreamController<List<AppNotification>> _changes =
+      StreamController<List<AppNotification>>.broadcast();
+
+  Future<void> _emit() async => _changes.add(await list());
+
+  @override
+  Stream<List<AppNotification>> watch() async* {
+    yield await list();
+    yield* _changes.stream;
+  }
+
+  /// Delivers a new notification, as the backend's fan-out would
+  /// (spec 0134) — the test/demo hook for arrivals.
+  Future<void> push(AppNotification notification) async {
+    _byId[notification.id] = notification;
+    await _emit();
+  }
 
   @override
   Future<List<AppNotification>> list() async {

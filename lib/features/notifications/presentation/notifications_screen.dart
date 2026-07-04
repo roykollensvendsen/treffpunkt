@@ -51,6 +51,12 @@ final notificationsProvider = FutureProvider<List<AppNotification>>(
   (ref) => ref.watch(notificationsRepositoryProvider).list(),
 );
 
+/// The live notification stream (spec 0134): the shot-sound trigger and
+/// the live badge listen here.
+final notificationsStreamProvider = StreamProvider<List<AppNotification>>(
+  (ref) => ref.watch(notificationsRepositoryProvider).watch(),
+);
+
 /// How many notifications are unread — the bell badge (spec 0094).
 final unreadNotificationsCountProvider = Provider<int>((ref) {
   final list =

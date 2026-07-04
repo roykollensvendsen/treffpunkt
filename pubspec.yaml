@@ -39,3 +39,4 @@ flutter:
   # uses — one source of truth, available offline (spec 0050).
   assets:
     - docs/user/
+    - assets/sounds/

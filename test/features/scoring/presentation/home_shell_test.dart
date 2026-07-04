@@ -6,9 +6,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/core/platform/notification_sound.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
+import 'package:treffpunkt/features/notifications/data/notifications_repository.dart';
+import 'package:treffpunkt/features/notifications/domain/app_notification.dart';
 import 'package:treffpunkt/features/notifications/presentation/notifications_screen.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/presentation/home_shell.dart';
@@ -17,12 +20,69 @@ import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.d
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/statistics_screen.dart';
 
-Widget _app() => ProviderScope(
-  overrides: [sessionStoreProvider.overrideWithValue(InMemorySessionStore())],
+Widget _app({
+  InMemoryNotificationsRepository? notifications,
+  _FakeSound? sound,
+}) => ProviderScope(
+  overrides: [
+    sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
+    if (notifications != null)
+      notificationsRepositoryProvider.overrideWithValue(notifications),
+    if (sound != null) notificationSoundProvider.overrideWithValue(sound),
+  ],
   child: const MaterialApp(home: HomeShell()),
 );
 
+/// Counts shots fired (spec 0134).
+class _FakeSound implements NotificationSound {
+  int plays = 0;
+
+  @override
+  void play() => plays++;
+}
+
 void main() {
+  testWidgets('an arriving notification fires the shot (spec 0134)', (
+    tester,
+  ) async {
+    final repo = InMemoryNotificationsRepository(
+      seeded: [
+        AppNotification(
+          id: 'old',
+          kind: AppNotificationKind.forumReply,
+          title: 'Gammelt svar',
+          body: '',
+          createdAt: DateTime(2026, 7),
+        ),
+      ],
+    );
+    final sound = _FakeSound();
+    await tester.pumpWidget(_app(notifications: repo, sound: sound));
+    await tester.pumpAndSettle();
+
+    // The initial load — old notifications included — is silent.
+    expect(sound.plays, 0);
+
+    // A new notification arrives while the app is open: one shot, and the
+    // bell badge updates without a manual refresh.
+    await repo.push(
+      AppNotification(
+        id: 'fresh',
+        kind: AppNotificationKind.mention,
+        title: 'Kari nevnte deg',
+        body: '',
+        createdAt: DateTime(2026, 7, 4),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(sound.plays, 1);
+    expect(find.text('2'), findsOneWidget); // the badge count
+
+    // Nothing new → no extra shot.
+    await tester.pumpAndSettle();
+    expect(sound.plays, 1);
+  });
+
   testWidgets('the edge bars are frosted and content extends (0129)', (
     tester,
   ) async {

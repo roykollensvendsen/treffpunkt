@@ -51,6 +51,12 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Added
+- **A shot rings out when a notification arrives**: with the app open,
+  a new notification plays a short shot sound and the bell badge now
+  updates live (Realtime) instead of waiting for a navigation. The
+  initial load is silent (spec 0134).
+
 ### Changed
 - **The forum header shares the glass**: the filter chips and the
   Robot Hood line moved into the frosted top bar, so the forum is one
