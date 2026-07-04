@@ -854,6 +854,37 @@ void main() {
       findsOneWidget,
     );
   });
+  testWidgets('the FAB collapses on scroll and re-extends (spec 0138)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    for (var i = 1; i <= 25; i++) {
+      await repo.createThread(
+        ForumThread(
+          id: 'many-t$i',
+          category: ForumCategory.general,
+          title: 'Trad nummer $i',
+        ),
+      );
+    }
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    // At the top: extended, with the pen icon and the label.
+    expect(find.text('Ny tråd'), findsOneWidget);
+    expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+
+    // Scrolled down: round and label-free.
+    await tester.drag(find.byType(ListView).last, const Offset(0, -250));
+    await tester.pumpAndSettle();
+    expect(find.text('Ny tråd'), findsNothing);
+    expect(find.byKey(newThreadButtonKey), findsOneWidget);
+
+    // Back at the top: extended again.
+    await tester.drag(find.byType(ListView).last, const Offset(0, 400));
+    await tester.pumpAndSettle();
+    expect(find.text('Ny tråd'), findsOneWidget);
+  });
 }
 
 /// A clipboard watcher whose paste stream the test drives.
