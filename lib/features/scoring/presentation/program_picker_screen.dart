@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/core/presentation/category_pictograms.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
@@ -250,7 +251,9 @@ class ProgramPickerScreen extends ConsumerWidget {
     final feltSaved = ref.watch(feltSavedSessionProvider).value;
     final last = _lastExercise(ref);
     return Scaffold(
-      appBar: AppBar(
+      // Content slides under the frosted bars (spec 0129).
+      extendBodyBehindAppBar: true,
+      appBar: FrostedAppBar(
         // The logo mark (spec 0101): the target beside the wordmark, its
         // bull in the signal red of a hit (spec 0100).
         title: Row(
@@ -289,125 +292,139 @@ class ProgramPickerScreen extends ConsumerWidget {
           ...?actions,
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      if (saved != null)
-                        Card(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.secondaryContainer,
-                          child: ListTile(
-                            key: resumeSessionKey,
-                            leading: const Icon(Icons.play_circle_outline),
-                            title: const Text('Fortsett økt'),
-                            subtitle: Text(_resumeSubtitle(saved)),
-                            trailing: IconButton(
-                              key: discardSessionKey,
-                              icon: const Icon(Icons.delete_outline),
-                              tooltip: 'Forkast lagret økt',
-                              onPressed: () =>
-                                  unawaited(_discard(context, ref)),
-                            ),
-                            onTap: () =>
-                                unawaited(_resume(context, ref, saved)),
-                          ),
-                        ),
-                      if (feltSaved != null)
-                        Card(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.secondaryContainer,
-                          child: ListTile(
-                            key: feltResumeSessionKey,
-                            leading: const Icon(Icons.play_circle_outline),
-                            title: const Text('Fortsett felt-økt'),
-                            subtitle: Text(
-                              'NorgesFelt-løype 2026 · '
-                              '${feltSaved.totalShots} skudd plassert',
-                            ),
-                            trailing: IconButton(
-                              key: feltDiscardSessionKey,
-                              icon: const Icon(Icons.delete_outline),
-                              tooltip: 'Forkast lagret økt',
-                              onPressed: () =>
-                                  unawaited(_discardFelt(context, ref)),
-                            ),
-                            onTap: () => unawaited(
-                              _resumeFelt(context, ref, feltSaved),
+      // The Builder gives a context INSIDE the body, where the Scaffold
+      // injects the app-bar/nav-bar insets (spec 0129).
+      body: Builder(
+        builder: (context) => SafeArea(
+          top: false,
+          bottom: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: kMaxContentWidth,
+                    ),
+                    child: ListView(
+                      padding: frostedScrollPadding(context),
+                      children: [
+                        if (saved != null)
+                          Card(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.secondaryContainer,
+                            child: ListTile(
+                              key: resumeSessionKey,
+                              leading: const Icon(Icons.play_circle_outline),
+                              title: const Text('Fortsett økt'),
+                              subtitle: Text(_resumeSubtitle(saved)),
+                              trailing: IconButton(
+                                key: discardSessionKey,
+                                icon: const Icon(Icons.delete_outline),
+                                tooltip: 'Forkast lagret økt',
+                                onPressed: () =>
+                                    unawaited(_discard(context, ref)),
+                              ),
+                              onTap: () =>
+                                  unawaited(_resume(context, ref, saved)),
                             ),
                           ),
-                        ),
-                      if (last != null)
-                        Card(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          child: Semantics(
-                            button: true,
-                            label: 'Skyt igjen: ${last.label}',
-                            onTap: () =>
-                                unawaited(_shootAgain(context, ref, last)),
-                            child: ExcludeSemantics(
-                              child: ListTile(
-                                key: shootAgainKey,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 8,
-                                ),
-                                leading: const TargetIcon(size: 30),
-                                title: const Text(
-                                  'Skyt igjen',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
+                        if (feltSaved != null)
+                          Card(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.secondaryContainer,
+                            child: ListTile(
+                              key: feltResumeSessionKey,
+                              leading: const Icon(Icons.play_circle_outline),
+                              title: const Text('Fortsett felt-økt'),
+                              subtitle: Text(
+                                'NorgesFelt-løype 2026 · '
+                                '${feltSaved.totalShots} skudd plassert',
+                              ),
+                              trailing: IconButton(
+                                key: feltDiscardSessionKey,
+                                icon: const Icon(Icons.delete_outline),
+                                tooltip: 'Forkast lagret økt',
+                                onPressed: () =>
+                                    unawaited(_discardFelt(context, ref)),
+                              ),
+                              onTap: () => unawaited(
+                                _resumeFelt(context, ref, feltSaved),
+                              ),
+                            ),
+                          ),
+                        if (last != null)
+                          Card(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
+                            child: Semantics(
+                              button: true,
+                              label: 'Skyt igjen: ${last.label}',
+                              onTap: () =>
+                                  unawaited(_shootAgain(context, ref, last)),
+                              child: ExcludeSemantics(
+                                child: ListTile(
+                                  key: shootAgainKey,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 8,
                                   ),
-                                ),
-                                subtitle: Text(last.label),
-                                onTap: () => unawaited(
-                                  _shootAgain(context, ref, last),
+                                  leading: const TargetIcon(size: 30),
+                                  title: const Text(
+                                    'Skyt igjen',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  subtitle: Text(last.label),
+                                  onTap: () => unawaited(
+                                    _shootAgain(context, ref, last),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
+                        const SizedBox(height: 4),
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 4,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 2,
+                          children: [
+                            for (final category in ProgramCategory.values)
+                              _CategoryTile(
+                                category: category,
+                                // MIL has nothing yet (spec 0097 req 4).
+                                onTap: category == ProgramCategory.mil
+                                    ? null
+                                    : () => unawaited(
+                                        _openCategory(context, ref, category),
+                                      ),
+                              ),
+                          ],
                         ),
-                      const SizedBox(height: 4),
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 4,
-                        crossAxisSpacing: 8,
-                        childAspectRatio: 2,
-                        children: [
-                          for (final category in ProgramCategory.values)
-                            _CategoryTile(
-                              category: category,
-                              // MIL has nothing yet (spec 0097 req 4).
-                              onTap: category == ProgramCategory.mil
-                                  ? null
-                                  : () => unawaited(
-                                      _openCategory(context, ref, category),
-                                    ),
-                            ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            // A discreet build-version footer below the program list so a user
-            // can confirm which build they are running (spec 0028).
-            const Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: BuildVersionLabel(),
-            ),
-          ],
+              // A discreet build-version footer below the program list so a
+              // user
+              // can confirm which build they are running (spec 0028). Padded
+              // clear of the frosted navigation bar (spec 0129).
+              Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.paddingOf(context).bottom + 12,
+                ),
+                child: const BuildVersionLabel(),
+              ),
+            ],
+          ),
         ),
       ),
     );

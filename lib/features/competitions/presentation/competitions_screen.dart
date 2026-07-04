@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
@@ -252,7 +253,9 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
     final month = _calendarMonth ?? firstOfMonth(_filterDay ?? DateTime.now());
 
     return Scaffold(
-      appBar: AppBar(
+      // Content slides under the frosted bars (spec 0129).
+      extendBodyBehindAppBar: true,
+      appBar: FrostedAppBar(
         title: const Text('Konkurranser'),
         actions: <Widget>[
           IconButton(
@@ -271,63 +274,69 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
         icon: const Icon(Icons.add),
         label: const Text('Ny konkurranse'),
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (_calendarOpen) ...[
-                  _CompetitionCalendar(
-                    month: month,
-                    selectedDay: _filterDay,
-                    daysWithCompetitions: daysWithComps,
-                    onSelectDay: _selectDay,
-                    onPrevMonth: () => setState(
-                      () => _calendarMonth = DateTime(
-                        month.year,
-                        month.month - 1,
+      // The Builder gives a context INSIDE the body, where the Scaffold
+      // injects the app-bar/nav-bar insets (spec 0129).
+      body: Builder(
+        builder: (context) => SafeArea(
+          top: false,
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+              child: ListView(
+                padding: frostedScrollPadding(context),
+                children: [
+                  if (_calendarOpen) ...[
+                    _CompetitionCalendar(
+                      month: month,
+                      selectedDay: _filterDay,
+                      daysWithCompetitions: daysWithComps,
+                      onSelectDay: _selectDay,
+                      onPrevMonth: () => setState(
+                        () => _calendarMonth = DateTime(
+                          month.year,
+                          month.month - 1,
+                        ),
+                      ),
+                      onNextMonth: () => setState(
+                        () => _calendarMonth = DateTime(
+                          month.year,
+                          month.month + 1,
+                        ),
                       ),
                     ),
-                    onNextMonth: () => setState(
-                      () => _calendarMonth = DateTime(
-                        month.year,
-                        month.month + 1,
+                    const SizedBox(height: 8),
+                  ],
+                  if (_filterDay case final day?)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: <Widget>[
+                          Chip(
+                            avatar: const Icon(Icons.event, size: 18),
+                            label: Text('Viser ${_formatNorDate(day)}'),
+                            onDeleted: () => setState(() => _filterDay = null),
+                            deleteButtonTooltipMessage: 'Vis alle',
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            key: competitionCalendarClearKey,
+                            onPressed: () => setState(() => _filterDay = null),
+                            child: const Text('Vis alle'),
+                          ),
+                        ],
                       ),
                     ),
+                  ..._invitationsSection(context, ref, invitations),
+                  ..._competitionsSection(
+                    context,
+                    ref,
+                    invitations,
+                    competitions,
+                    archivedIds,
                   ),
-                  const SizedBox(height: 8),
                 ],
-                if (_filterDay case final day?)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: <Widget>[
-                        Chip(
-                          avatar: const Icon(Icons.event, size: 18),
-                          label: Text('Viser ${_formatNorDate(day)}'),
-                          onDeleted: () => setState(() => _filterDay = null),
-                          deleteButtonTooltipMessage: 'Vis alle',
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          key: competitionCalendarClearKey,
-                          onPressed: () => setState(() => _filterDay = null),
-                          child: const Text('Vis alle'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ..._invitationsSection(context, ref, invitations),
-                ..._competitionsSection(
-                  context,
-                  ref,
-                  invitations,
-                  competitions,
-                  archivedIds,
-                ),
-              ],
+              ),
             ),
           ),
         ),

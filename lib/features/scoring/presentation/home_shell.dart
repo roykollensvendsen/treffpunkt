@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
@@ -65,6 +66,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Content slides under the frosted navigation bar (spec 0129).
+      extendBody: true,
       body: switch (_index) {
         0 => ProgramPickerScreen(actions: widget.actions),
         1 => const MySessionsScreen(),
@@ -74,47 +77,50 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       },
       // A slightly smaller label style so «Konkurranser» fits on one line
       // on narrow phones (spec 0097 fix).
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          labelTextStyle: WidgetStatePropertyAll<TextStyle?>(
-            Theme.of(context).textTheme.labelSmall,
+      bottomNavigationBar: FrostedBottomBar(
+        child: NavigationBarTheme(
+          data: NavigationBarThemeData(
+            labelTextStyle: WidgetStatePropertyAll<TextStyle?>(
+              Theme.of(context).textTheme.labelSmall,
+            ),
           ),
-        ),
-        child: NavigationBar(
-          selectedIndex: _index,
-          onDestinationSelected: _select,
-          destinations: const [
-            NavigationDestination(
-              key: homeTabKey,
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'Hjem',
-            ),
-            NavigationDestination(
-              key: mySessionsButtonKey,
-              icon: Icon(Icons.history),
-              label: 'Mine økter',
-            ),
-            NavigationDestination(
-              key: statisticsButtonKey,
-              icon: Icon(Icons.show_chart),
-              label: 'Statistikk',
-            ),
-            NavigationDestination(
-              key: competitionsButtonKey,
-              icon: Icon(Icons.emoji_events_outlined),
-              selectedIcon: Icon(Icons.emoji_events),
-              // «Stevner»: short enough to never wrap on narrow phones
-              // (spec 0097 fix); the screen itself stays «Konkurranser».
-              label: 'Stevner',
-            ),
-            NavigationDestination(
-              key: forumButtonKey,
-              icon: Icon(Icons.forum_outlined),
-              selectedIcon: Icon(Icons.forum),
-              label: 'Forum',
-            ),
-          ],
+          child: NavigationBar(
+            backgroundColor: Colors.transparent,
+            selectedIndex: _index,
+            onDestinationSelected: _select,
+            destinations: const [
+              NavigationDestination(
+                key: homeTabKey,
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'Hjem',
+              ),
+              NavigationDestination(
+                key: mySessionsButtonKey,
+                icon: Icon(Icons.history),
+                label: 'Mine økter',
+              ),
+              NavigationDestination(
+                key: statisticsButtonKey,
+                icon: Icon(Icons.show_chart),
+                label: 'Statistikk',
+              ),
+              NavigationDestination(
+                key: competitionsButtonKey,
+                icon: Icon(Icons.emoji_events_outlined),
+                selectedIcon: Icon(Icons.emoji_events),
+                // «Stevner»: short enough to never wrap on narrow phones
+                // (spec 0097 fix); the screen itself stays «Konkurranser».
+                label: 'Stevner',
+              ),
+              NavigationDestination(
+                key: forumButtonKey,
+                icon: Icon(Icons.forum_outlined),
+                selectedIcon: Icon(Icons.forum),
+                label: 'Forum',
+              ),
+            ],
+          ),
         ),
       ),
     );

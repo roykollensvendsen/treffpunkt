@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
 import 'package:treffpunkt/features/notifications/presentation/notifications_screen.dart';
@@ -22,6 +23,29 @@ Widget _app() => ProviderScope(
 );
 
 void main() {
+  testWidgets('the edge bars are frosted and content extends (0129)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+
+    // The shell's navigation bar sits on frosted glass and the body
+    // extends beneath it; the Hjem tab's app bar is frosted too, with the
+    // body behind it.
+    expect(find.byType(FrostedBottomBar), findsOneWidget);
+    final shell = tester.widget<Scaffold>(find.byType(Scaffold).first);
+    expect(shell.extendBody, isTrue);
+    expect(find.byType(FrostedAppBar), findsOneWidget);
+    final inner = tester.widget<Scaffold>(
+      find.descendant(
+        of: find.byType(ProgramPickerScreen),
+        matching: find.byType(Scaffold),
+      ),
+    );
+    expect(inner.extendBodyBehindAppBar, isTrue);
+    expect(find.byType(BackdropFilter), findsNWidgets(2));
+  });
+
   testWidgets('the bar shows five labelled destinations (spec 0097)', (
     tester,
   ) async {
