@@ -51,6 +51,12 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Fixed
+- **«Ny tråd» and «Ny konkurranse» float above the bottom bar again**:
+  the frosted-edge work slid the two floating buttons in behind the
+  translucent navigation bar; they now rise by the bar's height
+  (spec 0131).
+
 ### Changed
 - **Frosted edges everywhere**: every screen's top bar is now on the
   same frosted glass (the full-screen photo viewer keeps its dark

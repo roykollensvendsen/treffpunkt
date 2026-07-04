@@ -268,11 +268,19 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: newCompetitionButtonKey,
-        onPressed: () => unawaited(_create(context, ref)),
-        icon: const Icon(Icons.add),
-        label: const Text('Ny konkurranse'),
+      // Lifted clear of the shell's frosted navigation bar (spec 0131):
+      // with extendBody the tab fills the whole screen, so the FAB must
+      // rise by the bar's inset itself.
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.paddingOf(context).bottom,
+        ),
+        child: FloatingActionButton.extended(
+          key: newCompetitionButtonKey,
+          onPressed: () => unawaited(_create(context, ref)),
+          icon: const Icon(Icons.add),
+          label: const Text('Ny konkurranse'),
+        ),
       ),
       // The Builder gives a context INSIDE the body, where the Scaffold
       // injects the app-bar/nav-bar insets (spec 0129).

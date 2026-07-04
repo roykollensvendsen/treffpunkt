@@ -167,15 +167,23 @@ class _ForumScreenState extends ConsumerState<ForumScreen> {
     final threads = ref.watch(forumThreadsProvider);
     return Scaffold(
       appBar: const FrostedAppBar(title: Text('Forum')),
-      floatingActionButton: FloatingActionButton.extended(
-        key: newThreadButtonKey,
-        onPressed: () => unawaited(
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const NewThreadScreen()),
-          ),
+      // Lifted clear of the shell's frosted navigation bar (spec 0131):
+      // with extendBody the tab fills the whole screen, so the FAB must
+      // rise by the bar's inset itself.
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.paddingOf(context).bottom,
         ),
-        icon: const Icon(Icons.add),
-        label: const Text('Ny tråd'),
+        child: FloatingActionButton.extended(
+          key: newThreadButtonKey,
+          onPressed: () => unawaited(
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const NewThreadScreen()),
+            ),
+          ),
+          icon: const Icon(Icons.add),
+          label: const Text('Ny tråd'),
+        ),
       ),
       body: SafeArea(
         child: Center(
