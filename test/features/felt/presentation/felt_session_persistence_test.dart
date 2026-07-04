@@ -153,6 +153,53 @@ void main() {
     expect(controller.value.getMaxScaleOnAxis(), closeTo(1.0, 1e-6));
   });
 
+  testWidgets('a pinch zooms without planting a shot (spec 0128)', (
+    tester,
+  ) async {
+    bigView(tester);
+    final store = InMemoryFeltSessionStore();
+    await tester.pumpWidget(appWith(store, const FeltRecordScreen()));
+    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
+    await tester.pumpAndSettle();
+
+    final controller = tester
+        .widget<InteractiveViewer>(find.byType(InteractiveViewer))
+        .transformationController!;
+    final rect = tester.getRect(find.byKey(feltHoldRecorderKey));
+
+    // Two fingers land and spread — a pinch. While they are down the page
+    // scroll is suspended (spec 0021 parity) so the viewer owns the whole
+    // gesture; no shot is planted by the pinch.
+    final f1 = await tester.startGesture(rect.center - const Offset(20, 0));
+    final f2 = await tester.startGesture(rect.center + const Offset(20, 0));
+    await tester.pump();
+    expect(
+      tester.widget<ListView>(find.byType(ListView)).physics,
+      isA<NeverScrollableScrollPhysics>(),
+    );
+    await f1.moveBy(const Offset(-60, -10));
+    await f2.moveBy(const Offset(60, 10));
+    await tester.pump();
+    await f1.up();
+    await f2.up();
+    await tester.pumpAndSettle();
+
+    expect(controller.value.getMaxScaleOnAxis(), greaterThan(1.0));
+    expect(find.textContaining('Skudd 0/6'), findsOneWidget);
+    // Released: the page scrolls again.
+    expect(
+      tester.widget<ListView>(find.byType(ListView)).physics,
+      isNot(isA<NeverScrollableScrollPhysics>()),
+    );
+
+    // A completed tap still places exactly one shot.
+    await tester.tap(find.byKey(zoomResetKey));
+    await tester.pump();
+    await tester.tapAt(rect.center);
+    await tester.pump();
+    expect(find.textContaining('Skudd 1/6'), findsOneWidget);
+  });
+
   testWidgets('the course preview no longer offers resume (spec 0116)', (
     tester,
   ) async {
