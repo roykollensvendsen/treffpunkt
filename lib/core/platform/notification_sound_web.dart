@@ -13,7 +13,7 @@ class PlatformNotificationSound implements NotificationSound {
       // Flutter web serves bundled assets under assets/; the relative URL
       // follows the page's base href, so it works under /treffpunkt/ too.
       web.HTMLAudioElement()
-        ..src = 'assets/assets/sounds/shot.wav'
+        ..src = 'assets/assets/sounds/jingle.wav'
         ..play();
     } on Object {
       // Best-effort: the browser may refuse audio before the first user

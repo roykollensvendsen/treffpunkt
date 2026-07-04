@@ -23,9 +23,9 @@ of the sign-in screen. It works offline.
    each with a trash button to discard the saved session (after a
    confirmation). All dates and times in the app — session lists, the
    scorecards, the build stamp at the bottom — are your phone's local time.
-   The bell (varsler) and Innstillinger sit in the top bar. A **shot
-   sound** rings out when a notification arrives while the app is open,
-   and the bell's badge updates by itself.
+   The bell (varsler) and Innstillinger sit in the top bar. The app's
+   **jingle** rings out when a notification arrives while the app is
+   open, and the bell's badge updates by itself.
 2. Pick the program inside the category and confirm the session setup (date,
    time and place). You will see a round target, drawn like the official
    sheet — the **innertier ring** and the printed **ring values** included

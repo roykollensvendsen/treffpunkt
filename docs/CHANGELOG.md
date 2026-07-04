@@ -52,10 +52,11 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Added
-- **A shot rings out when a notification arrives**: with the app open,
-  a new notification plays a short shot sound and the bell badge now
+- **The Treffpunkt jingle rings when a notification arrives**: with
+  the app open, a new notification plays the app's signature jingle —
+  a bright ascending arpeggio landing on a «ding» — and the bell badge
   updates live (Realtime) instead of waiting for a navigation. The
-  initial load is silent (spec 0134).
+  initial load is silent (specs 0134/0135).
 
 ### Changed
 - **The forum header shares the glass**: the filter chips and the
