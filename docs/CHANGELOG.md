@@ -51,6 +51,13 @@ All notable changes to this project are documented here. The format is based on
   removes the round from your account (when synced) and the device (spec
   0089).
 
+### Changed
+- **Frosted edges — you can see there's more**: the bottom navigation,
+  the tab pages' top bars and the recording screen's bars are now
+  translucent with a backdrop blur, and the content scrolls beneath
+  them — the diffused glow through the bars makes it obvious the list
+  continues above/below the screen (spec 0129).
+
 ### Fixed
 - **Pinching the felt picture zooms, never shoots**: a pinch on the
   NorgesFelt hold picture could plant stray shots (placement fired on

@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
@@ -131,7 +132,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         : (exercises.isEmpty ? null : exercises.first);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: FrostedAppBar(
         title: const Text('Statistikk'),
         actions: [
           // The records page (spec 0102): startverdier and current pers.

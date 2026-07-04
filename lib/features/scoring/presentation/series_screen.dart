@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/nor_date.dart';
@@ -300,7 +301,10 @@ class SessionView extends ConsumerWidget {
     final isSilhouette = (session.currentStage?.targetsPerSeries ?? 1) > 1;
 
     return Scaffold(
-      appBar: AppBar(
+      // Content slides under the frosted bars (spec 0129).
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      appBar: FrostedAppBar(
         title: Text(program.name),
         actions: [
           if (!isSilhouette)
@@ -318,41 +322,46 @@ class SessionView extends ConsumerWidget {
       // The most frequent actions live in a big bottom bar (spec 0098):
       // Angre for the last shot, and «Fullfør serie (n/N)» — always showing
       // why it is disabled — instead of a small app-bar icon.
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-          child: Row(
-            children: [
-              TextButton.icon(
-                key: undoShotKey,
-                onPressed: current.shots.isEmpty
-                    ? null
-                    : () => ref.read(sessionProvider.notifier).undoShot(),
-                icon: const Icon(Icons.undo),
-                label: const Text('Angre'),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton.icon(
-                  key: sealSeriesKey,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                  ),
-                  onPressed: current.isComplete
-                      ? () => ref.read(sessionProvider.notifier).advance()
-                      : null,
-                  icon: const Icon(Icons.check),
-                  label: Text(
-                    'Fullfør serie '
-                    '(${current.shots.length}/${current.capacity})',
+      bottomNavigationBar: FrostedBottomBar(
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: Row(
+              children: [
+                TextButton.icon(
+                  key: undoShotKey,
+                  onPressed: current.shots.isEmpty
+                      ? null
+                      : () => ref.read(sessionProvider.notifier).undoShot(),
+                  icon: const Icon(Icons.undo),
+                  label: const Text('Angre'),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    key: sealSeriesKey,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                    ),
+                    onPressed: current.isComplete
+                        ? () => ref.read(sessionProvider.notifier).advance()
+                        : null,
+                    icon: const Icon(Icons.check),
+                    label: Text(
+                      'Fullfør serie '
+                      '(${current.shots.length}/${current.capacity})',
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
       body: SafeArea(
+        top: false,
+        bottom: false,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final wide = constraints.maxWidth >= _sideBySideBreakpoint;
@@ -578,7 +587,7 @@ class _SessionScrollBodyState extends State<_SessionScrollBody> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: frostedScrollPadding(context),
       physics: _suspendScroll ? const NeverScrollableScrollPhysics() : null,
       child: _CenteredContent(
         maxWidth: widget.maxWidth,

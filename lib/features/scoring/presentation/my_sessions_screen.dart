@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/nor_date.dart';
@@ -145,7 +146,9 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(
+      // Content slides under the frosted bars (spec 0129).
+      extendBodyBehindAppBar: true,
+      appBar: FrostedAppBar(
         title: const Text('Mine økter'),
         actions: [
           IconButton(
@@ -160,19 +163,31 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: Column(
-              children: [
-                if (syncFailed) const _SyncErrorBanner(),
-                Expanded(
-                  child: _calendar
-                      ? _calendarView(items)
-                      : _SessionsList(items: items),
-                ),
-              ],
+      // The Builder gives a context INSIDE the body, where the Scaffold
+      // injects the app-bar/nav-bar insets (spec 0129).
+      body: Builder(
+        builder: (context) => SafeArea(
+          top: false,
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+              child: Column(
+                children: [
+                  if (syncFailed)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.paddingOf(context).top,
+                      ),
+                      child: const _SyncErrorBanner(),
+                    ),
+                  Expanded(
+                    child: _calendar
+                        ? _calendarView(context, items)
+                        : _SessionsList(items: items),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -183,7 +198,7 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
   /// The calendar: a month grid with the days that have sessions marked, and
   /// the selected day's sessions below it (spec 0038). Sessions with no stored
   /// date are not placed on the calendar (they stay in the list view).
-  Widget _calendarView(List<MySessionItem> items) {
+  Widget _calendarView(BuildContext context, List<MySessionItem> items) {
     final byDay = <DateTime, List<MySessionItem>>{};
     for (final item in items) {
       final at = item.capturedAt;
@@ -201,7 +216,7 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
     final dayEntries = byDay[selectedDay] ?? const <MySessionItem>[];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: frostedScrollPadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -257,7 +272,7 @@ class _SessionsList extends StatelessWidget {
       return const _EmptyState();
     }
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: frostedScrollPadding(context),
       itemCount: items.length,
       itemBuilder: (context, index) => _itemRow(items[index]),
     );
