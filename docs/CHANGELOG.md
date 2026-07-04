@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Changed
+- **The pen buttons now glide**: the extended→round collapse is one
+  continuous 250 ms morph — the label's width and opacity follow the
+  same curve — instead of a widget-swap pop (spec 0139).
+
+### Changed
 - **The floating buttons pick up a pen and get out of the way**:
   «Ny tråd» and «Ny konkurranse» now carry a pen icon, and collapse to
   a round icon-only button while you scroll the list — the label comes

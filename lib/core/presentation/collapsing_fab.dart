@@ -5,9 +5,13 @@
 import 'package:flutter/material.dart';
 
 /// A floating action button that starts extended (icon + label) and
-/// collapses to a round icon-only button while the page is scrolled
-/// (spec 0138) — the label re-appears at the top, where there is room
-/// and a first-time user needs the words.
+/// morphs into a round icon-only button while the page is scrolled
+/// (specs 0138/0139) — the label re-appears at the top, where there is
+/// room and a first-time user needs the words.
+///
+/// The transition is one continuous animation (spec 0139): the label's
+/// width and opacity are driven by a single curve, so the pill glides
+/// into a circle instead of swapping widgets.
 class CollapsingFab extends StatelessWidget {
   /// Creates the button.
   const CollapsingFab({
@@ -35,22 +39,63 @@ class CollapsingFab extends StatelessWidget {
   final Key? buttonKey;
 
   @override
-  Widget build(BuildContext context) => AnimatedSwitcher(
-    duration: const Duration(milliseconds: 200),
-    transitionBuilder: (child, animation) =>
-        ScaleTransition(scale: animation, child: child),
-    child: collapsed
-        ? FloatingActionButton(
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(end: collapsed ? 0 : 1),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOutCubic,
+      builder: (context, t, _) => Semantics(
+        button: true,
+        label: label,
+        child: Tooltip(
+          message: label,
+          child: Material(
             key: buttonKey,
-            onPressed: onPressed,
-            tooltip: label,
-            child: Icon(icon),
-          )
-        : FloatingActionButton.extended(
-            key: buttonKey,
-            onPressed: onPressed,
-            icon: Icon(icon),
-            label: Text(label),
+            elevation: 6,
+            shadowColor: Colors.black45,
+            color: scheme.primaryContainer,
+            shape: const StadiumBorder(),
+            child: InkWell(
+              customBorder: const StadiumBorder(),
+              onTap: onPressed,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(icon, color: scheme.onPrimaryContainer),
+                    // The label glides away: its width and opacity follow
+                    // the same curve, clipped so it never overflows the
+                    // shrinking pill.
+                    ClipRect(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: t,
+                        heightFactor: 1,
+                        child: Opacity(
+                          opacity: t,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              style: TextStyle(
+                                color: scheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-  );
+        ),
+      ),
+    );
+  }
 }

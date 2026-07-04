@@ -169,6 +169,7 @@ nav:
       - "0136 — Én push per varsel": specs/0136-push-unified.md
       - "0137 — Synlige treffpunkter": specs/0137-visible-shot-markers.md
       - "0138 — Flytende knapper som krymper": specs/0138-collapsing-fabs.md
+      - "0139 — Pillen glir til sirkel": specs/0139-fab-morph.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
