@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/nor_date.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
@@ -72,7 +73,7 @@ class SessionSetupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(program.name)),
+      appBar: FrostedAppBar(title: Text(program.name)),
       body: SessionSetupForm(
         now: now,
         discipline: program.discipline,

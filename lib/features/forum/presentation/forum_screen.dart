@@ -450,7 +450,7 @@ class _NewThreadScreenState extends ConsumerState<NewThreadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ny tråd')),
+      appBar: const FrostedAppBar(title: Text('Ny tråd')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -820,7 +820,7 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: FrostedAppBar(
         title: Text(thread.title),
         actions: <Widget>[
           if (isAdmin)

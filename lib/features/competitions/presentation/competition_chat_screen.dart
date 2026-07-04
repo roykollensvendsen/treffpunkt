@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/mention_picker.dart';
@@ -291,7 +292,7 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
     final isOwner = uid == widget.competition.ownerId;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Chat · ${widget.competition.name}')),
+      appBar: FrostedAppBar(title: Text('Chat · ${widget.competition.name}')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

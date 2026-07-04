@@ -914,7 +914,7 @@ class SessionDetailScreen extends StatelessWidget {
       snapshot = SessionSnapshot.fromJson(record.payload);
     } on Object {
       return Scaffold(
-        appBar: AppBar(title: Text(record.program)),
+        appBar: FrostedAppBar(title: Text(record.program)),
         body: const SafeArea(
           child: _CenteredMessage(
             'Kan ikke vise denne økta',

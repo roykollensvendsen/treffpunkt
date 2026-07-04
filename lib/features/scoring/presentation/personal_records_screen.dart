@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
@@ -99,30 +100,42 @@ class PersonalRecordsScreen extends ConsumerWidget {
     final baselines = ref.watch(personalRecordsProvider);
     final entries = _entries(ref);
     return Scaffold(
-      appBar: AppBar(title: const Text('Rekorder')),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: Text(
-                    'Rekorden er det beste av startverdien din og øktene '
-                    'du har skutt i appen — slår du den, oppdateres den '
-                    'av seg selv. Trykk på en øvelse for å sette '
-                    'startverdien fra før du tok appen i bruk.',
-                  ),
+      extendBodyBehindAppBar: true,
+      appBar: const FrostedAppBar(title: Text('Rekorder')),
+      // The Builder gives a context INSIDE the body, where the
+      // Scaffold injects the bar insets (spec 0129).
+      body: Builder(
+        builder: (context) => SafeArea(
+          top: false,
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+              child: ListView(
+                padding: frostedScrollPadding(
+                  context,
+                  horizontal: 0,
+                  top: 8,
+                  bottom: 8,
                 ),
-                for (final entry in entries)
-                  _RecordRow(
-                    key: recordRowKey(entry.key),
-                    entry: entry,
-                    baseline: baselines[entry.key],
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: Text(
+                      'Rekorden er det beste av startverdien din og øktene '
+                      'du har skutt i appen — slår du den, oppdateres den '
+                      'av seg selv. Trykk på en øvelse for å sette '
+                      'startverdien fra før du tok appen i bruk.',
+                    ),
                   ),
-              ],
+                  for (final entry in entries)
+                    _RecordRow(
+                      key: recordRowKey(entry.key),
+                      entry: entry,
+                      baseline: baselines[entry.key],
+                    ),
+                ],
+              ),
             ),
           ),
         ),

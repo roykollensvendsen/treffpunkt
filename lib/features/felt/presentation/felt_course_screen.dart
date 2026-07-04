@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
@@ -31,74 +32,81 @@ class FeltCourseScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('NorgesFelt-løype 2026')),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: ListView(
-              padding: const EdgeInsets.all(12),
-              children: <Widget>[
-                Card(
-                  color: theme.colorScheme.secondaryContainer,
-                  child: const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text(
-                      '8 hold · 10 sek skytetid · maks 80/47 poeng. Hvert '
-                      'hold er tegnet som på den offisielle skiva; hvert '
-                      'kort sier hvilke figurer som har innertreff.',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                FilledButton.icon(
-                  key: feltShootButtonKey,
-                  onPressed: () => unawaited(_shoot(context, ref)),
-                  icon: const TargetIcon(size: 20),
-                  label: const Text('Skyt løypa'),
-                ),
-                const SizedBox(height: 8),
-                for (final hold in norgesfelt2026)
+      extendBodyBehindAppBar: true,
+      appBar: const FrostedAppBar(title: Text('NorgesFelt-løype 2026')),
+      // The Builder gives a context INSIDE the body, where the
+      // Scaffold injects the bar insets (spec 0129).
+      body: Builder(
+        builder: (context) => SafeArea(
+          top: false,
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: ListView(
+                padding: frostedScrollPadding(context, horizontal: 12, top: 12),
+                children: <Widget>[
                   Card(
-                    key: feltHoldCardKey(hold.number),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            'Hold ${hold.number}  ·  ${hold.distance}',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            hold.position,
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          FeltHoldArtView(art: _artFor(hold.number)),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Figurer: '
-                            '${hold.figures.map((f) => f.name).join(', ')}',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          Text(
-                            _innerCaption(_artFor(hold.number), hold),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+                    color: theme.colorScheme.secondaryContainer,
+                    child: const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Text(
+                        '8 hold · 10 sek skytetid · maks 80/47 poeng. Hvert '
+                        'hold er tegnet som på den offisielle skiva; hvert '
+                        'kort sier hvilke figurer som har innertreff.',
                       ),
                     ),
                   ),
-              ],
+                  const SizedBox(height: 8),
+                  FilledButton.icon(
+                    key: feltShootButtonKey,
+                    onPressed: () => unawaited(_shoot(context, ref)),
+                    icon: const TargetIcon(size: 20),
+                    label: const Text('Skyt løypa'),
+                  ),
+                  const SizedBox(height: 8),
+                  for (final hold in norgesfelt2026)
+                    Card(
+                      key: feltHoldCardKey(hold.number),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              'Hold ${hold.number}  ·  ${hold.distance}',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              hold.position,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            FeltHoldArtView(art: _artFor(hold.number)),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Figurer: '
+                              '${hold.figures.map((f) => f.name).join(', ')}',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              _innerCaption(_artFor(hold.number), hold),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

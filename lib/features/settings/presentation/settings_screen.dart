@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
@@ -96,50 +97,65 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Innstillinger')),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              children: <Widget>[
-                _SectionHeader('Konto', style: theme.textTheme.titleSmall),
-                const _AccountSection(),
-                const Divider(),
-                _SectionHeader('Skyting', style: theme.textTheme.titleSmall),
-                const _ShootingSection(),
-                const Divider(),
-                _SectionHeader(
-                  'Sikkerhetskopi',
-                  style: theme.textTheme.titleSmall,
+      extendBodyBehindAppBar: true,
+      appBar: const FrostedAppBar(title: Text('Innstillinger')),
+      // The Builder gives a context INSIDE the body, where the
+      // Scaffold injects the bar insets (spec 0129).
+      body: Builder(
+        builder: (context) => SafeArea(
+          top: false,
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+              child: ListView(
+                padding: frostedScrollPadding(
+                  context,
+                  horizontal: 0,
+                  top: 8,
+                  bottom: 8,
                 ),
-                const BackupSection(),
-                const Divider(),
-                _SectionHeader('Utseende', style: theme.textTheme.titleSmall),
-                const _ThemeSection(),
-                const Divider(),
-                _SectionHeader('Varsler', style: theme.textTheme.titleSmall),
-                const _NotificationsSection(),
-                const Divider(),
-                _SectionHeader('Personvern', style: theme.textTheme.titleSmall),
-                const _ContributionSection(),
-                const Divider(),
-                _SectionHeader('Hjelp', style: theme.textTheme.titleSmall),
-                ListTile(
-                  key: helpButtonKey,
-                  leading: const Icon(Icons.help_outline),
-                  title: const Text('Brukerveiledning'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => unawaited(
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const HelpScreen(),
+                children: <Widget>[
+                  _SectionHeader('Konto', style: theme.textTheme.titleSmall),
+                  const _AccountSection(),
+                  const Divider(),
+                  _SectionHeader('Skyting', style: theme.textTheme.titleSmall),
+                  const _ShootingSection(),
+                  const Divider(),
+                  _SectionHeader(
+                    'Sikkerhetskopi',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const BackupSection(),
+                  const Divider(),
+                  _SectionHeader('Utseende', style: theme.textTheme.titleSmall),
+                  const _ThemeSection(),
+                  const Divider(),
+                  _SectionHeader('Varsler', style: theme.textTheme.titleSmall),
+                  const _NotificationsSection(),
+                  const Divider(),
+                  _SectionHeader(
+                    'Personvern',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const _ContributionSection(),
+                  const Divider(),
+                  _SectionHeader('Hjelp', style: theme.textTheme.titleSmall),
+                  ListTile(
+                    key: helpButtonKey,
+                    leading: const Icon(Icons.help_outline),
+                    title: const Text('Brukerveiledning'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => unawaited(
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const HelpScreen(),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

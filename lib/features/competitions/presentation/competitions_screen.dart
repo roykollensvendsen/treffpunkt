@@ -786,7 +786,7 @@ class _CreateCompetitionScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ny konkurranse')),
+      appBar: const FrostedAppBar(title: Text('Ny konkurranse')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -990,7 +990,7 @@ class _CompetitionDetailScreenState
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: FrostedAppBar(
         title: Text(competition.name),
         actions: [
           // Rare and destructive actions live in the overflow menu (spec

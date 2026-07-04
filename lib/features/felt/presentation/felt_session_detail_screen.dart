@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/material.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/nor_date.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
@@ -32,7 +33,7 @@ class FeltSessionDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('NorgesFelt-løype 2026')),
+      appBar: const FrostedAppBar(title: Text('NorgesFelt-løype 2026')),
       body: SafeArea(
         child: Column(
           children: [

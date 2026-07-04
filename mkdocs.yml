@@ -160,6 +160,7 @@ nav:
       - "0127 — Lesbare ringtall på skjermen": specs/0127-readable-ring-labels.md
       - "0128 — Pinch på feltbildet zoomer, ikke skyter": specs/0128-felt-zoom-gestures.md
       - "0129 — Frostede kanter": specs/0129-frosted-edge-bars.md
+      - "0130 — Frostede kanter overalt": specs/0130-frosted-everywhere.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md
