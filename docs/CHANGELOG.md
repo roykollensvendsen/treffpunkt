@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **Shot markers are visible on the big faces**: a calibre-true bullet
+  hole is ~2 px on the 25 m faces at phone size — invisible. Markers
+  now floor at a 10 px hole on screen, exactly like the ring values'
+  legibility floor; the luft faces stay calibre-true, and scoring is
+  untouched (spec 0137, forum request).
+
+### Fixed
 - **Push notifications actually arrive**: the spec-0060 push pipeline
   was fully built but silently unconfigured (the webhook settings were
   never set), so no OS push was ever sent. The sender now also follows

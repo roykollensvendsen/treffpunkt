@@ -269,6 +269,34 @@ void main() {
       expect(canvas.paragraphs, hasLength(5 * 2));
     });
 
+    test('the marker radius floors at 5 px (spec 0137)', () {
+      // Calibre-true where visible …
+      expect(shotMarkerRadiusPx(9.8), 9.8);
+      // … floored where the big faces would shrink the hole to nothing.
+      expect(shotMarkerRadiusPx(2.2), 5.0);
+    });
+
+    test('a 25 m marker is visible at phone size (spec 0137)', () {
+      // Calibre-true on the 500 mm face is ~2.2 px — invisible. The floor
+      // draws it at 5 px.
+      const geometry = TargetGeometry.pistol25mRapid();
+      final canvas = _RecordingCanvas();
+      const SeriesPainter(
+        geometry: geometry,
+        shots: <Shot>[Shot(dxMm: 0, dyMm: 0)],
+        draggingIndex: null,
+      ).paint(canvas, size);
+      final centre = Offset(size.width / 2, size.height / 2);
+      final fills = canvas.circles.where(
+        (c) =>
+            (c.centre - centre).distance < 0.5 &&
+            c.paint.style == PaintingStyle.fill &&
+            c.radius < 20,
+      );
+      // The marker fill (the bull fill is far larger than 20 px).
+      expect(fills.any((c) => (c.radius - 5.0).abs() < 0.01), isTrue);
+    });
+
     test('the label size floors at 10 px and fits the band (spec 0127)', () {
       // Sheet-true above the floor passes through …
       expect(ringLabelFontPx(sheetPx: 14, bandPx: 40), 14);
