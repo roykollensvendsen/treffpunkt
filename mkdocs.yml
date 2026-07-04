@@ -162,6 +162,7 @@ nav:
       - "0129 — Frostede kanter": specs/0129-frosted-edge-bars.md
       - "0130 — Frostede kanter overalt": specs/0130-frosted-everywhere.md
       - "0131 — Knappene over bunnmenyen": specs/0131-fab-above-navbar.md
+      - "0132 — Klarere glass": specs/0132-clearer-frost.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

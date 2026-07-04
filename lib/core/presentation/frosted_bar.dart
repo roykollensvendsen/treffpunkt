@@ -9,11 +9,12 @@ import 'package:flutter/material.dart';
 /// The blur strength shared by every frosted edge bar (spec 0129).
 const double _frostSigma = 14;
 
-/// The translucent surface colour of a frosted bar (spec 0129): enough
-/// opacity to keep the bar's own content readable, translucent enough that
-/// scrolled content glows through and shows there is more to scroll.
+/// The translucent surface colour of a frosted bar (specs 0129/0132):
+/// clear enough that scrolled content genuinely shows through (the owners
+/// found 72 % too milky), while the blur keeps the bar's own labels
+/// readable against whatever passes beneath.
 Color frostedBarColor(BuildContext context) =>
-    Theme.of(context).colorScheme.surface.withValues(alpha: 0.72);
+    Theme.of(context).colorScheme.surface.withValues(alpha: 0.55);
 
 /// Scroll padding for a screen whose content slides under the frosted bars
 /// (spec 0129): the content starts below the top bar and above the bottom
