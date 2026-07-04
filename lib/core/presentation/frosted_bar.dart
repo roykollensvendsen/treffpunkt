@@ -41,7 +41,13 @@ EdgeInsets frostedScrollPadding(
 /// Pair with `extendBodyBehindAppBar: true`.
 class FrostedAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// Creates the bar; the parameters pass through to [AppBar].
-  const FrostedAppBar({this.title, this.actions, this.leading, super.key});
+  const FrostedAppBar({
+    this.title,
+    this.actions,
+    this.leading,
+    this.bottom,
+    super.key,
+  });
 
   /// The bar's title, as [AppBar.title].
   final Widget? title;
@@ -52,8 +58,15 @@ class FrostedAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// The leading widget, as [AppBar.leading].
   final Widget? leading;
 
+  /// A widget under the toolbar, as [AppBar.bottom] — part of the same
+  /// frosted pane, so a header (filters, tabs) shares the glass and the
+  /// content slides beneath it too (spec 0133).
+  final PreferredSizeWidget? bottom;
+
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => Size.fromHeight(
+    kToolbarHeight + (bottom?.preferredSize.height ?? 0),
+  );
 
   @override
   Widget build(BuildContext context) => ClipRect(
@@ -66,6 +79,7 @@ class FrostedAppBar extends StatelessWidget implements PreferredSizeWidget {
         title: title,
         actions: actions,
         leading: leading,
+        bottom: bottom,
       ),
     ),
   );
