@@ -870,20 +870,26 @@ void main() {
     await tester.pumpWidget(_app(repo));
     await tester.pumpAndSettle();
 
-    // At the top: extended, with the pen icon and the label.
-    expect(find.text('Ny tråd'), findsOneWidget);
+    // At the top: extended, with the pen icon and the label visible.
     expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+    final extendedWidth = tester.getSize(find.byKey(newThreadButtonKey)).width;
+    expect(extendedWidth, greaterThan(100));
 
-    // Scrolled down: round and label-free.
+    // Scrolled down: the pill has morphed into a circle (spec 0139) — the
+    // width collapses to icon + padding while the key and tap target stay.
     await tester.drag(find.byType(ListView).last, const Offset(0, -250));
     await tester.pumpAndSettle();
-    expect(find.text('Ny tråd'), findsNothing);
+    final collapsedWidth = tester.getSize(find.byKey(newThreadButtonKey)).width;
+    expect(collapsedWidth, lessThan(70));
     expect(find.byKey(newThreadButtonKey), findsOneWidget);
 
     // Back at the top: extended again.
     await tester.drag(find.byType(ListView).last, const Offset(0, 400));
     await tester.pumpAndSettle();
-    expect(find.text('Ny tråd'), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(newThreadButtonKey)).width,
+      greaterThan(100),
+    );
   });
 }
 

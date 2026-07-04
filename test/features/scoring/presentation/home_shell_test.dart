@@ -116,14 +116,14 @@ void main() {
     await tester.tap(find.byKey(forumButtonKey));
     await tester.pumpAndSettle();
     final navTop = tester.getTopLeft(find.byType(NavigationBar)).dy;
-    final fab = find.byType(FloatingActionButton);
+    final fab = find.byKey(newThreadButtonKey);
     expect(fab, findsOneWidget);
     expect(tester.getBottomLeft(fab).dy, lessThanOrEqualTo(navTop));
 
     // Stevner: «Ny konkurranse» likewise.
     await tester.tap(find.byKey(competitionsButtonKey));
     await tester.pumpAndSettle();
-    final fab2 = find.byType(FloatingActionButton);
+    final fab2 = find.byKey(newCompetitionButtonKey);
     expect(fab2, findsOneWidget);
     expect(tester.getBottomLeft(fab2).dy, lessThanOrEqualTo(navTop));
   });
