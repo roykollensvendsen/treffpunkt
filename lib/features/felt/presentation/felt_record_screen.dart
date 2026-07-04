@@ -79,6 +79,38 @@ class _Placed {
 
 class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
   FeltShooterGroup? _group;
+
+  /// Whether a mouse hovers or a finger presses the hold picture — while it
+  /// does, the page scroll is suspended so the pinch/pan reaches the
+  /// recorder's InteractiveViewer whole (specs 0021/0128).
+  bool _hoveringRecorder = false;
+  int _pointersOnRecorder = 0;
+
+  bool get _suspendScroll => _hoveringRecorder || _pointersOnRecorder > 0;
+
+  void _updateGuard(VoidCallback change) {
+    final before = _suspendScroll;
+    change();
+    if (_suspendScroll != before) setState(() {});
+  }
+
+  /// Wraps the recorder so hovering/pressing it suspends page scrolling.
+  /// The [Listener] only observes pointers — it never joins the gesture
+  /// arena — so taps, pinches and pans behave exactly as without it.
+  Widget _scrollGuard(Widget recorder) => MouseRegion(
+    onEnter: (_) => _updateGuard(() => _hoveringRecorder = true),
+    onExit: (_) => _updateGuard(() => _hoveringRecorder = false),
+    child: Listener(
+      onPointerDown: (_) => _updateGuard(() => _pointersOnRecorder++),
+      onPointerUp: (_) => _updateGuard(() {
+        if (_pointersOnRecorder > 0) _pointersOnRecorder--;
+      }),
+      onPointerCancel: (_) => _updateGuard(() {
+        if (_pointersOnRecorder > 0) _pointersOnRecorder--;
+      }),
+      child: recorder,
+    ),
+  );
   int _hold = 0;
   bool _done = false;
   late List<List<_Placed>> _shots;
@@ -340,6 +372,9 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
             constraints: const BoxConstraints(maxWidth: 560),
             child: ListView(
               padding: const EdgeInsets.all(12),
+              physics: _suspendScroll
+                  ? const NeverScrollableScrollPhysics()
+                  : null,
               children: <Widget>[
                 Text(
                   '${hold.distance}  ·  ${hold.position}',
@@ -353,11 +388,13 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _HoldRecorder(
-                  key: feltHoldRecorderKey,
-                  art: art,
-                  shots: placed,
-                  onPlace: (p) => _place(art, p),
+                _scrollGuard(
+                  _HoldRecorder(
+                    key: feltHoldRecorderKey,
+                    art: art,
+                    shots: placed,
+                    onPlace: (p) => _place(art, p),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 // Inner hits give no points (spec 0085): the hold line shows
@@ -544,7 +581,10 @@ class _HoldRecorderState extends State<_HoldRecorder> {
               trackpadScrollCausesScale: true,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTapDown: (d) => widget.onPlace(
+                // Tap-UP, not tap-down (spec 0128): tap-down fires before
+                // the arena knows a second finger is coming, so the first
+                // finger of every pinch planted a shot.
+                onTapUp: (d) => widget.onPlace(
                   Offset(
                     d.localPosition.dx / scale,
                     d.localPosition.dy / scale,

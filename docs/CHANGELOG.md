@@ -52,6 +52,15 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Fixed
+- **Pinching the felt picture zooms, never shoots**: a pinch on the
+  NorgesFelt hold picture could plant stray shots (placement fired on
+  tap-down, before the gesture knew a second finger was coming) and
+  zoomed unreliably (the page scroll competed for the gesture). Shots
+  now place on a completed tap, and the page stops scrolling while
+  your fingers are on the picture — the ring target's proven recipe
+  (spec 0128).
+
+### Fixed
 - **The 25 m duel face shows its ring values**: the values were drawn
   sheet-true (5 mm on a 50 cm face ≈ 3,5 px on a phone) and fell under
   the legibility threshold, so the face looked unnumbered. Ring values
