@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Push notifications actually arrive**: the spec-0060 push pipeline
+  was fully built but silently unconfigured (the webhook settings were
+  never set), so no OS push was ever sent. The sender now also follows
+  the notifications table itself — one push per in-app varsel, every
+  kind including mentions, with no double delivery — and the settings
+  are configured (spec 0136). Turn on **Varsler** under Innstillinger
+  on each device you want pushes on.
+
 ### Added
 - **Shoot the NorgesFelt course**: from the course preview, tap **Skyt løypa** to
   record a round — choose your group (6 shots/hold for group 1, 5 for groups
