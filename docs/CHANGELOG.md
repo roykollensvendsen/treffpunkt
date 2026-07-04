@@ -52,6 +52,12 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Changed
+- **The forum header shares the glass**: the filter chips and the
+  Robot Hood line moved into the frosted top bar, so the forum is one
+  frosted pane from the top down through the filters, with the thread
+  list sliding beneath it (spec 0133).
+
+### Changed
 - **Clearer glass**: the frosted bars are now noticeably more
   transparent (55 % instead of 72 % surface opacity) — the blur, not
   the tint, keeps their labels readable — and the forum's thread list

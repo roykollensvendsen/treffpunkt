@@ -166,7 +166,25 @@ class _ForumScreenState extends ConsumerState<ForumScreen> {
   Widget build(BuildContext context) {
     final threads = ref.watch(forumThreadsProvider);
     return Scaffold(
-      appBar: const FrostedAppBar(title: Text('Forum')),
+      // The filter header shares the frosted pane (spec 0133); the list
+      // slides beneath the whole block.
+      extendBodyBehindAppBar: true,
+      appBar: FrostedAppBar(
+        title: const Text('Forum'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(80),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              _Filters(
+                selected: _filter,
+                onSelect: (c) => setState(() => _filter = c),
+              ),
+              const _RobotPresenceLine(),
+            ],
+          ),
+        ),
+      ),
       // Lifted clear of the shell's frosted navigation bar (spec 0131):
       // with extendBody the tab fills the whole screen, so the FAB must
       // rise by the bar's inset itself.
@@ -185,86 +203,79 @@ class _ForumScreenState extends ConsumerState<ForumScreen> {
           label: const Text('Ny tråd'),
         ),
       ),
-      body: SafeArea(
-        bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _maxWidth),
-            child: Column(
-              children: <Widget>[
-                _Filters(
-                  selected: _filter,
-                  onSelect: (c) => setState(() => _filter = c),
+      // The Builder gives a context INSIDE the body, where the Scaffold
+      // injects the bar insets (specs 0129/0133).
+      body: Builder(
+        builder: (context) => SafeArea(
+          top: false,
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _maxWidth),
+              child: threads.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, _) => const Center(
+                  child: Text('Kunne ikke laste forumet.'),
                 ),
-                const _RobotPresenceLine(),
-                Expanded(
-                  child: threads.when(
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (_, _) => const Center(
-                      child: Text('Kunne ikke laste forumet.'),
+                data: (all) {
+                  final list = _filter == null
+                      ? all
+                      : all.where((t) => t.category == _filter).toList();
+                  if (list.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Ingen tråder ennå. Start den første!',
+                          key: forumEmptyKey,
+                        ),
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    // The list slides under both frosted panes
+                    // (specs 0132/0133).
+                    padding: EdgeInsets.fromLTRB(
+                      8,
+                      MediaQuery.paddingOf(context).top + 8,
+                      8,
+                      MediaQuery.paddingOf(context).bottom + 8,
                     ),
-                    data: (all) {
-                      final list = _filter == null
-                          ? all
-                          : all.where((t) => t.category == _filter).toList();
-                      if (list.isEmpty) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Text(
-                              'Ingen tråder ennå. Start den første!',
-                              key: forumEmptyKey,
+                    itemCount: list.length,
+                    itemBuilder: (context, i) {
+                      final thread = list[i];
+                      return Card(
+                        child: ListTile(
+                          key: forumThreadCardKey(thread.id),
+                          title: Text(thread.title),
+                          subtitle: Text(
+                            _byline(thread.authorName, thread.category),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              if (thread.status != ForumThreadStatus.open)
+                                _ThreadStatusBadge(
+                                  thread.status,
+                                  threadId: thread.id,
+                                ),
+                              const Icon(Icons.chevron_right),
+                            ],
+                          ),
+                          onTap: () => unawaited(
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) =>
+                                    ForumThreadScreen(thread: thread),
+                              ),
                             ),
                           ),
-                        );
-                      }
-                      return ListView.builder(
-                        // The list slides under the frosted navigation bar
-                        // (spec 0132); the header above stays put.
-                        padding: EdgeInsets.fromLTRB(
-                          8,
-                          8,
-                          8,
-                          MediaQuery.paddingOf(context).bottom + 8,
                         ),
-                        itemCount: list.length,
-                        itemBuilder: (context, i) {
-                          final thread = list[i];
-                          return Card(
-                            child: ListTile(
-                              key: forumThreadCardKey(thread.id),
-                              title: Text(thread.title),
-                              subtitle: Text(
-                                _byline(thread.authorName, thread.category),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  if (thread.status != ForumThreadStatus.open)
-                                    _ThreadStatusBadge(
-                                      thread.status,
-                                      threadId: thread.id,
-                                    ),
-                                  const Icon(Icons.chevron_right),
-                                ],
-                              ),
-                              onTap: () => unawaited(
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) =>
-                                        ForumThreadScreen(thread: thread),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
                       );
                     },
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
           ),
         ),
