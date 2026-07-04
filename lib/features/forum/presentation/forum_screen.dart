@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/platform/image_format.dart';
+import 'package:treffpunkt/core/presentation/collapsing_fab.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
@@ -162,6 +163,17 @@ class ForumScreen extends ConsumerStatefulWidget {
 class _ForumScreenState extends ConsumerState<ForumScreen> {
   ForumCategory? _filter;
 
+  /// Whether the FAB is collapsed to its round state (spec 0138): true
+  /// while the thread list is scrolled away from the top.
+  bool _fabCollapsed = false;
+
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final collapsed = notification.metrics.pixels > 64;
+    if (collapsed != _fabCollapsed) setState(() => _fabCollapsed = collapsed);
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final threads = ref.watch(forumThreadsProvider);
@@ -192,89 +204,94 @@ class _ForumScreenState extends ConsumerState<ForumScreen> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.paddingOf(context).bottom,
         ),
-        child: FloatingActionButton.extended(
-          key: newThreadButtonKey,
+        child: CollapsingFab(
+          buttonKey: newThreadButtonKey,
+          collapsed: _fabCollapsed,
+          icon: Icons.edit_outlined,
+          label: 'Ny tråd',
           onPressed: () => unawaited(
             Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const NewThreadScreen()),
             ),
           ),
-          icon: const Icon(Icons.add),
-          label: const Text('Ny tråd'),
         ),
       ),
       // The Builder gives a context INSIDE the body, where the Scaffold
       // injects the bar insets (specs 0129/0133).
-      body: Builder(
-        builder: (context) => SafeArea(
-          top: false,
-          bottom: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _maxWidth),
-              child: threads.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, _) => const Center(
-                  child: Text('Kunne ikke laste forumet.'),
-                ),
-                data: (all) {
-                  final list = _filter == null
-                      ? all
-                      : all.where((t) => t.category == _filter).toList();
-                  if (list.isEmpty) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'Ingen tråder ennå. Start den første!',
-                          key: forumEmptyKey,
-                        ),
-                      ),
-                    );
-                  }
-                  return ListView.builder(
-                    // The list slides under both frosted panes
-                    // (specs 0132/0133).
-                    padding: EdgeInsets.fromLTRB(
-                      8,
-                      MediaQuery.paddingOf(context).top + 8,
-                      8,
-                      MediaQuery.paddingOf(context).bottom + 8,
-                    ),
-                    itemCount: list.length,
-                    itemBuilder: (context, i) {
-                      final thread = list[i];
-                      return Card(
-                        child: ListTile(
-                          key: forumThreadCardKey(thread.id),
-                          title: Text(thread.title),
-                          subtitle: Text(
-                            _byline(thread.authorName, thread.category),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              if (thread.status != ForumThreadStatus.open)
-                                _ThreadStatusBadge(
-                                  thread.status,
-                                  threadId: thread.id,
-                                ),
-                              const Icon(Icons.chevron_right),
-                            ],
-                          ),
-                          onTap: () => unawaited(
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) =>
-                                    ForumThreadScreen(thread: thread),
-                              ),
-                            ),
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: Builder(
+          builder: (context) => SafeArea(
+            top: false,
+            bottom: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: _maxWidth),
+                child: threads.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, _) => const Center(
+                    child: Text('Kunne ikke laste forumet.'),
+                  ),
+                  data: (all) {
+                    final list = _filter == null
+                        ? all
+                        : all.where((t) => t.category == _filter).toList();
+                    if (list.isEmpty) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text(
+                            'Ingen tråder ennå. Start den første!',
+                            key: forumEmptyKey,
                           ),
                         ),
                       );
-                    },
-                  );
-                },
+                    }
+                    return ListView.builder(
+                      // The list slides under both frosted panes
+                      // (specs 0132/0133).
+                      padding: EdgeInsets.fromLTRB(
+                        8,
+                        MediaQuery.paddingOf(context).top + 8,
+                        8,
+                        MediaQuery.paddingOf(context).bottom + 8,
+                      ),
+                      itemCount: list.length,
+                      itemBuilder: (context, i) {
+                        final thread = list[i];
+                        return Card(
+                          child: ListTile(
+                            key: forumThreadCardKey(thread.id),
+                            title: Text(thread.title),
+                            subtitle: Text(
+                              _byline(thread.authorName, thread.category),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                if (thread.status != ForumThreadStatus.open)
+                                  _ThreadStatusBadge(
+                                    thread.status,
+                                    threadId: thread.id,
+                                  ),
+                                const Icon(Icons.chevron_right),
+                              ],
+                            ),
+                            onTap: () => unawaited(
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      ForumThreadScreen(thread: thread),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ),

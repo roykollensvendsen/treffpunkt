@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **The floating buttons pick up a pen and get out of the way**:
+  «Ny tråd» and «Ny konkurranse» now carry a pen icon, and collapse to
+  a round icon-only button while you scroll the list — the label comes
+  back at the top (spec 0138).
+
 ### Fixed
 - **Shot markers are visible on the big faces**: a calibre-true bullet
   hole is ~2 px on the 25 m faces at phone size — invisible. Markers

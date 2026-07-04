@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/collapsing_fab.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
@@ -151,6 +152,17 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
   DateTime? _calendarMonth;
   bool _calendarOpen = false;
 
+  /// Whether the FAB is collapsed to its round state (spec 0138): true
+  /// while the list is scrolled away from the top.
+  bool _fabCollapsed = false;
+
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final collapsed = notification.metrics.pixels > 64;
+    if (collapsed != _fabCollapsed) setState(() => _fabCollapsed = collapsed);
+    return false;
+  }
+
   Future<void> _create(BuildContext context, WidgetRef ref) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const CreateCompetitionScreen()),
@@ -275,75 +287,81 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.paddingOf(context).bottom,
         ),
-        child: FloatingActionButton.extended(
-          key: newCompetitionButtonKey,
+        child: CollapsingFab(
+          buttonKey: newCompetitionButtonKey,
+          collapsed: _fabCollapsed,
+          icon: Icons.edit_outlined,
+          label: 'Ny konkurranse',
           onPressed: () => unawaited(_create(context, ref)),
-          icon: const Icon(Icons.add),
-          label: const Text('Ny konkurranse'),
         ),
       ),
       // The Builder gives a context INSIDE the body, where the Scaffold
       // injects the app-bar/nav-bar insets (spec 0129).
-      body: Builder(
-        builder: (context) => SafeArea(
-          top: false,
-          bottom: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-              child: ListView(
-                padding: frostedScrollPadding(context),
-                children: [
-                  if (_calendarOpen) ...[
-                    _CompetitionCalendar(
-                      month: month,
-                      selectedDay: _filterDay,
-                      daysWithCompetitions: daysWithComps,
-                      onSelectDay: _selectDay,
-                      onPrevMonth: () => setState(
-                        () => _calendarMonth = DateTime(
-                          month.year,
-                          month.month - 1,
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: Builder(
+          builder: (context) => SafeArea(
+            top: false,
+            bottom: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+                child: ListView(
+                  padding: frostedScrollPadding(context),
+                  children: [
+                    if (_calendarOpen) ...[
+                      _CompetitionCalendar(
+                        month: month,
+                        selectedDay: _filterDay,
+                        daysWithCompetitions: daysWithComps,
+                        onSelectDay: _selectDay,
+                        onPrevMonth: () => setState(
+                          () => _calendarMonth = DateTime(
+                            month.year,
+                            month.month - 1,
+                          ),
+                        ),
+                        onNextMonth: () => setState(
+                          () => _calendarMonth = DateTime(
+                            month.year,
+                            month.month + 1,
+                          ),
                         ),
                       ),
-                      onNextMonth: () => setState(
-                        () => _calendarMonth = DateTime(
-                          month.year,
-                          month.month + 1,
+                      const SizedBox(height: 8),
+                    ],
+                    if (_filterDay case final day?)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: <Widget>[
+                            Chip(
+                              avatar: const Icon(Icons.event, size: 18),
+                              label: Text('Viser ${_formatNorDate(day)}'),
+                              onDeleted: () =>
+                                  setState(() => _filterDay = null),
+                              deleteButtonTooltipMessage: 'Vis alle',
+                            ),
+                            const Spacer(),
+                            TextButton(
+                              key: competitionCalendarClearKey,
+                              onPressed: () =>
+                                  setState(() => _filterDay = null),
+                              child: const Text('Vis alle'),
+                            ),
+                          ],
                         ),
                       ),
+                    ..._invitationsSection(context, ref, invitations),
+                    ..._competitionsSection(
+                      context,
+                      ref,
+                      invitations,
+                      competitions,
+                      archivedIds,
                     ),
-                    const SizedBox(height: 8),
                   ],
-                  if (_filterDay case final day?)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: <Widget>[
-                          Chip(
-                            avatar: const Icon(Icons.event, size: 18),
-                            label: Text('Viser ${_formatNorDate(day)}'),
-                            onDeleted: () => setState(() => _filterDay = null),
-                            deleteButtonTooltipMessage: 'Vis alle',
-                          ),
-                          const Spacer(),
-                          TextButton(
-                            key: competitionCalendarClearKey,
-                            onPressed: () => setState(() => _filterDay = null),
-                            child: const Text('Vis alle'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ..._invitationsSection(context, ref, invitations),
-                  ..._competitionsSection(
-                    context,
-                    ref,
-                    invitations,
-                    competitions,
-                    archivedIds,
-                  ),
-                ],
+                ),
               ),
             ),
           ),
