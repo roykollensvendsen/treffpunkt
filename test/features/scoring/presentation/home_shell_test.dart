@@ -46,6 +46,28 @@ void main() {
     expect(find.byType(BackdropFilter), findsNWidgets(2));
   });
 
+  testWidgets('tab FABs float above the frosted navbar (spec 0131)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+
+    // Forum: «Ny tråd» must sit clear of the navigation bar, not behind it.
+    await tester.tap(find.byKey(forumButtonKey));
+    await tester.pumpAndSettle();
+    final navTop = tester.getTopLeft(find.byType(NavigationBar)).dy;
+    final fab = find.byType(FloatingActionButton);
+    expect(fab, findsOneWidget);
+    expect(tester.getBottomLeft(fab).dy, lessThanOrEqualTo(navTop));
+
+    // Stevner: «Ny konkurranse» likewise.
+    await tester.tap(find.byKey(competitionsButtonKey));
+    await tester.pumpAndSettle();
+    final fab2 = find.byType(FloatingActionButton);
+    expect(fab2, findsOneWidget);
+    expect(tester.getBottomLeft(fab2).dy, lessThanOrEqualTo(navTop));
+  });
+
   testWidgets('the bar shows five labelled destinations (spec 0097)', (
     tester,
   ) async {
