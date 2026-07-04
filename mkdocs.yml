@@ -166,6 +166,7 @@ nav:
       - "0133 — Forum-toppen deler glasset": specs/0133-forum-frosted-header.md
       - "0134 — Skuddlyd ved varsler": specs/0134-shot-sound.md
       - "0135 — Treffpunkt-jingelen": specs/0135-notify-jingle.md
+      - "0136 — Én push per varsel": specs/0136-push-unified.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

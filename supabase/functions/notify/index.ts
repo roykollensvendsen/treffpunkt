@@ -1,10 +1,12 @@
-// Web Push sender (spec 0060, Increment B).
+// Web Push sender (spec 0060 Increment B; unified by spec 0136).
 //
 // Called by a database trigger (net.http_post) after a row is inserted into
-// competition_messages or competition_invitations. Computes the recipients,
-// loads their push subscriptions (service role — bypasses RLS), and sends an
-// encrypted web push to each, pruning subscriptions the push service has
-// dropped (404/410).
+// public.notifications (one push per in-app notification — recipients,
+// dedup and wording decided once by the spec-0094 fan-out) or into
+// forum_threads (new-thread alerts to the moderators, which have no
+// notifications-row equivalent). Loads the recipients' push subscriptions
+// (service role — bypasses RLS) and sends an encrypted web push to each,
+// pruning subscriptions the push service has dropped (404/410).
 //
 // Auth: the trigger sends a shared secret in the `x-notify-secret` header; this
 // function is deployed with `verify_jwt = false` (no end-user JWT) and trusts
@@ -48,14 +50,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const record = payload.record ?? {};
   try {
-    if (payload.table === "competition_messages") {
-      await handleMessage(record);
-    } else if (payload.table === "competition_invitations") {
-      await handleInvitation(record);
+    if (payload.table === "notifications") {
+      await handleNotification(record);
     } else if (payload.table === "forum_threads") {
       await handleForumThread(record);
-    } else if (payload.table === "forum_posts") {
-      await handleForumPost(record);
     }
   } catch (error) {
     console.error("notify failed", error);
@@ -64,72 +62,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
   return new Response("ok");
 });
 
-async function handleMessage(record: Record<string, unknown>): Promise<void> {
-  const competitionId = record.competition_id as string;
-  const senderId = record.user_id as string;
-  const body = (record.body ?? "").toString();
-
-  const [members, comp, sender] = await Promise.all([
-    admin
-      .from("competition_members")
-      .select("user_id")
-      .eq("competition_id", competitionId)
-      .neq("user_id", senderId),
-    admin
-      .from("competitions")
-      .select("name")
-      .eq("id", competitionId)
-      .maybeSingle(),
-    admin
-      .from("profiles")
-      .select("display_name")
-      .eq("id", senderId)
-      .maybeSingle(),
-  ]);
-
-  const userIds = (members.data ?? []).map((m) => m.user_id as string);
-  if (userIds.length === 0) return;
-
-  const senderName = (sender.data?.display_name as string) ?? "Noen";
-  const text = body.length > 80 ? `${body.slice(0, 79)}…` : body;
-  await sendToUsers(userIds, {
-    title: (comp.data?.name as string) ?? "Ny melding",
-    body: `${senderName}: ${text}`,
-    tag: `competition-${competitionId}`,
-    url: "./",
-  });
-}
-
-async function handleInvitation(
+// One push per in-app notification row (spec 0136): every kind —
+// invitations, chat messages, forum replies and mentions — arrives here
+// with the recipient, title and body already decided by the spec-0094
+// fan-out, so OS pushes and in-app varsler can never disagree.
+async function handleNotification(
   record: Record<string, unknown>,
 ): Promise<void> {
-  const competitionId = record.competition_id as string;
-  const email = record.invited_email as string;
-  const status = record.status as string | undefined;
-  if (status && status !== "pending") return;
-
-  // Map the invited email to a user (service-role-only helper). A not-yet-
-  // registered invitee has no account, so there is nobody to notify.
-  const { data: userId } = await admin.rpc("user_id_for_email", {
-    p_email: email,
-  });
+  const userId = record.user_id as string | undefined;
   if (!userId) return;
-
-  const { data: comp } = await admin
-    .from("competitions")
-    .select("name")
-    .eq("id", competitionId)
-    .maybeSingle();
-
-  await sendToUsers([userId as string], {
-    title: "Ny invitasjon",
-    body: comp?.name
-      ? `Du er invitert til ${comp.name}.`
-      : "Du har fått en ny invitasjon.",
-    tag: `invite-${competitionId}`,
+  await sendToUsers([userId], {
+    title: (record.title ?? "Treffpunkt").toString(),
+    body: (record.body ?? "").toString(),
+    tag: `notification-${record.id}`,
     url: "./",
   });
 }
+
+
 
 const CATEGORY_LABELS: Record<string, string> = {
   bug: "Bug",
@@ -154,23 +104,6 @@ async function handleForumThread(
   });
 }
 
-async function handleForumPost(
-  record: Record<string, unknown>,
-): Promise<void> {
-  const authorId = record.author_id as string;
-  const admins = await adminRecipients(authorId);
-  if (admins.length === 0) return;
-
-  const author = await displayName(authorId);
-  const body = (record.body ?? "").toString();
-  const text = body.length > 80 ? `${body.slice(0, 79)}…` : body;
-  await sendToUsers(admins, {
-    title: "Nytt svar i forumet",
-    body: `${author}: ${text}`,
-    tag: `forum-post-${record.thread_id}`,
-    url: "./",
-  });
-}
 
 // The app admins, minus the author (you do not get notified about your own
 // forum activity).
