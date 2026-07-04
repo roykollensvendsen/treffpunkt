@@ -1067,7 +1067,7 @@ class SessionScorecard extends StatelessWidget {
     final theme = Theme.of(context);
     final caption = _metadataCaption(metadata, weapon);
     return Scaffold(
-      appBar: AppBar(
+      appBar: FrostedAppBar(
         title: Text(title ?? program.name),
         actions: [...?actions],
       ),

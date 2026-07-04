@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/help/domain/manual.dart';
 import 'package:treffpunkt/features/help/presentation/help_providers.dart';
@@ -27,7 +28,7 @@ class HelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Brukerveiledning')),
+      appBar: const FrostedAppBar(title: Text('Brukerveiledning')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -68,7 +69,7 @@ class ManualPageScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final markdown = ref.watch(manualPageProvider(page.file));
     return Scaffold(
-      appBar: AppBar(title: Text(page.title)),
+      appBar: FrostedAppBar(title: Text(page.title)),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

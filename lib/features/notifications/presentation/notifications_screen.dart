@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_chat_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
@@ -204,7 +205,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             .where((notification) => !_removed.contains(notification.id))
             .toList();
     return Scaffold(
-      appBar: AppBar(
+      extendBodyBehindAppBar: true,
+      appBar: FrostedAppBar(
         title: const Text('Varsler'),
         actions: [
           IconButton(
@@ -222,75 +224,83 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             ),
         ],
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: notifications.isEmpty
-                ? const EmptyState(
-                    icon: Icons.notifications_none,
-                    title: 'Ingen varsler ennå.',
-                    titleKey: noNotificationsKey,
-                    hint: 'Invitasjoner, meldinger og svar dukker opp her.',
-                  )
-                : ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // Swipe a notification away to delete it (spec 0109).
-                      for (final notification in notifications)
-                        Dismissible(
-                          key: notificationTileKey(notification.id),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            color: theme.colorScheme.errorContainer,
-                            child: Icon(
-                              Icons.delete_outline,
-                              color: theme.colorScheme.onErrorContainer,
+      // The Builder gives a context INSIDE the body, where the
+      // Scaffold injects the bar insets (spec 0129).
+      body: Builder(
+        builder: (context) => SafeArea(
+          top: false,
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+              child: notifications.isEmpty
+                  ? const EmptyState(
+                      icon: Icons.notifications_none,
+                      title: 'Ingen varsler ennå.',
+                      titleKey: noNotificationsKey,
+                      hint: 'Invitasjoner, meldinger og svar dukker opp her.',
+                    )
+                  : ListView(
+                      padding: frostedScrollPadding(context),
+                      children: [
+                        // Swipe a notification away to delete it (spec 0109).
+                        for (final notification in notifications)
+                          Dismissible(
+                            key: notificationTileKey(notification.id),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              color: theme.colorScheme.errorContainer,
+                              child: Icon(
+                                Icons.delete_outline,
+                                color: theme.colorScheme.onErrorContainer,
+                              ),
                             ),
-                          ),
-                          onDismissed: (_) =>
-                              unawaited(_delete(ref, notification.id)),
-                          child: ListTile(
-                            leading: Icon(
-                              switch (notification.kind) {
-                                AppNotificationKind.invitation =>
-                                  Icons.emoji_events_outlined,
-                                AppNotificationKind.competitionMessage =>
-                                  Icons.chat_bubble_outline,
-                                AppNotificationKind.forumReply =>
-                                  Icons.forum_outlined,
-                                AppNotificationKind.mention =>
-                                  Icons.alternate_email,
-                              },
-                            ),
-                            title: Text(
-                              notification.title,
-                              style: notification.unread
-                                  ? const TextStyle(fontWeight: FontWeight.w700)
+                            onDismissed: (_) =>
+                                unawaited(_delete(ref, notification.id)),
+                            child: ListTile(
+                              leading: Icon(
+                                switch (notification.kind) {
+                                  AppNotificationKind.invitation =>
+                                    Icons.emoji_events_outlined,
+                                  AppNotificationKind.competitionMessage =>
+                                    Icons.chat_bubble_outline,
+                                  AppNotificationKind.forumReply =>
+                                    Icons.forum_outlined,
+                                  AppNotificationKind.mention =>
+                                    Icons.alternate_email,
+                                },
+                              ),
+                              title: Text(
+                                notification.title,
+                                style: notification.unread
+                                    ? const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      )
+                                    : null,
+                              ),
+                              subtitle: notification.body.isEmpty
+                                  ? null
+                                  : Text(
+                                      notification.body,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                              trailing: notification.unread
+                                  ? Icon(
+                                      Icons.circle,
+                                      size: 10,
+                                      color: theme.colorScheme.primary,
+                                    )
                                   : null,
+                              onTap: () =>
+                                  unawaited(_open(context, ref, notification)),
                             ),
-                            subtitle: notification.body.isEmpty
-                                ? null
-                                : Text(
-                                    notification.body,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                            trailing: notification.unread
-                                ? Icon(
-                                    Icons.circle,
-                                    size: 10,
-                                    color: theme.colorScheme.primary,
-                                  )
-                                : null,
-                            onTap: () =>
-                                unawaited(_open(context, ref, notification)),
                           ),
-                        ),
-                    ],
-                  ),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import 'package:flutter/material.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
@@ -38,7 +39,7 @@ class CompetitionResultScreen extends StatelessWidget {
       snapshot = SessionSnapshot.fromJson(result.payload);
     } on Object {
       return Scaffold(
-        appBar: AppBar(title: Text(shooter)),
+        appBar: FrostedAppBar(title: Text(shooter)),
         body: const SafeArea(
           child: _CenteredMessage(
             'Kan ikke vise dette resultatet',

@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
@@ -26,7 +27,7 @@ class FeltSetupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('NorgesFelt-løype 2026')),
+      appBar: const FrostedAppBar(title: Text('NorgesFelt-løype 2026')),
       body: SessionSetupForm(
         now: now,
         discipline: Discipline.pistol,

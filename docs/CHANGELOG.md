@@ -52,6 +52,12 @@ All notable changes to this project are documented here. The format is based on
   0089).
 
 ### Changed
+- **Frosted edges everywhere**: every screen's top bar is now on the
+  same frosted glass (the full-screen photo viewer keeps its dark
+  chrome), and Varsler, Innstillinger, felt-løypa and Rekorder scroll
+  beneath their bars like the main pages (spec 0130).
+
+### Changed
 - **Frosted edges — you can see there's more**: the bottom navigation,
   the tab pages' top bars and the recording screen's bars are now
   translucent with a backdrop blur, and the content scrolls beneath

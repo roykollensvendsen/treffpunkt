@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/tappable_card_tile.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
@@ -35,7 +36,7 @@ class ProgramCategoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(category.label)),
+      appBar: FrostedAppBar(title: Text(category.label)),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

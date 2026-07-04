@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/zoom_controls.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
@@ -308,7 +309,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     }
     if (_done) {
       return Scaffold(
-        appBar: AppBar(
+        appBar: FrostedAppBar(
           title: const Text('Resultat'),
           leading: BackButton(onPressed: () => setState(() => _done = false)),
         ),
@@ -352,7 +353,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     final tally = _tally(_hold);
     final shotsMax = _group!.shotsPerHold;
     return Scaffold(
-      appBar: AppBar(
+      appBar: FrostedAppBar(
         title: Text('Hold ${hold.number}/${norgesfelt2026.length}'),
         actions: [
           // A remembered group skipped the picker (spec 0099); offer a way
@@ -480,7 +481,7 @@ class _GroupPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Skyt NorgesFelt-løypa')),
+    appBar: const FrostedAppBar(title: Text('Skyt NorgesFelt-løypa')),
     body: SafeArea(
       child: Center(
         child: ConstrainedBox(
