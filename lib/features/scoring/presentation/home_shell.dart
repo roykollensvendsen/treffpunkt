@@ -4,11 +4,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/platform/notification_sound.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/forum/presentation/forum_screen.dart';
+import 'package:treffpunkt/features/notifications/presentation/notifications_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
@@ -65,6 +67,20 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    // The shot sound (spec 0134): a notification arriving while the app is
+    // open fires the shot and refreshes the bell badge. The first emission
+    // (the initial load) is silent by construction — prev is still loading.
+    ref.listen(notificationsStreamProvider, (prev, next) {
+      final before = prev?.value;
+      final after = next.value;
+      if (before == null || after == null) return;
+      final knownIds = <String>{for (final n in before) n.id};
+      final arrived = after.any((n) => !knownIds.contains(n.id) && n.unread);
+      if (arrived) {
+        ref.read(notificationSoundProvider).play();
+        ref.invalidate(notificationsProvider);
+      }
+    });
     return Scaffold(
       // Content slides under the frosted navigation bar (spec 0129).
       extendBody: true,

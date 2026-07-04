@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/features/notifications/data/notifications_repository.dart';
@@ -16,6 +18,44 @@ class SupabaseNotificationsRepository implements NotificationsRepository {
   final SupabaseClient _client;
 
   static const String _table = 'notifications';
+
+  @override
+  Stream<List<AppNotification>> watch() {
+    final controller = StreamController<List<AppNotification>>();
+    RealtimeChannel? sub;
+
+    Future<void> emit() async {
+      if (!controller.isClosed) controller.add(await list());
+    }
+
+    controller
+      ..onListen = () {
+        final uid = _client.auth.currentUser?.id;
+        sub = _client
+            .channel('notifications:${uid ?? 'anon'}')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: _table,
+              filter: uid == null
+                  ? null
+                  : PostgresChangeFilter(
+                      type: PostgresChangeFilterType.eq,
+                      column: 'user_id',
+                      value: uid,
+                    ),
+              callback: (_) => unawaited(emit()),
+            )
+            .subscribe();
+        unawaited(emit());
+      }
+      ..onCancel = () async {
+        final open = sub;
+        if (open != null) await _client.removeChannel(open);
+        await controller.close();
+      };
+    return controller.stream;
+  }
 
   @override
   Future<List<AppNotification>> list() async {
