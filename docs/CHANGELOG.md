@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Felt competitions open ready to shoot**: the competition detail
+  gated «Skyt nå» on the ring catalogue and showed «Ukjent program»
+  for a felt competition; it now recognises the felt programs
+  (spec 0140 fix).
+
 ### Added
 - **NorgesFelt competitions**: the create form now offers
   «NorgesFelt-løype 2026 (Gruppe 1)» and «(Gruppe 2)» — the group is

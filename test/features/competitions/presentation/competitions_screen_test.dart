@@ -134,6 +134,32 @@ void main() {
     expect(feltCompetitionGroup(created.program), FeltShooterGroup.two);
   });
 
+  testWidgets('a felt competition can be shot from the detail (0140)', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(
+      Competition(
+        id: 'felt-c1',
+        name: 'Feltcup',
+        program: feltCompetitionProgram(FeltShooterGroup.two),
+        ownerId: 'me',
+      ),
+    );
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(competitionCard('felt-c1')));
+    await tester.pumpAndSettle();
+
+    // The felt program is known: no «Ukjent program», and «Skyt nå» is
+    // enabled.
+    expect(find.text('Ukjent program'), findsNothing);
+    final shoot = tester.widget<FilledButton>(
+      find.byKey(shootForCompetitionKey),
+    );
+    expect(shoot.onPressed, isNotNull);
+  });
+
   testWidgets('accepting an invitation moves it into my competitions', (
     tester,
   ) async {
