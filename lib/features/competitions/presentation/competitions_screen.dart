@@ -1037,7 +1037,11 @@ class _CompetitionDetailScreenState
     // it too); today the detail is reached only as a participant.
     final isParticipant =
         isOwner || (members.value?.any((m) => m.userId == uid) ?? false);
-    final program = ProgramCatalogue.byName(competition.program);
+    // A program is shootable when the ring catalogue knows it OR it is a
+    // felt competition (spec 0140) — _shoot() routes accordingly.
+    final knownProgram =
+        ProgramCatalogue.byName(competition.program) != null ||
+        feltCompetitionGroup(competition.program) != null;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -1093,9 +1097,9 @@ class _CompetitionDetailScreenState
                     if (isParticipant)
                       FilledButton.icon(
                         key: shootForCompetitionKey,
-                        onPressed: program == null
-                            ? null
-                            : () => unawaited(_shoot()),
+                        onPressed: knownProgram
+                            ? () => unawaited(_shoot())
+                            : null,
                         icon: const TargetIcon(size: 20),
                         label: const Text('Skyt nå'),
                       ),
@@ -1132,7 +1136,7 @@ class _CompetitionDetailScreenState
                       ),
                   ],
                 ),
-                if (isParticipant && program == null)
+                if (isParticipant && !knownProgram)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
