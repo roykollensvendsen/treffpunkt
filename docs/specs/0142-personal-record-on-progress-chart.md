@@ -33,11 +33,13 @@ to show the personal record on the curve itself.
 4. The y-scale **includes the record**, so a startverdi above every plotted
    session keeps the line (and the gap up to it) visible instead of
    clipping it.
-5. The **felt curve** mixes both shooter groups into one series (spec 0090)
-   while felt records are per group (spec 0102). The pers line is drawn
-   only when every plotted round is from **one** group — that group's
-   effective record; with mixed groups no line is drawn (their points are
-   not comparable, spec 0140).
+5. ~~The **felt curve** mixes both shooter groups into one series
+   (spec 0090) while felt records are per group (spec 0102). The pers line
+   is drawn only when every plotted round is from **one** group — that
+   group's effective record; with mixed groups no line is drawn (their
+   points are not comparable, spec 0140).~~ **Superseded by spec 0143:**
+   the felt statistics are per group, so every felt curve carries its
+   group's record.
 6. The screen-reader summary (spec 0090 req 7) names the record:
    «Pers: N poeng.»
 

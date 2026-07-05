@@ -37,8 +37,11 @@ const Key noStatisticsKey = ValueKey<String>('noStatistics');
 /// Key for the «Rekorder» app-bar action (spec 0102), for tests.
 const Key statisticsRecordsKey = ValueKey<String>('statisticsRecords');
 
-/// The felt course's exercise name in the statistics (spec 0090).
-const String _feltExercise = 'NorgesFelt-løype 2026';
+/// The felt course's per-group exercise names (spec 0143), in group order —
+/// the same labels the Rekorder page keys records by (spec 0102).
+final List<String> _feltExercises = <String>[
+  for (final group in FeltShooterGroup.values) feltRecordKey(group),
+];
 
 /// The series colours (spec 0090), validated with the dataviz palette
 /// validator against the app's light (#F9F9FF) and dark (#111318) surfaces
@@ -104,8 +107,13 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     }
     for (final round in feltRounds) {
       final tally = round.tally;
+      // One exercise per felt group (spec 0143): the groups shoot different
+      // figures, so their points only compare within the group.
       byExercise
-          .putIfAbsent(_feltExercise, () => <ProgressSample>[])
+          .putIfAbsent(
+            feltRecordKey(round.session.group),
+            () => <ProgressSample>[],
+          )
           .add(
             ProgressSample(
               capturedAt: round.capturedAt,
@@ -119,14 +127,16 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         exercise: progressSeries(byExercise[exercise]!),
     }..removeWhere((_, entries) => entries.isEmpty);
 
-    // Offer the exercises in catalogue order, the felt course last, then any
+    // Offer the exercises in catalogue order, the felt groups last, then any
     // legacy names (a stored program no longer in the catalogue) at the end.
     final exercises = <String>[
       for (final program in ProgramCatalogue.all)
         if (series.containsKey(program.name)) program.name,
-      if (series.containsKey(_feltExercise)) _feltExercise,
+      for (final felt in _feltExercises)
+        if (series.containsKey(felt)) felt,
       for (final name in series.keys)
-        if (ProgramCatalogue.byName(name) == null && name != _feltExercise)
+        if (ProgramCatalogue.byName(name) == null &&
+            !_feltExercises.contains(name))
           name,
     ];
 
@@ -136,29 +146,24 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
 
     // The selected exercise's *effective* record (spec 0142): the best of
     // the manual baseline and every recorded session — dated or not — so
-    // the line always agrees with the Rekorder page. Felt records are per
-    // group (spec 0102) while the felt curve mixes both, so the line is
-    // drawn only when every plotted round is from one group.
+    // the line always agrees with the Rekorder page. A felt exercise IS a
+    // group (spec 0143), keyed exactly like its record, so both paths are
+    // the same shape.
     final baselines = ref.watch(personalRecordsProvider);
     ExerciseResult? pers;
-    if (selected == _feltExercise) {
-      final groups = <FeltShooterGroup>{
-        for (final round in feltRounds) round.session.group,
-      };
-      if (groups.length == 1) {
-        pers = bestResult(<ExerciseResult>[
-          ?baselines[feltRecordKey(groups.single)],
-          for (final round in feltRounds)
-            (points: round.tally.points, inner: round.tally.inner),
-        ]);
-      }
-    } else if (selected != null) {
-      pers = bestResult(<ExerciseResult>[
-        ?baselines[selected],
-        for (final entry in entries)
-          if (entry.record.program == selected)
-            (points: entry.record.total, inner: entry.record.innerTens),
-      ]);
+    if (selected != null) {
+      final history = _feltExercises.contains(selected)
+          ? <ExerciseResult>[
+              for (final round in feltRounds)
+                if (feltRecordKey(round.session.group) == selected)
+                  (points: round.tally.points, inner: round.tally.inner),
+            ]
+          : <ExerciseResult>[
+              for (final entry in entries)
+                if (entry.record.program == selected)
+                  (points: entry.record.total, inner: entry.record.innerTens),
+            ];
+      pers = bestResult(<ExerciseResult>[?baselines[selected], ...history]);
     }
 
     return Scaffold(
