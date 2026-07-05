@@ -13,6 +13,11 @@ All notable changes to this project are documented here. The format is based on
   silhouette, scan) (spec 0141).
 
 ### Fixed
+- **Notices with a button go away by themselves again**: the
+  «arkivert» confirmation (with «Angre») and the location-denied notice
+  (with «Åpne innstillinger») stayed on screen until tapped, because
+  newer Flutter keeps a snack bar with an action open indefinitely —
+  they now time out after a few seconds as before (spec 0049 fix).
 - **Felt competitions open ready to shoot**: the competition detail
   gated «Skyt nå» on the ring catalogue and showed «Ukjent program»
   for a felt competition; it now recognises the felt programs

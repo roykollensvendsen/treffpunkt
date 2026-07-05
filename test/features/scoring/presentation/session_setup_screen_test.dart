@@ -221,6 +221,24 @@ void main() {
     expect(pushedMetadata(tester)!.place!.label, 'Skytebanen');
   });
 
+  testWidgets('the "Åpne innstillinger" notice auto-dismisses after its '
+      'timeout', (tester) async {
+    final location = FakeLocationService(
+      result: const LocationDeniedForever(),
+    );
+    await tester.pumpWidget(app(location));
+
+    await tester.tap(find.byKey(useMyLocationKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(openLocationSettingsKey), findsOneWidget);
+
+    // A snack bar with an action persists by default since Flutter 3.44; this
+    // notice must still time out on its own and free up the screen.
+    await tester.pump(const Duration(seconds: 10));
+    await tester.pumpAndSettle();
+    expect(find.byKey(openLocationSettingsKey), findsNothing);
+  });
+
   testWidgets('does not offer "Åpne innstillinger" for a plain denial', (
     tester,
   ) async {

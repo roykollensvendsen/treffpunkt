@@ -221,6 +221,9 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
         ..showSnackBar(
           SnackBar(
             content: Text('«${competition.name}» arkivert'),
+            // Since Flutter 3.44 a snack bar with an action stays until acted
+            // on; this is a transient confirmation, so let it time out.
+            persist: false,
             action: SnackBarAction(
               label: 'Angre',
               onPressed: () => unawaited(_restore(ref, competition.id)),

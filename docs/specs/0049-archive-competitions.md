@@ -96,7 +96,9 @@ to the caller's row).
   until the tile is expanded. Each active card carries an **archive** icon
   (`archiveCompetitionKey(id)`); each archived row (revealed on expand) a
   **restore** icon (`unarchiveCompetitionKey(id)`). Archiving shows a snackbar
-  with **Angre**.
+  with **Angre**; it is a transient confirmation, so it times out on its own
+  (`persist: false` — since Flutter 3.44 a snackbar with an action would
+  otherwise stay until acted on).
 - The detail screen shows an **Arkiver** / **Gjenopprett** button available to
   every viewer (owner and non-owner alike), beside the owner-only delete.
 
@@ -117,6 +119,8 @@ to the caller's row).
   restore moves it back.
 - The "Arkiverte" tile is absent when nothing is archived.
 - A joined (non-owned) competition can be archived from the detail screen.
+- The «arkivert» snackbar auto-dismisses after its timeout despite carrying the
+  **Angre** action.
 
 ## Open questions
 - A future enhancement could auto-suggest archiving competitions with no recent

@@ -239,6 +239,9 @@ class _SessionSetupFormState extends ConsumerState<SessionSetupForm> {
           'Posisjon er avslått. Slå den på i innstillingene, '
           'eller skriv inn stedet selv.',
         ),
+        // Since Flutter 3.44 a snack bar with an action stays until acted on;
+        // manual entry is a fine outcome, so let the notice time out.
+        persist: false,
         action: SnackBarAction(
           key: openLocationSettingsKey,
           label: 'Åpne innstillinger',
