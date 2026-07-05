@@ -128,7 +128,11 @@ two curves in one chart: your **poengsum** and your **innertreff** per
 session, each in its own colour with a legend. There is no time axis — the
 x-axis is simply your sessions in the order you shot them. Tap or drag on
 the chart to read a specific session's numbers; the latest values are
-labelled at the end of each curve.
+labelled at the end of each curve. A dashed **Pers** line marks your
+personal record for the exercise — the same record the Rekorder page
+shows, so your startverdi and undated sessions count too. (The NorgesFelt
+curve only gets the line while all your rounds are from one group; the
+groups' points are not comparable.)
 
 The **trophy** button in the top bar opens **Rekorder**: every exercise with
 your current personal record. Shot for years before you got the app? Tap an

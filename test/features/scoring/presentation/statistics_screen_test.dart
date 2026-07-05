@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Widget tests for the per-exercise progress charts (spec 0090).
+// Widget tests for the per-exercise progress charts (spec 0090) and the
+// personal-record line on them (spec 0142).
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,7 +16,9 @@ import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
+import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
+import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/statistics_screen.dart';
 
@@ -33,24 +38,28 @@ SessionRecord _ring(
   payload: <String, dynamic>{'id': id},
 );
 
-FeltSessionRecord _felt(String id, {required DateTime capturedAt}) =>
-    FeltSessionRecord(
-      id: id,
-      capturedAt: capturedAt,
-      session: const FeltSessionSnapshot(
-        group: FeltShooterGroup.one,
-        currentHold: 0,
-        holds: <List<FeltPlacedShot>>[
-          <FeltPlacedShot>[
-            FeltPlacedShot(dx: 1, dy: 1, figureIndex: 0, inner: true),
-          ],
-        ],
-      ),
-    );
+FeltSessionRecord _felt(
+  String id, {
+  required DateTime capturedAt,
+  FeltShooterGroup group = FeltShooterGroup.one,
+}) => FeltSessionRecord(
+  id: id,
+  capturedAt: capturedAt,
+  session: FeltSessionSnapshot(
+    group: group,
+    currentHold: 0,
+    holds: const <List<FeltPlacedShot>>[
+      <FeltPlacedShot>[
+        FeltPlacedShot(dx: 1, dy: 1, figureIndex: 0, inner: true),
+      ],
+    ],
+  ),
+);
 
 Future<Widget> _app({
   List<SessionRecord> synced = const <SessionRecord>[],
   List<FeltSessionRecord> feltRounds = const <FeltSessionRecord>[],
+  Map<String, ExerciseResult> baselines = const <String, ExerciseResult>{},
   Widget home = const StatisticsScreen(),
 }) async {
   final repository = InMemorySessionRepository();
@@ -66,6 +75,7 @@ Future<Widget> _app({
         InMemoryPendingUploadsStore(),
       ),
       feltHistoryStoreProvider.overrideWithValue(feltHistory),
+      initialPersonalRecordsProvider.overrideWithValue(baselines),
     ],
     child: MaterialApp(home: home),
   );
@@ -152,6 +162,89 @@ void main() {
       find.textContaining('Økt 2: 570 poeng · 17', findRichText: true),
       findsOneWidget,
     );
+  });
+
+  testWidgets('the pers line sits at the plotted record (spec 0142)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(await _app(synced: luft));
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<ProgressChart>(find.byType(ProgressChart));
+    expect(chart.persPoints, 570);
+    expect(
+      find.bySemanticsLabel(RegExp(r'Pers: 570 poeng\.')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a startverdi above every session wins (spec 0142)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      await _app(
+        synced: luft,
+        baselines: const <String, ExerciseResult>{
+          '10 m Luftpistol 60 skudd': (points: 590, inner: 20),
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<ProgressChart>(find.byType(ProgressChart));
+    expect(chart.persPoints, 590);
+  });
+
+  testWidgets('an undated session counts for the record even though it is '
+      'not plotted (spec 0142)', (tester) async {
+    await tester.pumpWidget(
+      await _app(
+        synced: [
+          ...luft,
+          _ring('r3', '10 m Luftpistol 60 skudd', total: 585, inner: 12),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<ProgressChart>(find.byType(ProgressChart));
+    // Two dated sessions plotted, but the undated 585 holds the record.
+    expect(chart.entries, hasLength(2));
+    expect(chart.persPoints, 585);
+  });
+
+  testWidgets("the felt curve gets the single group's record, none when "
+      'groups mix (spec 0142)', (tester) async {
+    final round = _felt('f1', capturedAt: DateTime.utc(2026, 7));
+    await tester.pumpWidget(
+      await _app(
+        feltRounds: [round],
+        baselines: <String, ExerciseResult>{
+          feltRecordKey(FeltShooterGroup.one): const (points: 90, inner: 9),
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    var chart = tester.widget<ProgressChart>(find.byType(ProgressChart));
+    expect(chart.persPoints, math.max(90, round.tally.points));
+
+    await tester.pumpWidget(
+      await _app(
+        feltRounds: [
+          round,
+          _felt(
+            'f2',
+            capturedAt: DateTime.utc(2026, 7, 2),
+            group: FeltShooterGroup.two,
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    chart = tester.widget<ProgressChart>(find.byType(ProgressChart));
+    expect(chart.persPoints, isNull);
   });
 
   testWidgets('undated-only sessions leave the empty state (spec 0090)', (
