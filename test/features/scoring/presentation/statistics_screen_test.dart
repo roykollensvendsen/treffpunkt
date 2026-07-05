@@ -137,7 +137,7 @@ void main() {
 
     await tester.tap(find.byKey(exerciseDropdownKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('NorgesFelt-løype 2026').last);
+    await tester.tap(find.text('NorgesFelt-løype 2026 · Gruppe 1').last);
     await tester.pumpAndSettle();
 
     expect(find.byKey(progressChartKey), findsOneWidget);
@@ -213,12 +213,17 @@ void main() {
     expect(chart.persPoints, 585);
   });
 
-  testWidgets("the felt curve gets the single group's record, none when "
-      'groups mix (spec 0142)', (tester) async {
-    final round = _felt('f1', capturedAt: DateTime.utc(2026, 7));
+  testWidgets('the felt course is one exercise per group, each with its own '
+      'record (spec 0143)', (tester) async {
+    final one = _felt('f1', capturedAt: DateTime.utc(2026, 7));
+    final two = _felt(
+      'f2',
+      capturedAt: DateTime.utc(2026, 7, 2),
+      group: FeltShooterGroup.two,
+    );
     await tester.pumpWidget(
       await _app(
-        feltRounds: [round],
+        feltRounds: [one, two],
         baselines: <String, ExerciseResult>{
           feltRecordKey(FeltShooterGroup.one): const (points: 90, inner: 9),
         },
@@ -226,25 +231,43 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    var chart = tester.widget<ProgressChart>(find.byType(ProgressChart));
-    expect(chart.persPoints, math.max(90, round.tally.points));
+    // Both group exercises are offered, labelled like the Rekorder page.
+    await tester.tap(find.byKey(exerciseDropdownKey));
+    await tester.pumpAndSettle();
+    expect(find.text('NorgesFelt-løype 2026 · Gruppe 1'), findsWidgets);
+    expect(find.text('NorgesFelt-løype 2026 · Gruppe 2'), findsWidgets);
 
+    // Gruppe 1: one round plotted, the record beats the baseline in.
+    await tester.tap(find.text('NorgesFelt-løype 2026 · Gruppe 1').last);
+    await tester.pumpAndSettle();
+    var chart = tester.widget<ProgressChart>(find.byType(ProgressChart));
+    expect(chart.entries, hasLength(1));
+    expect(chart.persPoints, math.max(90, one.tally.points));
+
+    // Gruppe 2: its own round and its own (baseline-free) record.
+    await tester.tap(find.byKey(exerciseDropdownKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('NorgesFelt-løype 2026 · Gruppe 2').last);
+    await tester.pumpAndSettle();
+    chart = tester.widget<ProgressChart>(find.byType(ProgressChart));
+    expect(chart.entries, hasLength(1));
+    expect(chart.persPoints, two.tally.points);
+  });
+
+  testWidgets('only a group with dated rounds is offered (spec 0143)', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       await _app(
-        feltRounds: [
-          round,
-          _felt(
-            'f2',
-            capturedAt: DateTime.utc(2026, 7, 2),
-            group: FeltShooterGroup.two,
-          ),
-        ],
+        feltRounds: [_felt('f1', capturedAt: DateTime.utc(2026, 7))],
       ),
     );
     await tester.pumpAndSettle();
 
-    chart = tester.widget<ProgressChart>(find.byType(ProgressChart));
-    expect(chart.persPoints, isNull);
+    await tester.tap(find.byKey(exerciseDropdownKey));
+    await tester.pumpAndSettle();
+    expect(find.text('NorgesFelt-løype 2026 · Gruppe 1'), findsWidgets);
+    expect(find.text('NorgesFelt-løype 2026 · Gruppe 2'), findsNothing);
   });
 
   testWidgets('undated-only sessions leave the empty state (spec 0090)', (

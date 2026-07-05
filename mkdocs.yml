@@ -173,6 +173,7 @@ nav:
       - "0140 — NorgesFelt-konkurranser": specs/0140-felt-competitions.md
       - "0141 — Zoomknappene er for musa": specs/0141-zoom-controls-desktop-only.md
       - "0142 — Pers på progresjonskurven": specs/0142-personal-record-on-progress-chart.md
+      - "0143 — Felt-statistikk per gruppe": specs/0143-felt-statistics-per-group.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

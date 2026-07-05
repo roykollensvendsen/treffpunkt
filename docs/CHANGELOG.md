@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Felt statistics per group**: the NorgesFelt course appears in
+  Statistikk as one exercise **per group** — the groups shoot different
+  figures, so their points only compare within the group — and each
+  group's curve now carries its own «Pers»-line, matching the Rekorder
+  page (spec 0143; a mixed curve previously got no record at all).
+
 ### Added
 - **Your record on the statistics curve**: the progress chart now draws
   a dashed «Pers»-line at your personal record for the exercise — the

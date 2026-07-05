@@ -130,9 +130,10 @@ x-axis is simply your sessions in the order you shot them. Tap or drag on
 the chart to read a specific session's numbers; the latest values are
 labelled at the end of each curve. A dashed **Pers** line marks your
 personal record for the exercise — the same record the Rekorder page
-shows, so your startverdi and undated sessions count too. (The NorgesFelt
-curve only gets the line while all your rounds are from one group; the
-groups' points are not comparable.)
+shows, so your startverdi and undated sessions count too. The NorgesFelt
+course appears **per group** (like on the Rekorder page), since the
+groups shoot different figures and their points only compare within the
+group — each group's curve carries its own record.
 
 The **trophy** button in the top bar opens **Rekorder**: every exercise with
 your current personal record. Shot for years before you got the app? Tap an
