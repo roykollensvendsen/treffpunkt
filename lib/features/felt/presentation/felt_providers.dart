@@ -7,10 +7,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
+import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -132,7 +135,31 @@ class FeltSyncNotifier extends Notifier<void> {
   Future<void> uploadOne(FeltSessionRecord record) => _run(() async {
     if (!_signedIn) return;
     await ref.read(feltSessionRepositoryProvider).upload(record);
+    await _submitResult(record);
   });
+
+  /// Submits the round as a competition result (spec 0140): points as the
+  /// total, inner hits as the tiebreak, the round as the payload — the
+  /// felt mirror of the ring queue's submit. Idempotent by round id.
+  Future<void> _submitResult(FeltSessionRecord record) async {
+    final competitionId = record.competitionId;
+    if (competitionId == null) return;
+    final tally = record.tally;
+    await ref
+        .read(competitionRepositoryProvider)
+        .submitResult(
+          CompetitionResult(
+            id: record.id,
+            competitionId: competitionId,
+            program: feltCompetitionProgram(record.session.group),
+            total: tally.points,
+            maxTotal: feltCourseMaxPoints(record.session.group),
+            innerTens: tally.inner,
+            capturedAt: record.capturedAt,
+            payload: record.toJson(),
+          ),
+        );
+  }
 
   Future<void> _run(Future<void> Function() task) {
     final previous = _tail ?? Future<void>.value();

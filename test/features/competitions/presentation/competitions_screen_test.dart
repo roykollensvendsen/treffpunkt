@@ -27,6 +27,8 @@ import 'package:treffpunkt/features/competitions/presentation/competition_invite
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
+import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
+import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/session.dart';
@@ -99,6 +101,37 @@ void main() {
     // Back on the hub, the new competition is listed.
     expect(find.byKey(competitionCard('created-1')), findsOneWidget);
     expect(find.text('Klubbmatch'), findsOneWidget);
+  });
+
+  testWidgets('a felt competition is created group-locked (spec 0140)', (
+    tester,
+  ) async {
+    // A tall surface so the long program menu builds its felt entries.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final repo = _meRepo();
+    await tester.pumpWidget(_app(repo, newId: 'felt-1'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(newCompetitionButtonKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(competitionNameFieldKey), 'Feltcup');
+    await tester.tap(find.byKey(competitionProgramFieldKey));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.text(feltCompetitionProgram(FeltShooterGroup.two)).last,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(createCompetitionSubmitKey));
+    await tester.pumpAndSettle();
+
+    final created = (await repo.listMine()).single;
+    expect(
+      created.program,
+      feltCompetitionProgram(FeltShooterGroup.two),
+    );
+    expect(feltCompetitionGroup(created.program), FeltShooterGroup.two);
   });
 
   testWidgets('accepting an invitation moves it into my competitions', (

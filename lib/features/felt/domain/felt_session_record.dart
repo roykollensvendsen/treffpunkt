@@ -17,6 +17,7 @@ class FeltSessionRecord {
     required this.id,
     required this.capturedAt,
     required this.session,
+    this.competitionId,
   });
 
   /// Rebuilds a record from [json].
@@ -27,6 +28,7 @@ class FeltSessionRecord {
         session: FeltSessionSnapshot.fromJson(
           json['session'] as Map<String, dynamic>,
         ),
+        competitionId: json['competitionId'] as String?,
       );
 
   /// Stable client-generated id.
@@ -37,6 +39,10 @@ class FeltSessionRecord {
 
   /// The finished round (group, per-hold placed shots).
   final FeltSessionSnapshot session;
+
+  /// The competition this round was shot for (spec 0140), or `null` for a
+  /// plain training round.
+  final String? competitionId;
 
   /// The scored tally of the round.
   FeltSessionTally get tally => FeltSessionTally(
@@ -58,6 +64,7 @@ class FeltSessionRecord {
     'id': id,
     'capturedAt': capturedAt.toIso8601String(),
     'session': session.toJson(),
+    if (competitionId != null) 'competitionId': competitionId,
   };
 
   @override
@@ -65,8 +72,9 @@ class FeltSessionRecord {
       other is FeltSessionRecord &&
       other.id == id &&
       other.capturedAt == capturedAt &&
+      other.competitionId == competitionId &&
       other.session == session;
 
   @override
-  int get hashCode => Object.hash(id, capturedAt, session);
+  int get hashCode => Object.hash(id, capturedAt, competitionId, session);
 }

@@ -8,8 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/auth/domain/app_user.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
+import 'package:treffpunkt/features/competitions/domain/competition.dart';
+import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
+import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -116,4 +120,61 @@ void main() {
 
     expect((await repository.list()).single.id, 'a');
   });
+  test(
+    'a competition round submits its result on upload (spec 0140)',
+    () async {
+      final auth = FakeAuthRepository(
+        initial: const SignedIn(AppUser(id: 'me', email: 'me@example.com')),
+      );
+      final repository = InMemoryFeltSessionRepository();
+      final competitions = InMemoryCompetitionRepository(currentUserId: 'me');
+      await competitions.createCompetition(
+        Competition(
+          id: 'felt-c1',
+          name: 'Feltcup',
+          program: feltCompetitionProgram(FeltShooterGroup.two),
+          ownerId: 'me',
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(auth),
+          feltSessionRepositoryProvider.overrideWithValue(repository),
+          feltHistoryStoreProvider.overrideWithValue(
+            InMemoryFeltHistoryStore(),
+          ),
+          competitionRepositoryProvider.overrideWithValue(competitions),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final record = FeltSessionRecord(
+        id: 'felt-r1',
+        capturedAt: DateTime.utc(2026, 7, 5).toLocal(),
+        competitionId: 'felt-c1',
+        session: const FeltSessionSnapshot(
+          group: FeltShooterGroup.two,
+          currentHold: 7,
+          holds: <List<FeltPlacedShot>>[
+            <FeltPlacedShot>[
+              FeltPlacedShot(dx: 1, dy: 2, figureIndex: 0, inner: true),
+              FeltPlacedShot(dx: 3, dy: 4, figureIndex: 0),
+            ],
+          ],
+        ),
+      );
+      await container.read(feltSyncProvider.notifier).uploadOne(record);
+
+      final results = await competitions.resultsOf('felt-c1');
+      expect(results, hasLength(1));
+      final result = results.single;
+      // 2 treff + 1 figur = 3 points; 1 inner as the tiebreak; group max 47.
+      expect(result.total, 3);
+      expect(result.innerTens, 1);
+      expect(result.maxTotal, 47);
+      expect(result.program, feltCompetitionProgram(FeltShooterGroup.two));
+      // The payload round-trips as a felt record (the result screen's path).
+      expect(FeltSessionRecord.fromJson(result.payload).id, 'felt-r1');
+    },
+  );
 }
