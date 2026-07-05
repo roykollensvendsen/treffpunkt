@@ -77,8 +77,9 @@ setup step as the other programs — **date and time**, **place** (type it or
 tap **Bruk min posisjon**) and your **weapon** — then choose your **group**
 — **Gruppe 1** (6 shots per hold) or **Gruppe 2** (5 per hold) — and
 **place each shot** on the hold picture where it hit. You can **zoom and
-pan** the picture just like the ring targets — pinch, two-finger scroll or
-the **＋/−** buttons — for precise placement on the small figures. The app
+pan** the picture just like the ring targets — pinch on a touch screen,
+or two-finger scroll and the **＋/−** buttons on a computer — for precise
+placement on the small figures. The app
 works out which figure and inner zone each shot landed in and scores it the
 NorgesFelt way — **1 point per hit and 1 per figure you hit** (a stripe's
 three squares are one figure, the dividing lines included).

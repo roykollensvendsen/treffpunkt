@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // Widget tests for saving and resuming a felt round (specs 0081/0116).
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -125,6 +126,7 @@ void main() {
   testWidgets('the hold picture zooms with the shared buttons (0125)', (
     tester,
   ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     bigView(tester);
     final store = InMemoryFeltSessionStore();
     await tester.pumpWidget(appWith(store, const FeltRecordScreen()));
@@ -151,11 +153,13 @@ void main() {
     await tester.tap(find.byKey(zoomResetKey));
     await tester.pump();
     expect(controller.value.getMaxScaleOnAxis(), closeTo(1.0, 1e-6));
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('a pinch zooms without planting a shot (spec 0128)', (
     tester,
   ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     bigView(tester);
     final store = InMemoryFeltSessionStore();
     await tester.pumpWidget(appWith(store, const FeltRecordScreen()));
@@ -198,6 +202,7 @@ void main() {
     await tester.tapAt(rect.center);
     await tester.pump();
     expect(find.textContaining('Skudd 1/6'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('the course preview no longer offers resume (spec 0116)', (

@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/config/build_info.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
+import 'package:treffpunkt/core/presentation/zoom_controls.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
@@ -111,6 +112,8 @@ class _ScanZoomControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Desktop only (spec 0141): touch screens pinch instead.
+    if (!zoomControlsVisible) return const SizedBox.shrink();
     return Card(
       elevation: 2,
       shape: const StadiumBorder(),
