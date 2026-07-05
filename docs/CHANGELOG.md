@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Zoom buttons only where the mouse lives**: the on-target ＋/−/reset
+  stack covered the faces on phones, where a pinch does the job — it
+  now shows on desktop only, on every zoomable surface (ring, felt,
+  silhouette, scan) (spec 0141).
+
 ### Fixed
 - **Felt competitions open ready to shoot**: the competition detail
   gated «Skyt nå» on the ring catalogue and showed «Ukjent program»

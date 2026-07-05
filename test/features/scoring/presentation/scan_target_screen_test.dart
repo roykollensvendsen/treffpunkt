@@ -8,8 +8,8 @@
 // placement is capped at the series' remaining capacity, and confirming returns
 // the placed shots so the caller can commit them.
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -373,6 +373,7 @@ void main() {
 
   group('zoom while placing (spec 0045)', () {
     testWidgets('the zoom controls appear only in place mode', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
       final source = FakeImageSourceService(
         result: ImagePicked(PickedImage(bytes: _pngBytes)),
       );
@@ -389,11 +390,13 @@ void main() {
       expect(find.byKey(scanZoomInKey), findsOneWidget);
       expect(find.byKey(scanZoomResetKey), findsOneWidget);
       expect(find.byKey(scanZoomOutKey), findsOneWidget);
+      debugDefaultTargetPlatformOverride = null;
     });
 
     testWidgets('a centre tap still scores a ten after zooming in', (
       tester,
     ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
       final source = FakeImageSourceService(
         result: ImagePicked(PickedImage(bytes: _pngBytes)),
       );
@@ -408,6 +411,7 @@ void main() {
       await tester.pump();
 
       expect(tester.widget<Text>(find.byKey(scanLiveScoreKey)).data, '10');
+      debugDefaultTargetPlatformOverride = null;
     });
   });
 }

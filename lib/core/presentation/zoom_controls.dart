@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Key for the zoom-in button, used by tests.
@@ -13,9 +14,16 @@ const Key zoomResetKey = ValueKey<String>('zoomReset');
 /// Key for the zoom-out button, used by tests.
 const Key zoomOutKey = ValueKey<String>('zoomOut');
 
+/// Whether the on-target zoom buttons are shown (spec 0141): desktop only.
+/// Touch screens pinch — and on a phone the button stack covered the face.
+bool get zoomControlsVisible => switch (defaultTargetPlatform) {
+  TargetPlatform.android || TargetPlatform.iOS => false,
+  _ => true,
+};
+
 /// The ＋ / − / reset zoom buttons overlaid on a zoomable target — shared by
 /// the ring target and the felt hold pictures (spec 0125) so the two cannot
-/// drift apart.
+/// drift apart. Hidden on touch platforms (spec 0141).
 class ZoomControls extends StatelessWidget {
   /// Creates the control stack.
   const ZoomControls({
@@ -36,6 +44,7 @@ class ZoomControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!zoomControlsVisible) return const SizedBox.shrink();
     return Card(
       elevation: 2,
       shape: const StadiumBorder(),

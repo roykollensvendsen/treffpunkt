@@ -4,6 +4,7 @@
 
 // Widget tests for the interactive series target: placing several shots, moving
 // a placed one, zooming, and rendering a reduced-ring face.
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -119,7 +120,18 @@ void main() {
     expect(controller.value.getMaxScaleOnAxis(), greaterThan(1.0));
   });
 
+  testWidgets('the zoom buttons are hidden on touch platforms (0141)', (
+    tester,
+  ) async {
+    // flutter_test runs as Android — the phone contract: gestures zoom,
+    // the button stack must not cover the face.
+    await tester.pumpWidget(_app());
+    expect(find.byKey(const ValueKey<String>('zoomIn')), findsNothing);
+    expect(find.byType(InteractiveViewer), findsOneWidget);
+  });
+
   testWidgets('the zoom buttons zoom in and reset', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     await tester.pumpWidget(_app());
     final controller = tester
         .widget<InteractiveViewer>(find.byType(InteractiveViewer))
@@ -133,11 +145,13 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('zoomReset')));
     await tester.pump();
     expect(controller.value.getMaxScaleOnAxis(), closeTo(1.0, 1e-6));
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('exposes a screen-reader label and Norwegian zoom controls', (
     tester,
   ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(_app());
 
@@ -152,6 +166,7 @@ void main() {
     expect(find.byTooltip('Nullstill zoom'), findsOneWidget);
 
     handle.dispose();
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('the target button is activatable by assistive tech', (
