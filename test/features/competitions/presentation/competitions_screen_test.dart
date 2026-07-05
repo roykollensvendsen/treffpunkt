@@ -812,6 +812,32 @@ void main() {
     expect(find.byKey(unarchiveCompetitionKey('c1')), findsOneWidget);
   });
 
+  testWidgets('the "arkivert" notice auto-dismisses after its timeout', (
+    tester,
+  ) async {
+    final repo = _meRepo();
+    await repo.createCompetition(
+      const Competition(
+        id: 'c1',
+        name: 'Vårcup',
+        program: '25 m NAIS fin',
+        ownerId: 'me',
+      ),
+    );
+    await tester.pumpWidget(_app(repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(archiveCompetitionKey('c1')));
+    await tester.pumpAndSettle();
+    expect(find.text('«Vårcup» arkivert'), findsOneWidget);
+
+    // A snack bar with an action persists by default since Flutter 3.44; this
+    // one is a transient confirmation and must still time out on its own.
+    await tester.pump(const Duration(seconds: 10));
+    await tester.pumpAndSettle();
+    expect(find.text('«Vårcup» arkivert'), findsNothing);
+  });
+
   testWidgets('restoring returns an archived competition to the active list', (
     tester,
   ) async {

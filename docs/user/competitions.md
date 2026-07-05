@@ -105,6 +105,9 @@ competition **someone else created**, which you cannot delete.
 - **From the competition:** open it and pick **Arkiver konkurranse** from the
   **⋮** menu in the top bar (available to everyone, whether or not you own it).
 
+Archiving from the list shows a brief confirmation with an **Angre** button;
+it disappears by itself after a few seconds if you leave it alone.
+
 Archived competitions move into a collapsed **Arkiverte (N)** row at the bottom
 of the list. Tap it to expand, then tap **Gjenopprett** on a competition to
 bring it back to your active list.
