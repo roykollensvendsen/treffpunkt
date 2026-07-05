@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **NorgesFelt competitions**: the create form now offers
+  «NorgesFelt-løype 2026 (Gruppe 1)» and «(Gruppe 2)» — the group is
+  part of the program, so every competition is fair within one group.
+  «Skyt for konkurransen» opens the felt recorder locked to that group,
+  and saving the round submits the result (points, with inner hits as
+  the tiebreak) to the scoreboard like the ring programs do; tapping a
+  felt result opens the felt scorecard with the hold pictures
+  (spec 0140).
+
 ### Changed
 - **The pen buttons now glide**: the extended→round collapse is one
   continuous 250 ms morph — the label's width and opacity follow the

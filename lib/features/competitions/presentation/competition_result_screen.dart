@@ -5,6 +5,8 @@
 import 'package:flutter/material.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
+import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
@@ -38,15 +40,30 @@ class CompetitionResultScreen extends StatelessWidget {
     try {
       snapshot = SessionSnapshot.fromJson(result.payload);
     } on Object {
-      return Scaffold(
-        appBar: FrostedAppBar(title: Text(shooter)),
-        body: const SafeArea(
-          child: _CenteredMessage(
-            'Kan ikke vise dette resultatet',
-            key: unreadableResultKey,
+      // Not a ring session — a felt round renders its own scorecard
+      // (spec 0140); anything else is honestly unreadable.
+      try {
+        final record = FeltSessionRecord.fromJson(result.payload);
+        return Scaffold(
+          appBar: FrostedAppBar(title: Text(shooter)),
+          body: SafeArea(
+            child: FeltScorecard(
+              session: record.tally,
+              holds: record.session.holds,
+            ),
           ),
-        ),
-      );
+        );
+      } on Object {
+        return Scaffold(
+          appBar: FrostedAppBar(title: Text(shooter)),
+          body: const SafeArea(
+            child: _CenteredMessage(
+              'Kan ikke vise dette resultatet',
+              key: unreadableResultKey,
+            ),
+          ),
+        );
+      }
     }
     final session = snapshot.session;
     return SessionScorecard(

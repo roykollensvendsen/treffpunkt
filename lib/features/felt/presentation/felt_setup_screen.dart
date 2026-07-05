@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
+import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
@@ -19,10 +20,21 @@ import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.da
 class FeltSetupScreen extends StatelessWidget {
   /// Creates the felt setup screen, seeding the date/time from [now]
   /// (defaults to the wall clock; injected in tests).
-  FeltSetupScreen({DateTime? now, super.key}) : now = now ?? DateTime.now();
+  FeltSetupScreen({
+    DateTime? now,
+    this.competitionId,
+    this.forcedGroup,
+    super.key,
+  }) : now = now ?? DateTime.now();
 
   /// The moment used to seed the editable date and time.
   final DateTime now;
+
+  /// The competition this round is shot for (spec 0140), or `null`.
+  final String? competitionId;
+
+  /// The competition's locked group (spec 0140), or `null` for free choice.
+  final FeltShooterGroup? forcedGroup;
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +47,12 @@ class FeltSetupScreen extends StatelessWidget {
         onConfirm: (metadata, weapon, {required decimalEntry}) => unawaited(
           Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) =>
-                  FeltRecordScreen(metadata: metadata, weapon: weapon),
+              builder: (_) => FeltRecordScreen(
+                metadata: metadata,
+                weapon: weapon,
+                competitionId: competitionId,
+                forcedGroup: forcedGroup,
+              ),
             ),
           ),
         ),

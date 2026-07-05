@@ -31,6 +31,32 @@ void main() {
     await tester.pump();
   }
 
+  testWidgets('a competition locks the group (spec 0140)', (tester) async {
+    tester.view.physicalSize = const Size(600, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: FeltRecordScreen(
+            competitionId: 'felt-c1',
+            forcedGroup: FeltShooterGroup.two,
+          ),
+        ),
+      ),
+    );
+
+    // No picker, no group switch — straight to hold 1 with the locked group.
+    expect(
+      find.byKey(feltGroupButtonKey(FeltShooterGroup.one)),
+      findsNothing,
+    );
+    expect(find.byKey(feltChangeGroupKey), findsNothing);
+    expect(find.text('Hold 1/8'), findsOneWidget);
+    expect(find.textContaining('Skudd 0/5'), findsOneWidget);
+  });
+
   testWidgets('pick a group, place a shot, score updates (spec 0080)', (
     tester,
   ) async {

@@ -55,6 +55,8 @@ class FeltRecordScreen extends ConsumerStatefulWidget {
     this.restored,
     this.metadata,
     this.weapon,
+    this.competitionId,
+    this.forcedGroup,
     super.key,
   });
 
@@ -67,6 +69,13 @@ class FeltRecordScreen extends ConsumerStatefulWidget {
 
   /// The weapon chosen in the setup step (spec 0092), or null.
   final Weapon? weapon;
+
+  /// The competition this round is shot for (spec 0140), or `null`.
+  final String? competitionId;
+
+  /// The competition's locked group (spec 0140): skips the group picker
+  /// and hides the group switch.
+  final FeltShooterGroup? forcedGroup;
 
   @override
   ConsumerState<FeltRecordScreen> createState() => _FeltRecordScreenState();
@@ -163,8 +172,9 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
       _longitude = metadata?.place?.longitude;
       _weaponName = widget.weapon?.name;
       // The group is a stable property of the shooter: start on hold 1 with
-      // the remembered group and skip the picker (spec 0099).
-      _group = ref.read(initialFeltGroupProvider);
+      // the remembered group and skip the picker (spec 0099). A competition
+      // locks its own group (spec 0140).
+      _group = widget.forcedGroup ?? ref.read(initialFeltGroupProvider);
       _shots = List<List<_Placed>>.generate(
         norgesfelt2026Art.length,
         (_) => <_Placed>[],
@@ -262,6 +272,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
       id: _roundId,
       capturedAt: _capturedAt ?? DateTime.now(),
       session: _snapshot(),
+      competitionId: widget.competitionId,
     );
     await saveFeltRound(ref, record).catchError((Object _) {});
     unawaited(
@@ -357,8 +368,9 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
         title: Text('Hold ${hold.number}/${norgesfelt2026.length}'),
         actions: [
           // A remembered group skipped the picker (spec 0099); offer a way
-          // back while a change is still safe (no shots placed yet).
-          if (_totalShots == 0)
+          // back while a change is still safe (no shots placed yet). A
+          // competition's group is locked (spec 0140) — no way back.
+          if (_totalShots == 0 && widget.forcedGroup == null)
             TextButton.icon(
               key: feltChangeGroupKey,
               onPressed: () => setState(() => _group = null),

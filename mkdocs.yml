@@ -170,6 +170,7 @@ nav:
       - "0137 — Synlige treffpunkter": specs/0137-visible-shot-markers.md
       - "0138 — Flytende knapper som krymper": specs/0138-collapsing-fabs.md
       - "0139 — Pillen glir til sirkel": specs/0139-fab-morph.md
+      - "0140 — NorgesFelt-konkurranser": specs/0140-felt-competitions.md
   - Decisions:
       - ADR-0001 Flutter: adr/0001-frontend-flutter.md
       - ADR-0002 Supabase: adr/0002-backend-supabase.md

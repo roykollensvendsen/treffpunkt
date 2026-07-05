@@ -21,6 +21,9 @@ import 'package:treffpunkt/features/competitions/presentation/competition_chat_s
 import 'package:treffpunkt/features/competitions/presentation/competition_invite_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
+import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
+import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/month_calendar.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
@@ -842,6 +845,13 @@ class _CreateCompetitionScreenState
                         value: program.name,
                         child: Text(program.name),
                       ),
+                    // NorgesFelt, locked to a group (spec 0140): the group
+                    // IS the program, so the competition is fair per group.
+                    for (final group in FeltShooterGroup.offered)
+                      DropdownMenuItem<String>(
+                        value: feltCompetitionProgram(group),
+                        child: Text(feltCompetitionProgram(group)),
+                      ),
                   ],
                   onChanged: (value) =>
                       setState(() => _program = value ?? _program),
@@ -980,6 +990,21 @@ class _CompetitionDetailScreenState
   /// Starts the competition's fixed program; the result auto-submits on
   /// completion (spec 0012). On return, the scoreboard is refreshed.
   Future<void> _shoot() async {
+    // A felt competition (spec 0140) opens the felt setup, locked to the
+    // competition's group; ring competitions open the ring setup.
+    final feltGroup = feltCompetitionGroup(widget.competition.program);
+    if (feltGroup != null) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => FeltSetupScreen(
+            competitionId: widget.competition.id,
+            forcedGroup: feltGroup,
+          ),
+        ),
+      );
+      ref.invalidate(competitionScoreboardProvider(widget.competition.id));
+      return;
+    }
     final program = ProgramCatalogue.byName(widget.competition.program);
     if (program == null) return;
     await Navigator.of(context).push(

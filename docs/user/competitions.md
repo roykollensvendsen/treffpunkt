@@ -60,6 +60,14 @@ program; when you finish, your result is submitted on its own. Under
 live as people submit. **Deltakere** lists who has joined.
 
 ## Chat with the others
+## NorgesFelt competitions
+Pick **«NorgesFelt-løype 2026 (Gruppe 1)»** or **«(Gruppe 2)»** as the
+program to run a felt competition — the group is locked for everyone, so
+the maximum (80 or 47 points) is the same for all. **Skyt for
+konkurransen** opens the felt recorder with the group pre-set, and saving
+the round submits your points (inner hits break ties) to the scoreboard.
+Tapping a result opens the felt scorecard with the hold pictures.
+
 Every competition has a **chat** — a shared back-channel for the people in it.
 Open the competition and tap **Chat**. Everyone who can see the competition can
 read it; if you have joined, you can post. Messages appear **live** for everyone,
