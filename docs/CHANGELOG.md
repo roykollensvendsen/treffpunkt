@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Your record on the statistics curve**: the progress chart now draws
+  a dashed «Pers»-line at your personal record for the exercise — the
+  same record as the Rekorder page (startverdi and undated sessions
+  count), so you see how close every session came (spec 0142).
+
 ### Changed
 - **Zoom buttons only where the mouse lives**: the on-target ＋/−/reset
   stack covered the faces on phones, where a pinch does the job — it

@@ -11,11 +11,14 @@ import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
+import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/domain/exercise_progress.dart';
+import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
+import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/personal_records_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
@@ -131,6 +134,33 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         ? _exercise!
         : (exercises.isEmpty ? null : exercises.first);
 
+    // The selected exercise's *effective* record (spec 0142): the best of
+    // the manual baseline and every recorded session — dated or not — so
+    // the line always agrees with the Rekorder page. Felt records are per
+    // group (spec 0102) while the felt curve mixes both, so the line is
+    // drawn only when every plotted round is from one group.
+    final baselines = ref.watch(personalRecordsProvider);
+    ExerciseResult? pers;
+    if (selected == _feltExercise) {
+      final groups = <FeltShooterGroup>{
+        for (final round in feltRounds) round.session.group,
+      };
+      if (groups.length == 1) {
+        pers = bestResult(<ExerciseResult>[
+          ?baselines[feltRecordKey(groups.single)],
+          for (final round in feltRounds)
+            (points: round.tally.points, inner: round.tally.inner),
+        ]);
+      }
+    } else if (selected != null) {
+      pers = bestResult(<ExerciseResult>[
+        ?baselines[selected],
+        for (final entry in entries)
+          if (entry.record.program == selected)
+            (points: entry.record.total, inner: entry.record.innerTens),
+      ]);
+    }
+
     return Scaffold(
       appBar: FrostedAppBar(
         title: const Text('Statistikk'),
@@ -193,6 +223,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                           child: ProgressChart(
                             exercise: selected,
                             entries: series[selected]!,
+                            persPoints: pers?.points,
                           ),
                         ),
                       ],
@@ -243,11 +274,13 @@ class _Legend extends StatelessWidget {
 /// The two curves in one coordinate system (spec 0090): poengsum and
 /// innertreff per session, x = session order. Tap or drag to inspect the
 /// nearest session; the last value of each series is directly labelled.
+/// The personal record is a dashed reference line (spec 0142).
 class ProgressChart extends StatefulWidget {
   /// Creates the chart for [exercise]'s [entries].
   const ProgressChart({
     required this.exercise,
     required this.entries,
+    this.persPoints,
     super.key,
   });
 
@@ -256,6 +289,10 @@ class ProgressChart extends StatefulWidget {
 
   /// The sessions in chronological order.
   final List<ProgressEntry> entries;
+
+  /// The effective personal record's points (spec 0142), the «Pers» line;
+  /// null draws no line.
+  final int? persPoints;
 
   @override
   State<ProgressChart> createState() => _ProgressChartState();
@@ -338,6 +375,7 @@ class _ProgressChartState extends State<ProgressChart> {
                       // the widget text around the chart.
                       fontFamily: DefaultTextStyle.of(context).style.fontFamily,
                       inspected: inspected,
+                      persPoints: widget.persPoints,
                     ),
                   ),
                 ),
@@ -349,14 +387,17 @@ class _ProgressChartState extends State<ProgressChart> {
     );
   }
 
-  /// The text summary a screen reader gets instead of the pixels (req 7).
+  /// The text summary a screen reader gets instead of the pixels (req 7),
+  /// with the personal record when there is one (spec 0142 req 6).
   String _summary() {
     final entries = widget.entries;
     final best = entries.map((e) => e.points).reduce(math.max);
+    final pers = widget.persPoints;
     return 'Statistikk for ${widget.exercise}: ${entries.length} økter. '
         'Første ${entries.first.points} poeng, '
         'siste ${entries.last.points} poeng, beste $best poeng. '
-        'Innertreff siste økt: ${entries.last.inner}.';
+        'Innertreff siste økt: ${entries.last.inner}.'
+        '${pers == null ? '' : ' Pers: $pers poeng.'}';
   }
 }
 
@@ -372,6 +413,7 @@ class _ProgressChartPainter extends CustomPainter {
     required this.gridColor,
     required this.fontFamily,
     required this.inspected,
+    required this.persPoints,
   });
 
   final List<ProgressEntry> entries;
@@ -382,6 +424,7 @@ class _ProgressChartPainter extends CustomPainter {
   final Color gridColor;
   final String? fontFamily;
   final int? inspected;
+  final int? persPoints;
 
   /// Room for the y-axis labels (left) and the last-value labels (right).
   static const double leftPad = 40;
@@ -404,8 +447,10 @@ class _ProgressChartPainter extends CustomPainter {
       size.height - _bottomPad,
     );
     final n = entries.length;
+    // The record is part of the scale (spec 0142 req 4): a startverdi above
+    // every plotted session must stay visible, not clip off the top.
     final maxValue = math.max(
-      1,
+      math.max(1, persPoints ?? 0),
       entries.map((e) => math.max(e.points, e.inner)).reduce(math.max),
     );
     final step = _niceStep(maxValue / 4);
@@ -416,6 +461,7 @@ class _ProgressChartPainter extends CustomPainter {
     double y(num value) => plot.bottom - plot.height * value / yMax;
 
     _grid(canvas, plot, yMax, step);
+    _persLine(canvas, plot, y);
     _xLabels(canvas, plot, x);
     _guide(canvas, plot, x);
     _series(canvas, entries.map((e) => e.points).toList(), pointsColor, x, y);
@@ -440,6 +486,37 @@ class _ProgressChartPainter extends CustomPainter {
         align: _Align.rightCenter,
       );
     }
+  }
+
+  /// The personal-record annotation (spec 0142): a dashed hairline in the
+  /// muted ink — visibly not a gridline (those are solid) and quieter than
+  /// the 2 px data lines — direct-labelled «Pers N» in text ink, so it
+  /// needs no legend entry.
+  void _persLine(Canvas canvas, Rect plot, double Function(num) y) {
+    final pers = persPoints;
+    if (pers == null) return;
+    final dy = y(pers);
+    final paint = Paint()
+      ..color = mutedColor
+      ..strokeWidth = 1;
+    const dash = 4.0;
+    for (var dx = plot.left; dx < plot.right; dx += dash * 2) {
+      canvas.drawLine(
+        Offset(dx, dy),
+        Offset(math.min(dx + dash, plot.right), dy),
+        paint,
+      );
+    }
+    // Label above the line, except when the line hugs the top of the plot.
+    final above = dy - plot.top > 16;
+    _text(
+      canvas,
+      'Pers $pers',
+      Offset(plot.left + 4, dy + (above ? -3 : 3)),
+      color: inkColor,
+      bold: true,
+      align: above ? _Align.bottomLeft : _Align.topLeft,
+    );
   }
 
   /// Session numbers under the axis: all of them when few, subsampled when
@@ -564,6 +641,7 @@ class _ProgressChartPainter extends CustomPainter {
   bool shouldRepaint(_ProgressChartPainter old) =>
       old.entries != entries ||
       old.inspected != inspected ||
+      old.persPoints != persPoints ||
       old.pointsColor != pointsColor ||
       old.innerColor != innerColor;
 }
