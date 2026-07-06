@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/notifications/data/notifications_repository.dart';
 import 'package:treffpunkt/features/notifications/domain/app_notification.dart';
 
@@ -82,7 +83,7 @@ class SupabaseNotificationsRepository implements NotificationsRepository {
       await _client
           .from(_table)
           .update(<String, dynamic>{
-            'read_at': DateTime.now().toUtc().toIso8601String(),
+            'read_at': formatWireTimeUtc(DateTime.now()),
           })
           .eq('id', id);
     } on Object catch (error) {
@@ -122,7 +123,7 @@ class SupabaseNotificationsRepository implements NotificationsRepository {
       await _client
           .from(_table)
           .update(<String, dynamic>{
-            'read_at': DateTime.now().toUtc().toIso8601String(),
+            'read_at': formatWireTimeUtc(DateTime.now()),
           })
           .filter('read_at', 'is', null);
     } on Object catch (error) {

@@ -52,8 +52,6 @@ class CompetitionResult {
 
   /// Reads a result from a `competition_results` row (snake_case columns).
   factory CompetitionResult.fromJson(Map<String, dynamic> json) {
-    final capturedAt = json['captured_at'] as String?;
-    final createdAt = json['created_at'] as String?;
     return CompetitionResult(
       id: json['id'] as String,
       competitionId: json['competition_id'] as String,
@@ -62,9 +60,9 @@ class CompetitionResult {
       total: (json['total'] as num).toInt(),
       maxTotal: (json['max_total'] as num).toInt(),
       innerTens: (json['inner_tens'] as num).toInt(),
-      capturedAt: capturedAt == null ? null : parseWireTime(capturedAt),
+      capturedAt: parseWireTimeOrNull(json['captured_at'] as String?),
       payload: json['payload'] as Map<String, dynamic>,
-      createdAt: createdAt == null ? null : parseWireTime(createdAt),
+      createdAt: parseWireTimeOrNull(json['created_at'] as String?),
     );
   }
 

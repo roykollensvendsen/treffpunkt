@@ -27,11 +27,10 @@ class CompetitionMember {
   /// The [profile] is attached separately by the repository (there is no
   /// foreign key from members to profiles to embed), so it is `null` here.
   factory CompetitionMember.fromJson(Map<String, dynamic> json) {
-    final joinedAt = json['joined_at'] as String?;
     return CompetitionMember(
       competitionId: json['competition_id'] as String,
       userId: json['user_id'] as String,
-      joinedAt: joinedAt == null ? null : parseWireTime(joinedAt),
+      joinedAt: parseWireTimeOrNull(json['joined_at'] as String?),
     );
   }
 

@@ -26,16 +26,14 @@ class Competition {
 
   /// Reads a competition from a `competitions` row (snake_case columns).
   factory Competition.fromJson(Map<String, dynamic> json) {
-    final createdAt = json['created_at'] as String?;
-    final eventDate = json['event_date'] as String?;
     return Competition(
       id: json['id'] as String,
       name: json['name'] as String,
       program: json['program'] as String,
       ownerId: json['owner_id'] as String,
       isPublic: (json['is_public'] as bool?) ?? false,
-      createdAt: createdAt == null ? null : parseWireTime(createdAt),
-      eventDate: eventDate == null ? null : parseWireTime(eventDate),
+      createdAt: parseWireTimeOrNull(json['created_at'] as String?),
+      eventDate: parseWireTimeOrNull(json['event_date'] as String?),
     );
   }
 

@@ -351,8 +351,7 @@ final class SupabaseForumRepository implements ForumRepository {
           .from('robot_presence')
           .select('seen_at')
           .maybeSingle();
-      final seenAt = row?['seen_at'] as String?;
-      return seenAt == null ? null : parseWireTime(seenAt);
+      return parseWireTimeOrNull(row?['seen_at'] as String?);
     } on Object {
       // Presence is decoration (spec 0122): unreachable reads as absent.
       return null;

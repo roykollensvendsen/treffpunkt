@@ -25,13 +25,12 @@ class ForumPost {
 
   /// Reads a reply from a `forum_posts` row.
   factory ForumPost.fromJson(Map<String, dynamic> json) {
-    final createdAt = json['created_at'] as String?;
     return ForumPost(
       id: json['id'] as String,
       threadId: json['thread_id'] as String,
       authorId: json['author_id'] as String?,
       body: json['body'] as String,
-      createdAt: createdAt == null ? null : parseWireTime(createdAt),
+      createdAt: parseWireTimeOrNull(json['created_at'] as String?),
       imagePath: json['image_path'] as String?,
     );
   }

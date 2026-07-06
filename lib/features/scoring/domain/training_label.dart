@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/scoring/domain/target_scan.dart';
 import 'package:treffpunkt/features/scoring/domain/training_sample.dart';
 
@@ -34,7 +35,7 @@ Map<String, dynamic> buildLabel(
   return <String, dynamic>{
     'schemaVersion': trainingLabelSchemaVersion,
     'sampleId': sample.id,
-    'capturedAt': sample.capturedAt.toUtc().toIso8601String(),
+    'capturedAt': formatWireTimeUtc(sample.capturedAt),
     'appVersion': sample.appVersion,
     'image': <String, dynamic>{
       'widthPx': imageWidth,
