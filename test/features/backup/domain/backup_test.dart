@@ -12,30 +12,25 @@ import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
-SessionRecord _session(String id, {int total = 90}) => SessionRecord(
+import '../../../support/records.dart';
+
+SessionRecord _session(String id, {int total = 90}) => sessionRecord(
   id: id,
   program: '10 m Luftpistol 60 skudd',
   total: total,
-  maxTotal: 600,
-  innerTens: 2,
+  inner: 2,
   payload: const <String, dynamic>{'v': 1},
   capturedAt: DateTime.utc(2026, 7, 1, 18),
   placeLabel: 'Kongsberg',
 );
 
-FeltSessionRecord _felt(String id) => FeltSessionRecord(
+FeltSessionRecord _felt(String id) => feltSessionRecord(
   id: id,
   capturedAt: DateTime.utc(2026, 7, 2, 12),
-  session: FeltSessionSnapshot(
-    group: FeltShooterGroup.two,
-    currentHold: 7,
-    holds: <List<FeltPlacedShot>>[
-      const <FeltPlacedShot>[
-        FeltPlacedShot(dx: 38.6, dy: 97.9, figureIndex: 0, inner: true),
-      ],
-      for (var i = 1; i < 8; i++) const <FeltPlacedShot>[],
-    ],
-  ),
+  group: FeltShooterGroup.two,
+  currentHold: 7,
+  holdCount: 8,
+  shot: const FeltPlacedShot(dx: 38.6, dy: 97.9, figureIndex: 0, inner: true),
 );
 
 const Weapon _weapon = Weapon(

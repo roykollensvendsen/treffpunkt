@@ -20,19 +20,14 @@ import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
-FeltSessionRecord _record() => FeltSessionRecord(
+import '../../../support/records.dart';
+
+FeltSessionRecord _record() => feltSessionRecord(
   id: 'felt-1',
   capturedAt: DateTime.utc(2026, 7, 1, 12, 30),
-  session: FeltSessionSnapshot(
-    group: FeltShooterGroup.two,
-    currentHold: 0,
-    holds: <List<FeltPlacedShot>>[
-      const <FeltPlacedShot>[
-        FeltPlacedShot(dx: 38.6, dy: 97.9, figureIndex: 0, inner: true),
-      ],
-      for (var i = 1; i < 8; i++) const <FeltPlacedShot>[],
-    ],
-  ),
+  group: FeltShooterGroup.two,
+  holdCount: 8,
+  shot: const FeltPlacedShot(dx: 38.6, dy: 97.9, figureIndex: 0, inner: true),
 );
 
 void main() {

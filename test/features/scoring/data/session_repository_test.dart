@@ -8,13 +8,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 
-SessionRecord _record(String id, {int total = 100}) => SessionRecord(
+import '../../../support/records.dart';
+
+SessionRecord _record(String id, {int total = 100}) => sessionRecord(
   id: id,
   program: '10 m Air Pistol',
   total: total,
   maxTotal: 100,
-  innerTens: 0,
-  payload: <String, dynamic>{'id': id},
 );
 
 void main() {

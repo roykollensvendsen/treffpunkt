@@ -23,15 +23,14 @@ import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
+import '../../../support/records.dart';
 import '../../auth/fake_auth_repository.dart';
 
-SessionRecord _record(String id, {int total = 50}) => SessionRecord(
+SessionRecord _record(String id, {int total = 50}) => sessionRecord(
   id: id,
   program: '10 m Air Pistol',
   total: total,
   maxTotal: 100,
-  innerTens: 0,
-  payload: <String, dynamic>{'id': id},
 );
 
 /// Mounts the real app tree with [authRepository], the fake [repository] and a

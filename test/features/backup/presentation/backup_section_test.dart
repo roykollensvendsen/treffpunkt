@@ -25,6 +25,8 @@ import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
+import '../../../support/records.dart';
+
 class _RecordingSharer implements Sharer {
   String? filename;
   String? mimeType;
@@ -54,29 +56,22 @@ class _FakeFileSource implements BackupFileSource {
   Future<Uint8List?> pickBackupFile() async => _bytes;
 }
 
-SessionRecord _session(String id) => SessionRecord(
+SessionRecord _session(String id) => sessionRecord(
   id: id,
   program: '10 m Luftpistol 60 skudd',
   total: 90,
-  maxTotal: 600,
-  innerTens: 2,
+  inner: 2,
   payload: const <String, dynamic>{'v': 1},
   capturedAt: DateTime.utc(2026, 7, 1, 18),
 );
 
-FeltSessionRecord _felt(String id) => FeltSessionRecord(
+FeltSessionRecord _felt(String id) => feltSessionRecord(
   id: id,
   capturedAt: DateTime.utc(2026, 7, 2, 12),
-  session: FeltSessionSnapshot(
-    group: FeltShooterGroup.two,
-    currentHold: 7,
-    holds: <List<FeltPlacedShot>>[
-      const <FeltPlacedShot>[
-        FeltPlacedShot(dx: 10, dy: 10, figureIndex: 0),
-      ],
-      for (var i = 1; i < 8; i++) const <FeltPlacedShot>[],
-    ],
-  ),
+  group: FeltShooterGroup.two,
+  currentHold: 7,
+  holdCount: 8,
+  shot: const FeltPlacedShot(dx: 10, dy: 10, figureIndex: 0),
 );
 
 void main() {

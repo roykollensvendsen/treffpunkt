@@ -12,7 +12,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
-import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
@@ -22,39 +21,7 @@ import 'package:treffpunkt/features/scoring/presentation/personal_records_provid
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/statistics_screen.dart';
 
-SessionRecord _ring(
-  String id,
-  String program, {
-  required int total,
-  required int inner,
-  DateTime? capturedAt,
-}) => SessionRecord(
-  id: id,
-  program: program,
-  capturedAt: capturedAt,
-  total: total,
-  maxTotal: 600,
-  innerTens: inner,
-  payload: <String, dynamic>{'id': id},
-);
-
-FeltSessionRecord _felt(
-  String id, {
-  required DateTime capturedAt,
-  FeltShooterGroup group = FeltShooterGroup.one,
-}) => FeltSessionRecord(
-  id: id,
-  capturedAt: capturedAt,
-  session: FeltSessionSnapshot(
-    group: group,
-    currentHold: 0,
-    holds: const <List<FeltPlacedShot>>[
-      <FeltPlacedShot>[
-        FeltPlacedShot(dx: 1, dy: 1, figureIndex: 0, inner: true),
-      ],
-    ],
-  ),
-);
+import '../../../support/records.dart';
 
 Future<Widget> _app({
   List<SessionRecord> synced = const <SessionRecord>[],
@@ -83,16 +50,16 @@ Future<Widget> _app({
 
 void main() {
   final luft = <SessionRecord>[
-    _ring(
-      'r1',
-      '10 m Luftpistol 60 skudd',
+    sessionRecord(
+      id: 'r1',
+      program: '10 m Luftpistol 60 skudd',
       capturedAt: DateTime.utc(2026, 6, 20),
       total: 560,
       inner: 14,
     ),
-    _ring(
-      'r2',
-      '10 m Luftpistol 60 skudd',
+    sessionRecord(
+      id: 'r2',
+      program: '10 m Luftpistol 60 skudd',
       capturedAt: DateTime.utc(2026, 7, 2),
       total: 570,
       inner: 17,
@@ -129,7 +96,7 @@ void main() {
       await _app(
         synced: luft,
         feltRounds: <FeltSessionRecord>[
-          _felt('f1', capturedAt: DateTime.utc(2026, 7)),
+          feltSessionRecord(capturedAt: DateTime.utc(2026, 7)),
         ],
       ),
     );
@@ -201,7 +168,12 @@ void main() {
       await _app(
         synced: [
           ...luft,
-          _ring('r3', '10 m Luftpistol 60 skudd', total: 585, inner: 12),
+          sessionRecord(
+            id: 'r3',
+            program: '10 m Luftpistol 60 skudd',
+            total: 585,
+            inner: 12,
+          ),
         ],
       ),
     );
@@ -215,9 +187,9 @@ void main() {
 
   testWidgets('the felt course is one exercise per group, each with its own '
       'record (spec 0143)', (tester) async {
-    final one = _felt('f1', capturedAt: DateTime.utc(2026, 7));
-    final two = _felt(
-      'f2',
+    final one = feltSessionRecord(capturedAt: DateTime.utc(2026, 7));
+    final two = feltSessionRecord(
+      id: 'f2',
       capturedAt: DateTime.utc(2026, 7, 2),
       group: FeltShooterGroup.two,
     );
@@ -259,7 +231,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       await _app(
-        feltRounds: [_felt('f1', capturedAt: DateTime.utc(2026, 7))],
+        feltRounds: [feltSessionRecord(capturedAt: DateTime.utc(2026, 7))],
       ),
     );
     await tester.pumpAndSettle();
@@ -276,7 +248,12 @@ void main() {
     await tester.pumpWidget(
       await _app(
         synced: <SessionRecord>[
-          _ring('r9', '25 m Finpistol', total: 500, inner: 5),
+          sessionRecord(
+            id: 'r9',
+            program: '25 m Finpistol',
+            total: 500,
+            inner: 5,
+          ),
         ],
       ),
     );
