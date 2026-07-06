@@ -202,6 +202,7 @@ nav:
       - ADR-0025 Share a join link: adr/0025-share-join-link.md
       - ADR-0026 Web push, no iOS: adr/0026-web-push-no-ios.md
       - ADR-0027 Delte byggeklosser i core: adr/0027-shared-core-building-blocks.md
+      - ADR-0028 Generic upload-queue engine: adr/0028-generic-upload-queue-engine.md
   - Reference:
       - Program catalogue: reference/program-catalogue.md
   - Roadmap: ROADMAP.md
