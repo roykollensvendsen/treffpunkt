@@ -5,21 +5,16 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:treffpunkt/core/data/sync_exception.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
 import 'package:treffpunkt/features/forum/domain/forum_reaction.dart';
 import 'package:treffpunkt/features/forum/domain/forum_thread.dart';
 
 /// Thrown when a forum read or a write the user is waiting on fails
 /// (spec 0054). Mirrors `CompetitionSyncException`.
-class ForumException implements Exception {
+class ForumException extends SyncException {
   /// Creates an exception wrapping [cause].
-  const ForumException(this.cause);
-
-  /// The underlying error or a message.
-  final Object cause;
-
-  @override
-  String toString() => 'ForumException: $cause';
+  const ForumException(super.cause);
 }
 
 /// The data seam for the community forum (spec 0054): threads, their replies,
