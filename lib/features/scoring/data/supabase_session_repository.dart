@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:treffpunkt/core/data/sync_exception.dart';
 import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
@@ -56,41 +57,35 @@ final class SupabaseSessionRepository implements SessionRepository {
     }
   }
 
+  // Surfaces a failure (spec 0029) — unlike [upload], the read throws so a
+  // missing table or a dropped connection can show as a non-blocking notice
+  // on the "My sessions" screen rather than masquerading as an empty
+  // account. In debug, also prints so a real failure is diagnosable.
   @override
-  Future<List<SessionRecord>> list() async {
-    try {
+  Future<List<SessionRecord>> list() => guardSync(
+    () async {
       final rows = await _client
           .from(_table)
           .select()
           .order('captured_at', ascending: false);
       return <SessionRecord>[for (final row in rows) _recordFromRow(row)];
-    } on Object catch (error) {
-      // Surface the failure (spec 0029) — unlike [upload], the read throws so a
-      // missing table or a dropped connection can show as a non-blocking notice
-      // on the "My sessions" screen rather than masquerading as an empty
-      // account. In debug, also print so a real failure is diagnosable.
-      if (!kReleaseMode) {
-        debugPrint('Failed to list the session records: $error');
-      }
-      throw SessionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to list the session records',
+    wrap: SessionSyncException.new,
+  );
 
+  // A deliberate user action (spec 0033) — surfaces failure, unlike the
+  // silent best-effort upload (ADR-0017).
   @override
-  Future<void> deleteById(String id) async {
-    try {
+  Future<void> deleteById(String id) => guardSync(
+    () async {
       // RLS ("Sessions are deletable by their owner") gates this to the owner's
       // own rows. Deleting a missing id affects no rows and is not an error.
       await _client.from(_table).delete().eq('id', id);
-    } on Object catch (error) {
-      // A deliberate user action (spec 0033) — surface failure, unlike the
-      // silent best-effort upload (ADR-0017).
-      if (!kReleaseMode) {
-        debugPrint('Failed to delete the session record: $error');
-      }
-      throw SessionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to delete the session record',
+    wrap: SessionSyncException.new,
+  );
 
   /// Maps one `sessions` row back to a [SessionRecord] (the inverse of the
   /// upsert map in [upload], using the same snake_case column names).
