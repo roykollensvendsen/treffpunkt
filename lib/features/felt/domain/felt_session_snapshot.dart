@@ -90,9 +90,7 @@ class FeltSessionSnapshot {
                 FeltPlacedShot.fromJson(shot as Map<String, dynamic>),
             ],
         ],
-        capturedAt: json['capturedAt'] == null
-            ? null
-            : parseWireTime(json['capturedAt'] as String),
+        capturedAt: parseWireTimeOrNull(json['capturedAt'] as String?),
         placeLabel: json['placeLabel'] as String?,
         latitude: (json['latitude'] as num?)?.toDouble(),
         longitude: (json['longitude'] as num?)?.toDouble(),

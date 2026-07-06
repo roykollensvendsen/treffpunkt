@@ -27,7 +27,7 @@ final class SupabaseFeltSessionRepository implements FeltSessionRepository {
     try {
       await _client.from(_table).upsert(<String, dynamic>{
         'id': record.id,
-        'captured_at': record.capturedAt.toUtc().toIso8601String(),
+        'captured_at': formatWireTimeUtc(record.capturedAt),
         'group_name': record.session.group.name,
         'points': record.points,
         'payload': record.session.toJson(),

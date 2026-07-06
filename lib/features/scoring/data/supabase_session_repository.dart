@@ -35,7 +35,7 @@ final class SupabaseSessionRepository implements SessionRepository {
       await _client.from(_table).upsert(<String, dynamic>{
         'id': record.id,
         'program': record.program,
-        'captured_at': record.capturedAt?.toUtc().toIso8601String(),
+        'captured_at': formatWireTimeUtc(record.capturedAt),
         'place_label': record.placeLabel,
         'latitude': record.latitude,
         'longitude': record.longitude,
@@ -95,11 +95,10 @@ final class SupabaseSessionRepository implements SessionRepository {
   /// Maps one `sessions` row back to a [SessionRecord] (the inverse of the
   /// upsert map in [upload], using the same snake_case column names).
   static SessionRecord _recordFromRow(Map<String, dynamic> row) {
-    final capturedAt = row['captured_at'] as String?;
     return SessionRecord(
       id: row['id'] as String,
       program: row['program'] as String,
-      capturedAt: capturedAt == null ? null : parseWireTime(capturedAt),
+      capturedAt: parseWireTimeOrNull(row['captured_at'] as String?),
       placeLabel: row['place_label'] as String?,
       latitude: (row['latitude'] as num?)?.toDouble(),
       longitude: (row['longitude'] as num?)?.toDouble(),

@@ -91,7 +91,6 @@ class ForumThread {
 
   /// Reads a thread from a `forum_threads` row.
   factory ForumThread.fromJson(Map<String, dynamic> json) {
-    final createdAt = json['created_at'] as String?;
     return ForumThread(
       id: json['id'] as String,
       authorId: json['author_id'] as String?,
@@ -99,7 +98,7 @@ class ForumThread {
       title: json['title'] as String,
       body: (json['body'] as String?) ?? '',
       status: ForumThreadStatus.fromWire(json['status'] as String?),
-      createdAt: createdAt == null ? null : parseWireTime(createdAt),
+      createdAt: parseWireTimeOrNull(json['created_at'] as String?),
       imagePath: json['image_path'] as String?,
     );
   }

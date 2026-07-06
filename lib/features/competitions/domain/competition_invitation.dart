@@ -29,14 +29,13 @@ class CompetitionInvitation {
   /// If the query embedded the competition (`competitions(*)`), it is parsed
   /// into [competition].
   factory CompetitionInvitation.fromJson(Map<String, dynamic> json) {
-    final createdAt = json['created_at'] as String?;
     final embedded = json['competitions'];
     return CompetitionInvitation(
       competitionId: json['competition_id'] as String,
       invitedEmail: json['invited_email'] as String,
       invitedBy: json['invited_by'] as String?,
       status: (json['status'] as String?) ?? 'pending',
-      createdAt: createdAt == null ? null : parseWireTime(createdAt),
+      createdAt: parseWireTimeOrNull(json['created_at'] as String?),
       competition: embedded is Map<String, dynamic>
           ? Competition.fromJson(embedded)
           : null,

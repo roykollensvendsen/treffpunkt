@@ -42,9 +42,12 @@ end-to-end, not cosmetic:
 ## Requirements
 
 1. `parseWireTime` parses a wire timestamp and returns a local-zone
-   `DateTime`; all wire/JSON timestamp parsing uses it.
+   `DateTime`; all wire/JSON timestamp parsing uses it. Optional
+   timestamps go through its nullable form, `parseWireTimeOrNull`
+   (`null` stays `null`), so no `fromJson` hand-rolls the null check.
 2. Session and felt uploads serialise `captured_at` as UTC with an
-   explicit offset.
+   explicit offset, via the shared write-side helper
+   `formatWireTimeUtc`.
 3. `norDateTime` formats in the phone's local zone whatever it is
    given; the build stamp shows the build time as local
    `dd.MM.yyyy HH:mm`.

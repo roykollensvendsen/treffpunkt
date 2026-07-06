@@ -74,11 +74,10 @@ class SessionRecord {
   /// persisted in the upload queue reads back identical. Optional fields absent
   /// from the map come back `null`.
   factory SessionRecord.fromJson(Map<String, dynamic> json) {
-    final capturedAt = json['capturedAt'] as String?;
     return SessionRecord(
       id: json['id'] as String,
       program: json['program'] as String,
-      capturedAt: capturedAt == null ? null : parseWireTime(capturedAt),
+      capturedAt: parseWireTimeOrNull(json['capturedAt'] as String?),
       placeLabel: json['placeLabel'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),

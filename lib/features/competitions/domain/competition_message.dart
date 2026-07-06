@@ -33,13 +33,12 @@ class CompetitionMessage {
   /// The [profile] is attached separately by the repository (there is no
   /// foreign key from messages to profiles to embed), so it is `null` here.
   factory CompetitionMessage.fromJson(Map<String, dynamic> json) {
-    final createdAt = json['created_at'] as String?;
     return CompetitionMessage(
       id: json['id'] as String,
       competitionId: json['competition_id'] as String,
       userId: json['user_id'] as String?,
       body: json['body'] as String,
-      createdAt: createdAt == null ? null : parseWireTime(createdAt),
+      createdAt: parseWireTimeOrNull(json['created_at'] as String?),
       imagePath: json['image_path'] as String?,
     );
   }

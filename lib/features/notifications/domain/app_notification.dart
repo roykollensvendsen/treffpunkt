@@ -52,9 +52,7 @@ class AppNotification {
         createdAt: parseWireTime(json['created_at'] as String),
         competitionId: json['competition_id'] as String?,
         threadId: json['thread_id'] as String?,
-        readAt: json['read_at'] == null
-            ? null
-            : parseWireTime(json['read_at'] as String),
+        readAt: parseWireTimeOrNull(json['read_at'] as String?),
       );
 
   /// Stable id.
