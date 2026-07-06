@@ -10,13 +10,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/presentation/collapsing_fab.dart';
+import 'package:treffpunkt/core/presentation/confirm_dialog.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
+import 'package:treffpunkt/core/presentation/edit_text_dialog.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
+import 'package:treffpunkt/core/presentation/image_send.dart';
 import 'package:treffpunkt/core/presentation/mention_picker.dart';
 import 'package:treffpunkt/core/presentation/mention_text.dart';
+import 'package:treffpunkt/core/presentation/message_actions_sheet.dart';
+import 'package:treffpunkt/core/presentation/message_composer.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
-import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
+import 'package:treffpunkt/core/presentation/reaction_widgets.dart';
+import 'package:treffpunkt/core/presentation/snackbar_guard.dart';
 import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
 import 'package:treffpunkt/features/forum/domain/forum_post.dart';
@@ -129,18 +135,6 @@ Key forumPaletteEmojiKey(String emoji) =>
 /// Key for the reaction chip of [emoji] on a forum [target].
 Key forumReactionKey(String target, String emoji) =>
     ValueKey<String>('forumReaction-$target-$emoji');
-
-/// The emoji offered in the forum reaction palette (spec 0055).
-const List<String> forumReactionPalette = <String>[
-  '👍',
-  '🎯',
-  '🔥',
-  '😂',
-  '❤️',
-  '👏',
-  '😮',
-  '😢',
-];
 
 /// Key for the Robot Hood presence line (spec 0122), for tests.
 const Key robotPresenceKey = ValueKey<String>('robotPresence');
@@ -435,27 +429,24 @@ class _NewThreadScreenState extends ConsumerState<NewThreadScreen> {
   }
 
   /// Uploads [bytes] and stages it as the thread's image — shared by a picked
-  /// and a pasted image (spec 0062). Only JPG/PNG/GIF are accepted (spec 0075).
+  /// and a pasted image (spec 0062).
   Future<void> _attachImageBytes(Uint8List bytes) async {
     if (_saving) return;
-    final messenger = ScaffoldMessenger.of(context);
-    final format = detectImageFormat(bytes);
-    if (format == null) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text(unsupportedImageMessage)),
-      );
-      return;
-    }
+    await sendImageBytes(
+      context,
+      bytes: bytes,
+      send: _stageImage,
+      failureMessage: 'Kunne ikke laste opp bildet.',
+    );
+  }
+
+  Future<void> _stageImage(Uint8List bytes, ImageFormat format) async {
     setState(() => _saving = true);
     try {
       final path = await ref
           .read(forumRepositoryProvider)
           .uploadForumImage(bytes, fileExtension: format.extension);
       setState(() => _imagePath = path);
-    } on ForumException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke laste opp bildet.')),
-      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -639,23 +630,22 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     if (!await ensureDisplayName(context, ref)) return;
     if (!mounted) return;
     setState(() => _sending = true);
-    final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref
-          .read(forumRepositoryProvider)
-          .postReply(
-            ForumPost(
-              id: const Uuid().v4(),
-              threadId: widget.thread.id,
-              body: text,
-              authorId: ref.read(forumCurrentUserIdProvider),
+      final ok = await guardWithSnackBar<ForumException>(
+        context,
+        task: () => ref
+            .read(forumRepositoryProvider)
+            .postReply(
+              ForumPost(
+                id: const Uuid().v4(),
+                threadId: widget.thread.id,
+                body: text,
+                authorId: ref.read(forumCurrentUserIdProvider),
+              ),
             ),
-          );
-      _reply.clear();
-    } on ForumException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke sende svaret.')),
+        failureMessage: 'Kunne ikke sende svaret.',
       );
+      if (ok) _reply.clear();
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -663,23 +653,32 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
 
   Future<void> _pickAndSendImage() async {
     if (_sending) return;
-    final picked = await ref.read(forumImagePickerProvider)();
-    if (picked == null) return;
-    await _sendImageBytes(await picked.readAsBytes());
+    await pickAndSendImage(
+      context,
+      pickBytes: () async {
+        final picked = await ref.read(forumImagePickerProvider)();
+        return picked?.readAsBytes();
+      },
+      send: _postImageReply,
+      failureMessage: 'Kunne ikke laste opp bildet.',
+    );
   }
 
-  /// Uploads [bytes] and posts a reply with the image — shared by a picked and
-  /// a pasted image (spec 0062). Only JPG/PNG/GIF are accepted (spec 0075).
+  /// Sends a pasted image through the same guard-and-send pipeline as a
+  /// picked one (spec 0062).
   Future<void> _sendImageBytes(Uint8List bytes) async {
     if (_sending) return;
-    final messenger = ScaffoldMessenger.of(context);
-    final format = detectImageFormat(bytes);
-    if (format == null) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text(unsupportedImageMessage)),
-      );
-      return;
-    }
+    await sendImageBytes(
+      context,
+      bytes: bytes,
+      send: _postImageReply,
+      failureMessage: 'Kunne ikke laste opp bildet.',
+    );
+  }
+
+  /// Uploads the image and posts a reply carrying it — the shared tail of
+  /// both the picked and the pasted path (spec 0062).
+  Future<void> _postImageReply(Uint8List bytes, ImageFormat format) async {
     setState(() => _sending = true);
     try {
       final repo = ref.read(forumRepositoryProvider);
@@ -697,10 +696,6 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
         ),
       );
       _reply.clear();
-    } on ForumException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke laste opp bildet.')),
-      );
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -708,27 +703,13 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
 
   /// The forum's destructive-action confirmation (spec 0096) — the same
   /// dialog the session/competition deletes use.
-  Future<bool> _confirmDelete(String title) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: const Text('Handlingen kan ikke angres.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Avbryt'),
-          ),
-          FilledButton(
-            key: confirmForumDeleteKey,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Slett'),
-          ),
-        ],
-      ),
-    );
-    return confirmed ?? false;
-  }
+  Future<bool> _confirmDelete(String title) => showConfirmDialog(
+    context,
+    title: title,
+    message: 'Handlingen kan ikke angres.',
+    confirmLabel: 'Slett',
+    confirmKey: confirmForumDeleteKey,
+  );
 
   Future<void> _deleteThread() async {
     final navigator = Navigator.of(context);
@@ -745,44 +726,28 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
   /// Long-pressing the opening post offers "Kopier tekst" (spec 0069).
   void _showThreadActions(String body) {
     unawaited(
-      showModalBottomSheet<void>(
-        context: context,
-        builder: (sheetContext) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                key: forumThreadCopyKey,
-                leading: const Icon(Icons.copy_outlined),
-                title: const Text('Kopier tekst'),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  unawaited(copyMessageText(context, body));
-                },
-              ),
-            ],
-          ),
-        ),
+      showMessageActions(
+        context,
+        canCopy: true,
+        onCopy: () => unawaited(copyMessageText(context, body)),
+        copyKey: forumThreadCopyKey,
       ),
     );
   }
 
   /// Sets the thread's lifecycle status — moderators only (spec 0066).
   Future<void> _setStatus(String threadId, ForumThreadStatus status) async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref.read(forumRepositoryProvider).setThreadStatus(threadId, status);
-    } on ForumException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke sette status.')),
-      );
-    }
+    await guardWithSnackBar<ForumException>(
+      context,
+      task: () =>
+          ref.read(forumRepositoryProvider).setThreadStatus(threadId, status),
+      failureMessage: 'Kunne ikke sette status.',
+    );
   }
 
   /// Opens an editor for your own thread (title + body), then saves it
   /// (spec 0063).
   Future<void> _editThread(ForumThread thread) async {
-    final messenger = ScaffoldMessenger.of(context);
     final result = await showDialog<(String, String)>(
       context: context,
       builder: (_) => _EditThreadDialog(
@@ -794,32 +759,34 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     final (title, body) = result;
     // A thread needs a title; the body may be empty only with an image.
     if (title.isEmpty || (body.isEmpty && thread.imageUrl == null)) return;
-    try {
-      await ref
+    if (!mounted) return;
+    await guardWithSnackBar<ForumException>(
+      context,
+      task: () => ref
           .read(forumRepositoryProvider)
-          .editThread(thread.id, title: title, body: body);
-    } on ForumException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke lagre endringen.')),
-      );
-    }
+          .editThread(thread.id, title: title, body: body),
+      failureMessage: 'Kunne ikke lagre endringen.',
+    );
   }
 
   /// Opens an editor for your own reply body, then saves it (spec 0063).
   Future<void> _editPost(ForumPost post) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final newBody = await showDialog<String>(
-      context: context,
-      builder: (_) => _EditReplyDialog(initialBody: post.body),
+    final newBody = await showEditTextDialog(
+      context,
+      title: 'Rediger svar',
+      initialText: post.body,
+      hint: 'Svar …',
+      fieldKey: forumEditBodyFieldKey,
+      saveKey: forumEditSaveKey,
     );
     if (newBody == null || (newBody.isEmpty && post.imageUrl == null)) return;
-    try {
-      await ref.read(forumRepositoryProvider).editPost(post.id, body: newBody);
-    } on ForumException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke lagre endringen.')),
-      );
-    }
+    if (!mounted) return;
+    await guardWithSnackBar<ForumException>(
+      context,
+      task: () =>
+          ref.read(forumRepositoryProvider).editPost(post.id, body: newBody),
+      failureMessage: 'Kunne ikke lagre endringen.',
+    );
   }
 
   Future<void> _toggleReaction(
@@ -827,20 +794,17 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
     String targetId,
     String emoji,
   ) async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref
+    await guardWithSnackBar<ForumException>(
+      context,
+      task: () => ref
           .read(forumRepositoryProvider)
           .toggleReaction(
             targetType: targetType,
             targetId: targetId,
             emoji: emoji,
-          );
-    } on ForumException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke reagere.')),
-      );
-    }
+          ),
+      failureMessage: 'Kunne ikke reagere.',
+    );
   }
 
   @override
@@ -973,14 +937,25 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                                     ),
                                   ),
                                 ),
-                              _ForumReactionBar(
-                                target: 'thread:${thread.id}',
-                                reactions: thread.reactions,
-                                myUserId: uid,
-                                mine: thread.authorId == uid,
-                                onReact: (emoji) => unawaited(
+                              // You react to OTHER people's posts, not your
+                              // own (spec 0055).
+                              ReactionBar(
+                                reactions: _reactionViews(
+                                  thread.reactions,
+                                  uid,
+                                ),
+                                onToggle: (emoji) => unawaited(
                                   _toggleReaction('thread', thread.id, emoji),
                                 ),
+                                canReact: thread.authorId != uid,
+                                chipKeyFor: (emoji) => forumReactionKey(
+                                  'thread:${thread.id}',
+                                  emoji,
+                                ),
+                                addKey: forumAddReactionKey(
+                                  'thread:${thread.id}',
+                                ),
+                                paletteKeyFor: forumPaletteEmojiKey,
                               ),
                             ],
                           ),
@@ -1019,51 +994,20 @@ class _ForumThreadScreenState extends ConsumerState<ForumThreadScreen> {
                   ),
                 ),
                 const Divider(height: 1),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Row(
-                    children: <Widget>[
-                      IconButton(
-                        key: forumReplyAttachKey,
-                        tooltip: 'Legg ved bilde',
-                        onPressed: _sending
-                            ? null
-                            : () => unawaited(_pickAndSendImage()),
-                        icon: const Icon(Icons.image_outlined),
-                      ),
-                      Expanded(
-                        child: TextField(
-                          key: forumReplyFieldKey,
-                          controller: _reply,
-                          minLines: 1,
-                          maxLines: 4,
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => unawaited(_send()),
-                          // Typing @ offers the thread's participants and
-                          // Robot Hood (spec 0120).
-                          onChanged: (_) => unawaited(
-                            maybeOfferMentions(
-                              context,
-                              _reply,
-                              _mentionCandidates(),
-                            ),
-                          ),
-                          decoration: const InputDecoration(
-                            hintText: 'Skriv et svar …',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton.filled(
-                        key: forumReplySendKey,
-                        tooltip: 'Send',
-                        onPressed: _sending ? null : () => unawaited(_send()),
-                        icon: const Icon(Icons.send),
-                      ),
-                    ],
+                MessageComposer(
+                  controller: _reply,
+                  hint: 'Skriv et svar …',
+                  sending: _sending,
+                  onSend: () => unawaited(_send()),
+                  onAttach: () => unawaited(_pickAndSendImage()),
+                  // Typing @ offers the thread's participants and
+                  // Robot Hood (spec 0120).
+                  onChanged: (_) => unawaited(
+                    maybeOfferMentions(context, _reply, _mentionCandidates()),
                   ),
+                  fieldKey: forumReplyFieldKey,
+                  sendKey: forumReplySendKey,
+                  attachKey: forumReplyAttachKey,
                 ),
               ],
             ),
@@ -1096,45 +1040,17 @@ class _ReplyTile extends StatelessWidget {
   /// Offers Kopier tekst (spec 0069) and Rediger/Slett (spec 0063) for a reply.
   void _showActions(BuildContext context) {
     unawaited(
-      showModalBottomSheet<void>(
-        context: context,
-        builder: (sheetContext) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              if (post.body.isNotEmpty)
-                ListTile(
-                  key: forumReplyCopyKey,
-                  leading: const Icon(Icons.copy_outlined),
-                  title: const Text('Kopier tekst'),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    unawaited(copyMessageText(context, post.body));
-                  },
-                ),
-              if (canEdit)
-                ListTile(
-                  key: forumReplyEditKey,
-                  leading: const Icon(Icons.edit_outlined),
-                  title: const Text('Rediger'),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    onEdit();
-                  },
-                ),
-              if (canDelete)
-                ListTile(
-                  key: forumReplyDeleteKey,
-                  leading: const Icon(Icons.delete_outline),
-                  title: const Text('Slett'),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    onDelete();
-                  },
-                ),
-            ],
-          ),
-        ),
+      showMessageActions(
+        context,
+        canCopy: post.body.isNotEmpty,
+        canEdit: canEdit,
+        canDelete: canDelete,
+        onCopy: () => unawaited(copyMessageText(context, post.body)),
+        onEdit: onEdit,
+        onDelete: onDelete,
+        copyKey: forumReplyCopyKey,
+        editKey: forumReplyEditKey,
+        deleteKey: forumReplyDeleteKey,
       ),
     );
   }
@@ -1244,12 +1160,14 @@ class _ReplyTile extends StatelessWidget {
               ),
             ),
           ),
-          _ForumReactionBar(
-            target: 'post:${post.id}',
-            reactions: post.reactions,
-            myUserId: myUserId,
-            mine: mine,
-            onReact: onReact,
+          // You react to OTHER people's posts, not your own (spec 0055).
+          ReactionBar(
+            reactions: _reactionViews(post.reactions, myUserId),
+            onToggle: onReact,
+            canReact: !mine,
+            chipKeyFor: (emoji) => forumReactionKey('post:${post.id}', emoji),
+            addKey: forumAddReactionKey('post:${post.id}'),
+            paletteKeyFor: forumPaletteEmojiKey,
           ),
         ],
       ),
@@ -1272,108 +1190,23 @@ class _ForumImage extends StatelessWidget {
   );
 }
 
-/// The reaction chips on a thread or reply plus an add-reaction button
-/// (spec 0055). [target] is `thread:<id>` or `post:<id>`, used only for keys.
-class _ForumReactionBar extends StatelessWidget {
-  const _ForumReactionBar({
-    required this.target,
-    required this.reactions,
-    required this.myUserId,
-    required this.mine,
-    required this.onReact,
-  });
-
-  final String target;
-  final List<ForumReaction> reactions;
-  final String? myUserId;
-
-  /// Whether the current user authored this thread/reply — you react to other
-  /// people's posts, not your own (spec 0055).
-  final bool mine;
-  final void Function(String emoji) onReact;
-
-  Future<void> _openPalette(BuildContext context) async {
-    final emoji = await showModalBottomSheet<String>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              for (final emoji in forumReactionPalette)
-                IconButton(
-                  key: forumPaletteEmojiKey(emoji),
-                  onPressed: () => Navigator.of(sheetContext).pop(emoji),
-                  icon: Text(emoji, style: const TextStyle(fontSize: 24)),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (emoji != null) onReact(emoji);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final counts = <String, int>{};
-    final mineEmojis = <String>{};
-    for (final reaction in reactions) {
-      counts.update(reaction.emoji, (n) => n + 1, ifAbsent: () => 1);
-      if (reaction.userId == myUserId) mineEmojis.add(reaction.emoji);
-    }
-    final theme = Theme.of(context);
-    // You react to OTHER people's posts, not your own: on your own thread/reply
-    // the chips are display-only and there is no add button (spec 0055).
-    return Wrap(
-      spacing: 4,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: <Widget>[
-        for (final entry in counts.entries)
-          InkWell(
-            key: forumReactionKey(target, entry.key),
-            onTap: mine ? null : () => onReact(entry.key),
-            // Hold a reaction to see who reacted with it (spec 0059).
-            onLongPress: () => showReactors(
-              context,
-              entry.key,
-              <String>[
-                for (final r in reactions)
-                  if (r.emoji == entry.key) r.userName ?? 'Ukjent',
-              ],
-            ),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: mineEmojis.contains(entry.key)
-                    ? theme.colorScheme.primaryContainer
-                    : theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-                border: mineEmojis.contains(entry.key)
-                    ? Border.all(color: theme.colorScheme.primary)
-                    : null,
-              ),
-              child: Text(
-                '${entry.key} ${entry.value}',
-                style: theme.textTheme.labelMedium,
-              ),
-            ),
-          ),
-        if (!mine)
-          IconButton(
-            key: forumAddReactionKey(target),
-            visualDensity: VisualDensity.compact,
-            iconSize: 18,
-            tooltip: 'Reager',
-            onPressed: () => unawaited(_openPalette(context)),
-            icon: const Icon(Icons.add_reaction_outlined),
-          ),
-      ],
+/// Folds raw forum reaction rows into the shared per-emoji view (spec 0055)
+/// — the forum's data model stays its own.
+List<ReactionView> _reactionViews(
+  List<ForumReaction> reactions,
+  String? myUserId,
+) {
+  final views = <String, ReactionView>{};
+  for (final reaction in reactions) {
+    final view = views[reaction.emoji];
+    views[reaction.emoji] = ReactionView(
+      emoji: reaction.emoji,
+      count: (view?.count ?? 0) + 1,
+      mine: (view?.mine ?? false) || reaction.userId == myUserId,
+      reactorNames: [...?view?.reactorNames, reaction.userName ?? 'Ukjent'],
     );
   }
+  return views.values.toList();
 }
 
 /// Dialog to edit your own thread's title and body (spec 0063). Owns its
@@ -1440,56 +1273,6 @@ class _EditThreadDialogState extends State<_EditThreadDialog> {
         key: forumEditSaveKey,
         onPressed: () =>
             Navigator.of(context).pop((_title.text.trim(), _body.text.trim())),
-        child: const Text('Lagre'),
-      ),
-    ],
-  );
-}
-
-/// Dialog to edit your own reply's body (spec 0063). Returns the new body on
-/// save, or null on cancel.
-class _EditReplyDialog extends StatefulWidget {
-  const _EditReplyDialog({required this.initialBody});
-
-  final String initialBody;
-
-  @override
-  State<_EditReplyDialog> createState() => _EditReplyDialogState();
-}
-
-class _EditReplyDialogState extends State<_EditReplyDialog> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.initialBody,
-  );
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Rediger svar'),
-    content: SizedBox(
-      width: double.maxFinite,
-      child: TextField(
-        key: forumEditBodyFieldKey,
-        controller: _controller,
-        autofocus: true,
-        minLines: 1,
-        maxLines: 6,
-        decoration: const InputDecoration(hintText: 'Svar …'),
-      ),
-    ),
-    actions: <Widget>[
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Avbryt'),
-      ),
-      FilledButton(
-        key: forumEditSaveKey,
-        onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
         child: const Text('Lagre'),
       ),
     ],
