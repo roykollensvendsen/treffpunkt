@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:treffpunkt/core/data/sync_exception.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_invitation.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
@@ -21,15 +22,9 @@ import 'package:treffpunkt/features/competitions/domain/profile.dart';
 /// Unlike the background profile upsert (which stays silent so it can never
 /// break sign-in), these surface so the create/invite/accept UI (spec 0011) can
 /// show an error.
-class CompetitionSyncException implements Exception {
+class CompetitionSyncException extends SyncException {
   /// Creates an exception wrapping the underlying [cause].
-  const CompetitionSyncException(this.cause);
-
-  /// The underlying error (e.g. a `PostgrestException`) or a message.
-  final Object cause;
-
-  @override
-  String toString() => 'CompetitionSyncException: $cause';
+  const CompetitionSyncException(super.cause);
 }
 
 /// The data seam for competitions, profiles, members and invitations (spec

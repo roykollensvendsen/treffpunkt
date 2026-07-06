@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:treffpunkt/core/data/sync_exception.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 
 /// Thrown by [SessionRepository.list] when the synced read fails — a missing
@@ -12,16 +13,9 @@ import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 /// notice instead of a failure looking like "no sessions yet".
 /// [SessionRepository.upload] does **not** throw this — it stays silent
 /// (ADR-0017) so it never blocks recording.
-class SessionSyncException implements Exception {
+class SessionSyncException extends SyncException {
   /// Creates an exception wrapping the underlying [cause].
-  const SessionSyncException(this.cause);
-
-  /// The underlying error — e.g. a `PostgrestException` or a
-  /// `TimeoutException`.
-  final Object cause;
-
-  @override
-  String toString() => 'SessionSyncException: $cause';
+  const SessionSyncException(super.cause);
 }
 
 /// Uploads a completed session to the shooter's account (spec 0024).

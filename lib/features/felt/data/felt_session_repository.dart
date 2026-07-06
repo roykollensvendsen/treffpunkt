@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:treffpunkt/core/data/sync_exception.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 
 /// Syncs finished felt rounds to the shooter's account (spec 0083).
@@ -26,15 +27,9 @@ abstract interface class FeltSessionRepository {
 
 /// Thrown when reading the account's felt rounds fails (spec 0083), so a real
 /// failure is distinguishable from an empty account.
-class FeltSyncException implements Exception {
+class FeltSyncException extends SyncException {
   /// Wraps the underlying [cause].
-  const FeltSyncException(this.cause);
-
-  /// The underlying error.
-  final Object cause;
-
-  @override
-  String toString() => 'FeltSyncException: $cause';
+  const FeltSyncException(super.cause);
 }
 
 /// A [FeltSessionRepository] that keeps rounds in memory — the default binding
