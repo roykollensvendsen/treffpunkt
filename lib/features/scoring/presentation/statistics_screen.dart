@@ -7,10 +7,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
-import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
-import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/domain/exercise_progress.dart';
@@ -166,77 +165,67 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       pers = bestResult(<ExerciseResult>[?baselines[selected], ...history]);
     }
 
-    return Scaffold(
-      appBar: FrostedAppBar(
-        title: const Text('Statistikk'),
-        actions: [
-          // The records page (spec 0102): startverdier and current pers.
-          IconButton(
-            key: statisticsRecordsKey,
-            icon: const Icon(Icons.emoji_events_outlined),
-            tooltip: 'Rekorder',
-            onPressed: () => unawaited(
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const PersonalRecordsScreen(),
-                ),
+    return ContentScaffold(
+      title: const Text('Statistikk'),
+      actions: [
+        // The records page (spec 0102): startverdier and current pers.
+        IconButton(
+          key: statisticsRecordsKey,
+          icon: const Icon(Icons.emoji_events_outlined),
+          tooltip: 'Rekorder',
+          onPressed: () => unawaited(
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PersonalRecordsScreen(),
               ),
             ),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: selected == null
-                ? const EmptyState(
-                    icon: Icons.show_chart,
-                    title: 'Ingen fullførte økter med dato ennå.',
-                    titleKey: noStatisticsKey,
-                    hint: 'Fullfør en økt, så dukker kurvene opp her.',
-                  )
-                : Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        DropdownButtonFormField<String>(
-                          key: exerciseDropdownKey,
-                          initialValue: selected,
-                          decoration: const InputDecoration(
-                            labelText: 'Øvelse',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: [
-                            for (final exercise in exercises)
-                              DropdownMenuItem<String>(
-                                value: exercise,
-                                child: Text(
-                                  exercise,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
-                          onChanged: (value) =>
-                              setState(() => _exercise = value),
-                        ),
-                        const SizedBox(height: 12),
-                        _Legend(brightness: Theme.of(context).brightness),
-                        const SizedBox(height: 4),
-                        Expanded(
-                          child: ProgressChart(
-                            exercise: selected,
-                            entries: series[selected]!,
-                            persPoints: pers?.points,
+        ),
+      ],
+      body: selected == null
+          ? const EmptyState(
+              icon: Icons.show_chart,
+              title: 'Ingen fullførte økter med dato ennå.',
+              titleKey: noStatisticsKey,
+              hint: 'Fullfør en økt, så dukker kurvene opp her.',
+            )
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  DropdownButtonFormField<String>(
+                    key: exerciseDropdownKey,
+                    initialValue: selected,
+                    decoration: const InputDecoration(
+                      labelText: 'Øvelse',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      for (final exercise in exercises)
+                        DropdownMenuItem<String>(
+                          value: exercise,
+                          child: Text(
+                            exercise,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ],
+                    ],
+                    onChanged: (value) => setState(() => _exercise = value),
+                  ),
+                  const SizedBox(height: 12),
+                  _Legend(brightness: Theme.of(context).brightness),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: ProgressChart(
+                      exercise: selected,
+                      entries: series[selected]!,
+                      persPoints: pers?.points,
                     ),
                   ),
-          ),
-        ),
-      ),
+                ],
+              ),
+            ),
     );
   }
 }

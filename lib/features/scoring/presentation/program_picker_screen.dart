@@ -9,8 +9,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/core/presentation/category_pictograms.dart';
+import 'package:treffpunkt/core/presentation/confirm_dialog.dart';
+import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
-import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -203,7 +204,13 @@ class ProgramPickerScreen extends ConsumerWidget {
   /// (spec 0096 — the trash sits beside the resume tap target) and refreshes
   /// the card away.
   Future<void> _discard(BuildContext context, WidgetRef ref) async {
-    if (!await _confirmDestructive(context, title: 'Forkast lagret økt?')) {
+    if (!await showConfirmDialog(
+      context,
+      title: 'Forkast lagret økt?',
+      message: 'Handlingen kan ikke angres.',
+      confirmLabel: 'Slett',
+      confirmKey: confirmDestructiveKey,
+    )) {
       return;
     }
     await ref.read(sessionStoreProvider).clear();
@@ -212,37 +219,17 @@ class ProgramPickerScreen extends ConsumerWidget {
 
   /// Discards the saved felt round (spec 0116) after the same confirmation.
   Future<void> _discardFelt(BuildContext context, WidgetRef ref) async {
-    if (!await _confirmDestructive(context, title: 'Forkast lagret økt?')) {
+    if (!await showConfirmDialog(
+      context,
+      title: 'Forkast lagret økt?',
+      message: 'Handlingen kan ikke angres.',
+      confirmLabel: 'Slett',
+      confirmKey: confirmDestructiveKey,
+    )) {
       return;
     }
     await ref.read(feltSessionStoreProvider).clear();
     ref.invalidate(feltSavedSessionProvider);
-  }
-
-  /// The app's standard destructive-action confirmation (spec 0096).
-  Future<bool> _confirmDestructive(
-    BuildContext context, {
-    required String title,
-  }) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: const Text('Handlingen kan ikke angres.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Avbryt'),
-          ),
-          FilledButton(
-            key: confirmDestructiveKey,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Slett'),
-          ),
-        ],
-      ),
-    );
-    return confirmed ?? false;
   }
 
   @override
@@ -250,181 +237,162 @@ class ProgramPickerScreen extends ConsumerWidget {
     final saved = ref.watch(savedRecordingProvider).value;
     final feltSaved = ref.watch(feltSavedSessionProvider).value;
     final last = _lastExercise(ref);
-    return Scaffold(
-      // Content slides under the frosted bars (spec 0129).
-      extendBodyBehindAppBar: true,
-      appBar: FrostedAppBar(
-        // The logo mark (spec 0101): the target beside the wordmark, its
-        // bull in the signal red of a hit (spec 0100).
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TargetIcon(
-              size: 22,
-              color: Theme.of(context).colorScheme.primary,
-              bullColor: TreffColors.of(context).lastShot,
-            ),
-            const SizedBox(width: 8),
-            const Text('Treffpunkt'),
-          ],
-        ),
-        actions: [
-          // The bell (spec 0094): a live unread badge; tapping opens Varsler.
-          IconButton(
-            key: notificationsBellKey,
-            icon: Badge.count(
-              key: notificationsBadgeKey,
-              count: ref.watch(unreadNotificationsCountProvider),
-              isLabelVisible: ref.watch(unreadNotificationsCountProvider) > 0,
-              child: const Icon(Icons.notifications_outlined),
-            ),
-            tooltip: 'Varsler',
-            onPressed: () => unawaited(
-              Navigator.of(context)
-                  .push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const NotificationsScreen(),
-                    ),
-                  )
-                  .then((_) => ref.invalidate(notificationsProvider)),
-            ),
+    return ContentScaffold.behindBar(
+      // The logo mark (spec 0101): the target beside the wordmark, its
+      // bull in the signal red of a hit (spec 0100).
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TargetIcon(
+            size: 22,
+            color: Theme.of(context).colorScheme.primary,
+            bullColor: TreffColors.of(context).lastShot,
           ),
-          ...?actions,
+          const SizedBox(width: 8),
+          const Text('Treffpunkt'),
         ],
       ),
+      actions: [
+        // The bell (spec 0094): a live unread badge; tapping opens Varsler.
+        IconButton(
+          key: notificationsBellKey,
+          icon: Badge.count(
+            key: notificationsBadgeKey,
+            count: ref.watch(unreadNotificationsCountProvider),
+            isLabelVisible: ref.watch(unreadNotificationsCountProvider) > 0,
+            child: const Icon(Icons.notifications_outlined),
+          ),
+          tooltip: 'Varsler',
+          onPressed: () => unawaited(
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const NotificationsScreen(),
+                  ),
+                )
+                .then((_) => ref.invalidate(notificationsProvider)),
+          ),
+        ),
+        ...?actions,
+      ],
       // The Builder gives a context INSIDE the body, where the Scaffold
       // injects the app-bar/nav-bar insets (spec 0129).
       body: Builder(
-        builder: (context) => SafeArea(
-          top: false,
-          bottom: false,
-          child: Column(
-            children: [
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: kMaxContentWidth,
-                    ),
-                    child: ListView(
-                      padding: frostedScrollPadding(context),
-                      children: [
-                        if (saved != null)
-                          Card(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.secondaryContainer,
-                            child: ListTile(
-                              key: resumeSessionKey,
-                              leading: const Icon(Icons.play_circle_outline),
-                              title: const Text('Fortsett økt'),
-                              subtitle: Text(_resumeSubtitle(saved)),
-                              trailing: IconButton(
-                                key: discardSessionKey,
-                                icon: const Icon(Icons.delete_outline),
-                                tooltip: 'Forkast lagret økt',
-                                onPressed: () =>
-                                    unawaited(_discard(context, ref)),
-                              ),
-                              onTap: () =>
-                                  unawaited(_resume(context, ref, saved)),
-                            ),
-                          ),
-                        if (feltSaved != null)
-                          Card(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.secondaryContainer,
-                            child: ListTile(
-                              key: feltResumeSessionKey,
-                              leading: const Icon(Icons.play_circle_outline),
-                              title: const Text('Fortsett felt-økt'),
-                              subtitle: Text(
-                                'NorgesFelt-løype 2026 · '
-                                '${feltSaved.totalShots} skudd plassert',
-                              ),
-                              trailing: IconButton(
-                                key: feltDiscardSessionKey,
-                                icon: const Icon(Icons.delete_outline),
-                                tooltip: 'Forkast lagret økt',
-                                onPressed: () =>
-                                    unawaited(_discardFelt(context, ref)),
-                              ),
-                              onTap: () => unawaited(
-                                _resumeFelt(context, ref, feltSaved),
-                              ),
-                            ),
-                          ),
-                        if (last != null)
-                          Card(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primaryContainer,
-                            child: Semantics(
-                              button: true,
-                              label: 'Skyt igjen: ${last.label}',
-                              onTap: () =>
-                                  unawaited(_shootAgain(context, ref, last)),
-                              child: ExcludeSemantics(
-                                child: ListTile(
-                                  key: shootAgainKey,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 8,
-                                  ),
-                                  leading: const TargetIcon(size: 30),
-                                  title: const Text(
-                                    'Skyt igjen',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  subtitle: Text(last.label),
-                                  onTap: () => unawaited(
-                                    _shootAgain(context, ref, last),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 4),
-                        GridView.count(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 4,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 2,
-                          children: [
-                            for (final category in ProgramCategory.values)
-                              _CategoryTile(
-                                category: category,
-                                // MIL has nothing yet (spec 0097 req 4).
-                                onTap: category == ProgramCategory.mil
-                                    ? null
-                                    : () => unawaited(
-                                        _openCategory(context, ref, category),
-                                      ),
-                              ),
-                          ],
+        builder: (context) => Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: frostedScrollPadding(context),
+                children: [
+                  if (saved != null)
+                    Card(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.secondaryContainer,
+                      child: ListTile(
+                        key: resumeSessionKey,
+                        leading: const Icon(Icons.play_circle_outline),
+                        title: const Text('Fortsett økt'),
+                        subtitle: Text(_resumeSubtitle(saved)),
+                        trailing: IconButton(
+                          key: discardSessionKey,
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: 'Forkast lagret økt',
+                          onPressed: () => unawaited(_discard(context, ref)),
                         ),
-                      ],
+                        onTap: () => unawaited(_resume(context, ref, saved)),
+                      ),
                     ),
+                  if (feltSaved != null)
+                    Card(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.secondaryContainer,
+                      child: ListTile(
+                        key: feltResumeSessionKey,
+                        leading: const Icon(Icons.play_circle_outline),
+                        title: const Text('Fortsett felt-økt'),
+                        subtitle: Text(
+                          'NorgesFelt-løype 2026 · '
+                          '${feltSaved.totalShots} skudd plassert',
+                        ),
+                        trailing: IconButton(
+                          key: feltDiscardSessionKey,
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: 'Forkast lagret økt',
+                          onPressed: () =>
+                              unawaited(_discardFelt(context, ref)),
+                        ),
+                        onTap: () => unawaited(
+                          _resumeFelt(context, ref, feltSaved),
+                        ),
+                      ),
+                    ),
+                  if (last != null)
+                    Card(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer,
+                      child: Semantics(
+                        button: true,
+                        label: 'Skyt igjen: ${last.label}',
+                        onTap: () => unawaited(_shootAgain(context, ref, last)),
+                        child: ExcludeSemantics(
+                          child: ListTile(
+                            key: shootAgainKey,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 8,
+                            ),
+                            leading: const TargetIcon(size: 30),
+                            title: const Text(
+                              'Skyt igjen',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            subtitle: Text(last.label),
+                            onTap: () => unawaited(
+                              _shootAgain(context, ref, last),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 4,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 2,
+                    children: [
+                      for (final category in ProgramCategory.values)
+                        _CategoryTile(
+                          category: category,
+                          // MIL has nothing yet (spec 0097 req 4).
+                          onTap: category == ProgramCategory.mil
+                              ? null
+                              : () => unawaited(
+                                  _openCategory(context, ref, category),
+                                ),
+                        ),
+                    ],
                   ),
-                ),
+                ],
               ),
-              // A discreet build-version footer below the program list so a
-              // user
-              // can confirm which build they are running (spec 0028). Padded
-              // clear of the frosted navigation bar (spec 0129).
-              Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.paddingOf(context).bottom + 12,
-                ),
-                child: const BuildVersionLabel(),
+            ),
+            // A discreet build-version footer below the program list so a
+            // user can confirm which build they are running (spec 0028).
+            // Padded clear of the frosted navigation bar (spec 0129).
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.paddingOf(context).bottom + 12,
               ),
-            ],
-          ),
+              child: const BuildVersionLabel(),
+            ),
+          ],
         ),
       ),
     );

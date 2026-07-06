@@ -6,11 +6,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/confirm_dialog.dart';
+import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
-import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/nor_date.dart';
+import 'package:treffpunkt/core/presentation/snackbar_guard.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_session_detail_screen.dart';
@@ -145,51 +147,38 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
       syncedFeltIds: <String>{for (final round in feltSynced) round.id},
     );
 
-    return Scaffold(
-      // Content slides under the frosted bars (spec 0129).
-      extendBodyBehindAppBar: true,
-      appBar: FrostedAppBar(
-        title: const Text('Mine økter'),
-        actions: [
-          IconButton(
-            key: calendarToggleKey,
-            tooltip: _calendar ? 'Vis liste' : 'Vis kalender',
-            icon: Icon(
-              _calendar
-                  ? Icons.view_list_outlined
-                  : Icons.calendar_month_outlined,
-            ),
-            onPressed: () => setState(() => _calendar = !_calendar),
+    return ContentScaffold.behindBar(
+      title: const Text('Mine økter'),
+      actions: [
+        IconButton(
+          key: calendarToggleKey,
+          tooltip: _calendar ? 'Vis liste' : 'Vis kalender',
+          icon: Icon(
+            _calendar
+                ? Icons.view_list_outlined
+                : Icons.calendar_month_outlined,
           ),
-        ],
-      ),
+          onPressed: () => setState(() => _calendar = !_calendar),
+        ),
+      ],
       // The Builder gives a context INSIDE the body, where the Scaffold
       // injects the app-bar/nav-bar insets (spec 0129).
       body: Builder(
-        builder: (context) => SafeArea(
-          top: false,
-          bottom: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-              child: Column(
-                children: [
-                  if (syncFailed)
-                    Padding(
-                      padding: EdgeInsets.only(
-                        top: MediaQuery.paddingOf(context).top,
-                      ),
-                      child: const _SyncErrorBanner(),
-                    ),
-                  Expanded(
-                    child: _calendar
-                        ? _calendarView(context, items)
-                        : _SessionsList(items: items),
-                  ),
-                ],
+        builder: (context) => Column(
+          children: [
+            if (syncFailed)
+              Padding(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.paddingOf(context).top,
+                ),
+                child: const _SyncErrorBanner(),
               ),
+            Expanded(
+              child: _calendar
+                  ? _calendarView(context, items)
+                  : _SessionsList(items: items),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -395,38 +384,25 @@ class _FeltSessionCard extends ConsumerWidget {
   /// device, refreshing the list (spec 0089) — the ring card's flow (spec
   /// 0033). A failed account delete leaves the card and shows a message.
   Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref) async {
-    // Captured before the await so no BuildContext is used across the gap.
-    final messenger = ScaffoldMessenger.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Slett økt?'),
-        content: const Text('Handlingen kan ikke angres.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Avbryt'),
-          ),
-          FilledButton(
-            key: deleteSessionConfirmKey,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Slett'),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Slett økt?',
+      message: 'Handlingen kan ikke angres.',
+      confirmLabel: 'Slett',
+      confirmKey: deleteSessionConfirmKey,
     );
-    if (confirmed != true) return;
-    try {
-      if (synced) {
-        await ref.read(feltSessionRepositoryProvider).deleteById(record.id);
-      }
-      await deleteFeltRound(ref, record.id);
-      ref.invalidate(feltSyncedSessionsProvider);
-    } on Object {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke slette økta.')),
-      );
-    }
+    if (!confirmed || !context.mounted) return;
+    await guardWithSnackBar(
+      context,
+      task: () async {
+        if (synced) {
+          await ref.read(feltSessionRepositoryProvider).deleteById(record.id);
+        }
+        await deleteFeltRound(ref, record.id);
+        ref.invalidate(feltSyncedSessionsProvider);
+      },
+      failureMessage: 'Kunne ikke slette økta.',
+    );
   }
 }
 
@@ -618,41 +594,28 @@ class _SessionCard extends ConsumerWidget {
   /// local queue, refreshing the list (spec 0033). A pending-only session needs
   /// no network; a failed cloud delete leaves the card and shows a message.
   Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref) async {
-    // Captured before the await so no BuildContext is used across the gap.
-    final messenger = ScaffoldMessenger.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Slett økt?'),
-        content: const Text('Handlingen kan ikke angres.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Avbryt'),
-          ),
-          FilledButton(
-            key: deleteSessionConfirmKey,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Slett'),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Slett økt?',
+      message: 'Handlingen kan ikke angres.',
+      confirmLabel: 'Slett',
+      confirmKey: deleteSessionConfirmKey,
     );
-    if (confirmed != true) return;
+    if (!confirmed || !context.mounted) return;
     final id = entry.record.id;
-    try {
-      if (entry.synced) {
-        await ref.read(sessionRepositoryProvider).deleteById(id);
-      }
-      await ref.read(uploadQueueProvider.notifier).deleteById(id);
-      ref
-        ..invalidate(syncedSessionsProvider)
-        ..invalidate(storedPendingProvider);
-    } on Object {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke slette økta.')),
-      );
-    }
+    await guardWithSnackBar(
+      context,
+      task: () async {
+        if (entry.synced) {
+          await ref.read(sessionRepositoryProvider).deleteById(id);
+        }
+        await ref.read(uploadQueueProvider.notifier).deleteById(id);
+        ref
+          ..invalidate(syncedSessionsProvider)
+          ..invalidate(storedPendingProvider);
+      },
+      failureMessage: 'Kunne ikke slette økta.',
+    );
   }
 
   /// A spoken label for the whole card, consistent with the app's score labels.
@@ -913,13 +876,11 @@ class SessionDetailScreen extends StatelessWidget {
     try {
       snapshot = SessionSnapshot.fromJson(record.payload);
     } on Object {
-      return Scaffold(
-        appBar: FrostedAppBar(title: Text(record.program)),
-        body: const SafeArea(
-          child: _CenteredMessage(
-            'Kan ikke vise denne økta',
-            key: unreadableSessionKey,
-          ),
+      return ContentScaffold(
+        title: Text(record.program),
+        body: const _CenteredMessage(
+          'Kan ikke vise denne økta',
+          key: unreadableSessionKey,
         ),
       );
     }
