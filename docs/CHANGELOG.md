@@ -7,6 +7,15 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **Felt competition results now actually reach the scoreboard**: every
+  felt result submitted since felt competitions shipped (spec 0140) was
+  silently rejected by the database — felt round ids are not uuids, and
+  the results table's id column is — so no felt score ever appeared. The
+  result now carries a deterministic uuid derived from the round id
+  (same round → same result, so retries stay idempotent); rounds waiting
+  in the durable queue (spec 0144) deliver as soon as this fix is live.
+
+### Fixed
 - **Offline competition-felt-round results reach the scoreboard**: a
   competition felt round finished offline (or signed out) was uploaded
   later but its result never appeared on the scoreboard — the round is

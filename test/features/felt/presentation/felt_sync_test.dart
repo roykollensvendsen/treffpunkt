@@ -149,7 +149,12 @@ void main() {
 
       expect((await repository.list()).single.id, 'offline-1');
       final results = await competitions.resultsOf('felt-c1');
-      expect(results.map((r) => r.id), <String>['offline-1']);
+      // The result id is the round id mapped to a deterministic uuid — the
+      // results table's id column is `uuid`, so the raw radix-36 round id
+      // would be rejected by the real backend (spec 0140).
+      expect(results.map((r) => r.id), <String>[
+        feltCompetitionResultId('offline-1'),
+      ]);
       expect(container.read(feltSyncProvider), isEmpty);
       expect(await pending.load(), isEmpty);
     },
@@ -231,7 +236,10 @@ void main() {
       // re-upload is an idempotent no-op).
       competitions.fail = false;
       await container.read(feltSyncProvider.notifier).flush();
-      expect((await competitions.resultsOf('felt-c1')).single.id, 'r1');
+      expect(
+        (await competitions.resultsOf('felt-c1')).single.id,
+        feltCompetitionResultId('r1'),
+      );
       expect(container.read(feltSyncProvider), isEmpty);
     },
   );
@@ -414,6 +422,10 @@ void main() {
       final results = await competitions.resultsOf('felt-c1');
       expect(results, hasLength(1));
       final result = results.single;
+      // The id is the deterministic uuid for the round (spec 0140): the
+      // results table's id column is `uuid`, and retries must map the same
+      // round to the same result.
+      expect(result.id, feltCompetitionResultId('felt-r1'));
       // 2 treff + 1 figur = 3 points; 1 inner as the tiebreak; group max 47.
       expect(result.total, 3);
       expect(result.innerTens, 1);

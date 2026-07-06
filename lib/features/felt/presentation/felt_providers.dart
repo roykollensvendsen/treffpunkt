@@ -209,8 +209,10 @@ class FeltSyncNotifier extends Notifier<List<FeltSessionRecord>> {
 
   /// Submits the round as a competition result (spec 0140): points as the
   /// total, inner hits as the tiebreak, the round as the payload — the
-  /// felt mirror of the ring queue's submit. Idempotent by round id; a no-op
-  /// for a training round.
+  /// felt mirror of the ring queue's submit. Idempotent by round id — the
+  /// result id is [feltCompetitionResultId] of the round id, a deterministic
+  /// uuid, because the backend's id column is `uuid` and the raw radix-36
+  /// round id is rejected (22P02). A no-op for a training round.
   Future<void> _submitResult(FeltSessionRecord record) async {
     final competitionId = record.competitionId;
     if (competitionId == null) return;
@@ -219,7 +221,7 @@ class FeltSyncNotifier extends Notifier<List<FeltSessionRecord>> {
         .read(competitionRepositoryProvider)
         .submitResult(
           CompetitionResult(
-            id: record.id,
+            id: feltCompetitionResultId(record.id),
             competitionId: competitionId,
             program: feltCompetitionProgram(record.session.group),
             total: tally.points,
