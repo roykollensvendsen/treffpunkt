@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/sharer.dart';
+import 'package:treffpunkt/core/presentation/confirm_dialog.dart';
 import 'package:treffpunkt/features/backup/data/backup_file_source.dart';
 import 'package:treffpunkt/features/backup/domain/backup.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
@@ -121,30 +122,18 @@ class BackupSection extends ConsumerWidget {
     }
 
     if (!context.mounted) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Importere sikkerhetskopi?'),
-        content: Text(
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Importere sikkerhetskopi?',
+      message:
           'Fila inneholder ${incoming.sessions.length} økter, '
           '${incoming.feltRounds.length} feltrunder og '
           '${incoming.weapons.length} våpen. Alt du har fra før beholdes; '
           'bare det som mangler legges til.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Avbryt'),
-          ),
-          FilledButton(
-            key: backupImportConfirmKey,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Importer'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Importer',
+      confirmKey: backupImportConfirmKey,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     final pendingStore = ref.read(pendingUploadsStoreProvider);
     final feltStore = ref.read(feltHistoryStoreProvider);

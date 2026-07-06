@@ -4,7 +4,6 @@
 
 // Widget tests for the notification center (spec 0094).
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
 import 'package:treffpunkt/features/notifications/data/notifications_repository.dart';
@@ -13,6 +12,8 @@ import 'package:treffpunkt/features/notifications/presentation/notifications_scr
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
+
+import '../../../support/pump_app.dart';
 
 AppNotification _invitation(String id, {DateTime? at}) => AppNotification(
   id: id,
@@ -23,14 +24,13 @@ AppNotification _invitation(String id, {DateTime? at}) => AppNotification(
   competitionId: 'c1',
 );
 
-Widget _app(NotificationsRepository repository, {Widget? home}) =>
-    ProviderScope(
-      overrides: [
-        notificationsRepositoryProvider.overrideWithValue(repository),
-        sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
-      ],
-      child: MaterialApp(home: home ?? const NotificationsScreen()),
-    );
+Widget _app(NotificationsRepository repository, {Widget? home}) => buildApp(
+  overrides: [
+    notificationsRepositoryProvider.overrideWithValue(repository),
+    sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
+  ],
+  home: home ?? const NotificationsScreen(),
+);
 
 void main() {
   testWidgets('the bell shows the unread count and opens Varsler (0094)', (

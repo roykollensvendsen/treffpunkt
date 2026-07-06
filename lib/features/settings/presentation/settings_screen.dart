@@ -6,8 +6,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/confirm_dialog.dart';
+import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
-import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/backup/presentation/backup_section.dart';
@@ -96,68 +97,58 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: const FrostedAppBar(title: Text('Innstillinger')),
+    return ContentScaffold.behindBar(
+      title: const Text('Innstillinger'),
       // The Builder gives a context INSIDE the body, where the
       // Scaffold injects the bar insets (spec 0129).
       body: Builder(
-        builder: (context) => SafeArea(
-          top: false,
-          bottom: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-              child: ListView(
-                padding: frostedScrollPadding(
-                  context,
-                  horizontal: 0,
-                  top: 8,
-                  bottom: 8,
+        builder: (context) => ListView(
+          padding: frostedScrollPadding(
+            context,
+            horizontal: 0,
+            top: 8,
+            bottom: 8,
+          ),
+          children: <Widget>[
+            _SectionHeader('Konto', style: theme.textTheme.titleSmall),
+            const _AccountSection(),
+            const Divider(),
+            _SectionHeader('Skyting', style: theme.textTheme.titleSmall),
+            const _ShootingSection(),
+            const Divider(),
+            _SectionHeader(
+              'Sikkerhetskopi',
+              style: theme.textTheme.titleSmall,
+            ),
+            const BackupSection(),
+            const Divider(),
+            _SectionHeader('Utseende', style: theme.textTheme.titleSmall),
+            const _ThemeSection(),
+            const Divider(),
+            _SectionHeader('Varsler', style: theme.textTheme.titleSmall),
+            const _NotificationsSection(),
+            const Divider(),
+            _SectionHeader(
+              'Personvern',
+              style: theme.textTheme.titleSmall,
+            ),
+            const _ContributionSection(),
+            const Divider(),
+            _SectionHeader('Hjelp', style: theme.textTheme.titleSmall),
+            ListTile(
+              key: helpButtonKey,
+              leading: const Icon(Icons.help_outline),
+              title: const Text('Brukerveiledning'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => unawaited(
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const HelpScreen(),
+                  ),
                 ),
-                children: <Widget>[
-                  _SectionHeader('Konto', style: theme.textTheme.titleSmall),
-                  const _AccountSection(),
-                  const Divider(),
-                  _SectionHeader('Skyting', style: theme.textTheme.titleSmall),
-                  const _ShootingSection(),
-                  const Divider(),
-                  _SectionHeader(
-                    'Sikkerhetskopi',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  const BackupSection(),
-                  const Divider(),
-                  _SectionHeader('Utseende', style: theme.textTheme.titleSmall),
-                  const _ThemeSection(),
-                  const Divider(),
-                  _SectionHeader('Varsler', style: theme.textTheme.titleSmall),
-                  const _NotificationsSection(),
-                  const Divider(),
-                  _SectionHeader(
-                    'Personvern',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  const _ContributionSection(),
-                  const Divider(),
-                  _SectionHeader('Hjelp', style: theme.textTheme.titleSmall),
-                  ListTile(
-                    key: helpButtonKey,
-                    leading: const Icon(Icons.help_outline),
-                    title: const Text('Brukerveiledning'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => unawaited(
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const HelpScreen(),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -245,35 +236,21 @@ class _AccountSection extends ConsumerWidget {
   /// Deletes the account after an explicit consequence-listing confirmation
   /// (specs 0126/0096); the auth gate takes over once signed out.
   Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Slette profilen din?'),
-        content: const Text(
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Slette profilen din?',
+      message:
           'Dette sletter kontoen din og alt som er synkronisert til den: '
           'økter og feltrunder, konkurranser du EIER (de forsvinner også '
           'for deltakerne), innleggene dine i forumet og varslene dine. '
           'Handlingen kan ikke angres.\n\n'
           'Data lagret kun på denne enheten blir liggende her — ta gjerne '
           'en sikkerhetskopi først (Innstillinger → Sikkerhetskopi).',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Avbryt'),
-          ),
-          FilledButton(
-            key: confirmDeleteAccountKey,
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(dialogContext).colorScheme.error,
-            ),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Slett profilen min'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Slett profilen min',
+      confirmKey: confirmDeleteAccountKey,
+      destructiveConfirm: true,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     await ref.read(authControllerProvider.notifier).deleteAccount();
   }
 }
