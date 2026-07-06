@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:treffpunkt/core/data/sync_exception.dart';
 import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/forum/data/forum_repository.dart';
@@ -179,22 +180,22 @@ final class SupabaseForumRepository implements ForumRepository {
   );
 
   @override
-  Future<void> createThread(ForumThread thread) async {
-    try {
+  Future<void> createThread(ForumThread thread) => guardSync(
+    () async {
       await _client.from('forum_threads').insert(thread.toInsertJson());
-    } on Object catch (error) {
-      throw ForumException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to create the thread',
+    wrap: ForumException.new,
+  );
 
   @override
-  Future<void> deleteThread(String threadId) async {
-    try {
+  Future<void> deleteThread(String threadId) => guardSync(
+    () async {
       await _client.from('forum_threads').delete().eq('id', threadId);
-    } on Object catch (error) {
-      throw ForumException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to delete the thread',
+    wrap: ForumException.new,
+  );
 
   @override
   Stream<List<ForumPost>> watchPosts(String threadId) => _live(
@@ -214,58 +215,58 @@ final class SupabaseForumRepository implements ForumRepository {
   );
 
   @override
-  Future<void> postReply(ForumPost post) async {
-    try {
+  Future<void> postReply(ForumPost post) => guardSync(
+    () async {
       await _client.from('forum_posts').insert(post.toInsertJson());
-    } on Object catch (error) {
-      throw ForumException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to post the reply',
+    wrap: ForumException.new,
+  );
 
   @override
-  Future<void> deletePost(String postId) async {
-    try {
+  Future<void> deletePost(String postId) => guardSync(
+    () async {
       await _client.from('forum_posts').delete().eq('id', postId);
-    } on Object catch (error) {
-      throw ForumException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to delete the post',
+    wrap: ForumException.new,
+  );
 
   @override
   Future<void> editThread(
     String threadId, {
     required String title,
     required String body,
-  }) async {
-    try {
+  }) => guardSync(
+    () async {
       // RLS limits the update to the author's own thread (spec 0063).
       await _client
           .from('forum_threads')
           .update(<String, dynamic>{'title': title, 'body': body})
           .eq('id', threadId);
-    } on Object catch (error) {
-      throw ForumException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to edit the thread',
+    wrap: ForumException.new,
+  );
 
   @override
-  Future<void> editPost(String postId, {required String body}) async {
-    try {
+  Future<void> editPost(String postId, {required String body}) => guardSync(
+    () async {
       await _client
           .from('forum_posts')
           .update(<String, dynamic>{'body': body})
           .eq('id', postId);
-    } on Object catch (error) {
-      throw ForumException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to edit the post',
+    wrap: ForumException.new,
+  );
 
   @override
   Future<void> setThreadStatus(
     String threadId,
     ForumThreadStatus status,
-  ) async {
-    try {
+  ) => guardSync(
+    () async {
       // The RPC checks is_app_admin and updates only the status column
       // (spec 0066).
       await _client.rpc<void>(
@@ -275,14 +276,14 @@ final class SupabaseForumRepository implements ForumRepository {
           'p_status': status.wire,
         },
       );
-    } on Object catch (error) {
-      throw ForumException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to set the thread status',
+    wrap: ForumException.new,
+  );
 
   @override
-  Future<bool> isAdmin() async {
-    try {
+  Future<bool> isAdmin() => guardSync(
+    () async {
       // RLS limits the select to the caller's own admin row, so a returned row
       // means they are a moderator.
       final row = await _client
@@ -290,18 +291,18 @@ final class SupabaseForumRepository implements ForumRepository {
           .select('user_id')
           .maybeSingle();
       return row != null;
-    } on Object catch (error) {
-      throw ForumException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to check moderator status',
+    wrap: ForumException.new,
+  );
 
   @override
   Future<void> toggleReaction({
     required String targetType,
     required String targetId,
     required String emoji,
-  }) async {
-    try {
+  }) => guardSync(
+    () async {
       // Toggle: delete the caller's own reaction (RLS limits the delete to it);
       // if there was none, insert it (spec 0055).
       final removed = await _client
@@ -318,17 +319,17 @@ final class SupabaseForumRepository implements ForumRepository {
           'emoji': emoji,
         });
       }
-    } on Object catch (error) {
-      throw ForumException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to toggle the reaction',
+    wrap: ForumException.new,
+  );
 
   @override
   Future<String> uploadForumImage(
     Uint8List bytes, {
     String fileExtension = 'jpg',
-  }) async {
-    try {
+  }) => guardSync(
+    () async {
       final path = '${const Uuid().v4()}.$fileExtension';
       final contentType = imageMimeForExtension(fileExtension);
       await _client.storage
@@ -339,10 +340,10 @@ final class SupabaseForumRepository implements ForumRepository {
             fileOptions: FileOptions(contentType: contentType),
           );
       return path;
-    } on Object catch (error) {
-      throw ForumException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to upload the forum image',
+    wrap: ForumException.new,
+  );
 
   @override
   Future<DateTime?> robotSeenAt() async {

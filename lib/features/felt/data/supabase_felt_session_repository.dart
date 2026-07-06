@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:treffpunkt/core/data/sync_exception.dart';
 import 'package:treffpunkt/core/time/wire_time.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
@@ -40,32 +41,26 @@ final class SupabaseFeltSessionRepository implements FeltSessionRepository {
   }
 
   @override
-  Future<List<FeltSessionRecord>> list() async {
-    try {
+  Future<List<FeltSessionRecord>> list() => guardSync(
+    () async {
       final rows = await _client
           .from(_table)
           .select()
           .order('captured_at', ascending: false);
       return <FeltSessionRecord>[for (final row in rows) _fromRow(row)];
-    } on Object catch (error) {
-      if (!kReleaseMode) {
-        debugPrint('Failed to list the felt rounds: $error');
-      }
-      throw FeltSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to list the felt rounds',
+    wrap: FeltSyncException.new,
+  );
 
   @override
-  Future<void> deleteById(String id) async {
-    try {
+  Future<void> deleteById(String id) => guardSync(
+    () async {
       await _client.from(_table).delete().eq('id', id);
-    } on Object catch (error) {
-      if (!kReleaseMode) {
-        debugPrint('Failed to delete the felt round: $error');
-      }
-      throw FeltSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to delete the felt round',
+    wrap: FeltSyncException.new,
+  );
 
   FeltSessionRecord _fromRow(Map<String, dynamic> row) => FeltSessionRecord(
     id: row['id'] as String,

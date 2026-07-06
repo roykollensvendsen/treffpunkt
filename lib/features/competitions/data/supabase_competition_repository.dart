@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:treffpunkt/core/data/sync_exception.dart';
 import 'package:treffpunkt/core/platform/image_format.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
@@ -67,50 +68,52 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   }
 
   @override
-  Future<void> createCompetition(Competition competition) async {
-    try {
+  Future<void> createCompetition(Competition competition) => guardSync(
+    () async {
       // A plain insert, not an upsert: the id is freshly generated per create,
       // so there is nothing to merge — and an `upsert` issues
       // `ON CONFLICT DO UPDATE`, whose update path trips the owner-default
       // Row-Level Security check (`owner_id` defaults to `auth.uid()` and is
       // not sent), which a plain insert avoids.
       await _client.from('competitions').insert(competition.toInsertJson());
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to create the competition',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<void> deleteCompetition(String competitionId) async {
-    try {
+  Future<void> deleteCompetition(String competitionId) => guardSync(
+    () async {
       // RLS ("Competitions are deletable by their owner") gates this; the
       // schema `on delete cascade` removes members, invitations and results.
       await _client.from('competitions').delete().eq('id', competitionId);
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to delete the competition',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
   Future<Set<String>> archivedCompetitionIds() async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return const <String>{};
-    try {
-      // RLS confines the select to the caller's own archive rows.
-      final rows = await _client
-          .from('competition_archives')
-          .select('competition_id');
-      return <String>{
-        for (final row in rows) row['competition_id'] as String,
-      };
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
+    return guardSync(
+      () async {
+        // RLS confines the select to the caller's own archive rows.
+        final rows = await _client
+            .from('competition_archives')
+            .select('competition_id');
+        return <String>{
+          for (final row in rows) row['competition_id'] as String,
+        };
+      },
+      debugLabel: 'Failed to list the archived competitions',
+      wrap: CompetitionSyncException.new,
+    );
   }
 
   @override
-  Future<void> archiveCompetition(String competitionId) async {
-    try {
+  Future<void> archiveCompetition(String competitionId) => guardSync(
+    () async {
       // Idempotent: DO NOTHING on the (competition_id, user_id) primary key, so
       // archiving twice is a no-op. user_id defaults to auth.uid() server-side.
       await _client
@@ -120,70 +123,73 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
             onConflict: 'competition_id,user_id',
             ignoreDuplicates: true,
           );
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to archive the competition',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<void> unarchiveCompetition(String competitionId) async {
-    try {
+  Future<void> unarchiveCompetition(String competitionId) => guardSync(
+    () async {
       // RLS scopes the delete to the caller's own row.
       await _client
           .from('competition_archives')
           .delete()
           .eq('competition_id', competitionId);
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to unarchive the competition',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
   Future<List<Competition>> listMine() async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return const <Competition>[];
-    try {
-      // Inner-join membership filtered to me → competitions I own (owner is an
-      // auto-member) or have joined; excludes public ones I have not joined.
-      final rows = await _client
-          .from('competitions')
-          .select('*, competition_members!inner(user_id)')
-          .eq('competition_members.user_id', uid)
-          .order('created_at', ascending: false);
-      return <Competition>[for (final row in rows) Competition.fromJson(row)];
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
+    return guardSync(
+      () async {
+        // Inner-join membership filtered to me → competitions I own (owner is
+        // an auto-member) or have joined; excludes public ones I have not
+        // joined.
+        final rows = await _client
+            .from('competitions')
+            .select('*, competition_members!inner(user_id)')
+            .eq('competition_members.user_id', uid)
+            .order('created_at', ascending: false);
+        return <Competition>[for (final row in rows) Competition.fromJson(row)];
+      },
+      debugLabel: 'Failed to list the competitions',
+      wrap: CompetitionSyncException.new,
+    );
   }
 
   @override
-  Future<void> invite(String competitionId, String email) async {
-    try {
+  Future<void> invite(String competitionId, String email) => guardSync(
+    () async {
       await _client.from('competition_invitations').insert(<String, dynamic>{
         'competition_id': competitionId,
         'invited_email': email.toLowerCase(),
       });
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to send the invitation',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<List<Profile>> listShooters() async {
-    try {
+  Future<List<Profile>> listShooters() => guardSync(
+    () async {
       final rows = await _client
           .from('profiles')
           .select('id, display_name, avatar_url')
           .order('display_name');
       return <Profile>[for (final row in rows) Profile.fromJson(row)];
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to list the shooters',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<void> inviteUser(String competitionId, String userId) async {
-    try {
+  Future<void> inviteUser(String competitionId, String userId) => guardSync(
+    () async {
       // The RPC resolves the shooter's email server-side and writes the
       // email-keyed invitation; the email never reaches this client.
       await _client.rpc<void>(
@@ -193,32 +199,34 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
           'target_user_id': userId,
         },
       );
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to invite the shooter',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
   Future<List<CompetitionInvitation>> listMyInvitations() async {
     final email = _client.auth.currentUser?.email?.toLowerCase();
     if (email == null) return const <CompetitionInvitation>[];
-    try {
-      final rows = await _client
-          .from('competition_invitations')
-          .select('*, competitions(*)')
-          .eq('invited_email', email)
-          .eq('status', 'pending');
-      return <CompetitionInvitation>[
-        for (final row in rows) CompetitionInvitation.fromJson(row),
-      ];
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
+    return guardSync(
+      () async {
+        final rows = await _client
+            .from('competition_invitations')
+            .select('*, competitions(*)')
+            .eq('invited_email', email)
+            .eq('status', 'pending');
+        return <CompetitionInvitation>[
+          for (final row in rows) CompetitionInvitation.fromJson(row),
+        ];
+      },
+      debugLabel: 'Failed to list the invitations',
+      wrap: CompetitionSyncException.new,
+    );
   }
 
   @override
-  Future<List<String>> pendingInviteeIds(String competitionId) async {
-    try {
+  Future<List<String>> pendingInviteeIds(String competitionId) => guardSync(
+    () async {
       // The RPC resolves email-keyed invitations to user ids server-side and
       // enforces owner-only; a non-owner gets an empty set.
       final rows = await _client.rpc<List<dynamic>>(
@@ -229,26 +237,26 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
         for (final row in rows)
           (row as Map<String, dynamic>)['user_id'] as String,
       ];
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to list the pending invitees',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<void> acceptInvitation(String competitionId) async {
-    try {
+  Future<void> acceptInvitation(String competitionId) => guardSync(
+    () async {
       await _client.rpc<void>(
         'accept_invitation',
         params: <String, dynamic>{'cid': competitionId},
       );
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to accept the invitation',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<String?> joinToken(String competitionId) async {
-    try {
+  Future<String?> joinToken(String competitionId) => guardSync(
+    () async {
       // RLS limits the select to the owner's row, so a non-owner reads null.
       final row = await _client
           .from('competition_join_tokens')
@@ -256,39 +264,36 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
           .eq('competition_id', competitionId)
           .maybeSingle();
       return row?['token'] as String?;
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to read the join token',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<void> joinByLink(String competitionId, String token) async {
-    try {
+  Future<void> joinByLink(String competitionId, String token) => guardSync(
+    () async {
       await _client.rpc<void>(
         'join_competition',
         params: <String, dynamic>{'cid': competitionId, 'join_token': token},
       );
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to join by link',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<String> regenerateJoinToken(String competitionId) async {
-    try {
-      final token = await _client.rpc<String>(
-        'regenerate_join_token',
-        params: <String, dynamic>{'cid': competitionId},
-      );
-      return token;
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+  Future<String> regenerateJoinToken(String competitionId) => guardSync(
+    () => _client.rpc<String>(
+      'regenerate_join_token',
+      params: <String, dynamic>{'cid': competitionId},
+    ),
+    debugLabel: 'Failed to regenerate the join token',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<List<CompetitionMember>> membersOf(String competitionId) async {
-    try {
+  Future<List<CompetitionMember>> membersOf(String competitionId) => guardSync(
+    () async {
       final memberRows = await _client
           .from('competition_members')
           .select()
@@ -312,14 +317,14 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
       return <CompetitionMember>[
         for (final m in members) m.withProfile(byId[m.userId]),
       ];
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to list the members',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<void> submitResult(CompetitionResult result) async {
-    try {
+  Future<void> submitResult(CompetitionResult result) => guardSync(
+    () async {
       // Idempotent by id (the session id) via ON CONFLICT DO NOTHING, so a
       // queued retry is a server-side no-op. DO NOTHING (not DO UPDATE) runs
       // only the INSERT policy, so it is Row-Level-Security-safe — unlike an
@@ -331,14 +336,14 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
             onConflict: 'id',
             ignoreDuplicates: true,
           );
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to submit the result',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<List<CompetitionResult>> resultsOf(String competitionId) async {
-    try {
+  Future<List<CompetitionResult>> resultsOf(String competitionId) => guardSync(
+    () async {
       final rows = await _client
           .from('competition_results')
           .select()
@@ -364,10 +369,10 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
       return <CompetitionResult>[
         for (final r in results) r.withProfile(byId[r.userId]),
       ];
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to list the results',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
   Stream<List<CompetitionResult>> watchResults(String competitionId) {
@@ -416,13 +421,13 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   }
 
   @override
-  Future<void> postMessage(CompetitionMessage message) async {
-    try {
+  Future<void> postMessage(CompetitionMessage message) => guardSync(
+    () async {
       await _client.from('competition_messages').insert(message.toInsertJson());
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to post the message',
+    wrap: CompetitionSyncException.new,
+  );
 
   /// Maps the given user ids to display names from `profiles` (spec 0059).
   Future<Map<String, String>> _displayNamesFor(
@@ -564,32 +569,33 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
   }
 
   @override
-  Future<void> deleteMessage(String messageId) async {
-    try {
+  Future<void> deleteMessage(String messageId) => guardSync(
+    () async {
       // RLS allows the author or the competition owner; for anyone else the
       // delete matches no row (a no-op).
       await _client.from('competition_messages').delete().eq('id', messageId);
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to delete the message',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
-  Future<void> editMessage(String messageId, {required String body}) async {
-    try {
-      // RLS limits the update to the author's own message (spec 0070).
-      await _client
-          .from('competition_messages')
-          .update(<String, dynamic>{'body': body})
-          .eq('id', messageId);
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+  Future<void> editMessage(String messageId, {required String body}) =>
+      guardSync(
+        () async {
+          // RLS limits the update to the author's own message (spec 0070).
+          await _client
+              .from('competition_messages')
+              .update(<String, dynamic>{'body': body})
+              .eq('id', messageId);
+        },
+        debugLabel: 'Failed to edit the message',
+        wrap: CompetitionSyncException.new,
+      );
 
   @override
-  Future<void> toggleReaction(String messageId, String emoji) async {
-    try {
+  Future<void> toggleReaction(String messageId, String emoji) => guardSync(
+    () async {
       // Toggle: delete the caller's own reaction with this emoji (RLS limits
       // the delete to it); if there was none, insert it. user_id defaults to
       // auth.uid() on insert (spec 0052).
@@ -604,18 +610,18 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
           <String, dynamic>{'message_id': messageId, 'emoji': emoji},
         );
       }
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to toggle the reaction',
+    wrap: CompetitionSyncException.new,
+  );
 
   @override
   Future<String> uploadChatImage(
     String competitionId,
     Uint8List bytes, {
     String fileExtension = 'jpg',
-  }) async {
-    try {
+  }) => guardSync(
+    () async {
       // Path's first segment is the competition id — Storage RLS reads it to
       // gate the upload to a participant (spec 0053).
       final path = '$competitionId/${const Uuid().v4()}.$fileExtension';
@@ -628,8 +634,8 @@ final class SupabaseCompetitionRepository implements CompetitionRepository {
             fileOptions: FileOptions(contentType: contentType),
           );
       return path;
-    } on Object catch (error) {
-      throw CompetitionSyncException(error);
-    }
-  }
+    },
+    debugLabel: 'Failed to upload the chat image',
+    wrap: CompetitionSyncException.new,
+  );
 }
