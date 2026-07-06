@@ -51,5 +51,13 @@ void main() {
         expect(await store.load(), isNull);
       },
     );
+
+    test('malformed stored JSON loads as null, like never-saved', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'active_felt_session': 'not JSON',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      expect(await SharedPreferencesFeltSessionStore(prefs).load(), isNull);
+    });
   });
 }

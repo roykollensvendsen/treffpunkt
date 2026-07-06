@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:treffpunkt/core/data/prefs_store.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 
 /// Local storage for the queue of completed sessions awaiting upload (spec
@@ -45,35 +44,27 @@ class InMemoryPendingUploadsStore implements PendingUploadsStore {
 
 /// A [PendingUploadsStore] backed by `shared_preferences` (web + mobile).
 ///
-/// Stores the whole pending list as one JSON array under [_key] (ADR-0016).
-/// Tests drive it with `SharedPreferences.setMockInitialValues`, so no real
-/// platform storage is touched.
+/// Delegates to a [PrefsJsonListStore]: the whole pending list lives as one
+/// JSON array under one key (ADR-0016), and anything unreadable loads as the
+/// empty list, like never-saved. Tests drive it with
+/// `SharedPreferences.setMockInitialValues`, so no real platform storage is
+/// touched.
 class SharedPreferencesPendingUploadsStore implements PendingUploadsStore {
-  /// Creates a store reading and writing through [_prefs].
-  SharedPreferencesPendingUploadsStore(this._prefs);
+  /// Creates a store reading and writing through [prefs].
+  SharedPreferencesPendingUploadsStore(SharedPreferences prefs)
+    : _store = PrefsJsonListStore<SessionRecord>(
+        prefs,
+        key: 'pending_session_uploads',
+        toJson: (record) => record.toJson(),
+        fromJson: (json) =>
+            SessionRecord.fromJson(json! as Map<String, dynamic>),
+      );
 
-  final SharedPreferences _prefs;
-
-  static const String _key = 'pending_session_uploads';
-
-  @override
-  Future<List<SessionRecord>> load() async {
-    final stored = _prefs.getString(_key);
-    if (stored == null) return <SessionRecord>[];
-    final list = jsonDecode(stored) as List<dynamic>;
-    return <SessionRecord>[
-      for (final entry in list)
-        SessionRecord.fromJson(entry as Map<String, dynamic>),
-    ];
-  }
+  final PrefsJsonListStore<SessionRecord> _store;
 
   @override
-  Future<void> save(List<SessionRecord> records) async {
-    await _prefs.setString(
-      _key,
-      jsonEncode(<Map<String, dynamic>>[
-        for (final record in records) record.toJson(),
-      ]),
-    );
-  }
+  Future<List<SessionRecord>> load() => _store.load();
+
+  @override
+  Future<void> save(List<SessionRecord> records) => _store.save(records);
 }

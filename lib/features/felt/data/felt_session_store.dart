@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:treffpunkt/core/data/prefs_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 
 /// Local storage for the single active felt round (spec 0081).
@@ -42,31 +41,30 @@ class InMemoryFeltSessionStore implements FeltSessionStore {
   Future<void> clear() async => _snapshot = null;
 }
 
-/// A [FeltSessionStore] backed by `shared_preferences` (ADR-0016): one JSON
-/// string under [_key]. Tests drive it with
+/// A [FeltSessionStore] backed by `shared_preferences` (ADR-0016).
+///
+/// Delegates to a [PrefsJsonStore]: one JSON string under one key, and
+/// anything unreadable loads as `null`, like never-saved. Tests drive it with
 /// `SharedPreferences.setMockInitialValues`, so no real storage is touched.
 class SharedPreferencesFeltSessionStore implements FeltSessionStore {
-  /// Creates a store reading and writing through [_prefs].
-  SharedPreferencesFeltSessionStore(this._prefs);
+  /// Creates a store reading and writing through [prefs].
+  SharedPreferencesFeltSessionStore(SharedPreferences prefs)
+    : _store = PrefsJsonStore<FeltSessionSnapshot>(
+        prefs,
+        key: 'active_felt_session',
+        toJson: (snapshot) => snapshot.toJson(),
+        fromJson: (json) =>
+            FeltSessionSnapshot.fromJson(json! as Map<String, dynamic>),
+      );
 
-  final SharedPreferences _prefs;
-
-  static const String _key = 'active_felt_session';
-
-  @override
-  Future<void> save(FeltSessionSnapshot snapshot) async {
-    await _prefs.setString(_key, jsonEncode(snapshot.toJson()));
-  }
-
-  @override
-  Future<FeltSessionSnapshot?> load() async {
-    final stored = _prefs.getString(_key);
-    if (stored == null) return null;
-    return FeltSessionSnapshot.fromJson(
-      jsonDecode(stored) as Map<String, dynamic>,
-    );
-  }
+  final PrefsJsonStore<FeltSessionSnapshot> _store;
 
   @override
-  Future<void> clear() async => _prefs.remove(_key);
+  Future<void> save(FeltSessionSnapshot snapshot) => _store.save(snapshot);
+
+  @override
+  Future<FeltSessionSnapshot?> load() => _store.load();
+
+  @override
+  Future<void> clear() => _store.clear();
 }

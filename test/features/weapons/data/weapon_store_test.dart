@@ -82,5 +82,13 @@ void main() {
       await store.save(<Weapon>[_airRifle]);
       expect(await store.load(), <Weapon>[_airRifle]);
     });
+
+    test('malformed stored JSON loads as empty, like never-saved', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'personal_weapons': 'not JSON',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      expect(await SharedPreferencesWeaponStore(prefs).load(), isEmpty);
+    });
   });
 }

@@ -81,5 +81,13 @@ void main() {
       await store.save(<SessionRecord>[]);
       expect(await store.load(), isEmpty);
     });
+
+    test('malformed stored JSON loads as empty, like never-saved', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'pending_session_uploads': 'not JSON',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      expect(await SharedPreferencesPendingUploadsStore(prefs).load(), isEmpty);
+    });
   });
 }
