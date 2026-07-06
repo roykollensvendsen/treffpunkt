@@ -9,14 +9,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/clipboard_image.dart';
 import 'package:treffpunkt/core/platform/image_format.dart';
+import 'package:treffpunkt/core/presentation/confirm_dialog.dart';
 import 'package:treffpunkt/core/presentation/copy_message_text.dart';
+import 'package:treffpunkt/core/presentation/edit_text_dialog.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/full_screen_image.dart';
+import 'package:treffpunkt/core/presentation/image_send.dart';
 import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/core/presentation/mention_picker.dart';
 import 'package:treffpunkt/core/presentation/mention_text.dart';
+import 'package:treffpunkt/core/presentation/message_actions_sheet.dart';
+import 'package:treffpunkt/core/presentation/message_composer.dart';
 import 'package:treffpunkt/core/presentation/message_time.dart';
-import 'package:treffpunkt/core/presentation/reactors_sheet.dart';
+import 'package:treffpunkt/core/presentation/reaction_widgets.dart';
+import 'package:treffpunkt/core/presentation/snackbar_guard.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_message.dart';
@@ -74,18 +80,6 @@ Key chatPaletteEmojiKey(String emoji) =>
 Key chatReactionKey(String id, String emoji) =>
     ValueKey<String>('chatReaction-$id-$emoji');
 
-/// The emoji offered in the reaction palette (spec 0052).
-const List<String> chatReactionPalette = <String>[
-  '👍',
-  '🎯',
-  '🔥',
-  '😂',
-  '❤️',
-  '👏',
-  '😮',
-  '😢',
-];
-
 /// The live chat for one competition (spec 0051): everyone who can see the
 /// competition reads it; participants can post. Messages stream in via
 /// Realtime; you can delete your own, and the owner can delete any.
@@ -136,7 +130,6 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
     if (text.isEmpty || _sending) return;
     if (!await ensureDisplayName(context, ref)) return;
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
     setState(() => _sending = true);
     final message = CompetitionMessage(
       id: const Uuid().v4(),
@@ -145,12 +138,13 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
       userId: ref.read(currentUserIdProvider),
     );
     try {
-      await ref.read(competitionRepositoryProvider).postMessage(message);
-      _composer.clear();
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke sende meldingen.')),
+      final ok = await guardWithSnackBar<CompetitionSyncException>(
+        context,
+        task: () =>
+            ref.read(competitionRepositoryProvider).postMessage(message),
+        failureMessage: 'Kunne ikke sende meldingen.',
       );
+      if (ok) _composer.clear();
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -158,24 +152,32 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
 
   Future<void> _pickAndSendImage() async {
     if (_sending) return;
-    final picked = await ref.read(imagePickerProvider)();
-    if (picked == null) return;
-    await _sendImageBytes(await picked.readAsBytes());
+    await pickAndSendImage(
+      context,
+      pickBytes: () async {
+        final picked = await ref.read(imagePickerProvider)();
+        return picked?.readAsBytes();
+      },
+      send: _postImage,
+      failureMessage: 'Kunne ikke laste opp bildet.',
+    );
   }
 
-  /// Uploads [bytes] and posts a message with the image — the shared path for
-  /// both a picked and a pasted image (spec 0062). Only JPG/PNG/GIF are
-  /// accepted; anything else is refused with a clear message (spec 0075).
+  /// Sends a pasted image through the same guard-and-send pipeline as a
+  /// picked one (spec 0062).
   Future<void> _sendImageBytes(Uint8List bytes) async {
     if (_sending) return;
-    final messenger = ScaffoldMessenger.of(context);
-    final format = detectImageFormat(bytes);
-    if (format == null) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text(unsupportedImageMessage)),
-      );
-      return;
-    }
+    await sendImageBytes(
+      context,
+      bytes: bytes,
+      send: _postImage,
+      failureMessage: 'Kunne ikke laste opp bildet.',
+    );
+  }
+
+  /// Uploads the image and posts a message carrying it — the shared tail of
+  /// both the picked and the pasted path (spec 0062).
+  Future<void> _postImage(Uint8List bytes, ImageFormat format) async {
     if (!await ensureDisplayName(context, ref)) return;
     if (!mounted) return;
     setState(() => _sending = true);
@@ -196,75 +198,57 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
         ),
       );
       _composer.clear();
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke laste opp bildet.')),
-      );
     } finally {
       if (mounted) setState(() => _sending = false);
     }
   }
 
   Future<void> _confirmDelete(CompetitionMessage message) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Slett melding?'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Avbryt'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Slett'),
-          ),
-        ],
-      ),
+    final ok = await showConfirmDialog(
+      context,
+      title: 'Slett melding?',
+      confirmLabel: 'Slett',
     );
-    if (ok != true) return;
-    try {
-      await ref.read(competitionRepositoryProvider).deleteMessage(message.id);
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke slette meldingen.')),
-      );
-    }
+    if (!ok || !mounted) return;
+    await guardWithSnackBar<CompetitionSyncException>(
+      context,
+      task: () =>
+          ref.read(competitionRepositoryProvider).deleteMessage(message.id),
+      failureMessage: 'Kunne ikke slette meldingen.',
+    );
   }
 
   /// Opens an editor for your own message, then saves the new text (spec 0070).
   Future<void> _editMessage(CompetitionMessage message) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final newBody = await showDialog<String>(
-      context: context,
-      builder: (_) => _EditMessageDialog(initialBody: message.body),
+    final newBody = await showEditTextDialog(
+      context,
+      title: 'Rediger melding',
+      initialText: message.body,
+      hint: 'Melding …',
+      fieldKey: chatEditBodyFieldKey,
+      saveKey: chatEditSaveKey,
     );
     if (newBody == null) return;
     // The text may be cleared only when the message still carries an image.
     if (newBody.isEmpty && message.imageUrl == null) return;
-    try {
-      await ref
+    if (!mounted) return;
+    await guardWithSnackBar<CompetitionSyncException>(
+      context,
+      task: () => ref
           .read(competitionRepositoryProvider)
-          .editMessage(message.id, body: newBody);
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke lagre endringen.')),
-      );
-    }
+          .editMessage(message.id, body: newBody),
+      failureMessage: 'Kunne ikke lagre endringen.',
+    );
   }
 
   Future<void> _toggleReaction(String messageId, String emoji) async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref
+    await guardWithSnackBar<CompetitionSyncException>(
+      context,
+      task: () => ref
           .read(competitionRepositoryProvider)
-          .toggleReaction(messageId, emoji);
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke reagere.')),
-      );
-    }
+          .toggleReaction(messageId, emoji),
+      failureMessage: 'Kunne ikke reagere.',
+    );
   }
 
   void _scrollToBottomSoon() {
@@ -345,8 +329,9 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
                   ),
                 ),
                 const Divider(height: 1),
-                _Composer(
+                MessageComposer(
                   controller: _composer,
+                  hint: 'Skriv en melding …',
                   sending: _sending,
                   onSend: () => unawaited(_send()),
                   onAttach: () => unawaited(_pickAndSendImage()),
@@ -355,6 +340,9 @@ class _CompetitionChatScreenState extends ConsumerState<CompetitionChatScreen> {
                   onChanged: (_) => unawaited(
                     maybeOfferMentions(context, _composer, mentionNames),
                   ),
+                  fieldKey: chatComposerFieldKey,
+                  sendKey: chatSendButtonKey,
+                  attachKey: chatAttachImageKey,
                 ),
               ],
             ),
@@ -384,73 +372,40 @@ class _MessageBubble extends StatelessWidget {
   final VoidCallback onEdit;
   final void Function(String emoji) onReact;
 
-  Future<void> _openPalette(BuildContext context) async {
-    final emoji = await showModalBottomSheet<String>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              for (final emoji in chatReactionPalette)
-                IconButton(
-                  key: chatPaletteEmojiKey(emoji),
-                  onPressed: () => Navigator.of(sheetContext).pop(emoji),
-                  icon: Text(emoji, style: const TextStyle(fontSize: 24)),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (emoji != null) onReact(emoji);
+  /// Folds the message's raw reaction rows into the shared per-emoji view
+  /// (spec 0052) — the chat's data model stays its own.
+  List<ReactionView> _reactionViews() {
+    final views = <String, ReactionView>{};
+    for (final reaction in message.reactions) {
+      final view = views[reaction.emoji];
+      views[reaction.emoji] = ReactionView(
+        emoji: reaction.emoji,
+        count: (view?.count ?? 0) + 1,
+        mine: (view?.mine ?? false) || reaction.userId == myUserId,
+        reactorNames: [
+          ...?view?.reactorNames,
+          reaction.userName ?? 'Ukjent skytter',
+        ],
+      );
+    }
+    return views.values.toList();
   }
 
   /// Offers "Kopier tekst" (spec 0069), "Rediger" your own message (spec 0070)
   /// and, where allowed, "Slett" (spec 0051).
   void _showActions(BuildContext context) {
     unawaited(
-      showModalBottomSheet<void>(
-        context: context,
-        builder: (sheetContext) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              if (message.body.isNotEmpty)
-                ListTile(
-                  key: chatCopyKey,
-                  leading: const Icon(Icons.copy_outlined),
-                  title: const Text('Kopier tekst'),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    unawaited(copyMessageText(context, message.body));
-                  },
-                ),
-              if (mine)
-                ListTile(
-                  key: chatEditKey,
-                  leading: const Icon(Icons.edit_outlined),
-                  title: const Text('Rediger'),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    onEdit();
-                  },
-                ),
-              if (canDelete)
-                ListTile(
-                  key: chatDeleteKey,
-                  leading: const Icon(Icons.delete_outline),
-                  title: const Text('Slett'),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    onDelete();
-                  },
-                ),
-            ],
-          ),
-        ),
+      showMessageActions(
+        context,
+        canCopy: message.body.isNotEmpty,
+        canEdit: mine,
+        canDelete: canDelete,
+        onCopy: () => unawaited(copyMessageText(context, message.body)),
+        onEdit: onEdit,
+        onDelete: onDelete,
+        copyKey: chatCopyKey,
+        editKey: chatEditKey,
+        deleteKey: chatDeleteKey,
       ),
     );
   }
@@ -462,13 +417,6 @@ class _MessageBubble extends StatelessWidget {
     final colour = mine
         ? theme.colorScheme.primaryContainer
         : theme.colorScheme.surfaceContainerHighest;
-    // Aggregate reactions: count per emoji, and which ones I gave.
-    final counts = <String, int>{};
-    final mineEmojis = <String>{};
-    for (final reaction in message.reactions) {
-      counts.update(reaction.emoji, (n) => n + 1, ifAbsent: () => 1);
-      if (reaction.userId == myUserId) mineEmojis.add(reaction.emoji);
-    }
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
@@ -540,180 +488,13 @@ class _MessageBubble extends StatelessWidget {
           ),
           // You react to OTHER people's messages, not your own: on your own
           // message the chips are display-only and there is no add button.
-          Wrap(
-            spacing: 4,
-            children: <Widget>[
-              for (final entry in counts.entries)
-                _ReactionChip(
-                  key: chatReactionKey(message.id, entry.key),
-                  emoji: entry.key,
-                  count: entry.value,
-                  mine: mineEmojis.contains(entry.key),
-                  onTap: mine ? null : () => onReact(entry.key),
-                  // Hold a reaction to see who reacted with it (spec 0059).
-                  onLongPress: () => showReactors(
-                    context,
-                    entry.key,
-                    <String>[
-                      for (final r in message.reactions)
-                        if (r.emoji == entry.key)
-                          r.userName ?? 'Ukjent skytter',
-                    ],
-                  ),
-                ),
-              if (!mine)
-                IconButton(
-                  key: chatAddReactionKey(message.id),
-                  visualDensity: VisualDensity.compact,
-                  iconSize: 18,
-                  tooltip: 'Reager',
-                  onPressed: () => unawaited(_openPalette(context)),
-                  icon: const Icon(Icons.add_reaction_outlined),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A small editor for your own chat message's text (spec 0070).
-class _EditMessageDialog extends StatefulWidget {
-  const _EditMessageDialog({required this.initialBody});
-
-  final String initialBody;
-
-  @override
-  State<_EditMessageDialog> createState() => _EditMessageDialogState();
-}
-
-class _EditMessageDialogState extends State<_EditMessageDialog> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.initialBody,
-  );
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Rediger melding'),
-    content: SizedBox(
-      width: double.maxFinite,
-      child: TextField(
-        key: chatEditBodyFieldKey,
-        controller: _controller,
-        autofocus: true,
-        minLines: 1,
-        maxLines: 6,
-        decoration: const InputDecoration(hintText: 'Melding …'),
-      ),
-    ),
-    actions: <Widget>[
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Avbryt'),
-      ),
-      FilledButton(
-        key: chatEditSaveKey,
-        onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
-        child: const Text('Lagre'),
-      ),
-    ],
-  );
-}
-
-class _ReactionChip extends StatelessWidget {
-  const _ReactionChip({
-    required this.emoji,
-    required this.count,
-    required this.mine,
-    required this.onTap,
-    required this.onLongPress,
-    super.key,
-  });
-
-  final String emoji;
-  final int count;
-  final bool mine;
-  final VoidCallback? onTap;
-  final VoidCallback onLongPress;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: mine
-              ? theme.colorScheme.primaryContainer
-              : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-          border: mine ? Border.all(color: theme.colorScheme.primary) : null,
-        ),
-        child: Text('$emoji $count', style: theme.textTheme.labelMedium),
-      ),
-    );
-  }
-}
-
-class _Composer extends StatelessWidget {
-  const _Composer({
-    required this.controller,
-    required this.sending,
-    required this.onSend,
-    required this.onAttach,
-    this.onChanged,
-  });
-
-  final TextEditingController controller;
-  final bool sending;
-  final VoidCallback onSend;
-  final VoidCallback onAttach;
-  final ValueChanged<String>? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        children: <Widget>[
-          IconButton(
-            key: chatAttachImageKey,
-            onPressed: sending ? null : onAttach,
-            icon: const Icon(Icons.image_outlined),
-            tooltip: 'Legg ved bilde',
-          ),
-          Expanded(
-            child: TextField(
-              key: chatComposerFieldKey,
-              controller: controller,
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => onSend(),
-              onChanged: onChanged,
-              decoration: const InputDecoration(
-                hintText: 'Skriv en melding …',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton.filled(
-            key: chatSendButtonKey,
-            onPressed: sending ? null : onSend,
-            icon: const Icon(Icons.send),
-            tooltip: 'Send',
+          ReactionBar(
+            reactions: _reactionViews(),
+            onToggle: onReact,
+            canReact: !mine,
+            chipKeyFor: (emoji) => chatReactionKey(message.id, emoji),
+            addKey: chatAddReactionKey(message.id),
+            paletteKeyFor: chatPaletteEmojiKey,
           ),
         ],
       ),
