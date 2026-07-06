@@ -10,7 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 
-SessionRecord _record(String id, {int total = 100}) => SessionRecord(
+import '../../../support/records.dart';
+
+SessionRecord _record(String id, {int total = 100}) => sessionRecord(
   id: id,
   program: '10 m Air Pistol',
   capturedAt: DateTime(2026, 6, 21, 14, 30),
@@ -20,7 +22,7 @@ SessionRecord _record(String id, {int total = 100}) => SessionRecord(
   weaponName: 'My pistol',
   total: total,
   maxTotal: 100,
-  innerTens: 3,
+  inner: 3,
   payload: <String, dynamic>{'id': id, 'current': null},
 );
 

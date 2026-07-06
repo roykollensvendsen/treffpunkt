@@ -13,41 +13,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
-import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
-import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
+import '../../../support/records.dart';
 import '../../auth/fake_auth_repository.dart';
 
-SessionRecord _record(String id, {DateTime? capturedAt}) => SessionRecord(
+SessionRecord _record(String id, {DateTime? capturedAt}) => sessionRecord(
   id: id,
   program: '10 m Air Pistol',
   capturedAt: capturedAt,
   total: 90,
   maxTotal: 100,
-  innerTens: 0,
-  payload: <String, dynamic>{'id': id},
 );
 
 FeltSessionRecord _felt(String id, {required DateTime capturedAt}) =>
-    FeltSessionRecord(
-      id: id,
-      capturedAt: capturedAt,
-      session: const FeltSessionSnapshot(
-        group: FeltShooterGroup.one,
-        currentHold: 0,
-        holds: <List<FeltPlacedShot>>[
-          <FeltPlacedShot>[
-            FeltPlacedShot(dx: 1, dy: 1, figureIndex: 0, inner: true),
-          ],
-        ],
-      ),
-    );
+    feltSessionRecord(id: id, capturedAt: capturedAt);
 
 void main() {
   test('mergeSessionItems interleaves ring and felt newest-first (0082)', () {

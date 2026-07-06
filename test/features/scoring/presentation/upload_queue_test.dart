@@ -32,6 +32,7 @@ import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
+import '../../../support/records.dart';
 import '../../auth/fake_auth_repository.dart';
 
 // One stage of one series of two shots, so a session completes after a single
@@ -50,20 +51,14 @@ const ProgramDefinition _program = ProgramDefinition(
 );
 const Shot _centre = Shot(dxMm: 0, dyMm: 0);
 
-SessionRecord _record(
-  String id, {
-  int total = 50,
-  int innerTens = 0,
-  String? competitionId,
-}) => SessionRecord(
-  id: id,
-  program: '10 m Air Pistol',
-  total: total,
-  maxTotal: 100,
-  innerTens: innerTens,
-  payload: <String, dynamic>{'id': id},
-  competitionId: competitionId,
-);
+SessionRecord _record(String id, {int total = 50, String? competitionId}) =>
+    sessionRecord(
+      id: id,
+      program: '10 m Air Pistol',
+      total: total,
+      maxTotal: 100,
+      competitionId: competitionId,
+    );
 
 /// Records the result ids submitted, and can be made to fail — to prove the
 /// queue submits competition results and keeps a record queued until it lands.

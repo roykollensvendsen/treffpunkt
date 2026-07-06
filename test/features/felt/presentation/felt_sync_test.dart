@@ -19,19 +19,11 @@ import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 
+import '../../../support/records.dart';
 import '../../auth/fake_auth_repository.dart';
 
-FeltSessionRecord _record(String id) => FeltSessionRecord(
-  id: id,
-  capturedAt: DateTime.utc(2026, 7, 5),
-  session: const FeltSessionSnapshot(
-    group: FeltShooterGroup.one,
-    currentHold: 0,
-    holds: <List<FeltPlacedShot>>[
-      <FeltPlacedShot>[FeltPlacedShot(dx: 1, dy: 2, figureIndex: 0)],
-    ],
-  ),
-);
+FeltSessionRecord _record(String id) =>
+    feltSessionRecord(id: id, capturedAt: DateTime.utc(2026, 7, 5));
 
 ProviderContainer _container({
   required FakeAuthRepository auth,
