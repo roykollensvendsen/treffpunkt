@@ -8,8 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/platform/sharer.dart';
-import 'package:treffpunkt/core/presentation/frosted_bar.dart';
-import 'package:treffpunkt/core/presentation/layout.dart';
+import 'package:treffpunkt/core/presentation/content_scaffold.dart';
+import 'package:treffpunkt/core/presentation/snackbar_guard.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_member.dart';
@@ -97,22 +97,24 @@ class _CompetitionInviteScreenState
 
   /// Issues a fresh token, so old links stop working.
   Future<void> _regenerateLink() async {
+    // Captured by hand as well as by the guard: earlier notices are cleared
+    // up front, and the success notice below needs the messenger too.
     final messenger = ScaffoldMessenger.of(context)..clearSnackBars();
-    try {
-      await ref
-          .read(competitionRepositoryProvider)
-          .regenerateJoinToken(widget.competition.id);
-      ref.invalidate(competitionJoinTokenProvider(widget.competition.id));
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Ny lenke laget. Gamle lenker slutter å virke.'),
-        ),
-      );
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke lage ny lenke.')),
-      );
-    }
+    await guardWithSnackBar<CompetitionSyncException>(
+      context,
+      task: () async {
+        await ref
+            .read(competitionRepositoryProvider)
+            .regenerateJoinToken(widget.competition.id);
+        ref.invalidate(competitionJoinTokenProvider(widget.competition.id));
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Ny lenke laget. Gamle lenker slutter å virke.'),
+          ),
+        );
+      },
+      failureMessage: 'Kunne ikke lage ny lenke.',
+    );
   }
 
   /// Invites a registered shooter picked from the list (spec 0032). Their email
@@ -120,22 +122,26 @@ class _CompetitionInviteScreenState
   Future<void> _inviteUser(Profile shooter) async {
     if (_invitingShooterId != null) return;
     setState(() => _invitingShooterId = shooter.id);
+    // Captured by hand as well as by the guard: the success notice below
+    // needs the messenger too.
     final messenger = ScaffoldMessenger.of(context);
     final label = shooter.displayName ?? 'skytteren';
     try {
-      await ref
-          .read(competitionRepositoryProvider)
-          .inviteUser(widget.competition.id, shooter.id);
-      if (mounted) {
-        setState(() => _invitedShooterIds.add(shooter.id));
-        // Refresh the server-side invitee list so the marker is authoritative
-        // and survives a reopen.
-        ref.invalidate(competitionInviteesProvider(widget.competition.id));
-      }
-      messenger.showSnackBar(SnackBar(content: Text('Invitert $label.')));
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke invitere.')),
+      await guardWithSnackBar<CompetitionSyncException>(
+        context,
+        task: () async {
+          await ref
+              .read(competitionRepositoryProvider)
+              .inviteUser(widget.competition.id, shooter.id);
+          if (mounted) {
+            setState(() => _invitedShooterIds.add(shooter.id));
+            // Refresh the server-side invitee list so the marker is
+            // authoritative and survives a reopen.
+            ref.invalidate(competitionInviteesProvider(widget.competition.id));
+          }
+          messenger.showSnackBar(SnackBar(content: Text('Invitert $label.')));
+        },
+        failureMessage: 'Kunne ikke invitere.',
       );
     } finally {
       if (mounted) setState(() => _invitingShooterId = null);
@@ -190,51 +196,44 @@ class _CompetitionInviteScreenState
     final members = ref.watch(
       competitionMembersProvider(widget.competition.id),
     );
-    return Scaffold(
-      appBar: const FrostedAppBar(title: Text('Inviter')),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                const _SectionHeader('Inviter med lenke'),
-                Text(
-                  'Del en lenke; den som åpner den blir med.',
-                  style: theme.textTheme.bodySmall,
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: <Widget>[
-                    FilledButton.icon(
-                      key: shareInviteKey,
-                      onPressed: () => unawaited(_share()),
-                      icon: const Icon(Icons.share),
-                      label: const Text('Del lenke'),
-                    ),
-                    OutlinedButton.icon(
-                      key: copyInviteLinkKey,
-                      onPressed: () => unawaited(_copyLink()),
-                      icon: const Icon(Icons.link),
-                      label: const Text('Kopier lenke'),
-                    ),
-                    TextButton.icon(
-                      key: regenerateLinkKey,
-                      onPressed: () => unawaited(_regenerateLink()),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Lag ny lenke'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ..._shooterPicker(members.value),
-              ],
-            ),
+    return ContentScaffold(
+      title: const Text('Inviter'),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const _SectionHeader('Inviter med lenke'),
+          Text(
+            'Del en lenke; den som åpner den blir med.',
+            style: theme.textTheme.bodySmall,
           ),
-        ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              FilledButton.icon(
+                key: shareInviteKey,
+                onPressed: () => unawaited(_share()),
+                icon: const Icon(Icons.share),
+                label: const Text('Del lenke'),
+              ),
+              OutlinedButton.icon(
+                key: copyInviteLinkKey,
+                onPressed: () => unawaited(_copyLink()),
+                icon: const Icon(Icons.link),
+                label: const Text('Kopier lenke'),
+              ),
+              TextButton.icon(
+                key: regenerateLinkKey,
+                onPressed: () => unawaited(_regenerateLink()),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Lag ny lenke'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ..._shooterPicker(members.value),
+        ],
       ),
     );
   }

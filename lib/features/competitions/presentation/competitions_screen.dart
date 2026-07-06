@@ -7,10 +7,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/collapsing_fab.dart';
+import 'package:treffpunkt/core/presentation/confirm_dialog.dart';
+import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
+import 'package:treffpunkt/core/presentation/error_retry.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
-import 'package:treffpunkt/core/presentation/layout.dart';
+import 'package:treffpunkt/core/presentation/snackbar_guard.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/competitions/data/competition_repository.dart';
 import 'package:treffpunkt/features/competitions/domain/competition.dart';
@@ -178,21 +181,20 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
     WidgetRef ref,
     String competitionId,
   ) async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref
-          .read(competitionRepositoryProvider)
-          .acceptInvitation(
-            competitionId,
-          );
-      ref
-        ..invalidate(myInvitationsProvider)
-        ..invalidate(myCompetitionsProvider);
-    } on Object {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke godta invitasjonen.')),
-      );
-    }
+    await guardWithSnackBar(
+      context,
+      task: () async {
+        await ref
+            .read(competitionRepositoryProvider)
+            .acceptInvitation(
+              competitionId,
+            );
+        ref
+          ..invalidate(myInvitationsProvider)
+          ..invalidate(myCompetitionsProvider);
+      },
+      failureMessage: 'Kunne ikke godta invitasjonen.',
+    );
   }
 
   void _open(BuildContext context, Competition competition) {
@@ -210,31 +212,34 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
     WidgetRef ref,
     Competition competition,
   ) async {
+    // Captured by hand as well as by the guard: the success notice below
+    // needs the messenger too.
     final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref
-          .read(competitionRepositoryProvider)
-          .archiveCompetition(competition.id);
-      ref.invalidate(archivedCompetitionIdsProvider);
-      messenger
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('«${competition.name}» arkivert'),
-            // Since Flutter 3.44 a snack bar with an action stays until acted
-            // on; this is a transient confirmation, so let it time out.
-            persist: false,
-            action: SnackBarAction(
-              label: 'Angre',
-              onPressed: () => unawaited(_restore(ref, competition.id)),
+    await guardWithSnackBar(
+      context,
+      task: () async {
+        await ref
+            .read(competitionRepositoryProvider)
+            .archiveCompetition(competition.id);
+        ref.invalidate(archivedCompetitionIdsProvider);
+        messenger
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              content: Text('«${competition.name}» arkivert'),
+              // Since Flutter 3.44 a snack bar with an action stays until
+              // acted on; this is a transient confirmation, so let it time
+              // out.
+              persist: false,
+              action: SnackBarAction(
+                label: 'Angre',
+                onPressed: () => unawaited(_restore(ref, competition.id)),
+              ),
             ),
-          ),
-        );
-    } on Object {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke arkivere konkurransen.')),
-      );
-    }
+          );
+      },
+      failureMessage: 'Kunne ikke arkivere konkurransen.',
+    );
   }
 
   Future<void> _restore(WidgetRef ref, String competitionId) async {
@@ -270,22 +275,20 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
     };
     final month = _calendarMonth ?? firstOfMonth(_filterDay ?? DateTime.now());
 
-    return Scaffold(
-      // Content slides under the frosted bars (spec 0129).
-      extendBodyBehindAppBar: true,
-      appBar: FrostedAppBar(
-        title: const Text('Konkurranser'),
-        actions: <Widget>[
-          IconButton(
-            key: competitionCalendarToggleKey,
-            tooltip: 'Kalender',
-            isSelected: _calendarOpen || _filterDay != null,
-            icon: const Icon(Icons.calendar_month_outlined),
-            selectedIcon: const Icon(Icons.calendar_month),
-            onPressed: () => setState(() => _calendarOpen = !_calendarOpen),
-          ),
-        ],
-      ),
+    // The behindBar variant slides the content under the frosted bars
+    // (spec 0129).
+    return ContentScaffold.behindBar(
+      title: const Text('Konkurranser'),
+      actions: <Widget>[
+        IconButton(
+          key: competitionCalendarToggleKey,
+          tooltip: 'Kalender',
+          isSelected: _calendarOpen || _filterDay != null,
+          icon: const Icon(Icons.calendar_month_outlined),
+          selectedIcon: const Icon(Icons.calendar_month),
+          onPressed: () => setState(() => _calendarOpen = !_calendarOpen),
+        ),
+      ],
       // Lifted clear of the shell's frosted navigation bar (spec 0131):
       // with extendBody the tab fills the whole screen, so the FAB must
       // rise by the bar's inset itself.
@@ -301,75 +304,64 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
           onPressed: () => unawaited(_create(context, ref)),
         ),
       ),
-      // The Builder gives a context INSIDE the body, where the Scaffold
-      // injects the app-bar/nav-bar insets (spec 0129).
+      // The Builder gives the list a context INSIDE the scaffold's body,
+      // where the app-bar/nav-bar insets are injected (spec 0129).
       body: NotificationListener<ScrollNotification>(
         onNotification: _onScroll,
         child: Builder(
-          builder: (context) => SafeArea(
-            top: false,
-            bottom: false,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-                child: ListView(
-                  padding: frostedScrollPadding(context),
-                  children: [
-                    if (_calendarOpen) ...[
-                      _CompetitionCalendar(
-                        month: month,
-                        selectedDay: _filterDay,
-                        daysWithCompetitions: daysWithComps,
-                        onSelectDay: _selectDay,
-                        onPrevMonth: () => setState(
-                          () => _calendarMonth = DateTime(
-                            month.year,
-                            month.month - 1,
-                          ),
-                        ),
-                        onNextMonth: () => setState(
-                          () => _calendarMonth = DateTime(
-                            month.year,
-                            month.month + 1,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    if (_filterDay case final day?)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: <Widget>[
-                            Chip(
-                              avatar: const Icon(Icons.event, size: 18),
-                              label: Text('Viser ${_formatNorDate(day)}'),
-                              onDeleted: () =>
-                                  setState(() => _filterDay = null),
-                              deleteButtonTooltipMessage: 'Vis alle',
-                            ),
-                            const Spacer(),
-                            TextButton(
-                              key: competitionCalendarClearKey,
-                              onPressed: () =>
-                                  setState(() => _filterDay = null),
-                              child: const Text('Vis alle'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ..._invitationsSection(context, ref, invitations),
-                    ..._competitionsSection(
-                      context,
-                      ref,
-                      invitations,
-                      competitions,
-                      archivedIds,
+          builder: (context) => ListView(
+            padding: frostedScrollPadding(context),
+            children: [
+              if (_calendarOpen) ...[
+                _CompetitionCalendar(
+                  month: month,
+                  selectedDay: _filterDay,
+                  daysWithCompetitions: daysWithComps,
+                  onSelectDay: _selectDay,
+                  onPrevMonth: () => setState(
+                    () => _calendarMonth = DateTime(
+                      month.year,
+                      month.month - 1,
                     ),
-                  ],
+                  ),
+                  onNextMonth: () => setState(
+                    () => _calendarMonth = DateTime(
+                      month.year,
+                      month.month + 1,
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 8),
+              ],
+              if (_filterDay case final day?)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: <Widget>[
+                      Chip(
+                        avatar: const Icon(Icons.event, size: 18),
+                        label: Text('Viser ${_formatNorDate(day)}'),
+                        onDeleted: () => setState(() => _filterDay = null),
+                        deleteButtonTooltipMessage: 'Vis alle',
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        key: competitionCalendarClearKey,
+                        onPressed: () => setState(() => _filterDay = null),
+                        child: const Text('Vis alle'),
+                      ),
+                    ],
+                  ),
+                ),
+              ..._invitationsSection(context, ref, invitations),
+              ..._competitionsSection(
+                context,
+                ref,
+                invitations,
+                competitions,
+                archivedIds,
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -411,7 +403,7 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
         ),
       ],
       error: (error, _) => <Widget>[
-        _ErrorRetry(
+        ErrorRetry(
           onRetry: () => ref.invalidate(myCompetitionsProvider),
         ),
       ],
@@ -434,7 +426,17 @@ class _CompetitionsScreenState extends ConsumerState<CompetitionsScreen> {
             if (archivedIds.contains(c.id)) c,
         ];
         if (list.isEmpty && invitationList.isEmpty) {
-          return const <Widget>[_EmptyState()];
+          return const <Widget>[
+            Padding(
+              padding: EdgeInsets.only(top: 32),
+              child: EmptyState(
+                icon: Icons.emoji_events_outlined,
+                title: 'Ingen konkurranser ennå',
+                titleKey: noCompetitionsKey,
+                hint: 'Lag en konkurranse, eller godta en invitasjon.',
+              ),
+            ),
+          ];
         }
         return <Widget>[
           const _SectionHeader('Mine konkurranser'),
@@ -713,43 +715,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.only(top: 32),
-      child: EmptyState(
-        icon: Icons.emoji_events_outlined,
-        title: 'Ingen konkurranser ennå',
-        titleKey: noCompetitionsKey,
-        hint: 'Lag en konkurranse, eller godta en invitasjon.',
-      ),
-    );
-  }
-}
-
-class _ErrorRetry extends StatelessWidget {
-  const _ErrorRetry({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 48),
-      child: Column(
-        children: [
-          const Text('Kunne ikke hente konkurransene.'),
-          const SizedBox(height: 8),
-          OutlinedButton(onPressed: onRetry, child: const Text('Prøv igjen')),
-        ],
-      ),
-    );
-  }
-}
-
 /// The create-competition form (spec 0011): a name, the program it fixes, and
 /// whether it is public. Submitting mints a client id and creates it.
 class CreateCompetitionScreen extends ConsumerStatefulWidget {
@@ -791,7 +756,6 @@ class _CreateCompetitionScreenState
     if (name.isEmpty || _saving) return;
     setState(() => _saving = true);
     final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     final competition = Competition(
       id: ref.read(competitionIdGeneratorProvider)(),
       name: name,
@@ -800,105 +764,97 @@ class _CreateCompetitionScreenState
       isPublic: _isPublic,
       eventDate: _eventDate,
     );
-    try {
-      await ref
-          .read(competitionRepositoryProvider)
-          .createCompetition(
-            competition,
-          );
-      navigator.pop();
-    } on CompetitionSyncException {
-      if (mounted) setState(() => _saving = false);
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke opprette konkurransen.')),
-      );
-    }
+    final created = await guardWithSnackBar<CompetitionSyncException>(
+      context,
+      task: () async {
+        await ref
+            .read(competitionRepositoryProvider)
+            .createCompetition(
+              competition,
+            );
+        navigator.pop();
+      },
+      failureMessage: 'Kunne ikke opprette konkurransen.',
+    );
+    if (!created && mounted) setState(() => _saving = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const FrostedAppBar(title: Text('Ny konkurranse')),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                TextField(
-                  key: competitionNameFieldKey,
-                  controller: _name,
-                  decoration: const InputDecoration(
-                    labelText: 'Navn',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  key: competitionProgramFieldKey,
-                  initialValue: _program,
-                  decoration: const InputDecoration(
-                    labelText: 'Program',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: <DropdownMenuItem<String>>[
-                    for (final program in ProgramCatalogue.all)
-                      DropdownMenuItem<String>(
-                        value: program.name,
-                        child: Text(program.name),
-                      ),
-                    // NorgesFelt, locked to a group (spec 0140): the group
-                    // IS the program, so the competition is fair per group.
-                    for (final group in FeltShooterGroup.offered)
-                      DropdownMenuItem<String>(
-                        value: feltCompetitionProgram(group),
-                        child: Text(feltCompetitionProgram(group)),
-                      ),
-                  ],
-                  onChanged: (value) =>
-                      setState(() => _program = value ?? _program),
-                ),
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  key: competitionPublicSwitchKey,
-                  value: _isPublic,
-                  onChanged: (value) => setState(() => _isPublic = value),
-                  title: const Text('Åpen konkurranse'),
-                  subtitle: const Text(
-                    'Alle innloggede kan se den. Av = kun inviterte.',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ListTile(
-                  key: competitionDateFieldKey,
-                  leading: const Icon(Icons.event_outlined),
-                  title: Text(
-                    _eventDate == null
-                        ? 'Velg dato (valgfritt)'
-                        : 'Dato: ${_formatNorDate(_eventDate!)}',
-                  ),
-                  trailing: _eventDate == null
-                      ? null
-                      : IconButton(
-                          key: competitionDateClearKey,
-                          icon: const Icon(Icons.clear),
-                          tooltip: 'Fjern dato',
-                          onPressed: () => setState(() => _eventDate = null),
-                        ),
-                  onTap: () => unawaited(_pickDate()),
-                ),
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  key: createCompetitionSubmitKey,
-                  onPressed: _saving ? null : () => unawaited(_submit()),
-                  icon: const Icon(Icons.check),
-                  label: const Text('Opprett'),
-                ),
-              ],
+    return ContentScaffold(
+      title: const Text('Ny konkurranse'),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          TextField(
+            key: competitionNameFieldKey,
+            controller: _name,
+            decoration: const InputDecoration(
+              labelText: 'Navn',
+              border: OutlineInputBorder(),
             ),
           ),
-        ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            key: competitionProgramFieldKey,
+            initialValue: _program,
+            decoration: const InputDecoration(
+              labelText: 'Program',
+              border: OutlineInputBorder(),
+            ),
+            items: <DropdownMenuItem<String>>[
+              for (final program in ProgramCatalogue.all)
+                DropdownMenuItem<String>(
+                  value: program.name,
+                  child: Text(program.name),
+                ),
+              // NorgesFelt, locked to a group (spec 0140): the group
+              // IS the program, so the competition is fair per group.
+              for (final group in FeltShooterGroup.offered)
+                DropdownMenuItem<String>(
+                  value: feltCompetitionProgram(group),
+                  child: Text(feltCompetitionProgram(group)),
+                ),
+            ],
+            onChanged: (value) => setState(() => _program = value ?? _program),
+          ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            key: competitionPublicSwitchKey,
+            value: _isPublic,
+            onChanged: (value) => setState(() => _isPublic = value),
+            title: const Text('Åpen konkurranse'),
+            subtitle: const Text(
+              'Alle innloggede kan se den. Av = kun inviterte.',
+            ),
+          ),
+          const SizedBox(height: 8),
+          ListTile(
+            key: competitionDateFieldKey,
+            leading: const Icon(Icons.event_outlined),
+            title: Text(
+              _eventDate == null
+                  ? 'Velg dato (valgfritt)'
+                  : 'Dato: ${_formatNorDate(_eventDate!)}',
+            ),
+            trailing: _eventDate == null
+                ? null
+                : IconButton(
+                    key: competitionDateClearKey,
+                    icon: const Icon(Icons.clear),
+                    tooltip: 'Fjern dato',
+                    onPressed: () => setState(() => _eventDate = null),
+                  ),
+            onTap: () => unawaited(_pickDate()),
+          ),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            key: createCompetitionSubmitKey,
+            onPressed: _saving ? null : () => unawaited(_submit()),
+            icon: const Icon(Icons.check),
+            label: const Text('Opprett'),
+          ),
+        ],
       ),
     );
   }
@@ -925,69 +881,51 @@ class _CompetitionDetailScreenState
   /// members, invitations and results. A failure keeps the screen, with a
   /// notice.
   Future<void> _delete() async {
-    final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Slett konkurranse?'),
-        content: const Text(
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Slett konkurranse?',
+      message:
           'Alle deltakere, invitasjoner og resultater slettes. '
           'Handlingen kan ikke angres.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Avbryt'),
-          ),
-          FilledButton(
-            key: deleteCompetitionConfirmKey,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Slett'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Slett',
+      confirmKey: deleteCompetitionConfirmKey,
     );
-    if (confirmed != true) return;
-    try {
-      await ref
-          .read(competitionRepositoryProvider)
-          .deleteCompetition(widget.competition.id);
-      ref.invalidate(myCompetitionsProvider);
-      navigator.pop();
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Kunne ikke slette konkurransen.')),
-      );
-    }
+    if (!confirmed || !mounted) return;
+    await guardWithSnackBar<CompetitionSyncException>(
+      context,
+      task: () async {
+        await ref
+            .read(competitionRepositoryProvider)
+            .deleteCompetition(widget.competition.id);
+        ref.invalidate(myCompetitionsProvider);
+        navigator.pop();
+      },
+      failureMessage: 'Kunne ikke slette konkurransen.',
+    );
   }
 
   /// Archives or restores this competition for the viewer (spec 0049) — open to
   /// everyone, owner or not, since archiving is personal view state. On success
   /// it pops back to the list, which re-partitions on the refreshed archives.
   Future<void> _toggleArchive({required bool archived}) async {
-    final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     final repository = ref.read(competitionRepositoryProvider);
-    try {
-      if (archived) {
-        await repository.unarchiveCompetition(widget.competition.id);
-      } else {
-        await repository.archiveCompetition(widget.competition.id);
-      }
-      ref.invalidate(archivedCompetitionIdsProvider);
-      navigator.pop();
-    } on CompetitionSyncException {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            archived
-                ? 'Kunne ikke gjenopprette konkurransen.'
-                : 'Kunne ikke arkivere konkurransen.',
-          ),
-        ),
-      );
-    }
+    await guardWithSnackBar<CompetitionSyncException>(
+      context,
+      task: () async {
+        if (archived) {
+          await repository.unarchiveCompetition(widget.competition.id);
+        } else {
+          await repository.archiveCompetition(widget.competition.id);
+        }
+        ref.invalidate(archivedCompetitionIdsProvider);
+        navigator.pop();
+      },
+      failureMessage: archived
+          ? 'Kunne ikke gjenopprette konkurransen.'
+          : 'Kunne ikke arkivere konkurransen.',
+    );
   }
 
   /// Starts the competition's fixed program; the result auto-submits on
@@ -1047,171 +985,158 @@ class _CompetitionDetailScreenState
         feltCompetitionGroup(competition.program) != null;
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: FrostedAppBar(
-        title: Text(competition.name),
-        actions: [
-          // Rare and destructive actions live in the overflow menu (spec
-          // 0093): archive/restore for everyone, delete for the owner.
-          PopupMenuButton<_DetailMenuAction>(
-            key: competitionMenuKey,
-            tooltip: 'Flere valg',
-            onSelected: (action) => switch (action) {
-              _DetailMenuAction.archive => unawaited(
-                _toggleArchive(archived: isArchived),
+    return ContentScaffold(
+      title: Text(competition.name),
+      actions: [
+        // Rare and destructive actions live in the overflow menu (spec
+        // 0093): archive/restore for everyone, delete for the owner.
+        PopupMenuButton<_DetailMenuAction>(
+          key: competitionMenuKey,
+          tooltip: 'Flere valg',
+          onSelected: (action) => switch (action) {
+            _DetailMenuAction.archive => unawaited(
+              _toggleArchive(archived: isArchived),
+            ),
+            _DetailMenuAction.delete => unawaited(_delete()),
+          },
+          itemBuilder: (_) => <PopupMenuEntry<_DetailMenuAction>>[
+            PopupMenuItem<_DetailMenuAction>(
+              key: toggleArchiveButtonKey,
+              value: _DetailMenuAction.archive,
+              child: Text(
+                isArchived ? 'Gjenopprett konkurranse' : 'Arkiver konkurranse',
               ),
-              _DetailMenuAction.delete => unawaited(_delete()),
-            },
-            itemBuilder: (_) => <PopupMenuEntry<_DetailMenuAction>>[
-              PopupMenuItem<_DetailMenuAction>(
-                key: toggleArchiveButtonKey,
-                value: _DetailMenuAction.archive,
-                child: Text(
-                  isArchived
-                      ? 'Gjenopprett konkurranse'
-                      : 'Arkiver konkurranse',
+            ),
+            if (isOwner)
+              const PopupMenuItem<_DetailMenuAction>(
+                key: deleteCompetitionButtonKey,
+                value: _DetailMenuAction.delete,
+                child: Text('Slett konkurranse'),
+              ),
+          ],
+        ),
+      ],
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(_subtitle(competition), style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 16),
+          // One compact action row (spec 0093): shoot, chat and — for
+          // the owner — the invite page; the results lead below it.
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              if (isParticipant)
+                FilledButton.icon(
+                  key: shootForCompetitionKey,
+                  onPressed: knownProgram ? () => unawaited(_shoot()) : null,
+                  icon: const TargetIcon(size: 20),
+                  label: const Text('Skyt nå'),
                 ),
+              // The competition's chat — the shared back-channel for
+              // the people in it (spec 0051).
+              OutlinedButton.icon(
+                key: competitionChatButtonKey,
+                onPressed: () => unawaited(
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => CompetitionChatScreen(
+                        competition: competition,
+                      ),
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.forum_outlined),
+                label: const Text('Chat'),
               ),
               if (isOwner)
-                const PopupMenuItem<_DetailMenuAction>(
-                  key: deleteCompetitionButtonKey,
-                  value: _DetailMenuAction.delete,
-                  child: Text('Slett konkurranse'),
+                OutlinedButton.icon(
+                  key: inviteCompetitionKey,
+                  onPressed: () => unawaited(
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => CompetitionInviteScreen(
+                          competition: competition,
+                        ),
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.person_add_alt),
+                  label: const Text('Inviter'),
+                ),
+            ],
+          ),
+          if (isParticipant && !knownProgram)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Ukjent program',
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+          const SizedBox(height: 16),
+          const _SectionHeader('Resultater'),
+          ...results.when(
+            loading: () => const <Widget>[
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ],
+            error: (error, _) => <Widget>[
+              ErrorRetry(
+                onRetry: () => ref.invalidate(
+                  competitionScoreboardProvider(competition.id),
+                ),
+              ),
+            ],
+            data: (raw) {
+              // One row per shooter (their best), ranked best first.
+              final list = rankBestPerShooter(raw);
+              return list.isEmpty
+                  ? const <Widget>[
+                      Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'Ingen resultater ennå.',
+                          key: noResultsKey,
+                        ),
+                      ),
+                    ]
+                  : <Widget>[
+                      for (var i = 0; i < list.length; i++)
+                        _ResultRow(rank: i + 1, result: list[i]),
+                    ];
+            },
+          ),
+          const SizedBox(height: 16),
+          const _SectionHeader('Deltakere'),
+          ...members.when(
+            loading: () => const <Widget>[
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ],
+            error: (error, _) => <Widget>[
+              ErrorRetry(
+                onRetry: () => ref.invalidate(
+                  competitionMembersProvider(competition.id),
+                ),
+              ),
+            ],
+            data: (list) => <Widget>[
+              for (final member in list)
+                ListTile(
+                  leading: const Icon(Icons.person_outline),
+                  title: Text(
+                    member.profile?.displayName ?? 'Ukjent skytter',
+                  ),
                 ),
             ],
           ),
         ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(_subtitle(competition), style: theme.textTheme.bodyMedium),
-                const SizedBox(height: 16),
-                // One compact action row (spec 0093): shoot, chat and — for
-                // the owner — the invite page; the results lead below it.
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: <Widget>[
-                    if (isParticipant)
-                      FilledButton.icon(
-                        key: shootForCompetitionKey,
-                        onPressed: knownProgram
-                            ? () => unawaited(_shoot())
-                            : null,
-                        icon: const TargetIcon(size: 20),
-                        label: const Text('Skyt nå'),
-                      ),
-                    // The competition's chat — the shared back-channel for
-                    // the people in it (spec 0051).
-                    OutlinedButton.icon(
-                      key: competitionChatButtonKey,
-                      onPressed: () => unawaited(
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => CompetitionChatScreen(
-                              competition: competition,
-                            ),
-                          ),
-                        ),
-                      ),
-                      icon: const Icon(Icons.forum_outlined),
-                      label: const Text('Chat'),
-                    ),
-                    if (isOwner)
-                      OutlinedButton.icon(
-                        key: inviteCompetitionKey,
-                        onPressed: () => unawaited(
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => CompetitionInviteScreen(
-                                competition: competition,
-                              ),
-                            ),
-                          ),
-                        ),
-                        icon: const Icon(Icons.person_add_alt),
-                        label: const Text('Inviter'),
-                      ),
-                  ],
-                ),
-                if (isParticipant && !knownProgram)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'Ukjent program',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ),
-                const SizedBox(height: 16),
-                const _SectionHeader('Resultater'),
-                ...results.when(
-                  loading: () => const <Widget>[
-                    Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  ],
-                  error: (error, _) => <Widget>[
-                    _ErrorRetry(
-                      onRetry: () => ref.invalidate(
-                        competitionScoreboardProvider(competition.id),
-                      ),
-                    ),
-                  ],
-                  data: (raw) {
-                    // One row per shooter (their best), ranked best first.
-                    final list = rankBestPerShooter(raw);
-                    return list.isEmpty
-                        ? const <Widget>[
-                            Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Text(
-                                'Ingen resultater ennå.',
-                                key: noResultsKey,
-                              ),
-                            ),
-                          ]
-                        : <Widget>[
-                            for (var i = 0; i < list.length; i++)
-                              _ResultRow(rank: i + 1, result: list[i]),
-                          ];
-                  },
-                ),
-                const SizedBox(height: 16),
-                const _SectionHeader('Deltakere'),
-                ...members.when(
-                  loading: () => const <Widget>[
-                    Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  ],
-                  error: (error, _) => <Widget>[
-                    _ErrorRetry(
-                      onRetry: () => ref.invalidate(
-                        competitionMembersProvider(competition.id),
-                      ),
-                    ),
-                  ],
-                  data: (list) => <Widget>[
-                    for (final member in list)
-                      ListTile(
-                        leading: const Icon(Icons.person_outline),
-                        title: Text(
-                          member.profile?.displayName ?? 'Ukjent skytter',
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
