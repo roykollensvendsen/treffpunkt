@@ -29,6 +29,7 @@ import 'package:treffpunkt/features/competitions/presentation/competition_chat_s
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/display_name.dart';
 
+import '../../../support/fakes.dart';
 import '../../auth/fake_auth_repository.dart';
 
 /// Minimal valid headers so the upload's format detection accepts them.
@@ -562,17 +563,4 @@ void main() {
     );
     expect(find.textContaining('@[Kari]', findRichText: true), findsNothing);
   });
-}
-
-/// A clipboard watcher whose paste stream the test drives.
-class FakeClipboardImageWatcher implements ClipboardImageWatcher {
-  final StreamController<PastedImage> _controller =
-      StreamController<PastedImage>.broadcast();
-
-  @override
-  Stream<PastedImage> get images => _controller.stream;
-
-  void emit(PastedImage image) => _controller.add(image);
-
-  void dispose() => unawaited(_controller.close());
 }

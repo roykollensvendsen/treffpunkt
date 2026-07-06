@@ -37,6 +37,7 @@ import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
+import '../../../support/fakes.dart';
 import '../../auth/fake_auth_repository.dart';
 
 const _me = AppUser(id: 'me', email: 'me@example.com', displayName: 'Me');
@@ -61,20 +62,6 @@ InMemoryCompetitionRepository _meRepo() => InMemoryCompetitionRepository(
   currentUserId: 'me',
   currentEmail: 'me@example.com',
 );
-
-/// Records shared text instead of opening the real OS share sheet.
-class _RecordingSharer implements Sharer {
-  final List<String> shared = <String>[];
-  @override
-  Future<void> share(String text) async => shared.add(text);
-
-  @override
-  Future<void> shareFile({
-    required String filename,
-    required String mimeType,
-    required Uint8List bytes,
-  }) async {}
-}
 
 void main() {
   testWidgets('shows the empty state with no competitions', (tester) async {
@@ -236,7 +223,7 @@ void main() {
       ownerId: 'me',
     );
     await repo.createCompetition(competition);
-    final sharer = _RecordingSharer();
+    final sharer = RecordingSharer();
     String? copied;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,

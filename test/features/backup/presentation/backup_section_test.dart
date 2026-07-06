@@ -25,27 +25,8 @@ import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
+import '../../../support/fakes.dart';
 import '../../../support/records.dart';
-
-class _RecordingSharer implements Sharer {
-  String? filename;
-  String? mimeType;
-  Uint8List? bytes;
-
-  @override
-  Future<void> share(String text) async {}
-
-  @override
-  Future<void> shareFile({
-    required String filename,
-    required String mimeType,
-    required Uint8List bytes,
-  }) async {
-    this.filename = filename;
-    this.mimeType = mimeType;
-    this.bytes = bytes;
-  }
-}
 
 class _FakeFileSource implements BackupFileSource {
   _FakeFileSource(this._bytes);
@@ -93,7 +74,7 @@ void main() {
   testWidgets('export shares one JSON file with everything (0106)', (
     tester,
   ) async {
-    final sharer = _RecordingSharer();
+    final sharer = RecordingSharer();
     final pending = InMemoryPendingUploadsStore();
     await pending.save([_session('s1')]);
     final feltHistory = InMemoryFeltHistoryStore();
@@ -147,7 +128,7 @@ void main() {
 
     await tester.pumpWidget(
       app(
-        sharer: _RecordingSharer(),
+        sharer: RecordingSharer(),
         files: _FakeFileSource(
           Uint8List.fromList(utf8.encode(jsonEncode(incoming))),
         ),
@@ -176,7 +157,7 @@ void main() {
     final pending = InMemoryPendingUploadsStore();
     await tester.pumpWidget(
       app(
-        sharer: _RecordingSharer(),
+        sharer: RecordingSharer(),
         files: _FakeFileSource(
           Uint8List.fromList(utf8.encode('{"hello": "world"}')),
         ),
@@ -199,7 +180,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       app(
-        sharer: _RecordingSharer(),
+        sharer: RecordingSharer(),
         files: _FakeFileSource(null),
         pending: InMemoryPendingUploadsStore(),
         feltHistory: InMemoryFeltHistoryStore(),

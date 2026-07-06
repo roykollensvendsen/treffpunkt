@@ -28,6 +28,7 @@ import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
+import '../../../support/fakes.dart';
 import '../../auth/fake_auth_repository.dart';
 
 const Shot _centre = Shot(dxMm: 0, dyMm: 0);
@@ -136,19 +137,6 @@ Widget _appWith({
   );
 }
 
-/// A [SessionRepository] whose synced read always fails (spec 0029), so the
-/// screen takes the cloud-read-failure path. The upload is a no-op.
-class _ThrowingSessionRepository implements SessionRepository {
-  @override
-  Future<void> upload(SessionRecord record) async {}
-
-  @override
-  Future<List<SessionRecord>> list() async =>
-      throw const SessionSyncException('boom');
-  @override
-  Future<void> deleteById(String id) async {}
-}
-
 /// Seeds the fakes before mounting the screen, so the FutureProvider reads the
 /// records on its first load.
 class _Seeder extends StatefulWidget {
@@ -199,7 +187,10 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         _appWith(
-          repository: _ThrowingSessionRepository(),
+          repository: ThrowingSessionRepository(
+            throwsOnUpload: false,
+            throwsOnList: true,
+          ),
           pending: <SessionRecord>[
             _recordFor(
               ProgramCatalogue.airPistol10m,
@@ -296,7 +287,10 @@ void main() {
   testWidgets('the sync-error banner can be dismissed', (tester) async {
     await tester.pumpWidget(
       _appWith(
-        repository: _ThrowingSessionRepository(),
+        repository: ThrowingSessionRepository(
+          throwsOnUpload: false,
+          throwsOnList: true,
+        ),
         pending: <SessionRecord>[
           _recordFor(ProgramCatalogue.airPistol10m, id: 'pending-1'),
         ],
