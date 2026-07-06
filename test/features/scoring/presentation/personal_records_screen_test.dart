@@ -4,7 +4,6 @@
 
 // Widget tests for the «Rekorder» page (spec 0102).
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/scoring/data/personal_records_store.dart';
@@ -15,6 +14,8 @@ import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.d
 import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/personal_records_screen.dart';
 
+import '../../../support/pump_app.dart';
+
 void main() {
   final exercise = ProgramCatalogue.all.first.name;
 
@@ -23,7 +24,8 @@ void main() {
     List<SessionRecord>? syncedRecords,
     PersonalRecordsStore? store,
   }) {
-    return ProviderScope(
+    return buildApp(
+      home: const PersonalRecordsScreen(),
       overrides: [
         if (baselines != null)
           initialPersonalRecordsProvider.overrideWithValue(baselines),
@@ -32,7 +34,6 @@ void main() {
         if (store != null)
           personalRecordsStoreProvider.overrideWithValue(store),
       ],
-      child: const MaterialApp(home: PersonalRecordsScreen()),
     );
   }
 

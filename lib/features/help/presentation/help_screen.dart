@@ -7,8 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:treffpunkt/core/presentation/frosted_bar.dart';
-import 'package:treffpunkt/core/presentation/layout.dart';
+import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/features/help/domain/manual.dart';
 import 'package:treffpunkt/features/help/presentation/help_providers.dart';
 
@@ -27,31 +26,24 @@ class HelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const FrostedAppBar(title: Text('Brukerveiledning')),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: ListView(
-              padding: const EdgeInsets.all(8),
-              children: <Widget>[
-                for (final page in manualPages)
-                  ListTile(
-                    key: manualPageTileKey(page.file),
-                    leading: const Icon(Icons.article_outlined),
-                    title: Text(page.title),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => ManualPageScreen(page: page),
-                      ),
-                    ),
-                  ),
-              ],
+    return ContentScaffold(
+      title: const Text('Brukerveiledning'),
+      body: ListView(
+        padding: const EdgeInsets.all(8),
+        children: <Widget>[
+          for (final page in manualPages)
+            ListTile(
+              key: manualPageTileKey(page.file),
+              leading: const Icon(Icons.article_outlined),
+              title: Text(page.title),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ManualPageScreen(page: page),
+                ),
+              ),
             ),
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -68,24 +60,17 @@ class ManualPageScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final markdown = ref.watch(manualPageProvider(page.file));
-    return Scaffold(
-      appBar: FrostedAppBar(title: Text(page.title)),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-            child: markdown.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Kunne ikke laste denne siden.'),
-              ),
-              data: (raw) => Markdown(
-                data: _withoutLicenceComment(raw),
-                onTapLink: (text, href, title) => _onTapLink(context, href),
-              ),
-            ),
-          ),
+    return ContentScaffold(
+      title: Text(page.title),
+      body: markdown.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, _) => const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('Kunne ikke laste denne siden.'),
+        ),
+        data: (raw) => Markdown(
+          data: _withoutLicenceComment(raw),
+          onTapLink: (text, href, title) => _onTapLink(context, href),
         ),
       ),
     );

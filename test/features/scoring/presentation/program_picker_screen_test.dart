@@ -34,11 +34,13 @@ import 'package:treffpunkt/features/scoring/presentation/session_providers.dart'
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
+import '../../../support/pump_app.dart';
+
 void main() {
   Widget app(SessionStore store) {
-    return ProviderScope(
+    return buildApp(
+      home: const ProgramPickerScreen(),
       overrides: [sessionStoreProvider.overrideWithValue(store)],
-      child: const MaterialApp(home: ProgramPickerScreen()),
     );
   }
 

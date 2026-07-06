@@ -7,7 +7,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
@@ -21,6 +20,7 @@ import 'package:treffpunkt/features/scoring/presentation/personal_records_provid
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/statistics_screen.dart';
 
+import '../../../support/pump_app.dart';
 import '../../../support/records.dart';
 
 Future<Widget> _app({
@@ -35,7 +35,8 @@ Future<Widget> _app({
   }
   final feltHistory = InMemoryFeltHistoryStore();
   await feltHistory.save(feltRounds);
-  return ProviderScope(
+  return buildApp(
+    home: home,
     overrides: [
       sessionRepositoryProvider.overrideWithValue(repository),
       pendingUploadsStoreProvider.overrideWithValue(
@@ -44,7 +45,6 @@ Future<Widget> _app({
       feltHistoryStoreProvider.overrideWithValue(feltHistory),
       initialPersonalRecordsProvider.overrideWithValue(baselines),
     ],
-    child: MaterialApp(home: home),
   );
 }
 

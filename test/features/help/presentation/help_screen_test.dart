@@ -7,15 +7,16 @@
 // seam, with the licence comment stripped). No real assets needed.
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/help/domain/manual.dart';
 import 'package:treffpunkt/features/help/presentation/help_providers.dart';
 import 'package:treffpunkt/features/help/presentation/help_screen.dart';
 
-Widget _app(ManualLoader loader) => ProviderScope(
+import '../../../support/pump_app.dart';
+
+Widget _app(ManualLoader loader) => buildApp(
+  home: const HelpScreen(),
   overrides: [manualLoaderProvider.overrideWithValue(loader)],
-  child: const MaterialApp(home: HelpScreen()),
 );
 
 void main() {
