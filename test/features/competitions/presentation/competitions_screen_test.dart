@@ -38,6 +38,7 @@ import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
 import '../../../support/fakes.dart';
+import '../../../support/pump_app.dart';
 import '../../auth/fake_auth_repository.dart';
 
 const _me = AppUser(id: 'me', email: 'me@example.com', displayName: 'Me');
@@ -48,13 +49,13 @@ Widget _app(
   Widget home = const CompetitionsScreen(),
 }) {
   final auth = FakeAuthRepository(initial: const SignedIn(_me));
-  return ProviderScope(
+  return buildApp(
+    home: home,
     overrides: [
       authRepositoryProvider.overrideWithValue(auth),
       competitionRepositoryProvider.overrideWithValue(repo),
       competitionIdGeneratorProvider.overrideWithValue(() => newId),
     ],
-    child: MaterialApp(home: home),
   );
 }
 
