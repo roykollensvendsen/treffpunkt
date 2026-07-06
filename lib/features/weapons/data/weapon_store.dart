@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:treffpunkt/core/data/prefs_store.dart';
 import 'package:treffpunkt/features/weapons/data/weapons_snapshot.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
@@ -43,26 +42,26 @@ class InMemoryWeaponStore implements WeaponStore {
 
 /// A [WeaponStore] backed by `shared_preferences` (web + mobile).
 ///
-/// Stores the whole list as one JSON string under [_key] (ADR-0016). Tests
-/// drive it with `SharedPreferences.setMockInitialValues`, so no real platform
-/// storage is touched.
+/// Delegates to a [PrefsJsonStore] with the [WeaponsSnapshot] codecs: the
+/// whole list lives as one JSON string under one key (ADR-0016), and anything
+/// unreadable loads as the empty list, like never-saved. Tests drive it with
+/// `SharedPreferences.setMockInitialValues`, so no real platform storage is
+/// touched.
 class SharedPreferencesWeaponStore implements WeaponStore {
-  /// Creates a store reading and writing through [_prefs].
-  SharedPreferencesWeaponStore(this._prefs);
+  /// Creates a store reading and writing through [prefs].
+  SharedPreferencesWeaponStore(SharedPreferences prefs)
+    : _store = PrefsJsonStore<List<Weapon>>(
+        prefs,
+        key: 'personal_weapons',
+        toJson: WeaponsSnapshot.toJson,
+        fromJson: (json) => WeaponsSnapshot.fromJson(json! as List<dynamic>),
+      );
 
-  final SharedPreferences _prefs;
-
-  static const String _key = 'personal_weapons';
+  final PrefsJsonStore<List<Weapon>> _store;
 
   @override
-  Future<void> save(List<Weapon> weapons) async {
-    await _prefs.setString(_key, jsonEncode(WeaponsSnapshot.toJson(weapons)));
-  }
+  Future<void> save(List<Weapon> weapons) => _store.save(weapons);
 
   @override
-  Future<List<Weapon>> load() async {
-    final stored = _prefs.getString(_key);
-    if (stored == null) return const <Weapon>[];
-    return WeaponsSnapshot.fromJson(jsonDecode(stored) as List<dynamic>);
-  }
+  Future<List<Weapon>> load() async => await _store.load() ?? const <Weapon>[];
 }

@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:treffpunkt/core/data/prefs_store.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 
 /// Local storage for the shooter's manual personal-record baselines (spec
@@ -43,47 +42,39 @@ class InMemoryPersonalRecordsStore implements PersonalRecordsStore {
 
 /// A [PersonalRecordsStore] backed by `shared_preferences` (web + mobile).
 ///
-/// Stores the map as JSON under [_key]:
+/// Delegates to a [PrefsJsonStore] storing the map as JSON under one key:
 /// `{"<exercise>": {"points": 372, "inner": 11}}`. Anything unreadable — a
 /// missing key, malformed JSON, a wrong shape — loads as empty, so a broken
 /// value can never take the app down.
 class SharedPreferencesPersonalRecordsStore implements PersonalRecordsStore {
-  /// Creates a store reading and writing through [_prefs].
-  SharedPreferencesPersonalRecordsStore(this._prefs);
+  /// Creates a store reading and writing through [prefs].
+  SharedPreferencesPersonalRecordsStore(SharedPreferences prefs)
+    : _store = PrefsJsonStore<Map<String, ExerciseResult>>(
+        prefs,
+        key: 'personal_records',
+        toJson: (records) => <String, dynamic>{
+          for (final entry in records.entries)
+            entry.key: <String, int>{
+              'points': entry.value.points,
+              'inner': entry.value.inner,
+            },
+        },
+        fromJson: (json) => <String, ExerciseResult>{
+          for (final entry in (json! as Map<String, dynamic>).entries)
+            entry.key: (
+              points: (entry.value as Map<String, dynamic>)['points'] as int,
+              inner: (entry.value as Map<String, dynamic>)['inner'] as int,
+            ),
+        },
+      );
 
-  final SharedPreferences _prefs;
-
-  static const String _key = 'personal_records';
+  final PrefsJsonStore<Map<String, ExerciseResult>> _store;
 
   @override
-  Future<void> save(Map<String, ExerciseResult> records) async {
-    await _prefs.setString(
-      _key,
-      jsonEncode(<String, dynamic>{
-        for (final entry in records.entries)
-          entry.key: <String, int>{
-            'points': entry.value.points,
-            'inner': entry.value.inner,
-          },
-      }),
-    );
-  }
+  Future<void> save(Map<String, ExerciseResult> records) =>
+      _store.save(records);
 
   @override
-  Future<Map<String, ExerciseResult>> load() async {
-    final raw = _prefs.getString(_key);
-    if (raw == null) return const {};
-    try {
-      final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      return <String, ExerciseResult>{
-        for (final entry in decoded.entries)
-          entry.key: (
-            points: (entry.value as Map<String, dynamic>)['points'] as int,
-            inner: (entry.value as Map<String, dynamic>)['inner'] as int,
-          ),
-      };
-    } on Object {
-      return const {};
-    }
-  }
+  Future<Map<String, ExerciseResult>> load() async =>
+      await _store.load() ?? const {};
 }

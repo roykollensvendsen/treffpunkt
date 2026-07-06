@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:treffpunkt/core/data/prefs_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 
 /// Local storage for finished felt rounds (spec 0082).
@@ -36,40 +35,28 @@ class InMemoryFeltHistoryStore implements FeltHistoryStore {
       _records = List<FeltSessionRecord>.unmodifiable(records);
 }
 
-/// A [FeltHistoryStore] backed by `shared_preferences` (ADR-0016): a JSON array
-/// under [_key]. Tests drive it with `SharedPreferences.setMockInitialValues`,
-/// so no real storage is touched. A malformed store reads as empty rather than
-/// throwing, so a bad write can never brick the history.
+/// A [FeltHistoryStore] backed by `shared_preferences` (ADR-0016).
+///
+/// Delegates to a [PrefsJsonListStore]: a JSON array under one key, and a
+/// malformed store reads as empty rather than throwing, so a bad write can
+/// never brick the history. Tests drive it with
+/// `SharedPreferences.setMockInitialValues`, so no real storage is touched.
 class SharedPreferencesFeltHistoryStore implements FeltHistoryStore {
-  /// Creates a store reading and writing through [_prefs].
-  SharedPreferencesFeltHistoryStore(this._prefs);
+  /// Creates a store reading and writing through [prefs].
+  SharedPreferencesFeltHistoryStore(SharedPreferences prefs)
+    : _store = PrefsJsonListStore<FeltSessionRecord>(
+        prefs,
+        key: 'felt_session_history',
+        toJson: (record) => record.toJson(),
+        fromJson: (json) =>
+            FeltSessionRecord.fromJson(json! as Map<String, dynamic>),
+      );
 
-  final SharedPreferences _prefs;
-
-  static const String _key = 'felt_session_history';
-
-  @override
-  Future<List<FeltSessionRecord>> load() async {
-    final stored = _prefs.getString(_key);
-    if (stored == null) return const <FeltSessionRecord>[];
-    try {
-      final list = jsonDecode(stored) as List<dynamic>;
-      return <FeltSessionRecord>[
-        for (final item in list)
-          FeltSessionRecord.fromJson(item as Map<String, dynamic>),
-      ];
-    } on Object {
-      return const <FeltSessionRecord>[];
-    }
-  }
+  final PrefsJsonListStore<FeltSessionRecord> _store;
 
   @override
-  Future<void> save(List<FeltSessionRecord> records) async {
-    await _prefs.setString(
-      _key,
-      jsonEncode(<Map<String, dynamic>>[
-        for (final r in records) r.toJson(),
-      ]),
-    );
-  }
+  Future<List<FeltSessionRecord>> load() => _store.load();
+
+  @override
+  Future<void> save(List<FeltSessionRecord> records) => _store.save(records);
 }

@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:treffpunkt/core/data/prefs_store.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 
 /// Local storage for the single active session recording (spec 0009).
@@ -47,31 +46,30 @@ class InMemorySessionStore implements SessionStore {
 
 /// A [SessionStore] backed by `shared_preferences` (web + mobile).
 ///
-/// Stores the active recording as one JSON string under [_key] (ADR-0016).
-/// Tests drive it with `SharedPreferences.setMockInitialValues`, so no real
-/// platform storage is touched.
+/// Delegates to a [PrefsJsonStore]: the active recording lives as one JSON
+/// string under one key (ADR-0016), and anything unreadable loads as `null`,
+/// like never-saved. Tests drive it with
+/// `SharedPreferences.setMockInitialValues`, so no real platform storage is
+/// touched.
 class SharedPreferencesSessionStore implements SessionStore {
-  /// Creates a store reading and writing through [_prefs].
-  SharedPreferencesSessionStore(this._prefs);
+  /// Creates a store reading and writing through [prefs].
+  SharedPreferencesSessionStore(SharedPreferences prefs)
+    : _store = PrefsJsonStore<SessionSnapshot>(
+        prefs,
+        key: 'active_session_recording',
+        toJson: (snapshot) => snapshot.toJson(),
+        fromJson: (json) =>
+            SessionSnapshot.fromJson(json! as Map<String, dynamic>),
+      );
 
-  final SharedPreferences _prefs;
-
-  static const String _key = 'active_session_recording';
-
-  @override
-  Future<void> save(SessionSnapshot snapshot) async {
-    await _prefs.setString(_key, jsonEncode(snapshot.toJson()));
-  }
-
-  @override
-  Future<SessionSnapshot?> load() async {
-    final stored = _prefs.getString(_key);
-    if (stored == null) return null;
-    return SessionSnapshot.fromJson(
-      jsonDecode(stored) as Map<String, dynamic>,
-    );
-  }
+  final PrefsJsonStore<SessionSnapshot> _store;
 
   @override
-  Future<void> clear() async => _prefs.remove(_key);
+  Future<void> save(SessionSnapshot snapshot) => _store.save(snapshot);
+
+  @override
+  Future<SessionSnapshot?> load() => _store.load();
+
+  @override
+  Future<void> clear() => _store.clear();
 }
