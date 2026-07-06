@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:treffpunkt/core/domain/lexi_score.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 
 /// Ranks a competition's [results] into a scoreboard (spec 0013): one row per
@@ -34,10 +35,11 @@ bool _isBetter(CompetitionResult a, CompetitionResult b) => _byScore(a, b) < 0;
 /// Best-first comparator: total desc, then inner tens desc, then captured-at
 /// ascending (an earlier submission ranks ahead of an equal later one).
 int _byScore(CompetitionResult a, CompetitionResult b) {
-  final byTotal = b.total.compareTo(a.total);
-  if (byTotal != 0) return byTotal;
-  final byInnerTens = b.innerTens.compareTo(a.innerTens);
-  if (byInnerTens != 0) return byInnerTens;
+  final byScore = compareLexiScore(
+    (points: b.total, inner: b.innerTens),
+    (points: a.total, inner: a.innerTens),
+  );
+  if (byScore != 0) return byScore;
   final aAt = a.capturedAt;
   final bAt = b.capturedAt;
   if (aAt == null && bAt == null) return 0;

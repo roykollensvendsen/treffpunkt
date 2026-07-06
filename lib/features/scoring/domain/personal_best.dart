@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:treffpunkt/core/domain/lexi_score.dart';
+
 /// One comparable exercise result (spec 0101): points first, inner hits as
 /// the tiebreak — the `poeng + innertreff` order Norwegian shooters rank by
 /// (spec 0085).
-typedef ExerciseResult = ({int points, int inner});
+typedef ExerciseResult = LexiScore;
 
 /// Whether [result] is a **new** personal best against the [prior] results
 /// of the same exercise (spec 0101): strictly better — lexicographically on
@@ -19,10 +21,7 @@ bool isNewPersonalBest({
   var any = false;
   for (final p in prior) {
     any = true;
-    final beaten =
-        result.points > p.points ||
-        (result.points == p.points && result.inner > p.inner);
-    if (!beaten) return false;
+    if (!isBetterLexi(result, p)) return false;
   }
   return any;
 }
@@ -34,9 +33,7 @@ ExerciseResult? bestResult(Iterable<ExerciseResult> results) {
   ExerciseResult? best;
   for (final r in results) {
     final b = best;
-    if (b == null ||
-        r.points > b.points ||
-        (r.points == b.points && r.inner > b.inner)) {
+    if (b == null || isBetterLexi(r, b)) {
       best = r;
     }
   }
