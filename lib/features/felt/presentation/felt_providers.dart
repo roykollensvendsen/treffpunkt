@@ -4,13 +4,16 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/sync/upload_queue_engine.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
+import 'package:treffpunkt/features/felt/data/felt_pending_uploads_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
@@ -55,7 +58,9 @@ final feltHistoryProvider = FutureProvider<List<FeltSessionRecord>>(
 /// Prepends [record] to the finished-round history and refreshes readers
 /// (spec 0082). Upserts by id (spec 0091): a record saved again — the save
 /// button pressed twice, or any repeated path — replaces its stored copy
-/// instead of duplicating it.
+/// instead of duplicating it. The saved round is also enqueued on the durable
+/// upload queue (spec 0144), fire-and-forget so the save never waits on the
+/// network: the enqueue persists the round before any upload attempt.
 Future<void> saveFeltRound(WidgetRef ref, FeltSessionRecord record) async {
   final store = ref.read(feltHistoryStoreProvider);
   final current = await store.load();
@@ -65,10 +70,17 @@ Future<void> saveFeltRound(WidgetRef ref, FeltSessionRecord record) async {
       if (round.id != record.id) round,
   ]);
   ref.invalidate(feltHistoryProvider);
+  unawaited(
+    ref
+        .read(feltSyncProvider.notifier)
+        .enqueue(record)
+        .catchError((Object _) {}),
+  );
 }
 
-/// Removes the finished round [id] from the local history and refreshes
-/// readers (spec 0089).
+/// Removes the finished round [id] from the local history — and from the
+/// durable upload queue (spec 0144), so a deleted round can never upload
+/// afterwards — and refreshes readers (spec 0089).
 Future<void> deleteFeltRound(WidgetRef ref, String id) async {
   final store = ref.read(feltHistoryStoreProvider);
   final current = await store.load();
@@ -76,6 +88,7 @@ Future<void> deleteFeltRound(WidgetRef ref, String id) async {
     for (final round in current)
       if (round.id != id) round,
   ]);
+  await ref.read(feltSyncProvider.notifier).deleteById(id);
   ref.invalidate(feltHistoryProvider);
 }
 
@@ -85,6 +98,13 @@ final feltSessionRepositoryProvider = Provider<FeltSessionRepository>(
   (ref) => InMemoryFeltSessionRepository(),
 );
 
+/// The durable store behind the felt upload queue (spec 0144). Defaults to
+/// in-memory; `main()` overrides it with the `shared_preferences` one, like
+/// the ring's pending-uploads store (spec 0025).
+final feltPendingUploadsStoreProvider = Provider<FeltPendingUploadsStore>(
+  (ref) => InMemoryFeltPendingUploadsStore(),
+);
+
 /// The account's synced felt rounds, read in the background for "Mine økter"
 /// (spec 0083). A failed read surfaces as this provider's error and is treated
 /// as a non-blocking notice — the local rounds still show.
@@ -92,55 +112,105 @@ final feltSyncedSessionsProvider = FutureProvider<List<FeltSessionRecord>>(
   (ref) => ref.watch(feltSessionRepositoryProvider).list(),
 );
 
-/// Keeps finished felt rounds synced to the account (spec 0083): uploads the
-/// local rounds on sign-in and at app start, and one round on finish. Kept
-/// alive by the app root (like the ring upload queue); best-effort throughout.
-final feltSyncProvider = NotifierProvider<FeltSyncNotifier, void>(
-  FeltSyncNotifier.new,
-);
+/// The durable upload queue for finished felt rounds (spec 0144).
+///
+/// A finished round is enqueued here the instant it is saved (persisted to the
+/// [FeltPendingUploadsStore] so it survives a restart or an offline session)
+/// and flushed — uploaded *and*, for a competition round, its result submitted
+/// (spec 0140) — whenever that becomes possible: on save, on app start, and
+/// when the user signs in. Kept alive by the app root (like the ring upload
+/// queue); best-effort throughout.
+final feltSyncProvider =
+    NotifierProvider<FeltSyncNotifier, List<FeltSessionRecord>>(
+      FeltSyncNotifier.new,
+    );
 
 /// The notifier behind [feltSyncProvider].
-class FeltSyncNotifier extends Notifier<void> {
-  Future<void>? _tail;
+///
+/// A thin Riverpod shell over the shared [UploadQueueEngine] (ADR-0028), which
+/// owns the queue algorithm: the serial task chain, dedup-by-id,
+/// persist-before-upload and keep-on-failure. This notifier contributes the
+/// felt-specific capabilities — the felt-session repository, the pending
+/// store, the competition-result fan-out (spec 0140) and the signed-in gate —
+/// and mirrors the engine's pending list into its Riverpod state. Every
+/// capability is **best-effort**: a throwing repository or a failed persist
+/// never escapes, so the queue can never break the save flow.
+class FeltSyncNotifier extends Notifier<List<FeltSessionRecord>> {
+  /// The shared queue engine, wired to this feature's capabilities. One engine
+  /// per notifier instance, so its serial chain spans the notifier's lifetime.
+  late final UploadQueueEngine<FeltSessionRecord> _engine =
+      UploadQueueEngine<FeltSessionRecord>(
+        idOf: (record) => record.id,
+        load: _loadPending,
+        persist: _persist,
+        tryUpload: _tryUpload,
+        isSignedIn: _isSignedIn,
+        onState: (pending) => state = pending,
+      );
 
   @override
-  void build() {
+  List<FeltSessionRecord> build() {
+    // Flush whenever auth transitions into signed-in: a round queued while
+    // signed out can now go up. A single flush per transition (no re-subscribe
+    // loop, no timer) — Riverpod tears the listener down with the provider.
     ref.listen<AsyncValue<AuthStatus>>(authStateChangesProvider, (prev, next) {
       final wasSignedIn = prev?.value is SignedIn;
       final isSignedIn = next.value is SignedIn;
-      if (isSignedIn && !wasSignedIn) unawaited(uploadAll());
+      if (isSignedIn && !wasSignedIn) unawaited(flush());
     });
-    unawaited(uploadAll());
+
+    // Load any rounds waiting from a previous run and flush them (app start).
+    // Chained first, so the load completes before any enqueue runs against the
+    // loaded list. Fire-and-forget: `build` returns the synchronous empty list
+    // and the engine mirrors `state` in as its chain resolves.
+    unawaited(_engine.start());
+    return <FeltSessionRecord>[];
   }
 
-  bool get _signedIn {
+  /// Enqueues [record], replacing any pending round with the same id, persists
+  /// the list, then flushes (spec 0144).
+  Future<void> enqueue(FeltSessionRecord record) => _engine.enqueue(record);
+
+  /// Removes the pending round [id] from the queue and its durable store (spec
+  /// 0144), run on the serial chain so it never races a flush.
+  Future<void> deleteById(String id) => _engine.deleteById(id);
+
+  /// Attempts to upload every pending round, dropping the ones that succeed
+  /// and keeping the ones that fail (spec 0144).
+  Future<void> flush() => _engine.flush();
+
+  /// Uploads [record] and, when it was shot for a competition (spec 0140),
+  /// also submits its result; returns whether **everything** succeeded.
+  ///
+  /// Swallows every error so a throwing repository leaves the round queued
+  /// instead of breaking flush. The round is dropped only when both the upload
+  /// and (if any) the result submission succeed; both are idempotent, so a
+  /// retry of a partially-synced round re-runs safely.
+  Future<bool> _tryUpload(FeltSessionRecord record) async {
     try {
-      return ref.read(authStateChangesProvider).value is SignedIn;
-    } on Object {
+      await ref.read(feltSessionRepositoryProvider).upload(record);
+    } on Object catch (error) {
+      if (!kReleaseMode) {
+        debugPrint('Failed to upload a queued felt round: $error');
+      }
       return false;
     }
-  }
 
-  /// Uploads every locally-stored finished round (a sign-in / start reconcile).
-  Future<void> uploadAll() => _run(() async {
-    if (!_signedIn) return;
-    final repository = ref.read(feltSessionRepositoryProvider);
-    final local = await ref.read(feltHistoryStoreProvider).load();
-    for (final round in local) {
-      await repository.upload(round);
+    try {
+      await _submitResult(record);
+    } on Object catch (error) {
+      if (!kReleaseMode) {
+        debugPrint('Failed to submit the felt competition result: $error');
+      }
+      return false;
     }
-  });
-
-  /// Uploads one just-finished [record] (best-effort; a no-op when signed out).
-  Future<void> uploadOne(FeltSessionRecord record) => _run(() async {
-    if (!_signedIn) return;
-    await ref.read(feltSessionRepositoryProvider).upload(record);
-    await _submitResult(record);
-  });
+    return true;
+  }
 
   /// Submits the round as a competition result (spec 0140): points as the
   /// total, inner hits as the tiebreak, the round as the payload — the
-  /// felt mirror of the ring queue's submit. Idempotent by round id.
+  /// felt mirror of the ring queue's submit. Idempotent by round id; a no-op
+  /// for a training round.
   Future<void> _submitResult(FeltSessionRecord record) async {
     final competitionId = record.competitionId;
     if (competitionId == null) return;
@@ -161,10 +231,37 @@ class FeltSyncNotifier extends Notifier<void> {
         );
   }
 
-  Future<void> _run(Future<void> Function() task) {
-    final previous = _tail ?? Future<void>.value();
-    final next = previous.then((_) => task());
-    _tail = next.catchError((Object _, StackTrace _) {});
-    return next;
+  /// Whether a user is currently signed in (best-effort, like the notifier).
+  bool _isSignedIn() {
+    try {
+      return ref.read(authStateChangesProvider).value is SignedIn;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Loads the persisted pending list; an unreadable store yields an empty
+  /// list rather than breaking startup.
+  Future<List<FeltSessionRecord>> _loadPending() async {
+    try {
+      return await ref.read(feltPendingUploadsStoreProvider).load();
+    } on Object catch (error) {
+      if (!kReleaseMode) {
+        debugPrint('Failed to load the pending felt uploads: $error');
+      }
+      return <FeltSessionRecord>[];
+    }
+  }
+
+  /// Persists [records]; best-effort, so a write failure never breaks the
+  /// queue (the in-memory state is authoritative this run).
+  Future<void> _persist(List<FeltSessionRecord> records) async {
+    try {
+      await ref.read(feltPendingUploadsStoreProvider).save(records);
+    } on Object catch (error) {
+      if (!kReleaseMode) {
+        debugPrint('Failed to persist the pending felt uploads: $error');
+      }
+    }
   }
 }

@@ -258,8 +258,10 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
 
   /// Saves the finished round — exactly once (spec 0091): the record keeps
   /// the recorder's stable [_roundId] and the history save upserts by id.
-  /// Uploads best-effort (spec 0083), clears the in-progress store and pops
-  /// back to the course page with a confirmation.
+  /// The save enqueues the round on the durable upload queue (spec 0144),
+  /// which uploads it — and submits its competition result (spec 0140) — now
+  /// or when next possible. Clears the in-progress store and pops back to the
+  /// course page with a confirmation.
   Future<void> _save() async {
     if (_saving || _totalShots == 0) return;
     setState(() => _saving = true);
@@ -275,12 +277,6 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
       competitionId: widget.competitionId,
     );
     await saveFeltRound(ref, record).catchError((Object _) {});
-    unawaited(
-      ref
-          .read(feltSyncProvider.notifier)
-          .uploadOne(record)
-          .catchError((Object _) {}),
-    );
     await ref.read(feltSessionStoreProvider).clear().catchError((Object _) {});
     if (!mounted) return;
     setState(() => _saving = false);
