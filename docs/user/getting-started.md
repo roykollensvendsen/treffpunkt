@@ -94,8 +94,10 @@ felt-økt** on the course page, exactly where you left off. When you tap
 marked where they landed (green = innertreff, amber = treff, red = bom) —
 check it, and tap **Lagre økt** to save
 the round: it then shows up in **Mine økter** together with your ring
-sessions, and — when you're signed in — it syncs to your account so it
-follows you across devices. Until you save, the round stays resumable, and
+sessions, and it syncs to your account so it follows you across devices —
+a round saved **offline or signed out** is kept safely on the device and
+uploads by itself the next time you are online and signed in, exactly like
+a ring session. Until you save, the round stays resumable, and
 going back and forth never saves it twice. Like a ring session, a felt round can be **deleted** from Mine økter:
 tap the card's menu (⋮) and choose **Slett** — it is removed from your account
 and the device.

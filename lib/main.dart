@@ -15,6 +15,7 @@ import 'package:treffpunkt/features/backup/data/backup_file_source.dart';
 import 'package:treffpunkt/features/competitions/data/supabase_competition_repository.dart';
 import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
+import 'package:treffpunkt/features/felt/data/felt_pending_uploads_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/data/supabase_felt_session_repository.dart';
 import 'package:treffpunkt/features/forum/data/supabase_forum_repository.dart';
@@ -82,6 +83,7 @@ Future<void> main() async {
     ),
     sessionRepository: SupabaseSessionRepository(Supabase.instance.client),
     pendingUploadsStore: SharedPreferencesPendingUploadsStore(prefs),
+    feltPendingUploadsStore: SharedPreferencesFeltPendingUploadsStore(prefs),
     weaponStore: weaponStore,
     initialWeapons: savedWeapons,
     locationService: const GeolocatorLocationService(),

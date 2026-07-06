@@ -15,6 +15,7 @@ import 'package:treffpunkt/features/competitions/data/competition_repository.dar
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
+import 'package:treffpunkt/features/felt/data/felt_pending_uploads_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
@@ -72,10 +73,12 @@ import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 /// it from the [weaponStore] before this call so the notifier starts populated
 /// without an async `build` (spec 0019). Omitting it starts with no weapons.
 ///
-/// [pendingUploadsStore] is the durable upload queue's storage (spec 0025):
-/// `main()` passes the `shared_preferences`-backed store so completed sessions
-/// survive a restart and upload later; omitting it keeps the in-memory default,
-/// so tests and the integration harness never touch real storage.
+/// [pendingUploadsStore] is the durable upload queue's storage (spec 0025) and
+/// [feltPendingUploadsStore] its felt mirror (spec 0144): `main()` passes the
+/// `shared_preferences`-backed stores so completed sessions and finished felt
+/// rounds survive a restart and upload later; omitting them keeps the
+/// in-memory defaults, so tests and the integration harness never touch real
+/// storage.
 ///
 /// [themeModeStore] persists the chosen theme (spec 0030) and
 /// [initialThemeMode] seeds it at launch — `main()` loads the saved choice from
@@ -94,6 +97,7 @@ void runTreffpunkt(
   FeltSessionRepository? feltSessionRepository,
   SessionRepository? sessionRepository,
   PendingUploadsStore? pendingUploadsStore,
+  FeltPendingUploadsStore? feltPendingUploadsStore,
   WeaponStore? weaponStore,
   List<Weapon>? initialWeapons,
   LocationService? locationService,
@@ -140,6 +144,10 @@ void runTreffpunkt(
           sessionRepositoryProvider.overrideWithValue(sessionRepository),
         if (pendingUploadsStore != null)
           pendingUploadsStoreProvider.overrideWithValue(pendingUploadsStore),
+        if (feltPendingUploadsStore != null)
+          feltPendingUploadsStoreProvider.overrideWithValue(
+            feltPendingUploadsStore,
+          ),
         if (weaponStore != null)
           weaponStoreProvider.overrideWithValue(weaponStore),
         if (initialWeapons != null)

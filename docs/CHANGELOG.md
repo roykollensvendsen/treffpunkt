@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **Offline competition-felt-round results reach the scoreboard**: a
+  competition felt round finished offline (or signed out) was uploaded
+  later but its result never appeared on the scoreboard — the round is
+  now queued durably and, when it finally uploads, its result is
+  submitted in the same step (spec 0144).
+
+### Changed
+- **Felt sync uses the durable upload queue**: finished felt rounds are
+  queued on the device the moment they are saved (surviving a restart)
+  and uploaded when possible — on save, at app start and on sign-in —
+  instead of re-uploading the whole local history every start; deleting
+  a round also removes it from the queue, so a deleted round can never
+  upload afterwards (spec 0144, ring parity with spec 0025).
+
 ### Changed
 - **Felt statistics per group**: the NorgesFelt course appears in
   Statistikk as one exercise **per group** — the groups shoot different
