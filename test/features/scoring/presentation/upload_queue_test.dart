@@ -32,6 +32,7 @@ import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
 
+import '../../../support/fakes.dart';
 import '../../../support/records.dart';
 import '../../auth/fake_auth_repository.dart';
 
@@ -149,23 +150,6 @@ class _SpyCompetitionRepository implements CompetitionRepository {
     Uint8List bytes, {
     String fileExtension = 'jpg',
   }) async => throw UnimplementedError();
-}
-
-/// A repository whose [upload] always throws, to prove the queue keeps the
-/// record and never breaks completion.
-class _ThrowingSessionRepository implements SessionRepository {
-  int callCount = 0;
-
-  @override
-  Future<void> upload(SessionRecord record) async {
-    callCount++;
-    throw Exception('upload failed');
-  }
-
-  @override
-  Future<List<SessionRecord>> list() async => const <SessionRecord>[];
-  @override
-  Future<void> deleteById(String id) async {}
 }
 
 /// A repository whose first [upload] parks on a [Completer] (so a flush is
@@ -373,7 +357,7 @@ void main() {
   test(
     'a throwing repository leaves the record queued, not breaking completion',
     () async {
-      final repository = _ThrowingSessionRepository();
+      final repository = ThrowingSessionRepository();
       final pendingStore = InMemoryPendingUploadsStore();
       final container = makeContainer(
         auth: const SignedIn(AppUser(id: 'u1')),
@@ -404,7 +388,7 @@ void main() {
   test(
     'enqueuing the same id twice keeps exactly one pending record',
     () async {
-      final repository = _ThrowingSessionRepository(); // keep them queued
+      final repository = ThrowingSessionRepository(); // keep them queued
       final pendingStore = InMemoryPendingUploadsStore();
       final container = ProviderContainer(
         overrides: [

@@ -21,6 +21,7 @@ import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
+import '../../../support/fakes.dart';
 import '../../auth/fake_auth_repository.dart';
 
 // One stage of one series of two shots, so a session completes after a single
@@ -53,22 +54,6 @@ const ProgramDefinition _multiSeriesProgram = ProgramDefinition(
   ],
 );
 const Shot _centre = Shot(dxMm: 0, dyMm: 0);
-
-/// A repository whose [upload] always throws, to prove the upload is swallowed.
-class _ThrowingSessionRepository implements SessionRepository {
-  int callCount = 0;
-
-  @override
-  Future<void> upload(SessionRecord record) async {
-    callCount++;
-    throw Exception('upload failed');
-  }
-
-  @override
-  Future<List<SessionRecord>> list() async => const <SessionRecord>[];
-  @override
-  Future<void> deleteById(String id) async {}
-}
 
 /// A repository that only counts uploads, to pin upload-exactly-once.
 class _CountingSessionRepository implements SessionRepository {
@@ -275,7 +260,7 @@ void main() {
   );
 
   test('a repository whose upload throws does not break completion', () async {
-    final repository = _ThrowingSessionRepository();
+    final repository = ThrowingSessionRepository();
     final container = makeContainer(
       auth: const SignedIn(AppUser(id: 'u1')),
       repository: repository,
