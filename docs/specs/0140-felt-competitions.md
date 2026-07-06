@@ -25,6 +25,16 @@ inner hits as the tiebreak — but had no way into a competition.
   (points as total, inner hits as innerTens, the round as payload)
   after upload, exactly where the ring queue does — same offline
   resilience, same idempotent upsert by round id.
+- **The result id is a deterministic uuid, not the round id.** The
+  backend's `competition_results.id` column is a Postgres `uuid`, but
+  felt round ids are radix-36 timestamps — submitting one verbatim is
+  rejected with 22P02 and the result never lands (the in-memory
+  repository accepts any string, which is why the unit suite alone
+  missed this). `feltCompetitionResultId(roundId)` maps the round id
+  through UUIDv5 (URL namespace, name
+  `treffpunkt:felt-result:<round-id>`): a valid uuid with no schema
+  change, and deterministic so the durable queue's retries (spec 0144)
+  upsert the same result instead of duplicating it.
 - **The recorder obeys the lock**: shooting for a felt competition
   skips the group picker and pins the competition's group.
 - **The scoreboard can open a felt result**: the result screen tries
@@ -46,7 +56,11 @@ inner hits as the tiebreak — but had no way into a competition.
 ## Verification
 
 - Domain: program-name encode/parse round-trip; group max points
-  (80/47) asserted against the course data.
+  (80/47) asserted against the course data;
+  `feltCompetitionResultId` yields a canonical uuid, is stable across
+  two calls for the same round id and differs for different round ids
+  — and the sync tests assert the submitted result carries exactly
+  this id, never the raw round id.
 - Widget: creating a felt competition stores the encoded program;
   shooting for it opens the recorder with the locked group and no
   picker; saving submits a result with the round's points and inner

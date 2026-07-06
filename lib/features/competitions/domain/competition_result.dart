@@ -66,7 +66,10 @@ class CompetitionResult {
     );
   }
 
-  /// The result id (= the submitted session's id).
+  /// The result id — a uuid: the submitted session's id for ring sessions,
+  /// or the deterministic uuid derived from the round id for felt rounds
+  /// (`feltCompetitionResultId`, spec 0140), since felt round ids are not
+  /// uuids and the backend's id column is.
   final String id;
 
   /// The competition this result was submitted to.
