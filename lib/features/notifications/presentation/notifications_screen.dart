@@ -6,9 +6,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/presentation/confirm_dialog.dart';
+import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
-import 'package:treffpunkt/core/presentation/layout.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_chat_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
@@ -180,25 +181,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   /// Clears the whole list after a confirmation (spec 0109) — destructive,
   /// so it asks first (spec 0096).
   Future<void> _clearAll(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Fjern alle varsler?'),
-        content: const Text('Handlingen kan ikke angres.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Avbryt'),
-          ),
-          FilledButton(
-            key: clearNotificationsConfirmKey,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Fjern alle'),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Fjern alle varsler?',
+      message: 'Handlingen kan ikke angres.',
+      confirmLabel: 'Fjern alle',
+      confirmKey: clearNotificationsConfirmKey,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     await ref.read(notificationsRepositoryProvider).deleteAll();
     ref.invalidate(notificationsProvider);
   }
@@ -210,105 +200,93 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         (ref.watch(notificationsProvider).value ?? const <AppNotification>[])
             .where((notification) => !_removed.contains(notification.id))
             .toList();
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: FrostedAppBar(
-        title: const Text('Varsler'),
-        actions: [
+    return ContentScaffold.behindBar(
+      title: const Text('Varsler'),
+      actions: [
+        IconButton(
+          key: markAllReadKey,
+          tooltip: 'Marker alle som lest',
+          icon: const Icon(Icons.done_all),
+          onPressed: () => unawaited(_markAllRead(ref)),
+        ),
+        if (notifications.isNotEmpty)
           IconButton(
-            key: markAllReadKey,
-            tooltip: 'Marker alle som lest',
-            icon: const Icon(Icons.done_all),
-            onPressed: () => unawaited(_markAllRead(ref)),
+            key: clearNotificationsKey,
+            tooltip: 'Fjern alle',
+            icon: const Icon(Icons.delete_sweep_outlined),
+            onPressed: () => unawaited(_clearAll(context, ref)),
           ),
-          if (notifications.isNotEmpty)
-            IconButton(
-              key: clearNotificationsKey,
-              tooltip: 'Fjern alle',
-              icon: const Icon(Icons.delete_sweep_outlined),
-              onPressed: () => unawaited(_clearAll(context, ref)),
-            ),
-        ],
-      ),
+      ],
       // The Builder gives a context INSIDE the body, where the
       // Scaffold injects the bar insets (spec 0129).
       body: Builder(
-        builder: (context) => SafeArea(
-          top: false,
-          bottom: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
-              child: notifications.isEmpty
-                  ? const EmptyState(
-                      icon: Icons.notifications_none,
-                      title: 'Ingen varsler ennå.',
-                      titleKey: noNotificationsKey,
-                      hint: 'Invitasjoner, meldinger og svar dukker opp her.',
-                    )
-                  : ListView(
-                      padding: frostedScrollPadding(context),
-                      children: [
-                        // Swipe a notification away to delete it (spec 0109).
-                        for (final notification in notifications)
-                          Dismissible(
-                            key: notificationTileKey(notification.id),
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 20),
-                              color: theme.colorScheme.errorContainer,
-                              child: Icon(
-                                Icons.delete_outline,
-                                color: theme.colorScheme.onErrorContainer,
+        builder: (context) => notifications.isEmpty
+            ? const EmptyState(
+                icon: Icons.notifications_none,
+                title: 'Ingen varsler ennå.',
+                titleKey: noNotificationsKey,
+                hint: 'Invitasjoner, meldinger og svar dukker opp her.',
+              )
+            : ListView(
+                padding: frostedScrollPadding(context),
+                children: [
+                  // Swipe a notification away to delete it (spec 0109).
+                  for (final notification in notifications)
+                    Dismissible(
+                      key: notificationTileKey(notification.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        color: theme.colorScheme.errorContainer,
+                        child: Icon(
+                          Icons.delete_outline,
+                          color: theme.colorScheme.onErrorContainer,
+                        ),
+                      ),
+                      onDismissed: (_) =>
+                          unawaited(_delete(ref, notification.id)),
+                      child: ListTile(
+                        leading: Icon(
+                          switch (notification.kind) {
+                            AppNotificationKind.invitation =>
+                              Icons.emoji_events_outlined,
+                            AppNotificationKind.competitionMessage =>
+                              Icons.chat_bubble_outline,
+                            AppNotificationKind.forumReply =>
+                              Icons.forum_outlined,
+                            AppNotificationKind.mention =>
+                              Icons.alternate_email,
+                          },
+                        ),
+                        title: Text(
+                          notification.title,
+                          style: notification.unread
+                              ? const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                )
+                              : null,
+                        ),
+                        subtitle: notification.body.isEmpty
+                            ? null
+                            : Text(
+                                notification.body,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            onDismissed: (_) =>
-                                unawaited(_delete(ref, notification.id)),
-                            child: ListTile(
-                              leading: Icon(
-                                switch (notification.kind) {
-                                  AppNotificationKind.invitation =>
-                                    Icons.emoji_events_outlined,
-                                  AppNotificationKind.competitionMessage =>
-                                    Icons.chat_bubble_outline,
-                                  AppNotificationKind.forumReply =>
-                                    Icons.forum_outlined,
-                                  AppNotificationKind.mention =>
-                                    Icons.alternate_email,
-                                },
-                              ),
-                              title: Text(
-                                notification.title,
-                                style: notification.unread
-                                    ? const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                      )
-                                    : null,
-                              ),
-                              subtitle: notification.body.isEmpty
-                                  ? null
-                                  : Text(
-                                      notification.body,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                              trailing: notification.unread
-                                  ? Icon(
-                                      Icons.circle,
-                                      size: 10,
-                                      color: theme.colorScheme.primary,
-                                    )
-                                  : null,
-                              onTap: () =>
-                                  unawaited(_open(context, ref, notification)),
-                            ),
-                          ),
-                      ],
+                        trailing: notification.unread
+                            ? Icon(
+                                Icons.circle,
+                                size: 10,
+                                color: theme.colorScheme.primary,
+                              )
+                            : null,
+                        onTap: () =>
+                            unawaited(_open(context, ref, notification)),
+                      ),
                     ),
-            ),
-          ),
-        ),
+                ],
+              ),
       ),
     );
   }

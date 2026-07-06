@@ -8,7 +8,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/platform/sharer.dart';
 import 'package:treffpunkt/features/backup/data/backup_file_source.dart';
@@ -26,6 +25,7 @@ import 'package:treffpunkt/features/scoring/presentation/session_providers.dart'
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
 import '../../../support/fakes.dart';
+import '../../../support/pump_app.dart';
 import '../../../support/records.dart';
 
 class _FakeFileSource implements BackupFileSource {
@@ -61,14 +61,14 @@ void main() {
     required BackupFileSource files,
     required InMemoryPendingUploadsStore pending,
     required InMemoryFeltHistoryStore feltHistory,
-  }) => ProviderScope(
+  }) => buildApp(
     overrides: [
       sharerProvider.overrideWithValue(sharer),
       backupFileSourceProvider.overrideWithValue(files),
       pendingUploadsStoreProvider.overrideWithValue(pending),
       feltHistoryStoreProvider.overrideWithValue(feltHistory),
     ],
-    child: const MaterialApp(home: Scaffold(body: BackupSection())),
+    home: const Scaffold(body: BackupSection()),
   );
 
   testWidgets('export shares one JSON file with everything (0106)', (
