@@ -6,12 +6,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/core/sync/upload_queue_engine.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
-import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
@@ -23,20 +23,27 @@ import 'package:treffpunkt/features/scoring/presentation/session_providers.dart'
 /// and when the user signs in. So no completed session is ever lost; a session
 /// finished offline or signed out uploads itself automatically later.
 ///
-/// The state is the list of records still waiting to upload, deduplicated by
-/// [SessionRecord.id] (enqueuing the same id twice keeps one, the latest
-/// winning, an idempotent upsert like the repository). Every operation is
-/// **best-effort**: a throwing repository or a failed persist never escapes, so
-/// the queue can never break the completion flow, and a failed upload simply
-/// leaves the record queued for the next flush.
-///
-/// All mutating operations run **serially** on a single task chain
-/// ([_run]/[_tail]), so the asynchronous load, an [enqueue] and a [flush] can
-/// never interleave: no record is double-uploaded and no race drops one. Each
-/// task is a single pass, so the queue cannot spin (ADR-0013).
+/// A thin Riverpod shell over the shared [UploadQueueEngine] (ADR-0028), which
+/// owns the queue algorithm: the serial task chain, dedup-by-id,
+/// persist-before-upload and keep-on-failure. This notifier contributes the
+/// ring-specific capabilities — the session repository, the pending-uploads
+/// store, the competition-result fan-out (spec 0012) and the signed-in gate —
+/// and mirrors the engine's pending list into its Riverpod state for the
+/// screens that watch it. Every capability is **best-effort**: a throwing
+/// repository or a failed persist never escapes, so the queue can never break
+/// the completion flow.
 class UploadQueueNotifier extends Notifier<List<SessionRecord>> {
-  /// The tail of the serial task chain; `null` when idle.
-  Future<void>? _tail;
+  /// The shared queue engine, wired to this feature's capabilities. One engine
+  /// per notifier instance, so its serial chain spans the notifier's lifetime.
+  late final UploadQueueEngine<SessionRecord> _engine =
+      UploadQueueEngine<SessionRecord>(
+        idOf: (record) => record.id,
+        load: _loadPending,
+        persist: _persist,
+        tryUpload: _tryUpload,
+        isSignedIn: _isSignedIn,
+        onState: (pending) => state = pending,
+      );
 
   @override
   List<SessionRecord> build() {
@@ -57,85 +64,22 @@ class UploadQueueNotifier extends Notifier<List<SessionRecord>> {
     // Load any records waiting from a previous run and flush them (app start).
     // Chained first, so the load completes before any enqueue runs against the
     // loaded list. Fire-and-forget: `build` returns the synchronous empty list
-    // and the chain updates `state` as it resolves.
-    unawaited(_run(_loadThenState));
+    // and the engine mirrors `state` in as its chain resolves.
+    unawaited(_engine.start());
     return <SessionRecord>[];
   }
 
   /// Enqueues [record], replacing any pending record with the same id, persists
   /// the list, then flushes (spec 0025).
-  ///
-  /// Dedup-by-id keeps the upsert semantics of the whole pipeline: a session
-  /// enqueued twice (e.g. a resumed-then-re-completed one) stays one record.
-  /// Persisting **before** the upload is what guarantees no loss: the record is
-  /// durable the instant it is enqueued, even if the upload then fails or the
-  /// app dies mid-upload.
-  Future<void> enqueue(SessionRecord record) => _run(() async {
-    state = _dedupById(<SessionRecord>[
-      for (final pending in state)
-        if (pending.id != record.id) pending,
-      record,
-    ]);
-    await _persist(state);
-    await _flushOnce();
-  });
+  Future<void> enqueue(SessionRecord record) => _engine.enqueue(record);
 
   /// Removes the pending record [id] from the queue and its durable store (spec
   /// 0033), run on the serial chain so it never races a flush.
-  ///
-  /// A no-op for an id that is not pending (e.g. an already-synced session,
-  /// removed from the cloud separately). Persisting the remainder is what makes
-  /// the removal durable across a restart.
-  Future<void> deleteById(String id) => _run(() async {
-    state = _dedupById(<SessionRecord>[
-      for (final pending in state)
-        if (pending.id != id) pending,
-    ]);
-    await _persist(state);
-  });
+  Future<void> deleteById(String id) => _engine.deleteById(id);
 
   /// Attempts to upload every pending record, dropping the ones that succeed
   /// and keeping the ones that fail (spec 0025).
-  ///
-  /// A no-op when signed out (the records stay queued, unchanged). One pass
-  /// over the pending list, run on the serial chain so it never overlaps
-  /// another operation: the queue cannot spin (ADR-0013) and a record is never
-  /// double-uploaded. Fully best-effort: a throwing repository never escapes.
-  Future<void> flush() => _run(_flushOnce);
-
-  /// Runs [task] after any in-flight operation, keeping all mutations serial.
-  ///
-  /// Chaining on [_tail] (and swallowing a failed predecessor so one failure
-  /// cannot poison the chain) means the asynchronous load, an [enqueue] and a
-  /// [flush] execute one at a time, in order — no interleaving, no race.
-  Future<void> _run(Future<void> Function() task) {
-    final previous = _tail ?? Future<void>.value();
-    final next = previous.then((_) => task());
-    _tail = next.catchError((Object _, StackTrace _) {});
-    return next;
-  }
-
-  /// Loads the persisted pending list (deduplicated) into [state], then flushes
-  /// it (app start).
-  Future<void> _loadThenState() async {
-    state = _dedupById(await _loadPending());
-    await _flushOnce();
-  }
-
-  /// One flush pass: upload each pending record, drop the ones that succeed and
-  /// keep the ones that fail, then persist the remainder.
-  Future<void> _flushOnce() async {
-    if (!_isSignedIn()) return;
-    final repository = ref.read(sessionRepositoryProvider);
-    final remaining = <SessionRecord>[];
-    for (final record in state) {
-      if (!await _tryUpload(repository, record)) {
-        remaining.add(record);
-      }
-    }
-    state = remaining;
-    await _persist(remaining);
-  }
+  Future<void> flush() => _engine.flush();
 
   /// Uploads [record] and, when it was shot for a competition (spec 0012), also
   /// submits its result; returns whether **everything** succeeded.
@@ -144,12 +88,9 @@ class UploadQueueNotifier extends Notifier<List<SessionRecord>> {
   /// instead of breaking flush. The record is dropped only when both the
   /// session upload and (if any) the result submission succeed; both are
   /// idempotent, so a retry of a partially-synced record re-runs safely.
-  Future<bool> _tryUpload(
-    SessionRepository repository,
-    SessionRecord record,
-  ) async {
+  Future<bool> _tryUpload(SessionRecord record) async {
     try {
-      await repository.upload(record);
+      await ref.read(sessionRepositoryProvider).upload(record);
     } on Object catch (error) {
       if (!kReleaseMode) {
         debugPrint('Failed to upload a queued session: $error');
@@ -210,15 +151,6 @@ class UploadQueueNotifier extends Notifier<List<SessionRecord>> {
         debugPrint('Failed to persist the pending uploads: $error');
       }
     }
-  }
-
-  /// Keeps the last record per id, preserving order — an idempotent upsert.
-  static List<SessionRecord> _dedupById(List<SessionRecord> records) {
-    final byId = <String, SessionRecord>{};
-    for (final record in records) {
-      byId[record.id] = record;
-    }
-    return List<SessionRecord>.unmodifiable(byId.values);
   }
 }
 
