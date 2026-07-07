@@ -6,8 +6,10 @@ import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/app.dart';
+import 'package:treffpunkt/core/data/link_opener.dart';
 import 'package:treffpunkt/core/platform/browser_environment.dart';
 import 'package:treffpunkt/core/platform/sharer.dart';
+import 'package:treffpunkt/core/presentation/link_providers.dart';
 import 'package:treffpunkt/features/auth/domain/auth_repository.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/backup/data/backup_file_source.dart';
@@ -104,6 +106,7 @@ void runTreffpunkt(
   Geocoder? geocoder,
   ImageSourceService? imageSourceService,
   TargetScanner? targetScanner,
+  LinkOpener? linkOpener,
   ContributionService? contributionService,
   ThemeModeStore? themeModeStore,
   ThemeMode? initialThemeMode,
@@ -159,6 +162,8 @@ void runTreffpunkt(
           imageSourceServiceProvider.overrideWithValue(imageSourceService),
         if (targetScanner != null)
           targetScannerProvider.overrideWithValue(targetScanner),
+        if (linkOpener != null)
+          linkOpenerProvider.overrideWithValue(linkOpener),
         if (contributionService != null)
           contributionServiceProvider.overrideWithValue(contributionService),
         if (themeModeStore != null)
