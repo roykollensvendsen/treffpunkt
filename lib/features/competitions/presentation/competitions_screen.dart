@@ -25,6 +25,7 @@ import 'package:treffpunkt/features/competitions/presentation/competition_invite
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
 import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/month_calendar.dart';
@@ -808,13 +809,14 @@ class _CreateCompetitionScreenState
                   value: program.name,
                   child: Text(program.name),
                 ),
-              // NorgesFelt, locked to a group (spec 0140): the group
-              // IS the program, so the competition is fair per group.
-              for (final group in FeltShooterGroup.offered)
-                DropdownMenuItem<String>(
-                  value: feltCompetitionProgram(group),
-                  child: Text(feltCompetitionProgram(group)),
-                ),
+              // NorgesFelt, locked to a course and group (specs 0140/0145):
+              // course + group ARE the program, so the competition is fair.
+              for (final course in feltCourses)
+                for (final group in FeltShooterGroup.offered)
+                  DropdownMenuItem<String>(
+                    value: feltCompetitionProgram(course, group),
+                    child: Text(feltCompetitionProgram(course, group)),
+                  ),
             ],
             onChanged: (value) => setState(() => _program = value ?? _program),
           ),

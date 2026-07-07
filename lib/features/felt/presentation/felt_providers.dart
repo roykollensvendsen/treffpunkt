@@ -17,6 +17,7 @@ import 'package:treffpunkt/features/felt/data/felt_pending_uploads_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -217,15 +218,18 @@ class FeltSyncNotifier extends Notifier<List<FeltSessionRecord>> {
     final competitionId = record.competitionId;
     if (competitionId == null) return;
     final tally = record.tally;
+    // The round's own course names the program and sets the maximum (spec
+    // 0145); a pre-0145 round has no course id and resolves to 2026.
+    final course = feltCourseById(record.session.courseId);
     await ref
         .read(competitionRepositoryProvider)
         .submitResult(
           CompetitionResult(
             id: feltCompetitionResultId(record.id),
             competitionId: competitionId,
-            program: feltCompetitionProgram(record.session.group),
+            program: feltCompetitionProgram(course, record.session.group),
             total: tally.points,
-            maxTotal: feltCourseMaxPoints(record.session.group),
+            maxTotal: course.maxPoints(record.session.group),
             innerTens: tally.inner,
             capturedAt: record.capturedAt,
             payload: record.toJson(),

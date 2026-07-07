@@ -28,6 +28,7 @@ import 'package:treffpunkt/features/competitions/presentation/competition_provid
 import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
 import 'package:treffpunkt/features/competitions/presentation/competitions_screen.dart';
 import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
@@ -108,7 +109,11 @@ void main() {
     await tester.tap(find.byKey(competitionProgramFieldKey));
     await tester.pumpAndSettle();
     await tester.tap(
-      find.text(feltCompetitionProgram(FeltShooterGroup.two)).last,
+      find
+          .text(
+            feltCompetitionProgram(norgesfelt2026Course, FeltShooterGroup.two),
+          )
+          .last,
     );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(createCompetitionSubmitKey));
@@ -117,7 +122,7 @@ void main() {
     final created = (await repo.listMine()).single;
     expect(
       created.program,
-      feltCompetitionProgram(FeltShooterGroup.two),
+      feltCompetitionProgram(norgesfelt2026Course, FeltShooterGroup.two),
     );
     expect(feltCompetitionGroup(created.program), FeltShooterGroup.two);
   });
@@ -130,7 +135,10 @@ void main() {
       Competition(
         id: 'felt-c1',
         name: 'Feltcup',
-        program: feltCompetitionProgram(FeltShooterGroup.two),
+        program: feltCompetitionProgram(
+          norgesfelt2026Course,
+          FeltShooterGroup.two,
+        ),
         ownerId: 'me',
       ),
     );

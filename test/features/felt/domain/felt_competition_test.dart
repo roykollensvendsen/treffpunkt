@@ -6,27 +6,40 @@
 // round-id → result-id mapping (spec 0140).
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:uuid/uuid.dart';
 
 void main() {
-  test('the group rides the program name, round-trip (spec 0140)', () {
-    for (final group in FeltShooterGroup.values) {
-      final program = feltCompetitionProgram(group);
-      expect(program, contains('NorgesFelt'));
-      expect(program, contains(group.label));
-      expect(feltCompetitionGroup(program), group);
-    }
+  test(
+    'course and group ride the program name, round-trip (specs 0140/0145)',
+    () {
+      for (final course in feltCourses) {
+        for (final group in FeltShooterGroup.values) {
+          final program = feltCompetitionProgram(course, group);
+          expect(program, contains(course.name));
+          expect(program, contains(group.label));
+          final parsed = feltCompetitionCourseAndGroup(program);
+          expect(parsed?.course, same(course));
+          expect(parsed?.group, group);
+          expect(feltCompetitionGroup(program), group);
+        }
+      }
+    },
+  );
+
+  test('legacy 2026 program strings still parse to 2026 (spec 0145)', () {
+    final parsed = feltCompetitionCourseAndGroup(
+      'NorgesFelt-løype 2026 (Gruppe 1)',
+    );
+    expect(parsed?.course, same(norgesfelt2026Course));
+    expect(parsed?.group, FeltShooterGroup.one);
   });
 
   test('a ring program is not a felt competition', () {
     expect(feltCompetitionGroup('10 m Luftpistol 60 skudd'), isNull);
     expect(feltCompetitionGroup('NorgesFelt-løype 2026'), isNull);
-  });
-
-  test('the official course maxima (spec 0068)', () {
-    expect(feltCourseMaxPoints(FeltShooterGroup.one), 80);
-    expect(feltCourseMaxPoints(FeltShooterGroup.two), 47);
+    expect(feltCompetitionCourseAndGroup('NorgesFelt Asker+'), isNull);
   });
 
   group('feltCompetitionResultId (spec 0140)', () {
