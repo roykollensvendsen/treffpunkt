@@ -13,9 +13,9 @@ import 'package:treffpunkt/core/presentation/confirm_dialog.dart';
 import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
-import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
@@ -107,8 +107,8 @@ class ProgramPickerScreen extends ConsumerWidget {
   ///
   /// The flow below may save a new in-progress recording (the shooter places a
   /// shot and leaves), so re-read the stores to surface it as a resume card.
-  /// While only one felt course exists, Felt opens the course preview
-  /// directly (spec 0097 req 4).
+  /// With two felt courses (spec 0145) the Felt category opens its course
+  /// list like every other category.
   Future<void> _openCategory(
     BuildContext context,
     WidgetRef ref,
@@ -116,9 +116,7 @@ class ProgramPickerScreen extends ConsumerWidget {
   ) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => category == ProgramCategory.felt
-            ? const FeltCourseScreen()
-            : ProgramCategoryScreen(category: category),
+        builder: (_) => ProgramCategoryScreen(category: category),
       ),
     );
     _refreshHome(ref);
@@ -169,9 +167,11 @@ class ProgramPickerScreen extends ConsumerWidget {
     for (final round in felt) {
       if (bestAt == null || round.capturedAt.isAfter(bestAt)) {
         bestAt = round.capturedAt;
-        best = const _LastExercise(
-          label: 'NorgesFelt-løype 2026',
+        final course = feltCourseById(round.session.courseId);
+        best = _LastExercise(
+          label: course.name,
           isFelt: true,
+          feltCourse: course,
         );
       }
     }
@@ -186,7 +186,9 @@ class ProgramPickerScreen extends ConsumerWidget {
   ) async {
     if (last.isFelt) {
       await Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => FeltSetupScreen()),
+        MaterialPageRoute<void>(
+          builder: (_) => FeltSetupScreen(course: last.feltCourse),
+        ),
       );
     } else {
       final program = ProgramCatalogue.byName(last.label);
@@ -313,7 +315,7 @@ class ProgramPickerScreen extends ConsumerWidget {
                         leading: const Icon(Icons.play_circle_outline),
                         title: const Text('Fortsett felt-økt'),
                         subtitle: Text(
-                          'NorgesFelt-løype 2026 · '
+                          '${feltCourseById(feltSaved.courseId).name} · '
                           '${feltSaved.totalShots} skudd plassert',
                         ),
                         trailing: IconButton(
@@ -424,13 +426,20 @@ String _categorySubtitle(ProgramCategory category) {
 
 /// The «Skyt igjen» card's target (spec 0097).
 class _LastExercise {
-  const _LastExercise({required this.label, required this.isFelt});
+  const _LastExercise({
+    required this.label,
+    required this.isFelt,
+    this.feltCourse,
+  });
 
   /// The exercise name shown on the card.
   final String label;
 
-  /// Whether the target is the felt course (opens the felt setup).
+  /// Whether the target is a felt course (opens the felt setup).
   final bool isFelt;
+
+  /// The felt course to reopen (spec 0145), when [isFelt].
+  final FeltCourse? feltCourse;
 }
 
 /// The category's pictogram (spec 0101): what its programs are shot at —

@@ -933,15 +933,17 @@ class _CompetitionDetailScreenState
   /// Starts the competition's fixed program; the result auto-submits on
   /// completion (spec 0012). On return, the scoreboard is refreshed.
   Future<void> _shoot() async {
-    // A felt competition (spec 0140) opens the felt setup, locked to the
-    // competition's group; ring competitions open the ring setup.
-    final feltGroup = feltCompetitionGroup(widget.competition.program);
-    if (feltGroup != null) {
+    // A felt competition (specs 0140/0145) opens the felt setup, locked to
+    // the competition's course and group; ring competitions open the ring
+    // setup.
+    final felt = feltCompetitionCourseAndGroup(widget.competition.program);
+    if (felt != null) {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => FeltSetupScreen(
+            course: felt.course,
             competitionId: widget.competition.id,
-            forcedGroup: feltGroup,
+            forcedGroup: felt.group,
           ),
         ),
       );

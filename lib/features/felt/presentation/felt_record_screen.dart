@@ -13,9 +13,9 @@ import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_course_art.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hit_test.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
-import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
@@ -52,6 +52,7 @@ const Key feltSaveRoundKey = ValueKey<String>('feltSaveRound');
 class FeltRecordScreen extends ConsumerStatefulWidget {
   /// Creates the recorder, optionally resuming a saved [restored] round.
   const FeltRecordScreen({
+    this.course,
     this.restored,
     this.metadata,
     this.weapon,
@@ -59,6 +60,10 @@ class FeltRecordScreen extends ConsumerStatefulWidget {
     this.forcedGroup,
     super.key,
   });
+
+  /// The course to record on (spec 0145), or null to take it from
+  /// [restored] (falling back to NorgesFelt 2026).
+  final FeltCourse? course;
 
   /// A saved round to resume into, or null to start fresh (spec 0081).
   final FeltSessionSnapshot? restored;
@@ -125,6 +130,13 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
   bool _done = false;
   late List<List<_Placed>> _shots;
 
+  /// The course being recorded (spec 0145): the widget's, or the restored
+  /// round's, or NorgesFelt 2026.
+  late final FeltCourse _course;
+
+  /// The course's composed hold art, index-aligned with its holds.
+  late final List<FeltHoldArt> _art;
+
   /// The round's id, minted **once** per recorder (spec 0091): however many
   /// times the shooter walks Fullfør → tilbake → Fullfør, the saved record
   /// keeps one identity and the history upsert keeps one copy.
@@ -146,6 +158,8 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     super.initState();
     _roundId = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
     final restored = widget.restored;
+    _course = widget.course ?? feltCourseById(restored?.courseId);
+    _art = feltArtForCourse(_course);
     if (restored != null) {
       _group = restored.group;
       _hold = restored.currentHold;
@@ -176,7 +190,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
       // locks its own group (spec 0140).
       _group = widget.forcedGroup ?? ref.read(initialFeltGroupProvider);
       _shots = List<List<_Placed>>.generate(
-        norgesfelt2026Art.length,
+        _course.holds.length,
         (_) => <_Placed>[],
       );
     }
@@ -194,6 +208,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
 
   FeltSessionSnapshot _snapshot() => FeltSessionSnapshot(
     group: _group!,
+    courseId: _course.id,
     currentHold: _hold,
     capturedAt: _capturedAt,
     placeLabel: _placeLabel,
@@ -297,13 +312,17 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     );
     final baseline = ref.watch(
       personalRecordsProvider,
-    )[feltRecordKey(tally.group)];
+    )[feltRecordKey(_course, tally.group)];
+    // Same course AND same group (spec 0145): an Asker+ round never beats —
+    // or is beaten by — a 2026 round.
     return isNewPersonalBest(
       result: (points: tally.points, inner: tally.inner),
       prior: [
         ?baseline,
         for (final round in rounds)
-          if (round.id != _roundId && round.session.group == tally.group)
+          if (round.id != _roundId &&
+              round.session.group == tally.group &&
+              feltCourseById(round.session.courseId).id == _course.id)
             (points: round.tally.points, inner: round.tally.inner),
       ],
     );
@@ -312,7 +331,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
   @override
   Widget build(BuildContext context) {
     if (_group == null) {
-      return _GroupPicker(onPick: _pickGroup);
+      return _GroupPicker(courseName: _course.name, onPick: _pickGroup);
     }
     if (_done) {
       return Scaffold(
@@ -326,6 +345,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
               Expanded(
                 child: FeltScorecard(
                   session: _session,
+                  course: _course,
                   personalBest: _isPersonalBest(),
                   holds: _snapshot().holds,
                 ),
@@ -354,14 +374,14 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
 
   Widget _recording(BuildContext context) {
     final theme = Theme.of(context);
-    final art = norgesfelt2026Art[_hold];
-    final hold = norgesfelt2026[_hold];
+    final art = _art[_hold];
+    final hold = _course.holds[_hold];
     final placed = _shots[_hold];
     final tally = _tally(_hold);
     final shotsMax = _group!.shotsPerHold;
     return Scaffold(
       appBar: FrostedAppBar(
-        title: Text('Hold ${hold.number}/${norgesfelt2026.length}'),
+        title: Text('Hold ${hold.number}/${_course.holds.length}'),
         actions: [
           // A remembered group skipped the picker (spec 0099); offer a way
           // back while a change is still safe (no shots placed yet). A
@@ -460,7 +480,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
                           : () => _mutate(() => _hold--),
                       child: const Text('Forrige'),
                     ),
-                    if (_hold < norgesfelt2026.length - 1)
+                    if (_hold < _course.holds.length - 1)
                       FilledButton(
                         onPressed: () => _mutate(() => _hold++),
                         child: const Text('Neste'),
@@ -483,13 +503,14 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
 
 /// Picks the shooter group before recording (spec 0080).
 class _GroupPicker extends StatelessWidget {
-  const _GroupPicker({required this.onPick});
+  const _GroupPicker({required this.courseName, required this.onPick});
 
+  final String courseName;
   final ValueChanged<FeltShooterGroup> onPick;
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: const FrostedAppBar(title: Text('Skyt NorgesFelt-løypa')),
+    appBar: FrostedAppBar(title: Text('Skyt $courseName')),
     body: SafeArea(
       child: Center(
         child: ConstrainedBox(

@@ -9,6 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/personal_best_banner.dart';
 import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
+import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -55,6 +57,41 @@ void main() {
     expect(find.byKey(feltChangeGroupKey), findsNothing);
     expect(find.text('Hold 1/8'), findsOneWidget);
     expect(find.textContaining('Skudd 0/5'), findsOneWidget);
+  });
+
+  testWidgets('an Asker+ round records 10 holds and stores its course '
+      '(spec 0145)', (tester) async {
+    tester.view.physicalSize = const Size(600, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final store = InMemoryFeltSessionStore();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [feltSessionStoreProvider.overrideWithValue(store)],
+        child: MaterialApp(home: FeltRecordScreen(course: askerPlusCourse)),
+      ),
+    );
+    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hold 1/10'), findsOneWidget);
+
+    // A placed shot persists a snapshot that carries the course id.
+    await tapRecorder(tester, hareFrac);
+    final saved = await store.load();
+    expect(saved?.courseId, 'norgesfelt-asker-plus');
+    expect(saved?.holds, hasLength(10));
+
+    // Resuming that snapshot reopens the Asker+ course, not 2026.
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [feltSessionStoreProvider.overrideWithValue(store)],
+        child: MaterialApp(home: FeltRecordScreen(restored: saved)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Hold 1/10'), findsOneWidget);
   });
 
   testWidgets('pick a group, place a shot, score updates (spec 0080)', (
@@ -324,7 +361,10 @@ void main() {
         tester,
         const [],
         baselines: {
-          feltRecordKey(FeltShooterGroup.two): (points: 60, inner: 0),
+          feltRecordKey(norgesfelt2026Course, FeltShooterGroup.two): (
+            points: 60,
+            inner: 0,
+          ),
         },
       );
       expect(find.byKey(personalBestKey), findsNothing);
@@ -337,8 +377,14 @@ void main() {
         tester,
         const [],
         baselines: {
-          feltRecordKey(FeltShooterGroup.one): (points: 60, inner: 0),
-          feltRecordKey(FeltShooterGroup.two): (points: 0, inner: 0),
+          feltRecordKey(norgesfelt2026Course, FeltShooterGroup.one): (
+            points: 60,
+            inner: 0,
+          ),
+          feltRecordKey(norgesfelt2026Course, FeltShooterGroup.two): (
+            points: 0,
+            inner: 0,
+          ),
         },
       );
       expect(find.byKey(personalBestKey), findsOneWidget);

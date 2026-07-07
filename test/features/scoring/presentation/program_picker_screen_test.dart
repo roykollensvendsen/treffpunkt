@@ -170,7 +170,7 @@ void main() {
     expect(find.byKey(emptyCategoryKey), findsNothing);
   });
 
-  testWidgets('Felt opens the course preview directly (spec 0097)', (
+  testWidgets('Felt opens its course list with both courses (spec 0145)', (
     tester,
   ) async {
     await tester.pumpWidget(app(InMemorySessionStore()));
@@ -179,8 +179,24 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('category-Felt')));
     await tester.pumpAndSettle();
 
-    // One course exists, so the category skips the list (spec 0097 req 4).
+    // Two courses exist (spec 0145), so the category shows one tile each —
+    // the spec 0097 req 4 shortcut is retired.
+    expect(
+      find.byKey(const ValueKey<String>('felt-norgesfelt-2026')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('felt-norgesfelt-asker-plus')),
+      findsOneWidget,
+    );
+
+    // The Asker+ tile opens its preview.
+    await tester.tap(
+      find.byKey(const ValueKey<String>('felt-norgesfelt-asker-plus')),
+    );
+    await tester.pumpAndSettle();
     expect(find.byType(FeltCourseScreen), findsOneWidget);
+    expect(find.text('NorgesFelt Asker+'), findsOneWidget);
   });
 
   testWidgets('labels each category card as a button for screen readers', (

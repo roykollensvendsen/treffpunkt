@@ -5,6 +5,7 @@
 // Widget tests for the «Rekorder» page (spec 0102).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/scoring/data/personal_records_store.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
@@ -45,7 +46,9 @@ void main() {
 
     expect(find.byKey(recordRowKey(exercise)), findsOneWidget);
     for (final group in [FeltShooterGroup.one, FeltShooterGroup.two]) {
-      final row = find.byKey(recordRowKey(feltRecordKey(group)));
+      final row = find.byKey(
+        recordRowKey(feltRecordKey(norgesfelt2026Course, group)),
+      );
       await tester.scrollUntilVisible(row, 200);
       expect(row, findsOneWidget);
     }

@@ -37,6 +37,42 @@ void main() {
     addTearDown(tester.view.reset);
   }
 
+  testWidgets('an Asker+ round is labelled with its course (spec 0145)', (
+    tester,
+  ) async {
+    bigView(tester);
+    final history = InMemoryFeltHistoryStore();
+    await history.save(<FeltSessionRecord>[
+      feltSessionRecord(
+        id: 'felt-asker',
+        capturedAt: DateTime.utc(2026, 7, 7, 18),
+        holdCount: 10,
+        courseId: 'norgesfelt-asker-plus',
+      ),
+    ]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          feltHistoryStoreProvider.overrideWithValue(history),
+          sessionRepositoryProvider.overrideWithValue(
+            InMemorySessionRepository(),
+          ),
+          pendingUploadsStoreProvider.overrideWithValue(
+            InMemoryPendingUploadsStore(),
+          ),
+          feltSessionRepositoryProvider.overrideWithValue(
+            InMemoryFeltSessionRepository(),
+          ),
+        ],
+        child: const MaterialApp(home: MySessionsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('NorgesFelt Asker+'), findsOneWidget);
+    expect(find.text('NorgesFelt-løype 2026'), findsNothing);
+  });
+
   testWidgets('finishing a felt round adds it to history (spec 0082)', (
     tester,
   ) async {

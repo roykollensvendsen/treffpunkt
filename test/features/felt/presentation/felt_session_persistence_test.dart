@@ -211,7 +211,7 @@ void main() {
     bigView(tester);
     final store = InMemoryFeltSessionStore();
     await store.save(_savedHareInner(FeltShooterGroup.two));
-    await tester.pumpWidget(appWith(store, const FeltCourseScreen()));
+    await tester.pumpWidget(appWith(store, FeltCourseScreen()));
     await tester.pumpAndSettle();
 
     // The single resume card lives on the front page (spec 0116); the

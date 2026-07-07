@@ -30,7 +30,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [feltHistoryStoreProvider.overrideWithValue(history)],
-        child: const MaterialApp(home: FeltCourseScreen()),
+        child: MaterialApp(home: FeltCourseScreen()),
       ),
     );
     await tester.pumpAndSettle();
