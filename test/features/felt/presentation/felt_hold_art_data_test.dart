@@ -68,4 +68,44 @@ void main() {
       }
     }
   });
+
+  group('NorgesFelt Asker+ (spec 0145)', () {
+    test('has 10 holds numbered 1..10, sharing 1..8 with 2026', () {
+      expect(askerPlusArt.length, 10);
+      expect(
+        askerPlusArt.map((a) => a.number).toList(),
+        List<int>.generate(10, (i) => i + 1),
+      );
+      for (var i = 0; i < 8; i++) {
+        expect(askerPlusArt[i], same(norgesfelt2026Art[i]));
+      }
+    });
+
+    test('hold 9 is six ringed hexagons', () {
+      final hold9 = askerPlusArt[8];
+      expect(hold9.figures, hasLength(6));
+      for (final f in hold9.figures) {
+        expect(f.shape, FeltArtShape.polygon);
+        expect(f.ring, isNotNull);
+      }
+      // Alternating green and red (spec 0145).
+      expect(hold9.figures[0].fill, const Color(0xFF00683F));
+      expect(hold9.figures[1].fill, const Color(0xFFED1C24));
+    });
+
+    test('hold 10 scores as five figures: three stolper, oval, owl', () {
+      final hold10 = askerPlusArt[9];
+      expect(hold10.figures, hasLength(11));
+      // The nine stolpe squares group into three score figures anchored at
+      // 0/3/6, middles as inner zones (spec 0086 pattern).
+      for (var i = 0; i < 9; i++) {
+        expect(hold10.figures[i].scoreIndex, (i ~/ 3) * 3, reason: 'square $i');
+        expect(hold10.figures[i].innerZone, i % 3 == 1, reason: 'square $i');
+      }
+      // The oval and the owl each carry an inner ring.
+      expect(hold10.figures[9].ring, isNotNull);
+      expect(hold10.figures[10].ring, isNotNull);
+      expect(hold10.innerByScoringFigure, hasLength(5));
+    });
+  });
 }
