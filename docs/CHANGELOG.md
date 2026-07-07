@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **The front page scrolls behind the bottom bar again**: the «Spander en
+  kaffe» card and the version footer sat in a fixed block below the list,
+  so the scroll area ended above the frosted navigation bar and the page's
+  tail never shone through the glass (spec 0129). The whole front page is
+  now one scrollable; the last cards slide beneath the bar and rest clear
+  of it at the end of the scroll.
+
 ### Changed
 - **Felt programs come in 6- and 5-shot variants** (spec 0147): the Felt
   category lists four programs — each course as a Gruppe 1 (6 shots) and

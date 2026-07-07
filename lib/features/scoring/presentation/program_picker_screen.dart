@@ -302,136 +302,128 @@ class ProgramPickerScreen extends ConsumerWidget {
       ],
       // The Builder gives a context INSIDE the body, where the Scaffold
       // injects the app-bar/nav-bar insets (spec 0129).
+      // One full-height scrollable (spec 0129): the list itself extends
+      // behind the frosted nav bar, so the last items — the coffee card and
+      // the version footer — shine through the glass while scrolling and
+      // rest clear of it at the end (frostedScrollPadding pads past it).
       body: Builder(
-        builder: (context) => Column(
+        builder: (context) => ListView(
+          padding: frostedScrollPadding(context),
           children: [
-            Expanded(
-              child: ListView(
-                padding: frostedScrollPadding(context),
-                children: [
-                  if (saved != null)
-                    Card(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.secondaryContainer,
-                      child: ListTile(
-                        key: resumeSessionKey,
-                        leading: const Icon(Icons.play_circle_outline),
-                        title: const Text('Fortsett økt'),
-                        subtitle: Text(_resumeSubtitle(saved)),
-                        trailing: IconButton(
-                          key: discardSessionKey,
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Forkast lagret økt',
-                          onPressed: () => unawaited(_discard(context, ref)),
-                        ),
-                        onTap: () => unawaited(_resume(context, ref, saved)),
-                      ),
-                    ),
-                  if (feltSaved != null)
-                    Card(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.secondaryContainer,
-                      child: ListTile(
-                        key: feltResumeSessionKey,
-                        leading: const Icon(Icons.play_circle_outline),
-                        title: const Text('Fortsett felt-økt'),
-                        subtitle: Text(
-                          '${feltCourseById(feltSaved.courseId).name} · '
-                          '${feltSaved.totalShots} skudd plassert',
-                        ),
-                        trailing: IconButton(
-                          key: feltDiscardSessionKey,
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Forkast lagret økt',
-                          onPressed: () =>
-                              unawaited(_discardFelt(context, ref)),
-                        ),
-                        onTap: () => unawaited(
-                          _resumeFelt(context, ref, feltSaved),
-                        ),
-                      ),
-                    ),
-                  if (last != null)
-                    Card(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer,
-                      child: Semantics(
-                        button: true,
-                        label: 'Skyt igjen: ${last.label}',
-                        onTap: () => unawaited(_shootAgain(context, ref, last)),
-                        child: ExcludeSemantics(
-                          child: ListTile(
-                            key: shootAgainKey,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 8,
-                            ),
-                            leading: const TargetIcon(size: 30),
-                            title: const Text(
-                              'Skyt igjen',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            subtitle: Text(last.label),
-                            onTap: () => unawaited(
-                              _shootAgain(context, ref, last),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 4,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 2,
-                    children: [
-                      for (final category in ProgramCategory.values)
-                        _CategoryTile(
-                          category: category,
-                          // MIL has nothing yet (spec 0097 req 4).
-                          onTap: category == ProgramCategory.mil
-                              ? null
-                              : () => unawaited(
-                                  _openCategory(context, ref, category),
-                                ),
-                        ),
-                    ],
+            if (saved != null)
+              Card(
+                color: Theme.of(
+                  context,
+                ).colorScheme.secondaryContainer,
+                child: ListTile(
+                  key: resumeSessionKey,
+                  leading: const Icon(Icons.play_circle_outline),
+                  title: const Text('Fortsett økt'),
+                  subtitle: Text(_resumeSubtitle(saved)),
+                  trailing: IconButton(
+                    key: discardSessionKey,
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Forkast lagret økt',
+                    onPressed: () => unawaited(_discard(context, ref)),
                   ),
-                  const SizedBox(height: 12),
-                  // «Spander en kaffe» (spec 0146): last, below the
-                  // shooting flows — a thank-you, never a nag.
-                  Card(
+                  onTap: () => unawaited(_resume(context, ref, saved)),
+                ),
+              ),
+            if (feltSaved != null)
+              Card(
+                color: Theme.of(
+                  context,
+                ).colorScheme.secondaryContainer,
+                child: ListTile(
+                  key: feltResumeSessionKey,
+                  leading: const Icon(Icons.play_circle_outline),
+                  title: const Text('Fortsett felt-økt'),
+                  subtitle: Text(
+                    '${feltCourseById(feltSaved.courseId).name} · '
+                    '${feltSaved.totalShots} skudd plassert',
+                  ),
+                  trailing: IconButton(
+                    key: feltDiscardSessionKey,
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Forkast lagret økt',
+                    onPressed: () => unawaited(_discardFelt(context, ref)),
+                  ),
+                  onTap: () => unawaited(
+                    _resumeFelt(context, ref, feltSaved),
+                  ),
+                ),
+              ),
+            if (last != null)
+              Card(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primaryContainer,
+                child: Semantics(
+                  button: true,
+                  label: 'Skyt igjen: ${last.label}',
+                  onTap: () => unawaited(_shootAgain(context, ref, last)),
+                  child: ExcludeSemantics(
                     child: ListTile(
-                      key: coffeeCardKey,
-                      leading: const Icon(Icons.coffee_outlined),
-                      title: const Text('Spander en kaffe'),
-                      subtitle: const Text(
-                        'Liker du Treffpunkt? '
-                        'Vipps en kaffe til utviklerne.',
+                      key: shootAgainKey,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
                       ),
-                      onTap: () => unawaited(_openCoffee(context, ref)),
+                      leading: const TargetIcon(size: 30),
+                      title: const Text(
+                        'Skyt igjen',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(last.label),
+                      onTap: () => unawaited(
+                        _shootAgain(context, ref, last),
+                      ),
                     ),
                   ),
-                ],
+                ),
+              ),
+            const SizedBox(height: 4),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 4,
+              crossAxisSpacing: 8,
+              childAspectRatio: 2,
+              children: [
+                for (final category in ProgramCategory.values)
+                  _CategoryTile(
+                    category: category,
+                    // MIL has nothing yet (spec 0097 req 4).
+                    onTap: category == ProgramCategory.mil
+                        ? null
+                        : () => unawaited(
+                            _openCategory(context, ref, category),
+                          ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // «Spander en kaffe» (spec 0146): last, below the
+            // shooting flows — a thank-you, never a nag.
+            Card(
+              child: ListTile(
+                key: coffeeCardKey,
+                leading: const Icon(Icons.coffee_outlined),
+                title: const Text('Spander en kaffe'),
+                subtitle: const Text(
+                  'Liker du Treffpunkt? '
+                  'Vipps en kaffe til utviklerne.',
+                ),
+                onTap: () => unawaited(_openCoffee(context, ref)),
               ),
             ),
+            const SizedBox(height: 12),
             // A discreet build-version footer below the program list so a
             // user can confirm which build they are running (spec 0028).
-            // Padded clear of the frosted navigation bar (spec 0129).
-            Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.paddingOf(context).bottom + 12,
-              ),
-              child: const BuildVersionLabel(),
-            ),
+            const BuildVersionLabel(),
           ],
         ),
       ),
