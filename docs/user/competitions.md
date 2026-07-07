@@ -61,10 +61,12 @@ live as people submit. **Deltakere** lists who has joined.
 
 ## Chat with the others
 ## NorgesFelt competitions
-Pick **«NorgesFelt-løype 2026 (Gruppe 1)»** or **«(Gruppe 2)»** as the
-program to run a felt competition — the group is locked for everyone, so
-the maximum (80 or 47 points) is the same for all. **Skyt for
-konkurransen** opens the felt recorder with the group pre-set, and saving
+Pick a felt program — **«NorgesFelt-løype 2026 (Gruppe 1)»** / **«(Gruppe
+2)»**, or the extended course **«NorgesFelt Asker+ (Gruppe 1)»** / **«(Gruppe
+2)»** — to run a felt competition. The course and group are locked for
+everyone, so the maximum (80/47 on the official course, 103/90 on Asker+) is
+the same for all. **Skyt for konkurransen** opens the felt recorder on the
+right course with the group pre-set, and saving
 the round submits your points (inner hits break ties) to the scoreboard —
 a round saved offline submits by itself once you are back online and
 signed in. Tapping a result opens the felt scorecard with the hold
