@@ -81,30 +81,58 @@ void main() {
       }
     });
 
-    test('hold 9 is six ringed hexagons', () {
+    test('hold 9 is six ringed hexagons of equal area, in two rows', () {
       final hold9 = askerPlusArt[8];
       expect(hold9.figures, hasLength(6));
       for (final f in hold9.figures) {
         expect(f.shape, FeltArtShape.polygon);
         expect(f.ring, isNotNull);
       }
+      // The lying figures are the standing hexagon rotated, so every
+      // figure has the same area (domain-expert feedback 2026-07-07)…
+      double areaOf(FeltArtFigure f) {
+        final pts = f.points;
+        var area = 0.0;
+        for (var i = 0; i < pts.length; i++) {
+          final a = pts[i];
+          final b = pts[(i + 1) % pts.length];
+          area += a.dx * b.dy - b.dx * a.dy;
+        }
+        return area.abs() / 2;
+      }
+
+      final a0 = areaOf(hold9.figures[0]);
+      for (final f in hold9.figures) {
+        expect((areaOf(f) - a0).abs() / a0, lessThan(0.02), reason: 'figur');
+      }
+      // …and the two-row layout keeps the hold picture's proportions
+      // close to the other holds' (no wide strip — shots stay placeable).
+      expect(hold9.size.width / hold9.size.height, lessThan(2.5));
       // Alternating green and red (spec 0145).
       expect(hold9.figures[0].fill, const Color(0xFF00683F));
       expect(hold9.figures[1].fill, const Color(0xFFED1C24));
     });
 
-    test('hold 10 scores as five figures: three stolper, oval, owl', () {
+    test('hold 10 scores as five figures: owl, oval, three stolper', () {
       final hold10 = askerPlusArt[9];
       expect(hold10.figures, hasLength(11));
-      // The nine stolpe squares group into three score figures anchored at
-      // 0/3/6, middles as inner zones (spec 0086 pattern).
+      // Left→right: the owl and the oval each carry an inner ring…
+      expect(hold10.figures[0].ring, isNotNull);
+      expect(hold10.figures[1].ring, isNotNull);
+      // …then the nine stolpe squares group into three score figures
+      // anchored at 2/5/8, middles as inner zones (spec 0086 pattern).
       for (var i = 0; i < 9; i++) {
-        expect(hold10.figures[i].scoreIndex, (i ~/ 3) * 3, reason: 'square $i');
-        expect(hold10.figures[i].innerZone, i % 3 == 1, reason: 'square $i');
+        expect(
+          hold10.figures[2 + i].scoreIndex,
+          2 + (i ~/ 3) * 3,
+          reason: 'square $i',
+        );
+        expect(
+          hold10.figures[2 + i].innerZone,
+          i % 3 == 1,
+          reason: 'square $i',
+        );
       }
-      // The oval and the owl each carry an inner ring.
-      expect(hold10.figures[9].ring, isNotNull);
-      expect(hold10.figures[10].ring, isNotNull);
       expect(hold10.innerByScoringFigure, hasLength(5));
     });
   });

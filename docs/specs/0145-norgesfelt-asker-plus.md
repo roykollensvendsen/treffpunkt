@@ -12,13 +12,17 @@ hand-drawn sketch, figures measured from official blink images):
 
 - **Hold 9** (25 m, stående fri): six elongated hexagons (hold 8's hexagon),
   alternating **lying/standing** starting lying, coloured alternately
-  **green, red, green, red, green, red**. Every hexagon has an inner-treff
-  ring (white on green, light-red on red).
-- **Hold 10** (25 m, stående fri), left→right: **three «stolper»** (hold 8's
-  three-square stripe, green, middle square = inner zone), the **hold 1 big
-  oval lying** (black, rotated 90°, inner ring kept), and an **owl («Ugle»)**
-  — a new figure measured from the official owl blink (black silhouette,
-  white inner-treff ring in the belly).
+  **green, red, green, red, green, red** — the same hexagon rotated, so
+  every figure has the same area. The art lays them out in **two rows of
+  three** so the hold picture keeps the course's proportions instead of
+  becoming a wide strip that makes shots hard to place (domain-expert
+  feedback 2026-07-07). Every hexagon has an inner-treff ring (white on
+  green, light-red on red).
+- **Hold 10** (25 m, stående fri), left→right: an **owl («Ugle»)** — a new
+  figure measured from the official owl blink (black silhouette, white
+  inner-treff ring in the belly) — the **hold 1 big oval lying** (black,
+  rotated 90°, inner ring kept), and **three «stolper»** (hold 8's
+  three-square stripe, green, middle square = inner zone).
 
 The recorder, scorecard, history, sync, competitions and statistics all work
 for both courses; stored rounds carry their course and old rounds keep
@@ -82,8 +86,8 @@ resolving to NorgesFelt 2026.
 Unit tests:
 
 1. `felt_course_test`: Asker+ has 10 holds; holds 1–8 are identical objects
-   to `norgesfelt2026`'s; hold 9 is six hexagons; hold 10 is three stripes +
-   big oval + owl; `feltCourseById` round-trips both ids and defaults
+   to `norgesfelt2026`'s; hold 9 is six hexagons; hold 10 is owl + big oval
+   + three stripes; `feltCourseById` round-trips both ids and defaults
    unknown/null to 2026.
 2. `felt_competition_test`: max points — 2026 stays 80/47; Asker+ is 103/90
    (and the formula terms are asserted: 60+43, 50+40).
@@ -96,9 +100,10 @@ Unit tests:
    legacy JSON without the field resolves to 2026.
 6. `felt_hold_art_data_test`: `askerPlusArt` has 10 holds numbered 1–10 and
    shares holds 1–8 with `norgesfelt2026Art`; hold 9 art has six ringed
-   figures; hold 10 art has 11 figures forming five score groups (three
-   3-square stolper anchored at indices 0/3/6 with middle `innerZone`, oval
-   and owl with rings).
+   figures of equal area in two rows; hold 10 art has 11 figures forming
+   five score
+   groups (owl and oval with rings, then three 3-square stolper anchored at
+   indices 2/5/8 with middle `innerZone`).
 
 Widget tests:
 

@@ -8,9 +8,10 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 - **NorgesFelt Asker+** (spec 0145): a second felt course — the official
-  eight holds plus the family's hold 9 (six hexagons, alternating lying/
-  standing in green/red) and hold 10 (three stolper, the big oval lying,
-  and a new owl figure measured from the official blink). The Felt
+  eight holds plus the family's hold 9 (six hexagons in two rows,
+  alternating lying/standing in green/red) and hold 10 (a new owl figure
+  measured from the official blink, the big oval lying, and three
+  stolper). The Felt
   category lists both courses; recording, resume, Mine økter, sync,
   competitions («NorgesFelt Asker+ (Gruppe 1/2)»), records and statistics
   all know which course a round was shot on — and Asker+ maxima are
