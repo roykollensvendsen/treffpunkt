@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/personal_best_banner.dart';
-import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
@@ -33,7 +32,9 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('a competition locks the group (spec 0140)', (tester) async {
+  testWidgets('a competition round opens locked to its group (spec 0140)', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(600, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -43,18 +44,14 @@ void main() {
         child: MaterialApp(
           home: FeltRecordScreen(
             competitionId: 'felt-c1',
-            forcedGroup: FeltShooterGroup.two,
+            group: FeltShooterGroup.two,
           ),
         ),
       ),
     );
 
-    // No picker, no group switch — straight to hold 1 with the locked group.
-    expect(
-      find.byKey(feltGroupButtonKey(FeltShooterGroup.one)),
-      findsNothing,
-    );
-    expect(find.byKey(feltChangeGroupKey), findsNothing);
+    // Straight to hold 1 with the locked group — no group UI exists
+    // anywhere in the recorder (spec 0147).
     expect(find.text('Hold 1/8'), findsOneWidget);
     expect(find.textContaining('Skudd 0/5'), findsOneWidget);
   });
@@ -69,10 +66,14 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [feltSessionStoreProvider.overrideWithValue(store)],
-        child: MaterialApp(home: FeltRecordScreen(course: askerPlusCourse)),
+        child: MaterialApp(
+          home: FeltRecordScreen(
+            course: askerPlusCourse,
+            group: FeltShooterGroup.one,
+          ),
+        ),
       ),
     );
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
     await tester.pumpAndSettle();
 
     expect(find.text('Hold 1/10'), findsOneWidget);
@@ -94,26 +95,18 @@ void main() {
     expect(find.text('Hold 1/10'), findsOneWidget);
   });
 
-  testWidgets('pick a group, place a shot, score updates (spec 0080)', (
-    tester,
-  ) async {
+  testWidgets('place a shot, score updates (spec 0080)', (tester) async {
     tester.view.physicalSize = const Size(600, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: FeltRecordScreen())),
+      const ProviderScope(
+        child: MaterialApp(
+          home: FeltRecordScreen(group: FeltShooterGroup.one),
+        ),
+      ),
     );
-    // Only gruppe 1 and 2 are offered — gruppe 3 is not shot (spec 0088).
-    expect(
-      find.byKey(feltGroupButtonKey(FeltShooterGroup.two)),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(feltGroupButtonKey(FeltShooterGroup.three)),
-      findsNothing,
-    );
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
     await tester.pumpAndSettle();
 
     // A hit in the hare's inner zone scores treff + figur = 2; the inner hit
@@ -146,9 +139,12 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: FeltRecordScreen())),
+      const ProviderScope(
+        child: MaterialApp(
+          home: FeltRecordScreen(group: FeltShooterGroup.one),
+        ),
+      ),
     );
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Neste'));
     await tester.pumpAndSettle();
@@ -176,9 +172,12 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: FeltRecordScreen())),
+      const ProviderScope(
+        child: MaterialApp(
+          home: FeltRecordScreen(group: FeltShooterGroup.one),
+        ),
+      ),
     );
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
     await tester.pumpAndSettle();
 
     for (var i = 0; i < 9; i++) {
@@ -196,9 +195,12 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: FeltRecordScreen())),
+      const ProviderScope(
+        child: MaterialApp(
+          home: FeltRecordScreen(group: FeltShooterGroup.two),
+        ),
+      ),
     );
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)));
     await tester.pumpAndSettle();
 
     await tapRecorder(tester, hareFrac);
@@ -227,49 +229,6 @@ void main() {
     // picture per hold, the hare hit marked on hold 1.
     expect(find.byType(FeltHoldShotsView), findsNWidgets(8));
     expect(find.byType(FeltShotMarker), findsOneWidget);
-  });
-
-  testWidgets('a remembered group skips the picker (spec 0099)', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(600, 1200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.reset);
-
-    final store = InMemoryFeltGroupStore(seeded: FeltShooterGroup.two);
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          feltGroupStoreProvider.overrideWithValue(store),
-          initialFeltGroupProvider.overrideWithValue(FeltShooterGroup.two),
-        ],
-        child: const MaterialApp(home: FeltRecordScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // Straight to hold 1 with gruppe 2's five shots per hold — no picker.
-    expect(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)), findsNothing);
-    expect(find.textContaining('Skudd 0/5'), findsOneWidget);
-
-    // «Bytt gruppe» is offered while no shots are placed…
-    expect(find.byKey(feltChangeGroupKey), findsOneWidget);
-    await tester.tap(find.byKey(feltChangeGroupKey));
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(feltGroupButtonKey(FeltShooterGroup.one)),
-      findsOneWidget,
-    );
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Skudd 0/6'), findsOneWidget);
-
-    // …and picking persisted the new choice for the next round.
-    expect(await store.load(), FeltShooterGroup.one);
-
-    // After the first shot the change action is gone.
-    await tapRecorder(tester, hareFrac);
-    expect(find.byKey(feltChangeGroupKey), findsNothing);
   });
 
   group('«Ny pers!» on the finished round (spec 0101)', () {
@@ -315,10 +274,11 @@ void main() {
             if (baselines != null)
               initialPersonalRecordsProvider.overrideWithValue(baselines),
           ],
-          child: const MaterialApp(home: FeltRecordScreen()),
+          child: const MaterialApp(
+            home: FeltRecordScreen(group: FeltShooterGroup.two),
+          ),
         ),
       );
-      await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)));
       await tester.pumpAndSettle();
 
       await tapRecorder(tester, hareFrac);

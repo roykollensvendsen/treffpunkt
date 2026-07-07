@@ -11,14 +11,12 @@ import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_providers.dart';
-import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_pending_uploads_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
 import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
-import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 
@@ -39,17 +37,6 @@ final feltSavedSessionProvider = FutureProvider<FeltSessionSnapshot?>(
 final feltHistoryStoreProvider = Provider<FeltHistoryStore>(
   (ref) => InMemoryFeltHistoryStore(),
 );
-
-/// The app's store of the last-used felt group (spec 0099). Defaults to
-/// in-memory; `main()` overrides it with the `shared_preferences` one.
-final feltGroupStoreProvider = Provider<FeltGroupStore>(
-  (ref) => InMemoryFeltGroupStore(),
-);
-
-/// The last-used group loaded at launch (spec 0099), seeding the recorder.
-/// `main()` reads the saved choice once and overrides this; defaults to
-/// null, so a fresh app and every test start on the picker unless seeded.
-final initialFeltGroupProvider = Provider<FeltShooterGroup?>((ref) => null);
 
 /// The finished felt rounds, newest-first, watched by "Mine økter" (spec 0082).
 final feltHistoryProvider = FutureProvider<List<FeltSessionRecord>>(

@@ -2,29 +2,22 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
-import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_art.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
-import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
-import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
-
-/// Key for the "shoot the course" button on the preview (spec 0080), for tests.
-const Key feltShootButtonKey = ValueKey<String>('feltShoot');
 
 /// Key for hold [number]'s card in the course preview (spec 0068), for tests.
 Key feltHoldCardKey(int number) => ValueKey<String>('feltHold-$number');
 
 /// A preview of a felt course (specs 0068/0079/0145): the holds each drawn as
-/// one composed picture matching the official target sheet, with a "Skyt
-/// løypa" recorder (spec 0080). Resuming a saved round lives on the front
-/// page alone (spec 0116).
+/// one composed picture matching the official target sheet. Pure preview
+/// since spec 0147 — shooting starts from the program tiles; this screen is
+/// reached from the setup step's «Se løypa».
 class FeltCourseScreen extends ConsumerWidget {
   /// Creates the course preview; defaults to NorgesFelt 2026.
   FeltCourseScreen({FeltCourse? course, super.key})
@@ -63,13 +56,6 @@ class FeltCourseScreen extends ConsumerWidget {
                         'hvert kort sier hvilke figurer som har innertreff.',
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  FilledButton.icon(
-                    key: feltShootButtonKey,
-                    onPressed: () => unawaited(_shoot(context, ref)),
-                    icon: const TargetIcon(size: 20),
-                    label: const Text('Skyt løypa'),
                   ),
                   const SizedBox(height: 8),
                   for (final hold in course.holds)
@@ -119,15 +105,6 @@ class FeltCourseScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _shoot(BuildContext context, WidgetRef ref) async {
-    // The setup step first (spec 0092): date/time, place and weapon —
-    // the same form the ring programs use.
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => FeltSetupScreen(course: course)),
-    );
-    ref.invalidate(feltSavedSessionProvider);
   }
 }
 

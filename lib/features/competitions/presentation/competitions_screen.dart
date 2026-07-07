@@ -942,8 +942,8 @@ class _CompetitionDetailScreenState
         MaterialPageRoute<void>(
           builder: (_) => FeltSetupScreen(
             course: felt.course,
+            group: felt.group,
             competitionId: widget.competition.id,
-            forcedGroup: felt.group,
           ),
         ),
       );

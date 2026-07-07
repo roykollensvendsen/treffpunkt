@@ -16,6 +16,7 @@ import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/link_providers.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
+import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
@@ -174,9 +175,10 @@ class ProgramPickerScreen extends ConsumerWidget {
         bestAt = round.capturedAt;
         final course = feltCourseById(round.session.courseId);
         best = _LastExercise(
-          label: course.name,
+          label: '${course.name} (${round.session.group.label})',
           isFelt: true,
           feltCourse: course,
+          feltGroup: round.session.group,
         );
       }
     }
@@ -192,7 +194,10 @@ class ProgramPickerScreen extends ConsumerWidget {
     if (last.isFelt) {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => FeltSetupScreen(course: last.feltCourse),
+          builder: (_) => FeltSetupScreen(
+            course: last.feltCourse,
+            group: last.feltGroup ?? FeltShooterGroup.one,
+          ),
         ),
       );
     } else {
@@ -463,6 +468,7 @@ class _LastExercise {
     required this.label,
     required this.isFelt,
     this.feltCourse,
+    this.feltGroup,
   });
 
   /// The exercise name shown on the card.
@@ -473,6 +479,9 @@ class _LastExercise {
 
   /// The felt course to reopen (spec 0145), when [isFelt].
   final FeltCourse? feltCourse;
+
+  /// The last round's group — the program variant to reopen (spec 0147).
+  final FeltShooterGroup? feltGroup;
 }
 
 /// The category's pictogram (spec 0101): what its programs are shot at —

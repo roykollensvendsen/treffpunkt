@@ -25,10 +25,6 @@ import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.d
 import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 
-/// Key for the group-picker button for [group] (spec 0080), for tests.
-Key feltGroupButtonKey(FeltShooterGroup group) =>
-    ValueKey<String>('feltGroup-${group.name}');
-
 /// Key for the tappable hold recorder area (spec 0080).
 const Key feltHoldRecorderKey = ValueKey<String>('feltHoldRecorder');
 
@@ -38,32 +34,38 @@ const Key feltHoldPointsKey = ValueKey<String>('feltHoldPoints');
 /// Key for the running session total text (spec 0080).
 const Key feltTotalPointsKey = ValueKey<String>('feltTotalPoints');
 
-/// Key for the "Bytt gruppe" action while no shots are placed (spec 0099).
-const Key feltChangeGroupKey = ValueKey<String>('feltChangeGroup');
-
 /// Key for the scorecard's "Lagre økt" button (spec 0091), for tests.
 const Key feltSaveRoundKey = ValueKey<String>('feltSaveRound');
 
-/// Records a NorgesFelt session (spec 0080): pick a group, then place each shot
-/// on every hold and see the score, ending on a scorecard. The in-progress
-/// round is saved after each change and can be [restored] (spec 0081). The
-/// setup step's [metadata] and [weapon] (spec 0092) ride along on every
-/// snapshot and the saved record.
+/// Records a NorgesFelt session (spec 0080): place each shot on every hold
+/// and see the score, ending on a scorecard. The group is decided before
+/// the recorder opens — by the chosen program variant (spec 0147), the
+/// competition lock (spec 0140) or the [restored] round — so no picker is
+/// shown. The in-progress round is saved after each change and can be
+/// [restored] (spec 0081). The setup step's [metadata] and [weapon]
+/// (spec 0092) ride along on every snapshot and the saved record.
 class FeltRecordScreen extends ConsumerStatefulWidget {
   /// Creates the recorder, optionally resuming a saved [restored] round.
+  /// Exactly one of [group] and [restored] must provide the group.
   const FeltRecordScreen({
     this.course,
+    this.group,
     this.restored,
     this.metadata,
     this.weapon,
     this.competitionId,
-    this.forcedGroup,
     super.key,
-  });
+  }) : assert(
+         group != null || restored != null,
+         'the group comes from the program variant or the restored round',
+       );
 
   /// The course to record on (spec 0145), or null to take it from
   /// [restored] (falling back to NorgesFelt 2026).
   final FeltCourse? course;
+
+  /// The round's group (spec 0147), or null to take it from [restored].
+  final FeltShooterGroup? group;
 
   /// A saved round to resume into, or null to start fresh (spec 0081).
   final FeltSessionSnapshot? restored;
@@ -78,10 +80,6 @@ class FeltRecordScreen extends ConsumerStatefulWidget {
   /// The competition this round is shot for (spec 0140), or `null`.
   final String? competitionId;
 
-  /// The competition's locked group (spec 0140): skips the group picker
-  /// and hides the group switch.
-  final FeltShooterGroup? forcedGroup;
-
   @override
   ConsumerState<FeltRecordScreen> createState() => _FeltRecordScreenState();
 }
@@ -93,7 +91,7 @@ class _Placed {
 }
 
 class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
-  FeltShooterGroup? _group;
+  late final FeltShooterGroup _group;
 
   /// Whether a mouse hovers or a finger presses the hold picture — while it
   /// does, the page scroll is suspended so the pinch/pan reaches the
@@ -161,7 +159,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     _course = widget.course ?? feltCourseById(restored?.courseId);
     _art = feltArtForCourse(_course);
     if (restored != null) {
-      _group = restored.group;
+      _group = widget.group ?? restored.group;
       _hold = restored.currentHold;
       _capturedAt = restored.capturedAt;
       _placeLabel = restored.placeLabel;
@@ -185,10 +183,9 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
       _latitude = metadata?.place?.latitude;
       _longitude = metadata?.place?.longitude;
       _weaponName = widget.weapon?.name;
-      // The group is a stable property of the shooter: start on hold 1 with
-      // the remembered group and skip the picker (spec 0099). A competition
-      // locks its own group (spec 0140).
-      _group = widget.forcedGroup ?? ref.read(initialFeltGroupProvider);
+      // The group arrived with the chosen program variant (spec 0147) or
+      // the competition lock (spec 0140).
+      _group = widget.group!;
       _shots = List<List<_Placed>>.generate(
         _course.holds.length,
         (_) => <_Placed>[],
@@ -200,14 +197,14 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
       FeltHoldTally(_shots[i].map((p) => p.shot).toList());
 
   FeltSessionTally get _session => FeltSessionTally(
-    group: _group!,
+    group: _group,
     holds: <FeltHoldTally>[for (var i = 0; i < _shots.length; i++) _tally(i)],
   );
 
   int get _totalShots => _shots.fold(0, (sum, h) => sum + h.length);
 
   FeltSessionSnapshot _snapshot() => FeltSessionSnapshot(
-    group: _group!,
+    group: _group,
     courseId: _course.id,
     currentHold: _hold,
     capturedAt: _capturedAt,
@@ -235,23 +232,12 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
   /// never lost. Best-effort (spec 0081).
   void _persist() {
     final store = ref.read(feltSessionStoreProvider);
-    final write = (_group == null || _totalShots == 0)
-        ? store.clear()
-        : store.save(_snapshot());
+    final write = _totalShots == 0 ? store.clear() : store.save(_snapshot());
     unawaited(write.catchError((Object _) {}));
   }
 
-  void _pickGroup(FeltShooterGroup group) {
-    setState(() => _group = group);
-    // Remember the choice for the next round (spec 0099); best-effort.
-    unawaited(
-      ref.read(feltGroupStoreProvider).save(group).catchError((Object _) {}),
-    );
-    _persist();
-  }
-
   void _place(FeltHoldArt art, Offset holdPoint) {
-    if (_shots[_hold].length >= _group!.shotsPerHold) return;
+    if (_shots[_hold].length >= _group.shotsPerHold) return;
     setState(() {
       _shots[_hold].add(_Placed(holdPoint, feltHitTest(art, holdPoint)));
     });
@@ -330,9 +316,6 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_group == null) {
-      return _GroupPicker(courseName: _course.name, onPick: _pickGroup);
-    }
     if (_done) {
       return Scaffold(
         appBar: FrostedAppBar(
@@ -378,22 +361,10 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     final hold = _course.holds[_hold];
     final placed = _shots[_hold];
     final tally = _tally(_hold);
-    final shotsMax = _group!.shotsPerHold;
+    final shotsMax = _group.shotsPerHold;
     return Scaffold(
       appBar: FrostedAppBar(
         title: Text('Hold ${hold.number}/${_course.holds.length}'),
-        actions: [
-          // A remembered group skipped the picker (spec 0099); offer a way
-          // back while a change is still safe (no shots placed yet). A
-          // competition's group is locked (spec 0140) — no way back.
-          if (_totalShots == 0 && widget.forcedGroup == null)
-            TextButton.icon(
-              key: feltChangeGroupKey,
-              onPressed: () => setState(() => _group = null),
-              icon: const Icon(Icons.group_outlined),
-              label: Text(_group!.label),
-            ),
-        ],
       ),
       body: SafeArea(
         child: Center(
@@ -499,48 +470,6 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
       ),
     );
   }
-}
-
-/// Picks the shooter group before recording (spec 0080).
-class _GroupPicker extends StatelessWidget {
-  const _GroupPicker({required this.courseName, required this.onPick});
-
-  final String courseName;
-  final ValueChanged<FeltShooterGroup> onPick;
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: FrostedAppBar(title: Text('Skyt $courseName')),
-    body: SafeArea(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Velg gruppe — den bestemmer skudd per hold.'),
-              ),
-              for (final g in FeltShooterGroup.offered)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  child: FilledButton.tonal(
-                    key: feltGroupButtonKey(g),
-                    onPressed: () => onPick(g),
-                    child: Text('${g.label}  ·  ${g.shotsPerHold} skudd/hold'),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
 }
 
 /// The composed hold with tap-to-place shot markers (spec 0080).
