@@ -332,7 +332,10 @@ final List<FeltHoldDef> _askerPlusExtraHolds = <FeltHoldDef>[
       for (var i = 0; i < 6; i++)
         FeltFigure(
           FeltFigureType.hexagon,
-          // Lying first, then alternating standing (spec 0145).
+          // Lying first, then alternating standing (spec 0145) — the same
+          // hexagon rotated, so every figure has the same area. The art
+          // lays them out in two rows of three so the hold picture keeps
+          // the course's proportions (domain-expert feedback 2026-07-07).
           widthCm: i.isEven ? 31 : 22,
           heightCm: i.isEven ? 22 : 31,
           name: 'Sekskant',
@@ -344,32 +347,34 @@ final List<FeltHoldDef> _askerPlusExtraHolds = <FeltHoldDef>[
     distance: '25 m',
     position: 'Stående fri',
     colour: FeltHoldColour.black,
+    // Left→right as on the sheet: the owl, the big oval, the stolper
+    // (domain-expert feedback 2026-07-07).
     figures: <FeltFigure>[
-      FeltFigure(
-        FeltFigureType.stripe,
-        widthCm: 12,
-        heightCm: 37,
-        name: 'Stolpe',
-      ),
-      FeltFigure(
-        FeltFigureType.stripe,
-        widthCm: 12,
-        heightCm: 37,
-        name: 'Stolpe',
-      ),
-      FeltFigure(
-        FeltFigureType.stripe,
-        widthCm: 12,
-        heightCm: 37,
-        name: 'Stolpe',
-      ),
+      FeltFigure(FeltFigureType.owl, widthCm: 23, heightCm: 50, name: 'Ugle'),
       FeltFigure(
         FeltFigureType.oval,
         widthCm: 33,
         heightCm: 22,
         name: 'Stor oval',
       ),
-      FeltFigure(FeltFigureType.owl, widthCm: 23, heightCm: 50, name: 'Ugle'),
+      FeltFigure(
+        FeltFigureType.stripe,
+        widthCm: 12,
+        heightCm: 37,
+        name: 'Stolpe',
+      ),
+      FeltFigure(
+        FeltFigureType.stripe,
+        widthCm: 12,
+        heightCm: 37,
+        name: 'Stolpe',
+      ),
+      FeltFigure(
+        FeltFigureType.stripe,
+        widthCm: 12,
+        heightCm: 37,
+        name: 'Stolpe',
+      ),
     ],
   ),
 ];

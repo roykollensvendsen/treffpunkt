@@ -28,16 +28,16 @@ void main() {
     }
   });
 
-  test('hold 10 is three stolper, the big oval and the owl (spec 0145)', () {
+  test('hold 10 is the owl, the big oval and three stolper (spec 0145)', () {
     final figures = askerPlusCourse.holds[9].figures;
     expect(figures, hasLength(5));
+    expect(figures[0].type, FeltFigureType.owl);
+    expect(figures[0].name, 'Ugle');
+    expect(figures[1].type, FeltFigureType.oval);
     expect(
-      figures.take(3).map((f) => f.type),
+      figures.skip(2).map((f) => f.type),
       everyElement(FeltFigureType.stripe),
     );
-    expect(figures[3].type, FeltFigureType.oval);
-    expect(figures[4].type, FeltFigureType.owl);
-    expect(figures[4].name, 'Ugle');
   });
 
   test('courses resolve by id, unknown defaults to 2026 (spec 0145)', () {
