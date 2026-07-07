@@ -6,12 +6,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/config/support_links.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/core/presentation/category_pictograms.dart';
 import 'package:treffpunkt/core/presentation/confirm_dialog.dart';
 import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
+import 'package:treffpunkt/core/presentation/link_providers.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
@@ -47,6 +49,9 @@ const Key feltResumeSessionKey = ValueKey<String>('feltResumeSession');
 
 /// Key for the felt resume card's discard button (spec 0116), for tests.
 const Key feltDiscardSessionKey = ValueKey<String>('feltDiscardSession');
+
+/// Key for the «Spander en kaffe» Vipps card (spec 0146), for tests.
+const Key coffeeCardKey = ValueKey<String>('coffeeCard');
 
 /// Key for the «Skyt igjen» quick-start card (spec 0097), for tests.
 const Key shootAgainKey = ValueKey<String>('shootAgain');
@@ -219,6 +224,19 @@ class ProgramPickerScreen extends ConsumerWidget {
     ref.invalidate(savedRecordingProvider);
   }
 
+  /// Opens the developer's Vipps link (spec 0146); an unavailable handler
+  /// degrades to a hint, never a crash.
+  Future<void> _openCoffee(BuildContext context, WidgetRef ref) async {
+    // Captured before the await so no BuildContext is used across the gap.
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await ref.read(linkOpenerProvider).open(vippsCoffeeUri);
+    if (!ok) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Kunne ikke åpne Vipps-lenken.')),
+      );
+    }
+  }
+
   /// Discards the saved felt round (spec 0116) after the same confirmation.
   Future<void> _discardFelt(BuildContext context, WidgetRef ref) async {
     if (!await showConfirmDialog(
@@ -381,6 +399,21 @@ class ProgramPickerScreen extends ConsumerWidget {
                                 ),
                         ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  // «Spander en kaffe» (spec 0146): last, below the
+                  // shooting flows — a thank-you, never a nag.
+                  Card(
+                    child: ListTile(
+                      key: coffeeCardKey,
+                      leading: const Icon(Icons.coffee_outlined),
+                      title: const Text('Spander en kaffe'),
+                      subtitle: const Text(
+                        'Liker du Treffpunkt? '
+                        'Vipps en kaffe til utviklerne.',
+                      ),
+                      onTap: () => unawaited(_openCoffee(context, ref)),
+                    ),
                   ),
                 ],
               ),

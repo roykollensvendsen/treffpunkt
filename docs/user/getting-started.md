@@ -108,6 +108,13 @@ going back and forth never saves it twice. Like a ring session, a felt round can
 tap the card's menu (⋮) and choose **Slett** — it is removed from your account
 and the device.
 
+## Spander en kaffe
+
+At the bottom of the front page there is a small **«Spander en kaffe»** card.
+Tapping it opens **Vipps** with the developer as the recipient (on a computer
+it shows a QR code you can scan with your phone). Entirely optional — the app
+is and stays free; this is just a way to say thanks.
+
 ## Note where you are shooting
 Before a session starts, the setup step asks for the date, time and **place**.
 Tap **Bruk min posisjon** ("use my location") to fill the place from your

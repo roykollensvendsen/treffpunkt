@@ -7,6 +7,10 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **«Spander en kaffe»** (spec 0146): a small card at the bottom of the
+  front page opens the developer's Vipps link — straight into Vipps on a
+  phone, a scannable QR page in a browser. Optional and unobtrusive; the
+  app stays free.
 - **NorgesFelt Asker+** (spec 0145): a second felt course — the official
   eight holds plus the family's hold 9 (six hexagons in two rows,
   alternating lying/standing in green/red) and hold 10 (a new owl figure

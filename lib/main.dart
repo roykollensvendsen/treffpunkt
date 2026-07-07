@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:treffpunkt/bootstrap.dart';
 import 'package:treffpunkt/config/app_config.dart';
+import 'package:treffpunkt/core/data/url_launcher_link_opener.dart';
 import 'package:treffpunkt/core/platform/browser_environment.dart';
 import 'package:treffpunkt/core/platform/share_plus_sharer.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
@@ -90,6 +91,7 @@ Future<void> main() async {
     geocoder: BigDataCloudGeocoder(http.Client()),
     imageSourceService: ImagePickerImageSourceService(),
     targetScanner: const ImageTargetScanner(),
+    linkOpener: const UrlLauncherLinkOpener(),
     contributionService: SupabaseContributionService(Supabase.instance.client),
     feltGroupStore: feltGroupStore,
     initialFeltGroup: initialFeltGroup,

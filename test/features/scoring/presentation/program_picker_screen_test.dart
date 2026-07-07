@@ -7,8 +7,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:treffpunkt/config/support_links.dart';
+import 'package:treffpunkt/core/data/link_opener.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/core/presentation/category_pictograms.dart';
+import 'package:treffpunkt/core/presentation/link_providers.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
@@ -631,4 +634,67 @@ void main() {
     expect(find.byKey(feltResumeSessionKey), findsNothing);
     expect(await feltStore.load(), isNull);
   });
+
+  group('«Spander en kaffe» (spec 0146)', () {
+    testWidgets('the coffee card sits below the categories and opens Vipps', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      final opener = _RecordingLinkOpener();
+      await tester.pumpWidget(
+        buildApp(
+          home: const ProgramPickerScreen(),
+          overrides: [
+            sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
+            linkOpenerProvider.overrideWithValue(opener),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Below the last category card (spec 0146: never competing with the
+      // shooting flows).
+      final felt = find.byKey(const ValueKey<String>('category-Felt'));
+      expect(
+        tester.getTopLeft(find.byKey(coffeeCardKey)).dy,
+        greaterThan(tester.getTopLeft(felt).dy),
+      );
+
+      await tester.tap(find.byKey(coffeeCardKey));
+      await tester.pumpAndSettle();
+      expect(opener.opened, <Uri>[vippsCoffeeUri]);
+    });
+
+    testWidgets('a failed open shows the snackbar hint', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        buildApp(
+          home: const ProgramPickerScreen(),
+          overrides: [
+            sessionStoreProvider.overrideWithValue(InMemorySessionStore()),
+            // The default opener is unavailable — open() returns false.
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(coffeeCardKey));
+      await tester.pumpAndSettle();
+      expect(find.text('Kunne ikke åpne Vipps-lenken.'), findsOneWidget);
+    });
+  });
+}
+
+class _RecordingLinkOpener implements LinkOpener {
+  final List<Uri> opened = <Uri>[];
+
+  @override
+  Future<bool> open(Uri url) async {
+    opened.add(url);
+    return true;
+  }
 }
