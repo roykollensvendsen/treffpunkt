@@ -56,8 +56,9 @@ void main() {
   ) async {
     bigView(tester);
     final store = InMemoryFeltSessionStore();
-    await tester.pumpWidget(appWith(store, const FeltRecordScreen()));
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
+    await tester.pumpWidget(
+      appWith(store, const FeltRecordScreen(group: FeltShooterGroup.one)),
+    );
     await tester.pumpAndSettle();
     await tapRecorder(tester, hareFrac);
 
@@ -100,8 +101,9 @@ void main() {
   ) async {
     bigView(tester);
     final store = InMemoryFeltSessionStore();
-    await tester.pumpWidget(appWith(store, const FeltRecordScreen()));
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)));
+    await tester.pumpWidget(
+      appWith(store, const FeltRecordScreen(group: FeltShooterGroup.two)),
+    );
     await tester.pumpAndSettle();
     await tapRecorder(tester, hareFrac);
     expect(await store.load(), isNotNull);
@@ -129,8 +131,9 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     bigView(tester);
     final store = InMemoryFeltSessionStore();
-    await tester.pumpWidget(appWith(store, const FeltRecordScreen()));
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
+    await tester.pumpWidget(
+      appWith(store, const FeltRecordScreen(group: FeltShooterGroup.one)),
+    );
     await tester.pumpAndSettle();
 
     final controller = tester
@@ -162,8 +165,9 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     bigView(tester);
     final store = InMemoryFeltSessionStore();
-    await tester.pumpWidget(appWith(store, const FeltRecordScreen()));
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.one)));
+    await tester.pumpWidget(
+      appWith(store, const FeltRecordScreen(group: FeltShooterGroup.one)),
+    );
     await tester.pumpAndSettle();
 
     final controller = tester
@@ -215,8 +219,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // The single resume card lives on the front page (spec 0116); the
-    // course page keeps «Skyt løypa» and the hold previews only.
+    // course page is a pure preview (spec 0147) — no resume, no shoot.
     expect(find.text('Fortsett felt-økt'), findsNothing);
-    expect(find.byKey(feltShootButtonKey), findsOneWidget);
+    expect(find.text('Skyt løypa'), findsNothing);
   });
 }

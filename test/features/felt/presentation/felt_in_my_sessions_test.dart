@@ -81,10 +81,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [feltHistoryStoreProvider.overrideWithValue(history)],
-        child: const MaterialApp(home: FeltRecordScreen()),
+        child: const MaterialApp(
+          home: FeltRecordScreen(group: FeltShooterGroup.two),
+        ),
       ),
     );
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)));
     await tester.pumpAndSettle();
 
     final rect = tester.getRect(find.byKey(feltHoldRecorderKey));
@@ -121,10 +122,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [feltHistoryStoreProvider.overrideWithValue(history)],
-        child: const MaterialApp(home: FeltRecordScreen()),
+        child: const MaterialApp(
+          home: FeltRecordScreen(group: FeltShooterGroup.two),
+        ),
       ),
     );
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)));
     await tester.pumpAndSettle();
 
     final rect = tester.getRect(find.byKey(feltHoldRecorderKey));

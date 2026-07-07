@@ -14,7 +14,6 @@ import 'package:treffpunkt/core/platform/share_plus_sharer.dart';
 import 'package:treffpunkt/features/auth/data/supabase_auth_repository.dart';
 import 'package:treffpunkt/features/backup/data/backup_file_source.dart';
 import 'package:treffpunkt/features/competitions/data/supabase_competition_repository.dart';
-import 'package:treffpunkt/features/felt/data/felt_group_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_pending_uploads_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_store.dart';
@@ -54,8 +53,6 @@ Future<void> main() async {
   // can start populated without an async build (spec 0019).
   final savedWeapons = await weaponStore.load();
   final themeModeStore = SharedPreferencesThemeModeStore(prefs);
-  final feltGroupStore = SharedPreferencesFeltGroupStore(prefs);
-  final initialFeltGroup = await feltGroupStore.load();
   final defaultPlaceStore = SharedPreferencesDefaultPlaceStore(prefs);
   final initialDefaultPlace = await defaultPlaceStore.load();
   final personalRecordsStore = SharedPreferencesPersonalRecordsStore(prefs);
@@ -93,8 +90,6 @@ Future<void> main() async {
     targetScanner: const ImageTargetScanner(),
     linkOpener: const UrlLauncherLinkOpener(),
     contributionService: SupabaseContributionService(Supabase.instance.client),
-    feltGroupStore: feltGroupStore,
-    initialFeltGroup: initialFeltGroup,
     backupFileSource: const FilePickerBackupFileSource(),
     defaultPlaceStore: defaultPlaceStore,
     initialDefaultPlace: initialDefaultPlace,

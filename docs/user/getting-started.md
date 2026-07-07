@@ -77,11 +77,11 @@ position, in the hold's colour, white figures knocked out of a coloured plate,
 the **black lines dividing the målgrupper**, and each figure's inner-treff
 zone — the ring, or on the three-square stripes of holds 2 and 8 the
 **middle square** (every figure has one except the big triangle on hold 5;
-each hold card says which). Tap **Skyt løypa** to record a round: first the same
-setup step as the other programs — **date and time**, **place** (type it or
-tap **Bruk min posisjon**) and your **weapon** — then choose your **group**
-— **Gruppe 1** (6 shots per hold) or **Gruppe 2** (5 per hold) — and
-**place each shot** on the hold picture where it hit. You can **zoom and
+each hold card says which). The setup step is the same as the other
+programs — **date and time**, **place** (type it or tap **Bruk min
+posisjon**) and your **weapon** — then you go straight to hold 1 (the shots
+per hold follow the program you picked) and **place each shot** on the hold
+picture where it hit. You can **zoom and
 pan** the picture just like the ring targets — pinch on a touch screen,
 or two-finger scroll and the **＋/−** buttons on a computer — for precise
 placement on the small figures. The app

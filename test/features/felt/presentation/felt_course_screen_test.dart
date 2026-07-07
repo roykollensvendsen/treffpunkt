@@ -29,10 +29,10 @@ void main() {
     for (var n = 1; n <= 8; n++) {
       expect(find.byKey(feltHoldCardKey(n)), findsOneWidget);
     }
-    // Each hold is drawn as one composed picture.
+    // Each hold is drawn as one composed picture. Pure preview since spec
+    // 0147: no shoot button — shooting starts from the program tiles.
     expect(find.byType(FeltHoldArtView), findsNWidgets(8));
-    // The course can be shot (spec 0080).
-    expect(find.byKey(feltShootButtonKey), findsOneWidget);
+    expect(find.text('Skyt løypa'), findsNothing);
     // The figure names are listed under each hold.
     expect(find.textContaining('Hare'), findsWidgets);
     expect(find.textContaining('Ulvehode'), findsWidgets);

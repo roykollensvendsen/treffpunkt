@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Felt programs come in 6- and 5-shot variants** (spec 0147): the Felt
+  category lists four programs — each course as a Gruppe 1 (6 shots) and
+  Gruppe 2 (5 shots) variant with its maximum — and tapping one goes
+  straight to the setup step, like the ring programs. The group picker in
+  the recorder is gone, and the course preview moved behind «Se løypa» on
+  the setup screen instead of blocking the way to the first hold.
+
 ### Added
 - **«Spander en kaffe»** (spec 0146): a small card at the bottom of the
   front page opens the developer's Vipps link — straight into Vipps on a

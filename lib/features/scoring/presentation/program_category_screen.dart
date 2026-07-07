@@ -9,7 +9,8 @@ import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/tappable_card_tile.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
-import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
+import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_category.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
@@ -75,28 +76,34 @@ class ProgramCategoryScreen extends StatelessWidget {
     );
   }
 
-  /// The felt courses (specs 0068/0145): one tile per course.
+  /// The felt programs (specs 0068/0145/0147): each course as a 6-shot
+  /// (Gruppe 1) and a 5-shot (Gruppe 2) variant, straight to the setup —
+  /// like the ring categories. «Se løypa» on the setup previews the holds.
   Widget _courses(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         for (final course in feltCourses)
-          TappableCardTile(
-            tileKey: ValueKey<String>('felt-${course.id}'),
-            title: course.name,
-            subtitle:
-                'Forhåndsvis de ${course.holds.length} holdene og figurene',
-            semanticsLabel:
-                'Velg løype: ${course.name}, '
-                'Forhåndsvis de ${course.holds.length} holdene og figurene',
-            onTap: () => unawaited(
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => FeltCourseScreen(course: course),
+          for (final group in FeltShooterGroup.offered)
+            TappableCardTile(
+              tileKey: ValueKey<String>('felt-${course.id}-${group.name}'),
+              title: course.name,
+              subtitle:
+                  '${group.shotsPerHold} skudd per hold (${group.label}) · '
+                  'maks ${course.maxPoints(group)} poeng',
+              semanticsLabel:
+                  'Velg program: ${course.name}, '
+                  '${group.shotsPerHold} skudd per hold (${group.label}), '
+                  'maks ${course.maxPoints(group)} poeng',
+              onTap: () => unawaited(
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        FeltSetupScreen(course: course, group: group),
+                  ),
                 ),
               ),
             ),
-          ),
       ],
     );
   }

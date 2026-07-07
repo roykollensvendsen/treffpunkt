@@ -21,6 +21,7 @@ import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
@@ -173,33 +174,38 @@ void main() {
     expect(find.byKey(emptyCategoryKey), findsNothing);
   });
 
-  testWidgets('Felt opens its course list with both courses (spec 0145)', (
-    tester,
-  ) async {
+  testWidgets('Felt lists four program variants straight to setup '
+      '(spec 0147)', (tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey<String>('category-Felt')));
     await tester.pumpAndSettle();
 
-    // Two courses exist (spec 0145), so the category shows one tile each —
-    // the spec 0097 req 4 shortcut is retired.
-    expect(
-      find.byKey(const ValueKey<String>('felt-norgesfelt-2026')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('felt-norgesfelt-asker-plus')),
-      findsOneWidget,
-    );
+    // Each course as a 6- and 5-shot variant — four programs, like the
+    // ring categories (spec 0147), with per-variant maxima.
+    for (final key in const <String>[
+      'felt-norgesfelt-2026-one',
+      'felt-norgesfelt-2026-two',
+      'felt-norgesfelt-asker-plus-one',
+      'felt-norgesfelt-asker-plus-two',
+    ]) {
+      expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
+    }
+    expect(find.textContaining('maks 103 poeng'), findsOneWidget);
+    expect(find.textContaining('maks 90 poeng'), findsOneWidget);
 
-    // The Asker+ tile opens its preview.
+    // A variant tile opens the setup directly — no course preview between.
     await tester.tap(
-      find.byKey(const ValueKey<String>('felt-norgesfelt-asker-plus')),
+      find.byKey(const ValueKey<String>('felt-norgesfelt-asker-plus-two')),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(FeltCourseScreen), findsOneWidget);
-    expect(find.text('NorgesFelt Asker+'), findsOneWidget);
+    expect(find.byType(FeltSetupScreen), findsOneWidget);
+    expect(find.text('NorgesFelt Asker+ · Gruppe 2'), findsOneWidget);
+    expect(find.byType(FeltCourseScreen), findsNothing);
   });
 
   testWidgets('labels each category card as a button for screen readers', (

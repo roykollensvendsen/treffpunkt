@@ -8,11 +8,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
 void main() {
@@ -22,7 +24,7 @@ void main() {
     addTearDown(tester.view.reset);
   }
 
-  testWidgets('Skyt løypa runs through the shared setup form (0092)', (
+  testWidgets('a felt program runs through the shared setup form (0092)', (
     tester,
   ) async {
     bigView(tester);
@@ -30,12 +32,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [feltHistoryStoreProvider.overrideWithValue(history)],
-        child: MaterialApp(home: FeltCourseScreen()),
+        child: MaterialApp(
+          home: FeltSetupScreen(group: FeltShooterGroup.two),
+        ),
       ),
     );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(feltShootButtonKey));
     await tester.pumpAndSettle();
 
     // The same form the ring programs use: date/time, place, weapon, start.
@@ -46,9 +47,7 @@ void main() {
     await tester.tap(find.byKey(sessionConfirmKey));
     await tester.pumpAndSettle();
 
-    // Then the group picker, and one shot on hold 1.
-    await tester.tap(find.byKey(feltGroupButtonKey(FeltShooterGroup.two)));
-    await tester.pumpAndSettle();
+    // Straight to hold 1 (spec 0147) — one shot placed there.
     final rect = tester.getRect(find.byKey(feltHoldRecorderKey));
     await tester.tapAt(
       rect.topLeft + Offset(38.6 / 151 * rect.width, 97.9 / 145 * rect.height),
@@ -110,5 +109,30 @@ void main() {
     expect(saved.single.capturedAt, DateTime.utc(2026, 7, 2, 18));
     expect(saved.single.session.placeLabel, 'Kongsberg');
     expect(saved.single.session.weaponName, 'Min revolver');
+  });
+
+  testWidgets('«Se løypa» previews the course from the setup (spec 0147)', (
+    tester,
+  ) async {
+    bigView(tester);
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: FeltSetupScreen(
+            course: askerPlusCourse,
+            group: FeltShooterGroup.one,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(feltPreviewCourseKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FeltCourseScreen), findsOneWidget);
+    expect(find.text('NorgesFelt Asker+'), findsOneWidget);
+    // Pure preview: no shoot button (spec 0147).
+    expect(find.text('Skyt løypa'), findsNothing);
   });
 }
