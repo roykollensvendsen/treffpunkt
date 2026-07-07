@@ -36,6 +36,34 @@ void main() {
     expect(restored.holds[0][0].inner, isTrue);
   });
 
+  test('the course id rides the snapshot through JSON (spec 0145)', () {
+    const snapshot = FeltSessionSnapshot(
+      group: FeltShooterGroup.two,
+      currentHold: 0,
+      holds: <List<FeltPlacedShot>>[<FeltPlacedShot>[]],
+      courseId: 'norgesfelt-asker-plus',
+    );
+
+    final restored = FeltSessionSnapshot.fromJson(
+      jsonDecode(jsonEncode(snapshot.toJson())) as Map<String, dynamic>,
+    );
+
+    expect(restored, snapshot);
+    expect(restored.courseId, 'norgesfelt-asker-plus');
+  });
+
+  test('a stored round without a course id stays a 2026 round (spec 0145)', () {
+    // Every pre-0145 snapshot lacks the field; it must load with a null
+    // course id, which resolves to NorgesFelt 2026.
+    final restored = FeltSessionSnapshot.fromJson(const <String, dynamic>{
+      'group': 'one',
+      'currentHold': 0,
+      'holds': <List<dynamic>>[<dynamic>[]],
+    });
+
+    expect(restored.courseId, isNull);
+  });
+
   test('metadata rides the snapshot through JSON (spec 0092)', () {
     final snapshot = FeltSessionSnapshot(
       group: FeltShooterGroup.one,

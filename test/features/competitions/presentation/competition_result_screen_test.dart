@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/competitions/domain/competition_result.dart';
 import 'package:treffpunkt/features/competitions/presentation/competition_result_screen.dart';
 import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -40,7 +41,10 @@ void main() {
     final result = CompetitionResult(
       id: record.id,
       competitionId: 'felt-c1',
-      program: feltCompetitionProgram(FeltShooterGroup.two),
+      program: feltCompetitionProgram(
+        norgesfelt2026Course,
+        FeltShooterGroup.two,
+      ),
       total: 2,
       maxTotal: 47,
       innerTens: 1,

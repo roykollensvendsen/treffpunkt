@@ -20,6 +20,7 @@ import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_pending_uploads_store.dart';
 import 'package:treffpunkt/features/felt/data/felt_session_repository.dart';
 import 'package:treffpunkt/features/felt/domain/felt_competition.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
@@ -430,7 +431,10 @@ void main() {
       expect(result.total, 3);
       expect(result.innerTens, 1);
       expect(result.maxTotal, 47);
-      expect(result.program, feltCompetitionProgram(FeltShooterGroup.two));
+      expect(
+        result.program,
+        feltCompetitionProgram(norgesfelt2026Course, FeltShooterGroup.two),
+      );
       // The payload round-trips as a felt record (the result screen's path).
       expect(FeltSessionRecord.fromJson(result.payload).id, 'felt-r1');
     },

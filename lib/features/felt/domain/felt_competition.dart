@@ -2,29 +2,42 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:uuid/uuid.dart';
 
-// NorgesFelt as a competition program (spec 0140).
+// NorgesFelt as a competition program (specs 0140/0145).
 //
-// The group IS the program: the groups shoot different courses (Gruppe 1
-// six shots per hold, Gruppe 2 five), so a fair competition is per group.
-// Encoding the group in the program name locks it at creation with no
-// schema change, and every place that shows the program shows the group.
-const String _base = 'NorgesFelt-løype 2026';
+// The course and group ARE the program: the groups shoot different rounds
+// (Gruppe 1 six shots per hold, Gruppe 2 five) and the courses differ, so a
+// fair competition is per course + group. Encoding both in the program name
+// locks them at creation with no schema change, and every place that shows
+// the program shows the course and group.
 
-/// The program name for a felt competition locked to [group].
-String feltCompetitionProgram(FeltShooterGroup group) =>
-    '$_base (${group.label})';
+/// The program name for a felt competition locked to [course] and [group].
+String feltCompetitionProgram(FeltCourse course, FeltShooterGroup group) =>
+    course.programName(group);
 
-/// The locked group of a felt-competition [program] name, or `null` when
-/// the program is not a felt competition.
-FeltShooterGroup? feltCompetitionGroup(String program) {
-  for (final group in FeltShooterGroup.values) {
-    if (program == feltCompetitionProgram(group)) return group;
+/// The locked course and group of a felt-competition [program] name, or
+/// `null` when the program is not a felt competition (spec 0145). Pre-0145
+/// program strings carry the 2026 course name and parse unchanged.
+({FeltCourse course, FeltShooterGroup group})? feltCompetitionCourseAndGroup(
+  String program,
+) {
+  for (final course in feltCourses) {
+    for (final group in FeltShooterGroup.values) {
+      if (program == course.programName(group)) {
+        return (course: course, group: group);
+      }
+    }
   }
   return null;
 }
+
+/// The locked group of a felt-competition [program] name, or `null` when
+/// the program is not a felt competition.
+FeltShooterGroup? feltCompetitionGroup(String program) =>
+    feltCompetitionCourseAndGroup(program)?.group;
 
 /// The competition-result id for the felt round [roundId] (spec 0140).
 ///
@@ -40,10 +53,3 @@ FeltShooterGroup? feltCompetitionGroup(String program) {
 /// duplicating.
 String feltCompetitionResultId(String roundId) =>
     const Uuid().v5(Namespace.url.value, 'treffpunkt:felt-result:$roundId');
-
-/// The official course maximum for [group] (spec 0068, norgesfelt.no):
-/// 80 points for Gruppe 1 (48 treff + 32 figur), 47 for Gruppe 2/3.
-int feltCourseMaxPoints(FeltShooterGroup group) => switch (group) {
-  FeltShooterGroup.one => 80,
-  FeltShooterGroup.two || FeltShooterGroup.three => 47,
-};

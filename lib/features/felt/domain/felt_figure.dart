@@ -44,7 +44,11 @@ enum FeltFigureType {
   wolfHead('Ulvehode'),
 
   /// A ptarmigan (traced).
-  ptarmigan('Rype');
+  ptarmigan('Rype'),
+
+  /// An owl (measured from the official owl blink, spec 0145) — NorgesFelt
+  /// Asker+ hold 10's new figure.
+  owl('Ugle');
 
   const FeltFigureType(this.label);
 

@@ -71,6 +71,7 @@ class FeltSessionSnapshot {
     required this.group,
     required this.holds,
     required this.currentHold,
+    this.courseId,
     this.capturedAt,
     this.placeLabel,
     this.latitude,
@@ -82,6 +83,7 @@ class FeltSessionSnapshot {
   factory FeltSessionSnapshot.fromJson(Map<String, dynamic> json) =>
       FeltSessionSnapshot(
         group: FeltShooterGroup.values.byName(json['group'] as String),
+        courseId: json['course'] as String?,
         currentHold: json['currentHold'] as int,
         holds: <List<FeltPlacedShot>>[
           for (final hold in json['holds'] as List<dynamic>)
@@ -99,6 +101,11 @@ class FeltSessionSnapshot {
 
   /// The shooter's group.
   final FeltShooterGroup group;
+
+  /// The course id of the round (spec 0145), or null on a round stored
+  /// before courses existed — those are NorgesFelt 2026 rounds (resolve via
+  /// `feltCourseById`).
+  final String? courseId;
 
   /// The shots placed on each hold, one list per hold in course order.
   final List<List<FeltPlacedShot>> holds;
@@ -128,6 +135,7 @@ class FeltSessionSnapshot {
   /// Serialises this snapshot.
   Map<String, dynamic> toJson() => <String, dynamic>{
     'group': group.name,
+    if (courseId != null) 'course': courseId,
     'currentHold': currentHold,
     'holds': <List<Map<String, dynamic>>>[
       for (final hold in holds)
@@ -144,6 +152,7 @@ class FeltSessionSnapshot {
   bool operator ==(Object other) =>
       other is FeltSessionSnapshot &&
       other.group == group &&
+      other.courseId == courseId &&
       other.currentHold == currentHold &&
       other.capturedAt == capturedAt &&
       other.placeLabel == placeLabel &&
@@ -155,6 +164,7 @@ class FeltSessionSnapshot {
   @override
   int get hashCode => Object.hash(
     group,
+    courseId,
     currentHold,
     capturedAt,
     placeLabel,

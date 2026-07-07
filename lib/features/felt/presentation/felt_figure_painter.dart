@@ -146,6 +146,8 @@ Path figurePath(FeltFigureType type, Size size) {
       return _polygon(feltWolfHeadOutline, size);
     case FeltFigureType.ptarmigan:
       return _polygon(feltPtarmiganOutline, size);
+    case FeltFigureType.owl:
+      return _polygon(feltOwlOutline, size);
   }
 }
 
@@ -210,6 +212,10 @@ Offset figureCentroid(FeltFigureType type, Size size) {
       return _polygonCentroid(feltWolfHeadOutline, size);
     case FeltFigureType.ptarmigan:
       return _polygonCentroid(feltPtarmiganOutline, size);
+    case FeltFigureType.owl:
+      // The measured blink puts the inner ring in the belly, not at the
+      // area centroid (spec 0145).
+      return Offset(0.4996 * size.width, 0.4630 * size.height);
     case FeltFigureType.circle:
       // Concentric with the circle (its centre is a radius down from the top).
       return Offset(size.width / 2, math.min(size.width / 2, size.height));
