@@ -673,6 +673,37 @@ void main() {
       expect(opener.opened, <Uri>[vippsCoffeeUri]);
     });
 
+    testWidgets('the front page is one scrollable behind the nav bar '
+        '(spec 0129)', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(app(InMemorySessionStore()));
+      await tester.pumpAndSettle();
+
+      // The coffee card and the version footer live INSIDE the scrollable,
+      // so the list extends behind the frosted nav bar and its tail shines
+      // through the glass while scrolling — a column with the footer below
+      // the list would end the scroll area above the bar.
+      final scrollable = find
+          .descendant(
+            of: find.byType(ProgramPickerScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      expect(
+        find.descendant(of: scrollable, matching: find.byKey(coffeeCardKey)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: scrollable,
+          matching: find.byType(BuildVersionLabel),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('a failed open shows the snackbar hint', (tester) async {
       tester.view.physicalSize = const Size(800, 1800);
       tester.view.devicePixelRatio = 1.0;
