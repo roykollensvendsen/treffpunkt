@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/nor_date.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_scorecard.dart';
 
@@ -33,7 +34,9 @@ class FeltSessionDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: const FrostedAppBar(title: Text('NorgesFelt-løype 2026')),
+      appBar: FrostedAppBar(
+        title: Text(feltCourseById(record.session.courseId).name),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -49,6 +52,7 @@ class FeltSessionDetailScreen extends StatelessWidget {
             Expanded(
               child: FeltScorecard(
                 session: record.tally,
+                course: feltCourseById(record.session.courseId),
                 // The stored shots drawn where they landed (spec 0105).
                 holds: record.session.holds,
               ),

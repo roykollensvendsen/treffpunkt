@@ -8,8 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/target_icon.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
+import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
+import 'package:treffpunkt/features/felt/presentation/felt_course_art.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
-import 'package:treffpunkt/features/felt/presentation/felt_hold_art_data.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
@@ -20,20 +21,24 @@ const Key feltShootButtonKey = ValueKey<String>('feltShoot');
 /// Key for hold [number]'s card in the course preview (spec 0068), for tests.
 Key feltHoldCardKey(int number) => ValueKey<String>('feltHold-$number');
 
-/// A preview of the NorgesFelt 2026 field course (specs 0068/0079): the 8 holds
-/// each drawn as one composed picture matching the official target sheet, with
-/// a "Skyt løypa" recorder (spec 0080). Resuming a saved round lives on the
-/// front page alone (spec 0116).
+/// A preview of a felt course (specs 0068/0079/0145): the holds each drawn as
+/// one composed picture matching the official target sheet, with a "Skyt
+/// løypa" recorder (spec 0080). Resuming a saved round lives on the front
+/// page alone (spec 0116).
 class FeltCourseScreen extends ConsumerWidget {
-  /// Creates the course preview.
-  const FeltCourseScreen({super.key});
+  /// Creates the course preview; defaults to NorgesFelt 2026.
+  FeltCourseScreen({FeltCourse? course, super.key})
+    : course = course ?? norgesfelt2026Course;
+
+  /// The course previewed (spec 0145).
+  final FeltCourse course;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: const FrostedAppBar(title: Text('NorgesFelt-løype 2026')),
+      appBar: FrostedAppBar(title: Text(course.name)),
       // The Builder gives a context INSIDE the body, where the
       // Scaffold injects the bar insets (spec 0129).
       body: Builder(
@@ -48,12 +53,14 @@ class FeltCourseScreen extends ConsumerWidget {
                 children: <Widget>[
                   Card(
                     color: theme.colorScheme.secondaryContainer,
-                    child: const Padding(
-                      padding: EdgeInsets.all(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
                       child: Text(
-                        '8 hold · 10 sek skytetid · maks 80/47 poeng. Hvert '
-                        'hold er tegnet som på den offisielle skiva; hvert '
-                        'kort sier hvilke figurer som har innertreff.',
+                        '${course.holds.length} hold · 10 sek skytetid · '
+                        'maks ${course.maxPoints(FeltShooterGroup.one)}/'
+                        '${course.maxPoints(FeltShooterGroup.two)} poeng. '
+                        'Hvert hold er tegnet som på den offisielle skiva; '
+                        'hvert kort sier hvilke figurer som har innertreff.',
                       ),
                     ),
                   ),
@@ -65,7 +72,7 @@ class FeltCourseScreen extends ConsumerWidget {
                     label: const Text('Skyt løypa'),
                   ),
                   const SizedBox(height: 8),
-                  for (final hold in norgesfelt2026)
+                  for (final hold in course.holds)
                     Card(
                       key: feltHoldCardKey(hold.number),
                       child: Padding(
@@ -86,7 +93,7 @@ class FeltCourseScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            FeltHoldArtView(art: _artFor(hold.number)),
+                            FeltHoldArtView(art: _artFor(course, hold.number)),
                             const SizedBox(height: 8),
                             Text(
                               'Figurer: '
@@ -96,7 +103,7 @@ class FeltCourseScreen extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              _innerCaption(_artFor(hold.number), hold),
+                              _innerCaption(_artFor(course, hold.number), hold),
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
@@ -118,15 +125,15 @@ class FeltCourseScreen extends ConsumerWidget {
     // The setup step first (spec 0092): date/time, place and weapon —
     // the same form the ring programs use.
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => FeltSetupScreen()),
+      MaterialPageRoute<void>(builder: (_) => FeltSetupScreen(course: course)),
     );
     ref.invalidate(feltSavedSessionProvider);
   }
 }
 
-/// The composed art for hold [number] (spec 0079).
-FeltHoldArt _artFor(int number) =>
-    norgesfelt2026Art.firstWhere((a) => a.number == number);
+/// The composed art for [course]'s hold [number] (specs 0079/0145).
+FeltHoldArt _artFor(FeltCourse course, int number) =>
+    feltArtForCourse(course).firstWhere((a) => a.number == number);
 
 /// The hold's honest inner-treff line (spec 0104), derived from the measured
 /// art — not asserted: «Innertreff på alle figurer», or the count with the

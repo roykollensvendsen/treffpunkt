@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/felt/data/felt_history_store.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
@@ -197,7 +198,10 @@ void main() {
       await _app(
         feltRounds: [one, two],
         baselines: <String, ExerciseResult>{
-          feltRecordKey(FeltShooterGroup.one): const (points: 90, inner: 9),
+          feltRecordKey(norgesfelt2026Course, FeltShooterGroup.one): const (
+            points: 90,
+            inner: 9,
+          ),
         },
       ),
     );

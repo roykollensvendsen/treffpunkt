@@ -22,7 +22,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: FeltCourseScreen())),
+      ProviderScope(child: MaterialApp(home: FeltCourseScreen())),
     );
     await tester.pumpAndSettle();
 
@@ -48,7 +48,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: FeltCourseScreen())),
+      ProviderScope(child: MaterialApp(home: FeltCourseScreen())),
     );
     await tester.pumpAndSettle();
 
@@ -71,6 +71,37 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+    'the Asker+ preview shows all 10 holds and its maxima (spec 0145)',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 8000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(home: FeltCourseScreen(course: askerPlusCourse)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('NorgesFelt Asker+'), findsOneWidget);
+      for (var n = 1; n <= 10; n++) {
+        expect(
+          find.byKey(feltHoldCardKey(n)),
+          findsOneWidget,
+          reason: 'hold $n',
+        );
+      }
+      expect(find.byType(FeltHoldArtView), findsNWidgets(10));
+      // The computed maxima (spec 0145): 103/90, not the official 80/47.
+      expect(find.textContaining('maks 103/90 poeng'), findsOneWidget);
+      // The new figures are named on their holds.
+      expect(find.textContaining('Ugle'), findsWidgets);
+      expect(find.textContaining('Stolpe'), findsWidgets);
+    },
+  );
 
   test(
     'holds are coloured black / green / red as on the course (spec 0078)',

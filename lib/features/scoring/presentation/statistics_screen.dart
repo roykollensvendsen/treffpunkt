@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/domain/exercise_progress.dart';
@@ -36,10 +37,12 @@ const Key noStatisticsKey = ValueKey<String>('noStatistics');
 /// Key for the «Rekorder» app-bar action (spec 0102), for tests.
 const Key statisticsRecordsKey = ValueKey<String>('statisticsRecords');
 
-/// The felt course's per-group exercise names (spec 0143), in group order —
-/// the same labels the Rekorder page keys records by (spec 0102).
+/// The felt exercise names per course and group (specs 0143/0145), in
+/// course-then-group order — the same labels the Rekorder page keys records
+/// by (spec 0102).
 final List<String> _feltExercises = <String>[
-  for (final group in FeltShooterGroup.values) feltRecordKey(group),
+  for (final course in feltCourses)
+    for (final group in FeltShooterGroup.values) feltRecordKey(course, group),
 ];
 
 /// The series colours (spec 0090), validated with the dataviz palette
@@ -110,7 +113,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       // figures, so their points only compare within the group.
       byExercise
           .putIfAbsent(
-            feltRecordKey(round.session.group),
+            feltRecordKey(
+              feltCourseById(round.session.courseId),
+              round.session.group,
+            ),
             () => <ProgressSample>[],
           )
           .add(
@@ -154,7 +160,11 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       final history = _feltExercises.contains(selected)
           ? <ExerciseResult>[
               for (final round in feltRounds)
-                if (feltRecordKey(round.session.group) == selected)
+                if (feltRecordKey(
+                      feltCourseById(round.session.courseId),
+                      round.session.group,
+                    ) ==
+                    selected)
                   (points: round.tally.points, inner: round.tally.inner),
             ]
           : <ExerciseResult>[

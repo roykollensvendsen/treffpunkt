@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/tappable_card_tile.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_category.dart';
@@ -74,24 +75,28 @@ class ProgramCategoryScreen extends StatelessWidget {
     );
   }
 
-  /// The felt courses (spec 0068) — today the single NorgesFelt-løype 2026.
+  /// The felt courses (specs 0068/0145): one tile per course.
   Widget _courses(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        TappableCardTile(
-          tileKey: const ValueKey<String>('felt-norgesfelt-2026'),
-          title: 'NorgesFelt-løype 2026',
-          subtitle: 'Forhåndsvis de 8 holdene og figurene',
-          semanticsLabel:
-              'Velg løype: NorgesFelt-løype 2026, '
-              'Forhåndsvis de 8 holdene og figurene',
-          onTap: () => unawaited(
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const FeltCourseScreen()),
+        for (final course in feltCourses)
+          TappableCardTile(
+            tileKey: ValueKey<String>('felt-${course.id}'),
+            title: course.name,
+            subtitle:
+                'Forhåndsvis de ${course.holds.length} holdene og figurene',
+            semanticsLabel:
+                'Velg løype: ${course.name}, '
+                'Forhåndsvis de ${course.holds.length} holdene og figurene',
+            onTap: () => unawaited(
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => FeltCourseScreen(course: course),
+                ),
+              ),
             ),
           ),
-        ),
       ],
     );
   }

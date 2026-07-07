@@ -13,6 +13,7 @@ import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/core/presentation/nor_date.dart';
 import 'package:treffpunkt/core/presentation/snackbar_guard.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_session_detail_screen.dart';
@@ -313,14 +314,15 @@ class _FeltSessionCard extends ConsumerWidget {
             child: Semantics(
               button: true,
               label:
-                  'NorgesFelt-løype 2026. $_metaLine. '
+                  '${feltCourseById(record.session.courseId).name}. '
+                  '$_metaLine. '
                   '${tally.points} poeng, ${tally.inner} innertreff'
                   '${weapon == null ? '' : '. $weapon'}',
               onTap: () => unawaited(_open(context)),
               child: ExcludeSemantics(
                 child: ListTile(
                   key: feltSessionCard(record.id),
-                  title: const Text('NorgesFelt-løype 2026'),
+                  title: Text(feltCourseById(record.session.courseId).name),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

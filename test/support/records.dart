@@ -60,12 +60,14 @@ FeltSessionRecord feltSessionRecord({
     inner: true,
   ),
   String? competitionId,
+  String? courseId,
 }) => FeltSessionRecord(
   id: id,
   capturedAt: capturedAt,
   competitionId: competitionId,
   session: FeltSessionSnapshot(
     group: group,
+    courseId: courseId,
     currentHold: currentHold,
     holds: <List<FeltPlacedShot>>[
       <FeltPlacedShot>[shot],

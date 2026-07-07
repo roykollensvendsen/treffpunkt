@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_record_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
@@ -22,13 +23,18 @@ class FeltSetupScreen extends StatelessWidget {
   /// (defaults to the wall clock; injected in tests).
   FeltSetupScreen({
     DateTime? now,
+    FeltCourse? course,
     this.competitionId,
     this.forcedGroup,
     super.key,
-  }) : now = now ?? DateTime.now();
+  }) : now = now ?? DateTime.now(),
+       course = course ?? norgesfelt2026Course;
 
   /// The moment used to seed the editable date and time.
   final DateTime now;
+
+  /// The course the round is shot on (spec 0145).
+  final FeltCourse course;
 
   /// The competition this round is shot for (spec 0140), or `null`.
   final String? competitionId;
@@ -39,7 +45,7 @@ class FeltSetupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const FrostedAppBar(title: Text('NorgesFelt-løype 2026')),
+      appBar: FrostedAppBar(title: Text(course.name)),
       body: SessionSetupForm(
         now: now,
         discipline: Discipline.pistol,
@@ -48,6 +54,7 @@ class FeltSetupScreen extends StatelessWidget {
           Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) => FeltRecordScreen(
+                course: course,
                 metadata: metadata,
                 weapon: weapon,
                 competitionId: competitionId,

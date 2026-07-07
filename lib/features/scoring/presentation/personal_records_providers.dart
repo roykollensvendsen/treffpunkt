@@ -6,14 +6,15 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/scoring/data/personal_records_store.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 
-/// The record key of the felt course for [group] (spec 0102): records are
-/// per group, like the «Ny pers!» comparison (spec 0101).
-String feltRecordKey(FeltShooterGroup group) =>
-    'NorgesFelt-løype 2026 · ${group.label}';
+/// The record key of [course] for [group] (specs 0102/0145): records are
+/// per course and group, like the «Ny pers!» comparison (spec 0101).
+String feltRecordKey(FeltCourse course, FeltShooterGroup group) =>
+    course.recordKey(group);
 
 /// The app's [PersonalRecordsStore] for the manual baselines (spec 0102).
 /// Defaults to an in-memory store so tests and a fresh app never touch real

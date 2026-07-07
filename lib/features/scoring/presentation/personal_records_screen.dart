@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
@@ -82,16 +83,20 @@ class PersonalRecordsScreen extends ConsumerWidget {
                 (points: entry.record.total, inner: entry.record.innerTens),
           ],
         ),
-      for (final group in const [FeltShooterGroup.one, FeltShooterGroup.two])
-        _RecordEntry(
-          key: feltRecordKey(group),
-          label: feltRecordKey(group),
-          history: [
-            for (final round in rounds)
-              if (round.session.group == group)
-                (points: round.tally.points, inner: round.tally.inner),
-          ],
-        ),
+      // One row per course and group (specs 0143/0145): points only
+      // compare within the same course and group.
+      for (final course in feltCourses)
+        for (final group in FeltShooterGroup.offered)
+          _RecordEntry(
+            key: feltRecordKey(course, group),
+            label: feltRecordKey(course, group),
+            history: [
+              for (final round in rounds)
+                if (round.session.group == group &&
+                    feltCourseById(round.session.courseId).id == course.id)
+                  (points: round.tally.points, inner: round.tally.inner),
+            ],
+          ),
     ];
   }
 
