@@ -6,6 +6,18 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **NorgesFelt Asker+** (spec 0145): a second felt course — the official
+  eight holds plus the family's hold 9 (six hexagons, alternating lying/
+  standing in green/red) and hold 10 (three stolper, the big oval lying,
+  and a new owl figure measured from the official blink). The Felt
+  category lists both courses; recording, resume, Mine økter, sync,
+  competitions («NorgesFelt Asker+ (Gruppe 1/2)»), records and statistics
+  all know which course a round was shot on — and Asker+ maxima are
+  computed from the scoring rules (103/90 for Gruppe 1/2), while the
+  official course keeps its official 80/47. Existing rounds stay
+  NorgesFelt 2026 rounds.
+
 ### Fixed
 - **Felt competition results now actually reach the scoreboard**: every
   felt result submitted since felt competitions shipped (spec 0140) was

@@ -64,9 +64,14 @@ camera scan is for the single-face programs.)
 
 ### Feltskyting (field shooting)
 Field shooting is scored by **hits on figures** at different distances, not by
-rings. Under the **Felt** category on the **Velg program** page you can open
-**NorgesFelt-løype 2026** to preview the whole course — all **8 holds**, each
-drawn as **one picture that matches the official target sheet**: the figures (hare, wolf head,
+rings. Under the **Felt** category on the **Velg program** page there are two
+courses: the official **NorgesFelt-løype 2026** (8 holds, max 80/47 points for
+Gruppe 1/2) and the family's extended **NorgesFelt Asker+** — the same eight
+holds plus **hold 9** (six hexagons, alternating lying and standing in green
+and red) and **hold 10** (three stolper, the big oval lying down, and an
+**owl**). Asker+ has no official maximum, so the app computes it from the
+scoring rules: **103/90 points** for Gruppe 1/2. Open a course to preview it —
+every hold drawn as **one picture that matches the official target sheet**: the figures (hare, wolf head,
 ptarmigan, hexagons, triangles, circles …) at their real relative size and
 position, in the hold's colour, white figures knocked out of a coloured plate,
 the **black lines dividing the målgrupper**, and each figure's inner-treff
@@ -89,7 +94,8 @@ three squares are one figure, the dividing lines included).
 programs show inner tens. You get a running total, and the scorecard at the
 end shows the total in the same coloured result box as the ring programs. The round
 is **saved as you go**, so you can leave and pick it up later from **Fortsett
-felt-økt** on the course page, exactly where you left off. When you tap
+felt-økt** on the front page — it remembers which course you were shooting and
+reopens it exactly where you left off. When you tap
 **Fullfør** you get the scorecard — every hold's picture with your shots
 marked where they landed (green = innertreff, amber = treff, red = bom) —
 check it, and tap **Lagre økt** to save
@@ -125,7 +131,7 @@ so the card only appears while a session is in progress.
 ## See if you are improving (Statistikk)
 
 Open the **Statistikk** tab at the bottom. Pick an **øvelse** (any program —
-or the NorgesFelt course — you have completed dated sessions of) and you get
+or a NorgesFelt course — you have completed dated sessions of) and you get
 two curves in one chart: your **poengsum** and your **innertreff** per
 session, each in its own colour with a legend. There is no time axis — the
 x-axis is simply your sessions in the order you shot them. Tap or drag on
@@ -133,9 +139,10 @@ the chart to read a specific session's numbers; the latest values are
 labelled at the end of each curve. A dashed **Pers** line marks your
 personal record for the exercise — the same record the Rekorder page
 shows, so your startverdi and undated sessions count too. The NorgesFelt
-course appears **per group** (like on the Rekorder page), since the
-groups shoot different figures and their points only compare within the
-group — each group's curve carries its own record.
+courses appear **per course and group** (like on the Rekorder page), since
+the groups shoot different figures — and the courses different holds — so
+points only compare within the same course and group; each curve carries
+its own record.
 
 The **trophy** button in the top bar opens **Rekorder**: every exercise with
 your current personal record. Shot for years before you got the app? Tap an
