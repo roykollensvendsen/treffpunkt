@@ -147,8 +147,10 @@ class TargetLoupe extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    // Float above the finger; flip below when that would clip the top edge.
-    final fitsAbove = focal.dy - lift - diameter / 2 >= 0;
+    // Stay above the finger as long as possible — the loupe may ride up to
+    // half off the top edge (its centre, the crosshair, reaching the edge)
+    // before it flips below the finger (spec 0152).
+    final fitsAbove = focal.dy - lift >= 0;
     final centreY = focal.dy + (fitsAbove ? -lift : lift);
     final centreX = focal.dx.clamp(diameter / 2, area.width - diameter / 2);
     // Keep the crosshair on the true finger point even when the glass is

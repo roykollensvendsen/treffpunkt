@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Changed
+- **The magnifier stays above your finger longer** (spec 0152): it now
+  holds above the finger until it is half off the top edge before flipping
+  below, instead of flipping the moment it touched the edge.
 - **A new shot lands where your finger lifts** (spec 0151): you can now
   press, slide to aim with the loupe, and release — the shot is placed at
   the release point. Before, sliding cancelled the placement, so aiming
