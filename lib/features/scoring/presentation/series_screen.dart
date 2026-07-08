@@ -20,6 +20,7 @@ import 'package:treffpunkt/features/scoring/domain/session_metadata.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_score.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
+import 'package:treffpunkt/features/scoring/presentation/decimal_score_format.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/scan_target_screen.dart';
@@ -107,8 +108,7 @@ class _CenteredContent extends StatelessWidget {
 }
 
 /// A decimal score in Norwegian notation (spec 0107): one decimal, comma.
-String _norDecimal(double value) =>
-    value.toStringAsFixed(1).replaceAll('.', ',');
+String _norDecimal(double value) => norDecimalScore(value);
 
 /// The inner-ten count spoken in Norwegian (e.g. "3 indre tiere"), or an empty
 /// string when there are none, so a screen reader reads the X count in words.

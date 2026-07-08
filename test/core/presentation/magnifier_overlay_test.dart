@@ -84,6 +84,54 @@ void main() {
     await gesture.up();
   });
 
+  group('readout badge (spec 0153)', () {
+    Widget readoutHost(String? Function(Offset) readoutAt) => MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 300,
+            height: 300,
+            child: MagnifierOverlay(
+              readoutAt: readoutAt,
+              child: const ColoredBox(color: Colors.black),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    testWidgets('shows the readout for the point under the finger', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        readoutHost((focal) => focal.dx < 150 ? '10,4' : '9,2'),
+      );
+      final origin = tester.getTopLeft(find.byType(MagnifierOverlay));
+      final gesture = await tester.startGesture(origin + const Offset(60, 150));
+      await tester.pump();
+      expect(find.text('10,4'), findsOneWidget);
+
+      // Sliding to another point updates the badge live.
+      await gesture.moveTo(origin + const Offset(240, 150));
+      await tester.pump();
+      expect(find.text('9,2'), findsOneWidget);
+      expect(find.text('10,4'), findsNothing);
+      await gesture.up();
+    });
+
+    testWidgets('no badge without a readout callback', (tester) async {
+      await tester.pumpWidget(host());
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(MagnifierOverlay)),
+      );
+      await tester.pump();
+      expect(find.byType(RawMagnifier), findsOneWidget);
+      // The only text, if any, would be a badge — there is none.
+      expect(find.byType(Text), findsNothing);
+      await gesture.up();
+    });
+  });
+
   group('flip threshold (spec 0152)', () {
     // The loupe centre relative to the touch point: negative dy = above.
     Future<double> centreRelToTouch(WidgetTester tester, Offset touch) async {

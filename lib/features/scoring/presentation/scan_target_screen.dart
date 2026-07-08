@@ -20,6 +20,7 @@ import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_calibration.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
 import 'package:treffpunkt/features/scoring/domain/training_sample.dart';
+import 'package:treffpunkt/features/scoring/presentation/decimal_score_format.dart';
 import 'package:treffpunkt/features/scoring/presentation/scan_overlay_painter.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/settings/presentation/contribution_disclosure.dart';
@@ -594,6 +595,17 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
             child: MagnifierOverlay(
               enabled: !calibrating,
               onCommit: _commitPlacement,
+              // The decimal value under the crosshair, live while aiming
+              // (spec 0153).
+              readoutAt: (focal) {
+                final scene = _transform.toScene(focal);
+                final shot = _calibration.shotFor(
+                  PixelPoint(scene.dx, scene.dy),
+                );
+                return norDecimalScore(
+                  _scoring.decimalScore(widget.geometry, shot),
+                );
+              },
               child: InteractiveViewer(
                 transformationController: _transform,
                 minScale: _minScale,

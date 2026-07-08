@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/core/presentation/magnifier_overlay.dart';
 import 'package:treffpunkt/core/presentation/zoom_controls.dart';
+import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
+import 'package:treffpunkt/features/scoring/presentation/decimal_score_format.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_painter.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
@@ -68,6 +70,14 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
                 MagnifierOverlay(
                   onCommit: (position, {required moved}) =>
                       _commit(geometry, position, side, moved: moved),
+                  // The decimal value of the point under the crosshair,
+                  // live while aiming (spec 0153).
+                  readoutAt: (focal) => norDecimalScore(
+                    const ScoringService().decimalScore(
+                      geometry,
+                      _toShot(geometry, _transform.toScene(focal), side),
+                    ),
+                  ),
                   child: InteractiveViewer(
                     transformationController: _transform,
                     minScale: _minScale,
