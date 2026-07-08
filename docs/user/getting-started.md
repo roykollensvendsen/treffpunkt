@@ -81,7 +81,7 @@ each hold card says which). The setup step is the same as the other
 programs — **date and time**, **place** (type it or tap **Bruk min
 posisjon**) and your **weapon** — then you go straight to hold 1 (the shots
 per hold follow the program you picked) and **place each shot** on the hold
-picture where it hit. You can **zoom and
+picture where it hit. While you press to place or drag a shot, a small **magnifier** pops up above your finger so it never hides the exact spot. You can also **zoom and
 pan** the picture just like the ring targets — pinch on a touch screen,
 or two-finger scroll and the **＋/−** buttons on a computer — for precise
 placement on the small figures. The app

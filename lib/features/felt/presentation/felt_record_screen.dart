@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
+import 'package:treffpunkt/core/presentation/magnifier_overlay.dart';
 import 'package:treffpunkt/core/presentation/zoom_controls.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
@@ -532,53 +533,56 @@ class _HoldRecorderState extends State<_HoldRecorder> {
             // Zoom and pan like the ring target (spec 0125): the tap
             // gesture sits INSIDE the viewer, so its localPosition is
             // already in picture space and the fraction maths is
-            // untouched by the zoom.
-            InteractiveViewer(
-              transformationController: _transform,
-              minScale: _minScale,
-              maxScale: _maxScale,
-              trackpadScrollCausesScale: true,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                // Tap-UP, not tap-down (spec 0128): tap-down fires before
-                // the arena knows a second finger is coming, so the first
-                // finger of every pinch planted a shot.
-                onTapUp: (d) => widget.onPlace(
-                  Offset(
-                    d.localPosition.dx / scale,
-                    d.localPosition.dy / scale,
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black12),
+            // untouched by the zoom. The loupe (spec 0150) floats above the
+            // finger while placing a shot so it never hides the point.
+            MagnifierOverlay(
+              child: InteractiveViewer(
+                transformationController: _transform,
+                minScale: _minScale,
+                maxScale: _maxScale,
+                trackpadScrollCausesScale: true,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  // Tap-UP, not tap-down (spec 0128): tap-down fires before
+                  // the arena knows a second finger is coming, so the first
+                  // finger of every pinch planted a shot.
+                  onTapUp: (d) => widget.onPlace(
+                    Offset(
+                      d.localPosition.dx / scale,
+                      d.localPosition.dy / scale,
                     ),
-                    child: SizedBox(
-                      width: w,
-                      height: h,
-                      child: Stack(
-                        children: <Widget>[
-                          Positioned.fill(
-                            child: CustomPaint(
-                              painter: FeltHoldArtPainter(art),
-                            ),
-                          ),
-                          for (final s in widget.shots)
-                            Positioned(
-                              left:
-                                  s.pos.dx * scale -
-                                  FeltShotMarker.diameter / 2,
-                              top:
-                                  s.pos.dy * scale -
-                                  FeltShotMarker.diameter / 2,
-                              child: FeltShotMarker(
-                                hit: s.shot.isHit,
-                                inner: s.shot.inner,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black12),
+                      ),
+                      child: SizedBox(
+                        width: w,
+                        height: h,
+                        child: Stack(
+                          children: <Widget>[
+                            Positioned.fill(
+                              child: CustomPaint(
+                                painter: FeltHoldArtPainter(art),
                               ),
                             ),
-                        ],
+                            for (final s in widget.shots)
+                              Positioned(
+                                left:
+                                    s.pos.dx * scale -
+                                    FeltShotMarker.diameter / 2,
+                                top:
+                                    s.pos.dy * scale -
+                                    FeltShotMarker.diameter / 2,
+                                child: FeltShotMarker(
+                                  hit: s.shot.isHit,
+                                  inner: s.shot.inner,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

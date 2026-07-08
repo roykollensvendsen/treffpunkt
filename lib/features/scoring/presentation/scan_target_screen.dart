@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/config/build_info.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
+import 'package:treffpunkt/core/presentation/magnifier_overlay.dart';
 import 'package:treffpunkt/core/presentation/zoom_controls.dart';
 import 'package:treffpunkt/features/auth/domain/auth_status.dart';
 import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
@@ -568,51 +569,56 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
             // two handles are dragged directly). A single-finger drag pans, a
             // pinch (or the on-photo buttons / trackpad scroll) zooms; the
             // overlay's pointer coordinates are mapped back to the photo's own
-            // space, so the calibration and scoring are unaffected.
-            child: InteractiveViewer(
-              transformationController: _transform,
-              minScale: _minScale,
-              maxScale: _maxScale,
-              trackpadScrollCausesScale: true,
-              panEnabled: !calibrating,
-              scaleEnabled: !calibrating,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Image.memory(_imageBytes!, fit: BoxFit.contain),
-                  ),
-                  Positioned.fill(
-                    child: GestureDetector(
-                      key: scanOverlayKey,
-                      behavior: HitTestBehavior.opaque,
-                      // Calibrating: drag to move and pinch to scale the ring
-                      // overlay onto the target. Placing: tap to place a shot,
-                      // long-press to drag one.
-                      onScaleStart: calibrating ? _calibrateStart : null,
-                      onScaleUpdate: calibrating ? _calibrateUpdate : null,
-                      onTapUp: calibrating
-                          ? null
-                          : (d) => _placeAt(d.localPosition),
-                      onLongPressStart: calibrating
-                          ? null
-                          : (d) => _pickUp(d.localPosition),
-                      onLongPressMoveUpdate: calibrating
-                          ? null
-                          : (d) => _dragTo(d.localPosition),
-                      onLongPressEnd: calibrating
-                          ? null
-                          : (_) => setState(() => _draggingIndex = null),
-                      child: CustomPaint(
-                        size: Size.square(side),
-                        painter: ScanOverlayPainter(
-                          geometry: widget.geometry,
-                          calibration: calibration,
-                          shots: <Shot>[for (final c in _candidates) c.shot],
+            // space, so the calibration and scoring are unaffected. The loupe
+            // (spec 0150) floats above the finger while placing a shot — only
+            // when placing, not while calibrating.
+            child: MagnifierOverlay(
+              enabled: !calibrating,
+              child: InteractiveViewer(
+                transformationController: _transform,
+                minScale: _minScale,
+                maxScale: _maxScale,
+                trackpadScrollCausesScale: true,
+                panEnabled: !calibrating,
+                scaleEnabled: !calibrating,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Image.memory(_imageBytes!, fit: BoxFit.contain),
+                    ),
+                    Positioned.fill(
+                      child: GestureDetector(
+                        key: scanOverlayKey,
+                        behavior: HitTestBehavior.opaque,
+                        // Calibrating: drag to move and pinch to scale the
+                        // ring overlay onto the target. Placing: tap to place
+                        // a shot, long-press to drag one.
+                        onScaleStart: calibrating ? _calibrateStart : null,
+                        onScaleUpdate: calibrating ? _calibrateUpdate : null,
+                        onTapUp: calibrating
+                            ? null
+                            : (d) => _placeAt(d.localPosition),
+                        onLongPressStart: calibrating
+                            ? null
+                            : (d) => _pickUp(d.localPosition),
+                        onLongPressMoveUpdate: calibrating
+                            ? null
+                            : (d) => _dragTo(d.localPosition),
+                        onLongPressEnd: calibrating
+                            ? null
+                            : (_) => setState(() => _draggingIndex = null),
+                        child: CustomPaint(
+                          size: Size.square(side),
+                          painter: ScanOverlayPainter(
+                            geometry: widget.geometry,
+                            calibration: calibration,
+                            shots: <Shot>[for (final c in _candidates) c.shot],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

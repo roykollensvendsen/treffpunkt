@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Magnifier loupe when placing shots** (spec 0150): on a touch screen the
+  finger used to hide the exact spot a shot lands. Now a small circular
+  magnifier floats above the finger — with a crosshair on the point —
+  whenever you place or drag a shot on the ring target, the scan overlay or
+  the felt hold recorder.
+
 ### Fixed
 - **Asker+ hold 9 and 10 figures corrected from the real course** (spec
   0149): a photo of the physical sheet showed the sketch was off — hold 9

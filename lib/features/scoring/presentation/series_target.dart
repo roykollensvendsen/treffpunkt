@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/app_theme.dart';
+import 'package:treffpunkt/core/presentation/magnifier_overlay.dart';
 import 'package:treffpunkt/core/presentation/zoom_controls.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
 import 'package:treffpunkt/features/scoring/domain/target_geometry.dart';
@@ -61,42 +62,46 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
             height: side,
             child: Stack(
               children: [
-                InteractiveViewer(
-                  transformationController: _transform,
-                  minScale: _minScale,
-                  maxScale: _maxScale,
-                  trackpadScrollCausesScale: true,
-                  child: GestureDetector(
-                    key: seriesTargetKey,
-                    onTapUp: (details) =>
-                        _place(geometry, details.localPosition, side),
-                    onLongPressStart: (details) => _tryPickUp(
-                      geometry,
-                      shots,
-                      details.localPosition,
-                      side,
-                    ),
-                    onLongPressMoveUpdate: (details) =>
-                        _drag(geometry, details.localPosition, side),
-                    onLongPressEnd: (_) =>
-                        ref.read(sessionProvider.notifier).drop(),
-                    child: Semantics(
-                      label: 'Skyteskive — trykk for å plassere skudd',
-                      button: true,
-                      // The outer GestureDetector's `onTapUp` is a pointer
-                      // gesture and adds no `SemanticsAction.tap`, so the node
-                      // would advertise a button with nothing to activate.
-                      // Carry the action here so assistive tech can place a
-                      // shot (at the target centre).
-                      onTap: () =>
-                          _place(geometry, Offset(side / 2, side / 2), side),
-                      child: CustomPaint(
-                        size: Size.square(side),
-                        painter: SeriesPainter(
-                          geometry: geometry,
-                          shots: shots,
-                          draggingIndex: recording.draggingIndex,
-                          colors: TreffColors.of(context),
+                // The loupe (spec 0150) floats above the finger while a shot
+                // is placed or dragged, so the finger never hides the point.
+                MagnifierOverlay(
+                  child: InteractiveViewer(
+                    transformationController: _transform,
+                    minScale: _minScale,
+                    maxScale: _maxScale,
+                    trackpadScrollCausesScale: true,
+                    child: GestureDetector(
+                      key: seriesTargetKey,
+                      onTapUp: (details) =>
+                          _place(geometry, details.localPosition, side),
+                      onLongPressStart: (details) => _tryPickUp(
+                        geometry,
+                        shots,
+                        details.localPosition,
+                        side,
+                      ),
+                      onLongPressMoveUpdate: (details) =>
+                          _drag(geometry, details.localPosition, side),
+                      onLongPressEnd: (_) =>
+                          ref.read(sessionProvider.notifier).drop(),
+                      child: Semantics(
+                        label: 'Skyteskive — trykk for å plassere skudd',
+                        button: true,
+                        // The outer GestureDetector's `onTapUp` is a pointer
+                        // gesture and adds no `SemanticsAction.tap`, so the
+                        // node would advertise a button with nothing to
+                        // activate. Carry the action here so assistive tech
+                        // can place a shot (at the target centre).
+                        onTap: () =>
+                            _place(geometry, Offset(side / 2, side / 2), side),
+                        child: CustomPaint(
+                          size: Size.square(side),
+                          painter: SeriesPainter(
+                            geometry: geometry,
+                            shots: shots,
+                            draggingIndex: recording.draggingIndex,
+                            colors: TreffColors.of(context),
+                          ),
                         ),
                       ),
                     ),

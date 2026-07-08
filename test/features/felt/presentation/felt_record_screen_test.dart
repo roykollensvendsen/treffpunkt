@@ -95,6 +95,32 @@ void main() {
     expect(find.text('Hold 1/10'), findsOneWidget);
   });
 
+  testWidgets('a press on the hold shows the magnifier loupe (spec 0150)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(600, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: FeltRecordScreen(group: FeltShooterGroup.one),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(feltHoldRecorderKey)),
+    );
+    await tester.pump();
+    expect(find.byType(RawMagnifier), findsOneWidget);
+    await gesture.up();
+    await tester.pump();
+    expect(find.byType(RawMagnifier), findsNothing);
+  });
+
   testWidgets('place a shot, score updates (spec 0080)', (tester) async {
     tester.view.physicalSize = const Size(600, 1200);
     tester.view.devicePixelRatio = 1.0;
