@@ -65,7 +65,7 @@ camera scan is for the single-face programs.)
 ### Feltskyting (field shooting)
 Field shooting is scored by **hits on figures** at different distances, not by
 rings. Under the **Felt** category on the **Velg program** page there are two
-courses: the official **NorgesFelt-løype 2026** (8 holds, max 80/47 points for
+courses: the official **NorgesFelt-løype 2026** (8 holds, max 80/70 points for
 Gruppe 1/2) and the family's extended **NorgesFelt Asker+** — the same eight
 holds plus **hold 9** (six hexagons in two rows, alternating lying and
 standing in green and red) and **hold 10** (an **owl**, the big oval lying

@@ -47,9 +47,13 @@ void main() {
     expect(feltCourseById('no-such-course'), same(norgesfelt2026Course));
   });
 
-  test('2026 keeps its official maxima (specs 0068/0145)', () {
+  test('2026 maxima are computed from the scoring rules (spec 0148)', () {
+    // Gruppe 1: 6 × 8 = 48 treff + 32 figur = 80 — matches the official
+    // number. Gruppe 2: 5 × 8 = 40 treff + 30 figur = 70 — the domain
+    // expert shot a perfect round scoring exactly 70 (2026-07-07), which
+    // falsified the previously cited «official» 47 (spec 0068).
     expect(norgesfelt2026Course.maxPoints(FeltShooterGroup.one), 80);
-    expect(norgesfelt2026Course.maxPoints(FeltShooterGroup.two), 47);
+    expect(norgesfelt2026Course.maxPoints(FeltShooterGroup.two), 70);
   });
 
   test('Asker+ maxima are computed from the scoring rules (spec 0145)', () {

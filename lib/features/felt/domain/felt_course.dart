@@ -45,14 +45,8 @@ class FeltHoldDef {
 /// [holds], and the per-group course maximum.
 @immutable
 class FeltCourse {
-  /// Creates a course. [officialMax] carries the official per-group maxima
-  /// when they exist; groups without one get the computed maximum.
-  const FeltCourse({
-    required this.id,
-    required this.name,
-    required this.holds,
-    this.officialMax,
-  });
+  /// Creates a course.
+  const FeltCourse({required this.id, required this.name, required this.holds});
 
   /// Stable id serialised into saved rounds (spec 0145).
   final String id;
@@ -63,22 +57,19 @@ class FeltCourse {
   /// The holds, in shooting order.
   final List<FeltHoldDef> holds;
 
-  /// Official per-group maxima (norgesfelt.no), when published.
-  final Map<FeltShooterGroup, int>? officialMax;
-
-  /// The course maximum for [group]: the official number when one is
-  /// published, otherwise computed from the scoring rules (specs 0080/0085 —
-  /// points = treff + distinct figures, inner is tiebreak only): per hold,
-  /// shots + min(shots, figures).
-  int maxPoints(FeltShooterGroup group) =>
-      officialMax?[group] ??
-      holds.fold(
-        0,
-        (sum, hold) =>
-            sum +
-            group.shotsPerHold +
-            math.min(group.shotsPerHold, hold.figures.length),
-      );
+  /// The course maximum for [group], computed from the scoring rules
+  /// (specs 0080/0085 — points = treff + distinct figures, inner is
+  /// tiebreak only): per hold, shots + min(shots, figures). Always
+  /// computed (spec 0148): the once-cited «official» 47 for Gruppe 2 was
+  /// falsified by the domain expert's perfect 70-point round; Gruppe 1's
+  /// official 80 equals the formula.
+  int maxPoints(FeltShooterGroup group) => holds.fold(
+    0,
+    (sum, hold) =>
+        sum +
+        group.shotsPerHold +
+        math.min(group.shotsPerHold, hold.figures.length),
+  );
 
   /// The competition-program name for [group] (spec 0140's encoding: the
   /// group — and now the course — is the program).
@@ -91,8 +82,8 @@ class FeltCourse {
 /// The NorgesFelt 2026 course (spec 0068), reconstructed from norgesfelt.no:
 /// 8 holds, 10 s shooting time. Inner zones follow the measured art (spec
 /// 0104): every figure has one except hold 5's big triangle. Max points
-/// (treff + figur, spec 0085): the official 80/47 (the official 80 for
-/// gruppe 1 — 48 treff + 32 figur — confirms inner hits score nothing).
+/// (treff + figur, spec 0085): computed 80/70 (spec 0148); the official 80
+/// for gruppe 1 — 48 treff + 32 figur — confirms inner hits score nothing.
 final List<FeltHoldDef> norgesfelt2026 = <FeltHoldDef>[
   FeltHoldDef(
     number: 1,
@@ -379,20 +370,16 @@ final List<FeltHoldDef> _askerPlusExtraHolds = <FeltHoldDef>[
   ),
 ];
 
-/// The official NorgesFelt 2026 course (spec 0068) with its official maxima.
+/// The official NorgesFelt 2026 course (spec 0068): computed maxima 80/70
+/// for gruppe 1/2 (spec 0148).
 final FeltCourse norgesfelt2026Course = FeltCourse(
   id: 'norgesfelt-2026',
   name: 'NorgesFelt-løype 2026',
   holds: norgesfelt2026,
-  officialMax: <FeltShooterGroup, int>{
-    FeltShooterGroup.one: 80,
-    FeltShooterGroup.two: 47,
-    FeltShooterGroup.three: 47,
-  },
 );
 
-/// NorgesFelt Asker+ (spec 0145): the 2026 course plus holds 9–10. No
-/// official maximum exists, so it is computed (103/90 for gruppe 1/2).
+/// NorgesFelt Asker+ (spec 0145): the 2026 course plus holds 9–10,
+/// computed maxima 103/90 for gruppe 1/2.
 final FeltCourse askerPlusCourse = FeltCourse(
   id: 'norgesfelt-asker-plus',
   name: 'NorgesFelt Asker+',

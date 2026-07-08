@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **NorgesFelt Gruppe 2's maximum is 70, not 47** (spec 0148): a perfect
+  5-shot round scores 40 treff + 30 figur = 70 — verified on the range —
+  while the app displayed the once-cited «official» 47 under the program
+  and as the competition maximum. Every felt maximum is now computed from
+  the scoring rules (80/70 official course, 103/90 Asker+).
+
+### Fixed
 - **The front page scrolls behind the bottom bar again**: the «Spander en
   kaffe» card and the version footer sat in a fixed block below the list,
   so the scroll area ended above the frosted navigation bar and the page's
