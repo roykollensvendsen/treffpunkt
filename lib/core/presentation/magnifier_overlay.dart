@@ -29,6 +29,7 @@ class MagnifierOverlay extends StatefulWidget {
     required this.child,
     this.enabled = true,
     this.onCommit,
+    this.readoutAt,
     super.key,
   });
 
@@ -41,6 +42,12 @@ class MagnifierOverlay extends StatefulWidget {
 
   /// Called on the release of a single-finger gesture (spec 0151).
   final LoupeCommit? onCommit;
+
+  /// A live readout for the point under the finger (spec 0153): given the
+  /// current focal (viewport) point, returns a short label — e.g. the decimal
+  /// score «10,4» — drawn as a badge on the loupe. Null result, or no
+  /// callback, shows no badge.
+  final String? Function(Offset focal)? readoutAt;
 
   @override
   State<MagnifierOverlay> createState() => _MagnifierOverlayState();
@@ -114,7 +121,11 @@ class _MagnifierOverlayState extends State<MagnifierOverlay> {
           children: <Widget>[
             widget.child,
             if (_focal != null)
-              TargetLoupe(focal: _focal!, area: constraints.biggest),
+              TargetLoupe(
+                focal: _focal!,
+                area: constraints.biggest,
+                readout: widget.readoutAt?.call(_focal!),
+              ),
           ],
         ),
       ),
@@ -127,13 +138,22 @@ class _MagnifierOverlayState extends State<MagnifierOverlay> {
 /// edge) and clamped inside [area], with a crosshair on the focal point.
 class TargetLoupe extends StatelessWidget {
   /// Creates the loupe centred on the content under [focal].
-  const TargetLoupe({required this.focal, required this.area, super.key});
+  const TargetLoupe({
+    required this.focal,
+    required this.area,
+    this.readout,
+    super.key,
+  });
 
   /// The point under the finger, in the overlay's local coordinates.
   final Offset focal;
 
   /// The overlay's size, so the loupe stays on-screen.
   final Size area;
+
+  /// A short label (e.g. the decimal score «10,4») shown as a badge on the
+  /// side of the loupe away from the finger (spec 0153), or null for none.
+  final String? readout;
 
   /// Loupe diameter.
   static const double diameter = 96;
@@ -157,35 +177,89 @@ class TargetLoupe extends StatelessWidget {
     // nudged to stay on-screen: focalPointOffset shifts what the lens shows
     // relative to its own centre (Flutter's RawMagnifier contract).
     final focalOffset = Offset(focal.dx - centreX, focal.dy - centreY);
-    return Positioned(
-      left: centreX - diameter / 2,
-      top: centreY - diameter / 2,
+    // The whole area, so the loupe and its badge can be positioned freely
+    // over the target; nothing here takes pointers.
+    return Positioned.fill(
       child: IgnorePointer(
-        child: RawMagnifier(
-          size: const Size.square(diameter),
-          magnificationScale: magnification,
-          focalPointOffset: focalOffset,
-          clipBehavior: Clip.hardEdge,
-          decoration: MagnifierDecoration(
-            shape: CircleBorder(
-              side: BorderSide(color: scheme.primary, width: 2),
-            ),
-            shadows: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x33000000),
-                blurRadius: 6,
-                offset: Offset(0, 2),
+        child: Stack(
+          children: <Widget>[
+            Positioned(
+              left: centreX - diameter / 2,
+              top: centreY - diameter / 2,
+              child: RawMagnifier(
+                size: const Size.square(diameter),
+                magnificationScale: magnification,
+                focalPointOffset: focalOffset,
+                clipBehavior: Clip.hardEdge,
+                decoration: MagnifierDecoration(
+                  shape: CircleBorder(
+                    side: BorderSide(color: scheme.primary, width: 2),
+                  ),
+                  shadows: const <BoxShadow>[
+                    BoxShadow(
+                      color: Color(0x33000000),
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: CustomPaint(
+                  painter: _CrosshairPainter(scheme.primary),
+                  size: const Size.square(diameter),
+                ),
               ),
-            ],
-          ),
-          child: CustomPaint(
-            painter: _CrosshairPainter(scheme.primary),
-            size: const Size.square(diameter),
-          ),
+            ),
+            if (readout != null)
+              // The value badge on the far side of the loupe from the finger:
+              // above the loupe when it floats above, below it when flipped.
+              Positioned(
+                left: centreX - 60,
+                width: 120,
+                top: fitsAbove
+                    ? centreY - diameter / 2 - 28
+                    : centreY + diameter / 2 + 6,
+                child: Center(
+                  child: _ScoreBadge(readout!, scheme),
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
+}
+
+/// The value pill drawn beside the loupe (spec 0153).
+class _ScoreBadge extends StatelessWidget {
+  const _ScoreBadge(this.label, this.scheme);
+
+  final String label;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+    decoration: BoxDecoration(
+      color: scheme.primary,
+      borderRadius: BorderRadius.circular(11),
+      boxShadow: const <BoxShadow>[
+        BoxShadow(
+          color: Color(0x33000000),
+          blurRadius: 4,
+          offset: Offset(0, 1),
+        ),
+      ],
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+        color: scheme.onPrimary,
+        fontWeight: FontWeight.w700,
+        fontSize: 15,
+        fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+      ),
+    ),
+  );
 }
 
 /// A small ring with a centre dot at the lens centre — the focal point.

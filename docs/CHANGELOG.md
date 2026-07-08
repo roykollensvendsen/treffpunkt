@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **The loupe shows the shot's decimal value while you aim** (spec 0153):
+  a badge on the magnifier shows the score of the point under the crosshair
+  (e.g. «10,4»), live as you slide, so you see the value before you lift.
+  On the ring target and the scan overlay; always one decimal.
+
 ### Changed
 - **The magnifier stays above your finger longer** (spec 0152): it now
   holds above the finger until it is half off the top edge before flipping
