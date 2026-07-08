@@ -81,15 +81,16 @@ void main() {
       }
     });
 
-    test('hold 9 is six ringed hexagons of equal area, in two rows', () {
+    test('hold 9 is five ringed hexagons of equal area, in two rows '
+        '(spec 0149)', () {
       final hold9 = askerPlusArt[8];
-      expect(hold9.figures, hasLength(6));
+      expect(hold9.figures, hasLength(5));
       for (final f in hold9.figures) {
         expect(f.shape, FeltArtShape.polygon);
         expect(f.ring, isNotNull);
       }
       // The lying figures are the standing hexagon rotated, so every
-      // figure has the same area (domain-expert feedback 2026-07-07)…
+      // figure has the same area (domain-expert feedback)…
       double areaOf(FeltArtFigure f) {
         final pts = f.points;
         var area = 0.0;
@@ -108,19 +109,24 @@ void main() {
       // …and the two-row layout keeps the hold picture's proportions
       // close to the other holds' (no wide strip — shots stay placeable).
       expect(hold9.size.width / hold9.size.height, lessThan(2.5));
-      // Alternating green and red (spec 0145).
+      // Alternating green-lying and red-standing, G-R-G-R-G (spec 0149).
       expect(hold9.figures[0].fill, const Color(0xFF00683F));
       expect(hold9.figures[1].fill, const Color(0xFFED1C24));
+      expect(hold9.figures[4].fill, const Color(0xFF00683F));
     });
 
-    test('hold 10 scores as five figures: owl, oval, three stolper', () {
+    test('hold 10 scores as six figures: hexagon, owl, three stolper, '
+        'hexagon (spec 0149)', () {
       final hold10 = askerPlusArt[9];
-      expect(hold10.figures, hasLength(11));
-      // Left→right: the owl and the oval each carry an inner ring…
+      // A green hexagon, the owl, nine stolpe squares, a green hexagon.
+      expect(hold10.figures, hasLength(12));
+      // The leading hexagon and the owl each carry an inner ring…
       expect(hold10.figures[0].ring, isNotNull);
+      expect(hold10.figures[0].fill, const Color(0xFF00683F));
       expect(hold10.figures[1].ring, isNotNull);
       // …then the nine stolpe squares group into three score figures
-      // anchored at 2/5/8, middles as inner zones (spec 0086 pattern).
+      // anchored at 2/5/8, the middle of each (a lying stolpe) as the
+      // inner zone (spec 0086 pattern, rotated 90° — spec 0149).
       for (var i = 0; i < 9; i++) {
         expect(
           hold10.figures[2 + i].scoreIndex,
@@ -133,7 +139,10 @@ void main() {
           reason: 'square $i',
         );
       }
-      expect(hold10.innerByScoringFigure, hasLength(5));
+      // …and a trailing green hexagon with a ring.
+      expect(hold10.figures[11].ring, isNotNull);
+      expect(hold10.figures[11].fill, const Color(0xFF00683F));
+      expect(hold10.innerByScoringFigure, hasLength(6));
     });
   });
 }
