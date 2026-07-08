@@ -84,6 +84,39 @@ void main() {
     await gesture.up();
   });
 
+  group('flip threshold (spec 0152)', () {
+    // The loupe centre relative to the touch point: negative dy = above.
+    Future<double> centreRelToTouch(WidgetTester tester, Offset touch) async {
+      final gesture = await tester.startGesture(touch);
+      await tester.pump();
+      final loupe = tester.getRect(find.byType(RawMagnifier)).center;
+      await gesture.up();
+      return loupe.dy - touch.dy;
+    }
+
+    testWidgets('stays above the finger when there is room', (tester) async {
+      await tester.pumpWidget(host());
+      final origin = tester.getTopLeft(find.byType(MagnifierOverlay));
+      // Well below the top edge: the loupe floats above (negative dy).
+      final rel = await centreRelToTouch(
+        tester,
+        origin + const Offset(150, 200),
+      );
+      expect(rel, lessThan(0));
+    });
+
+    testWidgets('flips below only past 50% off the top edge', (tester) async {
+      await tester.pumpWidget(host());
+      final origin = tester.getTopLeft(find.byType(MagnifierOverlay));
+      // Near the top (dy < lift): above would be >50% clipped → flip below.
+      final rel = await centreRelToTouch(
+        tester,
+        origin + const Offset(150, 20),
+      );
+      expect(rel, greaterThan(0));
+    });
+  });
+
   group('onCommit (spec 0151)', () {
     Widget commitHost(void Function(Offset, {required bool moved}) onCommit) =>
         MaterialApp(
