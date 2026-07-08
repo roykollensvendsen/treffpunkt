@@ -32,6 +32,48 @@ void main() {
     await tester.pump();
   }
 
+  testWidgets('a slide places the shot where the finger lifts (spec 0151)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(600, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: FeltRecordScreen(group: FeltShooterGroup.one),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Press on an empty corner, slide to the hare's inner zone (as one does
+    // to aim with the loupe), and lift there — the shot must land at the
+    // lift point, not the touch-down point.
+    final rect = tester.getRect(find.byKey(feltHoldRecorderKey));
+    final gesture = await tester.startGesture(
+      rect.topLeft + const Offset(4, 4),
+    );
+    await tester.pump();
+    await gesture.moveTo(
+      rect.topLeft +
+          Offset(hareFrac.dx * rect.width, hareFrac.dy * rect.height),
+    );
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    // The lift landed in the hare's inner zone: treff 1 + figur 1 = 2, one Ⓧ.
+    expect(
+      find.textContaining(
+        'Treff 1 · Figur 1  =  2 poeng · 1',
+        findRichText: true,
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('a competition round opens locked to its group (spec 0140)', (
     tester,
   ) async {

@@ -4,6 +4,12 @@
 
 import 'package:flutter/material.dart';
 
+/// Reports where a single-finger placement gesture ended (spec 0150): the
+/// release [position] in the overlay's local (viewport) coordinates, and
+/// whether the finger [moved] beyond touch slop before release. Not called
+/// for a pinch or a cancelled gesture.
+typedef LoupeCommit = void Function(Offset position, {required bool moved});
+
 /// Wraps a shot-placement target with a magnifier loupe (spec 0150).
 ///
 /// While a single finger presses or drags on the [child], a small circular,
@@ -12,10 +18,19 @@ import 'package:flutter/material.dart';
 /// tracks pointers without joining the gesture arena, so the child's taps,
 /// long-presses and pinches are untouched; the loupe is [IgnorePointer]. It
 /// shows only for a single pointer — a two-finger pinch-zoom raises none.
+///
+/// [onCommit] fires on the release of a single-finger gesture with the
+/// release point, so a shot lands **where the finger lifts** even after
+/// sliding to aim with the loupe (spec 0151) — not where it first touched.
 class MagnifierOverlay extends StatefulWidget {
   /// Wraps [child] with the loupe overlay. Set [enabled] to false to keep the
   /// pointer tracking off entirely (e.g. a non-touch context).
-  const MagnifierOverlay({required this.child, this.enabled = true, super.key});
+  const MagnifierOverlay({
+    required this.child,
+    this.enabled = true,
+    this.onCommit,
+    super.key,
+  });
 
   /// The interactive target (e.g. the target painter, kept inside its own
   /// `InteractiveViewer` so the loupe sits in untransformed space above it).
@@ -24,13 +39,23 @@ class MagnifierOverlay extends StatefulWidget {
   /// Whether the loupe is shown at all.
   final bool enabled;
 
+  /// Called on the release of a single-finger gesture (spec 0151).
+  final LoupeCommit? onCommit;
+
   @override
   State<MagnifierOverlay> createState() => _MagnifierOverlayState();
 }
 
 class _MagnifierOverlayState extends State<MagnifierOverlay> {
+  /// A finger that travels more than this (logical px) has "moved" — a slide,
+  /// not a tap.
+  static const double _slop = 8;
+
   final Set<int> _pointers = <int>{};
   Offset? _focal;
+  Offset _downAt = Offset.zero;
+  bool _moved = false;
+  bool _wasPinch = false;
 
   void _sync(Offset? position) {
     // A single pointer means "placing/moving": show the loupe. Zero or two+
@@ -41,12 +66,35 @@ class _MagnifierOverlayState extends State<MagnifierOverlay> {
 
   void _down(PointerDownEvent event) {
     _pointers.add(event.pointer);
+    if (_pointers.length >= 2) {
+      _wasPinch = true;
+    } else {
+      _downAt = event.localPosition;
+      _moved = false;
+      _wasPinch = false;
+    }
     _sync(event.localPosition);
   }
 
-  void _release(int pointer) {
-    _pointers.remove(pointer);
-    _sync(null);
+  void _move(PointerMoveEvent event) {
+    if (_pointers.length != 1) return;
+    if ((event.localPosition - _downAt).distance > _slop) _moved = true;
+    _sync(event.localPosition);
+  }
+
+  void _release(PointerEvent event, {required bool committed}) {
+    final wasLast = _pointers.length == 1;
+    _pointers.remove(event.pointer);
+    if (wasLast) {
+      // The last finger lifted: a single-finger gesture ended. Commit the
+      // placement at the lift point unless it was ever part of a pinch.
+      if (committed && !_wasPinch) {
+        widget.onCommit?.call(event.localPosition, moved: _moved);
+      }
+      setState(() => _focal = null);
+    } else {
+      _sync(null);
+    }
   }
 
   @override
@@ -59,11 +107,9 @@ class _MagnifierOverlayState extends State<MagnifierOverlay> {
         // siblings behind, not descendants.
         behavior: HitTestBehavior.opaque,
         onPointerDown: _down,
-        onPointerMove: (event) {
-          if (_pointers.length == 1) _sync(event.localPosition);
-        },
-        onPointerUp: (event) => _release(event.pointer),
-        onPointerCancel: (event) => _release(event.pointer),
+        onPointerMove: _move,
+        onPointerUp: (event) => _release(event, committed: true),
+        onPointerCancel: (event) => _release(event, committed: false),
         child: Stack(
           children: <Widget>[
             widget.child,

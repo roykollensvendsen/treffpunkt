@@ -534,8 +534,16 @@ class _HoldRecorderState extends State<_HoldRecorder> {
             // gesture sits INSIDE the viewer, so its localPosition is
             // already in picture space and the fraction maths is
             // untouched by the zoom. The loupe (spec 0150) floats above the
-            // finger while placing a shot so it never hides the point.
+            // finger while placing a shot so it never hides the point, and
+            // the shot lands where the finger lifts (spec 0151). The overlay
+            // reports the release for a single finger only, so a pinch never
+            // plants a shot (subsuming the old tap-UP guard, spec 0128).
             MagnifierOverlay(
+              onCommit: (position, {required moved}) {
+                if (moved && _currentScale > 1) return;
+                final scene = _transform.toScene(position);
+                widget.onPlace(Offset(scene.dx / scale, scene.dy / scale));
+              },
               child: InteractiveViewer(
                 transformationController: _transform,
                 minScale: _minScale,
@@ -543,15 +551,6 @@ class _HoldRecorderState extends State<_HoldRecorder> {
                 trackpadScrollCausesScale: true,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  // Tap-UP, not tap-down (spec 0128): tap-down fires before
-                  // the arena knows a second finger is coming, so the first
-                  // finger of every pinch planted a shot.
-                  onTapUp: (d) => widget.onPlace(
-                    Offset(
-                      d.localPosition.dx / scale,
-                      d.localPosition.dy / scale,
-                    ),
-                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: DecoratedBox(

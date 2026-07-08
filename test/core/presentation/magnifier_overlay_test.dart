@@ -83,4 +83,80 @@ void main() {
     expect(find.byType(RawMagnifier), findsNothing);
     await gesture.up();
   });
+
+  group('onCommit (spec 0151)', () {
+    Widget commitHost(void Function(Offset, {required bool moved}) onCommit) =>
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 300,
+                height: 300,
+                child: MagnifierOverlay(
+                  onCommit: onCommit,
+                  child: const ColoredBox(color: Colors.black),
+                ),
+              ),
+            ),
+          ),
+        );
+
+    testWidgets('a tap commits at the release point, not moved', (
+      tester,
+    ) async {
+      Offset? at;
+      bool? wasMoved;
+      await tester.pumpWidget(
+        commitHost((p, {required moved}) {
+          at = p;
+          wasMoved = moved;
+        }),
+      );
+      final origin = tester.getTopLeft(find.byType(MagnifierOverlay));
+      final gesture = await tester.startGesture(origin + const Offset(50, 60));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+      expect(at, const Offset(50, 60));
+      expect(wasMoved, isFalse);
+    });
+
+    testWidgets('a slide commits at the LIFT point, marked moved', (
+      tester,
+    ) async {
+      Offset? at;
+      bool? wasMoved;
+      await tester.pumpWidget(
+        commitHost((p, {required moved}) {
+          at = p;
+          wasMoved = moved;
+        }),
+      );
+      final origin = tester.getTopLeft(find.byType(MagnifierOverlay));
+      final gesture = await tester.startGesture(origin + const Offset(40, 40));
+      await tester.pump();
+      await gesture.moveTo(origin + const Offset(160, 120));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+      // The shot lands where the finger lifted, not where it touched down.
+      expect(at, const Offset(160, 120));
+      expect(wasMoved, isTrue);
+    });
+
+    testWidgets('a pinch commits nothing', (tester) async {
+      var commits = 0;
+      await tester.pumpWidget(
+        commitHost((_, {required moved}) => commits++),
+      );
+      final centre = tester.getCenter(find.byType(MagnifierOverlay));
+      final a = await tester.startGesture(centre + const Offset(-20, 0));
+      final b = await tester.startGesture(centre + const Offset(20, 0));
+      await tester.pump();
+      await a.up();
+      await b.up();
+      await tester.pump();
+      expect(commits, 0);
+    });
+  });
 }

@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **A new shot lands where your finger lifts** (spec 0151): you can now
+  press, slide to aim with the loupe, and release — the shot is placed at
+  the release point. Before, sliding cancelled the placement, so aiming
+  with the loupe placed nothing.
+
 ### Added
 - **Magnifier loupe when placing shots** (spec 0150): on a touch screen the
   finger used to hide the exact spot a shot lands. Now a small circular
