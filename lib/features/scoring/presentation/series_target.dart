@@ -63,8 +63,11 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
             child: Stack(
               children: [
                 // The loupe (spec 0150) floats above the finger while a shot
-                // is placed or dragged, so the finger never hides the point.
+                // is placed or dragged, so the finger never hides the point;
+                // the shot lands where the finger lifts (spec 0151).
                 MagnifierOverlay(
+                  onCommit: (position, {required moved}) =>
+                      _commit(geometry, position, side, moved: moved),
                   child: InteractiveViewer(
                     transformationController: _transform,
                     minScale: _minScale,
@@ -72,8 +75,6 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
                     trackpadScrollCausesScale: true,
                     child: GestureDetector(
                       key: seriesTargetKey,
-                      onTapUp: (details) =>
-                          _place(geometry, details.localPosition, side),
                       onLongPressStart: (details) => _tryPickUp(
                         geometry,
                         shots,
@@ -154,6 +155,29 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
   void _place(TargetGeometry geometry, Offset px, double side) =>
       ref.read(sessionProvider.notifier).placeShot(_toShot(geometry, px, side));
 
+  /// Whether the gesture in progress grabbed an existing marker to move it —
+  /// so its release must not also place a new shot (spec 0151).
+  bool _grabbed = false;
+
+  /// Commits a single-finger gesture at its lift [position] (spec 0151): a
+  /// new shot lands where the finger lifts. Skipped when the gesture moved an
+  /// existing marker, or was a pan of a zoomed-in view.
+  void _commit(
+    TargetGeometry geometry,
+    Offset position,
+    double side, {
+    required bool moved,
+  }) {
+    if (_grabbed) {
+      _grabbed = false;
+      return;
+    }
+    // A one-finger drag on a zoomed-in target pans it — that is not a
+    // placement. At 1× there is no pan, so a slide is loupe-assisted aiming.
+    if (moved && _currentScale > 1) return;
+    _place(geometry, _transform.toScene(position), side);
+  }
+
   void _tryPickUp(
     TargetGeometry geometry,
     List<Shot> shots,
@@ -177,6 +201,7 @@ class _SeriesTargetState extends ConsumerState<SeriesTarget> {
     if (nearest >= 0 && nearestPx <= _pickUpRadiusMm * scale) {
       // Only pick the shot up; it stays put until the first drag update, so a
       // long-press near (not on) a marker does not teleport it to the press.
+      _grabbed = true;
       ref.read(sessionProvider.notifier).pickUp(nearest);
     }
   }

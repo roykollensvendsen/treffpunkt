@@ -389,6 +389,24 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
     });
   }
 
+  /// Whether the gesture in progress grabbed an existing marker to drag it —
+  /// so its release must not also place a new shot (spec 0151).
+  bool _grabbed = false;
+
+  /// Commits a single-finger gesture at its lift [position] (spec 0151): a
+  /// new shot lands where the finger lifts, mapped back through the zoom.
+  /// Skipped when an existing marker was being dragged, or when a zoomed-in
+  /// view was panned.
+  void _commitPlacement(Offset position, {required bool moved}) {
+    if (_grabbed) {
+      _grabbed = false;
+      return;
+    }
+    if (moved && _currentScale > 1) return;
+    final scene = _transform.toScene(position);
+    _placeAt(scene);
+  }
+
   void _pickUp(Offset localPx) {
     final press = PixelPoint(localPx.dx, localPx.dy);
     var nearest = -1;
@@ -402,6 +420,7 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
       }
     }
     if (nearest >= 0 && nearestPx <= _pickRadiusPx) {
+      _grabbed = true;
       setState(() => _draggingIndex = nearest);
     }
   }
@@ -574,6 +593,7 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
             // when placing, not while calibrating.
             child: MagnifierOverlay(
               enabled: !calibrating,
+              onCommit: _commitPlacement,
               child: InteractiveViewer(
                 transformationController: _transform,
                 minScale: _minScale,
@@ -591,13 +611,11 @@ class _ScanTargetScreenState extends ConsumerState<ScanTargetScreen> {
                         key: scanOverlayKey,
                         behavior: HitTestBehavior.opaque,
                         // Calibrating: drag to move and pinch to scale the
-                        // ring overlay onto the target. Placing: tap to place
-                        // a shot, long-press to drag one.
+                        // ring overlay onto the target. Placing: the loupe
+                        // overlay commits a shot where the finger lifts
+                        // (spec 0151); a long-press drags an existing one.
                         onScaleStart: calibrating ? _calibrateStart : null,
                         onScaleUpdate: calibrating ? _calibrateUpdate : null,
-                        onTapUp: calibrating
-                            ? null
-                            : (d) => _placeAt(d.localPosition),
                         onLongPressStart: calibrating
                             ? null
                             : (d) => _pickUp(d.localPosition),
