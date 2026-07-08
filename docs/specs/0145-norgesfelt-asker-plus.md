@@ -46,7 +46,8 @@ resolving to NorgesFelt 2026.
   figures), so course max = shots × holds + Σ min(shots, figures per hold).
   - Asker+ Gruppe 1 (6 shots): 60 + (32 + 6 + 5) = **103**.
   - Asker+ Gruppe 2 (5 shots): 50 + (30 + 5 + 5) = **90**.
-  - NorgesFelt 2026 keeps its **official** 80/47 (spec 0068) untouched. Note
+  - NorgesFelt 2026 keeps its **official** 80/47 (spec 0068) untouched
+    (superseded by spec 0148: always computed, 80/70). Note
     the official Gruppe 2 value (47) is *lower* than the formula value (70);
     the official number wins for the official course, the formula is only
     used where no official number exists.
@@ -66,7 +67,8 @@ resolving to NorgesFelt 2026.
 - `FeltCourse` (domain): `id`, `name`, `holds` (List<FeltHoldDef>),
   `maxPoints(FeltShooterGroup)`, `programName(group)`, `recordKey(group)`.
   Two instances: `norgesfelt2026Course` (wraps the existing list, official
-  80/47) and `askerPlusCourse` (10 holds, computed max). `feltCourseById`
+  80/47 — superseded by spec 0148) and `askerPlusCourse` (10 holds,
+  computed max). `feltCourseById`
   resolves an id (unknown/absent → 2026).
 - `FeltSessionSnapshot` gains `courseId` (serialised; absent → 2026).
 - `tool/felt/gen_dart.py` emits holds 1–10 and two consts:

@@ -427,10 +427,11 @@ void main() {
       // results table's id column is `uuid`, and retries must map the same
       // round to the same result.
       expect(result.id, feltCompetitionResultId('felt-r1'));
-      // 2 treff + 1 figur = 3 points; 1 inner as the tiebreak; group max 47.
+      // 2 treff + 1 figur = 3 points; 1 inner as the tiebreak; the gruppe-2
+      // maximum is computed: 40 treff + 30 figur = 70 (spec 0148).
       expect(result.total, 3);
       expect(result.innerTens, 1);
-      expect(result.maxTotal, 47);
+      expect(result.maxTotal, 70);
       expect(
         result.program,
         feltCompetitionProgram(norgesfelt2026Course, FeltShooterGroup.two),

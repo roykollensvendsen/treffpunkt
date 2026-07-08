@@ -15,6 +15,9 @@ circles, …) drawn to scale, recorded as hits/inner per figure.
 The NorgesFelt 2026 course (reconstructed from the official files on
 norgesfelt.no): **8 holds**, distances 15/25 m, shooting positions, **10 s**
 shooting time, an **inner zone on every figure**, max **80/47** points.
+*(Correction, spec 0148: the cited 47 for Gruppe 2 does not match the
+treff+figur scoring — a verified perfect round scores 70; the app computes
+80/70.)*
 
 ## Requirements (this increment)
 1. A **figure catalogue**: each NorgesFelt figure drawn as scalable **vector**,
