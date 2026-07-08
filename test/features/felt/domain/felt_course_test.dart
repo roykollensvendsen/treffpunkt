@@ -20,24 +20,25 @@ void main() {
     expect(askerPlusCourse.holds[9].number, 10);
   });
 
-  test('hold 9 is six hexagons (spec 0145)', () {
+  test('hold 9 is five hexagons (spec 0149)', () {
     final figures = askerPlusCourse.holds[8].figures;
-    expect(figures, hasLength(6));
+    expect(figures, hasLength(5));
     for (final figure in figures) {
       expect(figure.type, FeltFigureType.hexagon);
     }
   });
 
-  test('hold 10 is the owl, the big oval and three stolper (spec 0145)', () {
+  test('hold 10 is hexagon, owl, three stolper, hexagon (spec 0149)', () {
     final figures = askerPlusCourse.holds[9].figures;
-    expect(figures, hasLength(5));
-    expect(figures[0].type, FeltFigureType.owl);
-    expect(figures[0].name, 'Ugle');
-    expect(figures[1].type, FeltFigureType.oval);
+    expect(figures, hasLength(6));
+    expect(figures[0].type, FeltFigureType.hexagon);
+    expect(figures[1].type, FeltFigureType.owl);
+    expect(figures[1].name, 'Ugle');
     expect(
-      figures.skip(2).map((f) => f.type),
+      figures.getRange(2, 5).map((f) => f.type),
       everyElement(FeltFigureType.stripe),
     );
+    expect(figures[5].type, FeltFigureType.hexagon);
   });
 
   test('courses resolve by id, unknown defaults to 2026 (spec 0145)', () {

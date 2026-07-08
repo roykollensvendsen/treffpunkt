@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- **Asker+ hold 9 and 10 figures corrected from the real course** (spec
+  0149): a photo of the physical sheet showed the sketch was off — hold 9
+  is five hexagons (not six), and hold 10 is a green hexagon, the owl,
+  three lying stolper and a green hexagon (no oval). Course maxima are
+  unchanged (103/90).
 - **NorgesFelt Gruppe 2's maximum is 70, not 47** (spec 0148): a perfect
   5-shot round scores 40 treff + 30 figur = 70 — verified on the range —
   while the app displayed the once-cited «official» 47 under the program
