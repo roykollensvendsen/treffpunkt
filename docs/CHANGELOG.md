@@ -13,6 +13,11 @@ All notable changes to this project are documented here. The format is based on
   On the ring target and the scan overlay; always one decimal.
 
 ### Changed
+- **The Luft and Fin/Grov tiles show their ammunition** (spec 0154): the
+  air category now wears a lead match pellet and the fin/grov category a
+  .22 cartridge in natural colours, instead of two near-identical ring
+  targets — so the two precision categories tell apart at a glance. MIL and
+  Felt pictograms are unchanged.
 - **The magnifier stays above your finger longer** (spec 0152): it now
   holds above the finger until it is half off the top edge before flipping
   below, instead of flipping the moment it touched the edge.

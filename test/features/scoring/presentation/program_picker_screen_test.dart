@@ -89,11 +89,13 @@ void main() {
     await tester.pumpWidget(app(InMemorySessionStore()));
     await tester.pumpAndSettle();
 
-    // The wordmark's target beside the title, plus one on each precision
-    // category tile (Luft and Fin/Grov).
-    expect(find.byType(TargetIcon), findsNWidgets(3));
-    // MIL wears the silhouette its programs are shot on, Felt the
-    // square-and-circle figure pair of its holds.
+    // The wordmark's target beside the title — the only ring glyph now.
+    expect(find.byType(TargetIcon), findsOneWidget);
+    // Each category wears its own pictogram: the Luft pellet and the
+    // Fin/Grov cartridge (spec 0154), MIL the silhouette its programs are
+    // shot on, Felt the square-and-circle figure pair of its holds.
+    expect(find.byType(PelletPictogram), findsOneWidget);
+    expect(find.byType(CartridgePictogram), findsOneWidget);
     expect(find.byType(SilhouettePictogram), findsOneWidget);
     expect(find.byType(FeltFiguresPictogram), findsOneWidget);
   });
