@@ -35,6 +35,22 @@ python3 gen_dart.py out/report.json --name Cartridge \
   *vector | overlay | original*, left→right. Judge with your eyes, not just the
   IoU.
 
+## Shaping the trace: symmetry, rotation, vertex cap
+Most objects need one or more of these — they are the steps you would otherwise
+redo by hand every time:
+- **`--symmetry x|y`** mirrors each region about its own centre before tracing,
+  so a reference that is a hair off-symmetric (every hand/technical drawing is)
+  yields a *balanced* silhouette instead of a skewed one. `x` = a vertical axis
+  (left↔right), `y` = horizontal (top↔bottom). Apply in the *reference's*
+  orientation.
+- **`--rotate 90|180|270`** turns the *emitted coordinates* clockwise. The trace
+  and the overlay panel stay in the source orientation (so verification lines up
+  with the drawing) — only the Dart output stands upright. A cartridge drawn on
+  its side: `--symmetry y --rotate 90`. The `aspect` swaps for a quarter-turn.
+- **`--max-verts N`** raises `--eps` (fine steps) until each region has ≤ N
+  vertices — the direct way to stylise to a primitive (an octagon pellet =
+  `--max-verts 8`) instead of hand-tuning `--eps` to a target count.
+
 ## `--region NAME:SPEC[:CLOSE]`
 - `NAME` becomes the Dart field (`static const List<Offset> NAME`). Avoid Dart
   keywords; `gen_dart.py` renames `case`→`caseOutline` etc. automatically.
@@ -60,6 +76,22 @@ traced polygon vs the source mask). `aspect` is width ÷ height of the union box
   rendered at tile size (26 px) in light + dark, is signed off before any PR.
 
 ## Hard-won gotchas
+- **Research the real object before you trace, never draw from memory.** The
+  pellet's first freehand attempt came out as a mushroom/pawn because it was
+  guessed; it only worked once traced from the reference as the true shape (a
+  *wadcutter* match pellet — flat head, thin waist, flared hollow skirt, **flat**
+  base, not domed, not concave). Trace the *specific* element the user points at
+  (the user meant the left pellet on the data sheet, not "a pellet").
+- **Symmetrise a symmetric object.** A raw trace of an off-symmetric drawing is
+  visibly lopsided; `--symmetry` balances it. (Mask-level symmetry gives a
+  symmetric *silhouette*; RDP may still place left/right vertices at slightly
+  different spots — if you want coordinate-exact mirror pairs for a clean list,
+  that is a small hand-polish on the emitted points.)
+- **The reference's orientation is rarely the pictogram's.** Trace in the
+  drawing's orientation (overlay verifies), then `--rotate` the output upright.
+- **Show the overlay every round, not just at the end.** The user re-checks the
+  vector *over the original* at each iteration — read `out/x.png` and share it
+  before declaring a fit; expect several correction rounds on a new shape.
 - **An internal line splits a fill into pieces.** A dash-dot centreline or a
   dimension line drawn *through* a coloured region cuts it into several blobs,
   so the largest-component grab returns a sliver (IoU collapses). Bridge it with
