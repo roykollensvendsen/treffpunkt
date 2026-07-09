@@ -1,0 +1,12 @@
+# Verification artefacts may embed the reference/source images — never commit.
+out/
+# Local caches.
+__pycache__/
+*.pyc
+# Stray reference/source images left by tooling — never commit.
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.pdf
