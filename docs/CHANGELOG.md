@@ -12,6 +12,12 @@ All notable changes to this project are documented here. The format is based on
   (e.g. «10,4»), live as you slide, so you see the value before you lift.
   On the ring target and the scan overlay; always one decimal.
 
+### Added
+- **A first, empty Hjem invites you to start** (spec 0156): on a fresh install,
+  before there's any history or a session to resume, a short line above the
+  category grid — «Velg en gren for å starte økta di» — frames the tiles so the
+  screen guides you rather than sitting half-empty.
+
 ### Changed
 - **The two «Fortsett» cards tell apart at a glance** (spec 0157): a paused
   ring session and a paused felt round no longer share one play icon — each

@@ -100,6 +100,37 @@ void main() {
     expect(find.byType(FeltFiguresPictogram), findsOneWidget);
   });
 
+  testWidgets('a first, empty Hjem shows the lead-in; history hides it '
+      '(spec 0156)', (tester) async {
+    // Fresh install: nothing to resume, no history — the lead-in frames the
+    // grid.
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+    expect(find.byKey(firstRunLeadKey), findsOneWidget);
+
+    // Once a completed exercise exists, the "Skyt igjen" hero orients the user
+    // and the lead-in gives way.
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ProgramPickerScreen)),
+    );
+    await container
+        .read(uploadQueueProvider.notifier)
+        .enqueue(
+          SessionRecord(
+            id: 'live-1',
+            program: '10 m Luftpistol 60 skudd',
+            capturedAt: DateTime.utc(2026, 7, 3, 9),
+            total: 92,
+            maxTotal: 600,
+            innerTens: 1,
+            payload: const <String, dynamic>{},
+          ),
+        );
+    await tester.pumpAndSettle();
+    expect(find.byKey(firstRunLeadKey), findsNothing);
+    expect(find.byKey(shootAgainKey), findsOneWidget);
+  });
+
   testWidgets('the two «Fortsett» cards wear their discipline glyph, not a '
       'shared play icon (spec 0157)', (tester) async {
     final session = Session.start(ProgramCatalogue.airRifle10m);
