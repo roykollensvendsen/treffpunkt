@@ -264,6 +264,18 @@ void main() {
     // Air rifle is the spec-0001 reference / fixture but is not offered.
     expect(find.text('10 m Air Rifle'), findsNothing);
 
+    // Each program row wears the category's discipline glyph (spec 0158) — the
+    // Luft pellet — so it identifies with the tile it was reached from.
+    expect(
+      find.descendant(
+        of: find.byKey(
+          const ValueKey<String>('program-10 m Luftpistol 60 skudd'),
+        ),
+        matching: find.byType(PelletPictogram),
+      ),
+      findsOneWidget,
+    );
+
     await tester.tap(
       find.byKey(const ValueKey<String>('program-10 m Luftpistol 60 skudd')),
     );
@@ -338,6 +350,15 @@ void main() {
     }
     expect(find.textContaining('maks 103 poeng'), findsOneWidget);
     expect(find.textContaining('maks 90 poeng'), findsOneWidget);
+
+    // Each felt course row wears the felt figure glyph (spec 0158).
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('felt-norgesfelt-2026-one')),
+        matching: find.byType(FeltFiguresPictogram),
+      ),
+      findsOneWidget,
+    );
 
     // A variant tile opens the setup directly — no course preview between.
     await tester.tap(

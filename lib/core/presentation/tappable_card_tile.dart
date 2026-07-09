@@ -22,11 +22,16 @@ class TappableCardTile extends StatelessWidget {
     required this.subtitle,
     required this.semanticsLabel,
     required this.onTap,
+    this.leading,
     super.key,
   });
 
   /// Key on the inner [ListTile], used by tests to find and tap the tile.
   final Key tileKey;
+
+  /// An optional leading glyph — e.g. the discipline pictogram, so a program
+  /// row carries the same identifier its category tile does (spec 0158).
+  final Widget? leading;
 
   /// The tile's title line.
   final String title;
@@ -53,6 +58,7 @@ class TappableCardTile extends StatelessWidget {
           child: ListTile(
             key: tileKey,
             enabled: onTap != null,
+            leading: leading,
             title: Text(title),
             subtitle: Text(subtitle),
             trailing: onTap == null ? null : const Icon(Icons.chevron_right),
