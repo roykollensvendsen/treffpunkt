@@ -100,6 +100,56 @@ def components(mask, min_area=1):
     return out
 
 
+def mask_bbox(mask):
+    """(x0, y0, w, h) tight box of the True pixels."""
+    ys, xs = np.where(mask)
+    return int(xs.min()), int(ys.min()), \
+        int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1)
+
+
+def symmetrise(mask, axis='x'):
+    """Make *mask* bilaterally symmetric about its own bbox centre line.
+
+    ``axis='x'`` mirrors left↔right (a vertical axis), ``axis='y'`` top↔bottom.
+    The result is the union of the shape and its mirror, so a reference that is
+    a hair off-symmetric — as hand and technical drawings always are — traces to
+    a clean, balanced polygon. Apply in the *reference's* orientation, before any
+    ``rotate`` (compose: symmetrise the horizontal cartridge about ``y``, then
+    rotate it upright).
+    """
+    x0, y0, w, h = mask_bbox(mask)
+    crop = mask[y0:y0 + h, x0:x0 + w]
+    crop = crop | crop[:, ::-1] if axis == 'x' else crop | crop[::-1, :]
+    out = np.zeros_like(mask)
+    out[y0:y0 + h, x0:x0 + w] = crop
+    return out
+
+
+def rotate_norm(poly, quarter):
+    """Rotate normalised (0..1) points by *quarter* × 90° clockwise.
+
+    The trace and the overlay panel stay in the reference's orientation (so
+    verification lines up with the source); only the emitted coordinates turn,
+    to stand an object drawn on its side upright. Combine with an aspect swap
+    for odd quarters — see ``rotate_aspect``.
+    """
+    p = np.asarray(poly, dtype=np.float64).copy()
+    x, y = p[:, 0].copy(), p[:, 1].copy()
+    q = quarter % 4
+    if q == 1:  # 90° CW: (x, y) -> (1 - y, x)
+        p[:, 0], p[:, 1] = 1 - y, x
+    elif q == 2:  # 180°
+        p[:, 0], p[:, 1] = 1 - x, 1 - y
+    elif q == 3:  # 270° CW / 90° CCW: (x, y) -> (y, 1 - x)
+        p[:, 0], p[:, 1] = y, 1 - x
+    return p
+
+
+def rotate_aspect(aspect, quarter):
+    """Width÷height after a *quarter*-turn — swaps for an odd number of turns."""
+    return round(1.0 / aspect, 4) if quarter % 2 else aspect
+
+
 def fill_holes(mask):
     """Fill interior holes: flood the background in from the border, invert."""
     h, w = mask.shape
@@ -270,10 +320,24 @@ def chaikin(pts, iters=1):
     return pts
 
 
-def trace(mask, eps=1.5, chaikin_iters=0):
-    """Ordered, RDP-minimal outline (x, y) of *mask*'s largest filled region."""
+def trace(mask, eps=1.5, chaikin_iters=0, max_verts=0):
+    """Ordered, RDP-minimal outline (x, y) of *mask*'s largest filled region.
+
+    With *max_verts* > 0 the RDP tolerance is raised until the outline has at
+    most that many vertices — the direct way to stylise a shape down to a chosen
+    primitive (e.g. an octagon pellet: ``max_verts=8``). *eps* is the starting
+    (and minimum) tolerance.
+    """
     ring = contour_ring(mask)
     poly = rdp_closed(ring, eps)
+    if max_verts:
+        # Grow the tolerance in fine steps and stop at the first outline that
+        # fits the cap — the largest vertex count <= max_verts, i.e. the best
+        # fit that still meets the target (coarse steps overshoot well under it).
+        e = eps
+        while len(poly) > max_verts and e < 100:
+            e *= 1.1
+            poly = rdp_closed(ring, e)
     if chaikin_iters:
         poly = chaikin(poly, chaikin_iters)
     return poly

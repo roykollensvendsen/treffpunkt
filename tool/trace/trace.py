@@ -13,6 +13,12 @@ Usage:
     python3 tool/trace/trace.py ref.png \\
         --region case:0.35,0.45:8 --region bullet:0.82,0.45 --eps 2.0
 
+    # a symmetric object drawn on its side, stood upright:
+    python3 tool/trace/trace.py ref.png --symmetry y --rotate 90
+
+    # stylise to an octagon:
+    python3 tool/trace/trace.py ref.png --max-verts 8
+
 A ``--region`` is ``NAME:SPEC[:CLOSE]`` where SPEC is either ``x,y`` (a 0..1
 sample point whose colour is picked from the image) or ``r,g,b`` (a target
 colour), and the optional trailing integer is that region's own close in px
@@ -67,6 +73,15 @@ def main():
                          'largest (recovers split fills / detached parts)')
     ap.add_argument('--chaikin', type=int, default=0,
                     help='Chaikin smoothing passes (rounds facets)')
+    ap.add_argument('--max-verts', type=int, default=0,
+                    help='raise --eps until each region has <= N vertices '
+                         '(stylise to a primitive, e.g. 8 for an octagon)')
+    ap.add_argument('--symmetry', choices=('x', 'y'), default=None,
+                    help="mirror each region about its centre before tracing "
+                         "('x' = left/right, 'y' = top/bottom)")
+    ap.add_argument('--rotate', type=int, choices=(0, 90, 180, 270), default=0,
+                    help='turn the emitted coords clockwise (the overlay stays '
+                         'in the source orientation for verification)')
     ap.add_argument('--paper', default=None,
                     help='background colour r,g,b (default: auto from corners)')
     ap.add_argument('--out', default='out/trace.png')
@@ -89,18 +104,23 @@ def main():
             T.ink_mask(rgb, paper), close_px=args.close,
             keep_frac=args.keep_frac)))
 
+    if args.symmetry:
+        named = [(n, c, T.symmetrise(m, args.symmetry)) for n, c, m in named]
+
     polys_px = []
     for _, _, mask in named:
         if not mask.any():
             raise SystemExit('a region matched no pixels — adjust colour/tol')
-        polys_px.append(T.trace(mask, eps=args.eps, chaikin_iters=args.chaikin))
+        polys_px.append(T.trace(mask, eps=args.eps, chaikin_iters=args.chaikin,
+                                max_verts=args.max_verts))
 
     box = T.union_box(polys_px)
-    report = {'image': os.path.basename(args.image),
-              'paper': list(paper), 'aspect': T.aspect(box), 'regions': []}
+    quarter = args.rotate // 90
+    report = {'image': os.path.basename(args.image), 'paper': list(paper),
+              'aspect': T.rotate_aspect(T.aspect(box), quarter), 'regions': []}
     panel_regions = []
     for (name, colour, mask), poly in zip(named, polys_px):
-        norm = T.normalise(poly, box)
+        norm = T.rotate_norm(T.normalise(poly, box), quarter)
         report['regions'].append({
             'name': name,
             'colour': list(colour) if args.region else None,
