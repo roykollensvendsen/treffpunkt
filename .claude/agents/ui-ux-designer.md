@@ -111,8 +111,13 @@ specific data shape). Faithful because it's the same widgets. Recipe (see the
 - **Load a real font first** or text renders as boxes: read
   `/usr/share/fonts/TTF/DejaVuSans.ttf`, load it as a `FontLoader('Roboto')`, and
   wrap in `MaterialApp(theme: appTheme, …)` — use the real `appTheme`/`darkTheme`
-  so colours and typography are faithful. (Material **icon** glyphs still box —
-  that's the unloaded icon font, not a bug.)
+  so colours and typography are faithful. Material **icon** glyphs still box —
+  that's the unloaded icon font, not a bug — *unless the icon itself is what
+  you're reviewing*, in which case also load it:
+  `FontLoader('MaterialIcons')..addFont(…)` from
+  `~/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf`, and
+  `Icon(Icons.…)` renders properly. Custom-painted glyphs (TargetIcon, the
+  category pictograms) never need this — they're CustomPaint, not font glyphs.
 - CustomPainter text (TextPainter) needs `fontFamily: 'Roboto'` pinned in its
   style or it boxes.
 - For a `Consumer` screen, wrap in `ProviderScope(overrides: […])` and stub the

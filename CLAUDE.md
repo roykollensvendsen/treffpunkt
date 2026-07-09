@@ -23,6 +23,10 @@ session.
    passes, then refactor.
 3. **Conventional Commits**, atomic, one logical change each. Enforced by a
    `commit-msg` hook and in CI. **No AI-agent references in commit messages.**
+   The hook matches `claude|anthropic|chatgpt|openai|copilot|codeium` as a
+   *substring, case-insensitively* — so a message mentioning the `.claude/`
+   path (e.g. when adding an agent or skill) is rejected for containing
+   "claude"; refer to it as "the versioned agents directory" instead.
 4. **Plain language first.** Every commit body and PR description opens with a
    one-paragraph everyday explanation of *what and why*, then the specifics.
 5. **Decisions are ADRs** in `docs/adr/`.
