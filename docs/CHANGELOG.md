@@ -19,6 +19,10 @@ All notable changes to this project are documented here. The format is based on
   screen guides you rather than sitting half-empty.
 
 ### Changed
+- **A warm cup on «Spander en kaffe»** (spec 0159): the thank-you card now
+  leads with a filled coffee cup in the palette's amber instead of a neutral
+  outlined glyph, so it reads as a friendly aside rather than another chrome
+  icon.
 - **Program rows carry the discipline glyph** (spec 0158): drilling into a
   category, each program row now leads with the same pictogram as the tile you
   tapped (the pellet for Luft programs, the felt figures for felt courses), so

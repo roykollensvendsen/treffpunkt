@@ -440,7 +440,15 @@ class ProgramPickerScreen extends ConsumerWidget {
             Card(
               child: ListTile(
                 key: coffeeCardKey,
-                leading: const Icon(Icons.coffee_outlined),
+                // A warm, filled cup in the palette's amber (spec 0159) — the
+                // one warm accent in TreffColors — so the thank-you reads
+                // friendly, not like neutral chrome. Not a shot marker; just
+                // the palette's warm tone (colours come from the theme,
+                // spec 0100), never a hard-coded coffee brown.
+                leading: Icon(
+                  Icons.coffee,
+                  color: TreffColors.of(context).draggedShot,
+                ),
                 title: const Text('Spander en kaffe'),
                 subtitle: const Text(
                   'Liker du Treffpunkt? '
