@@ -317,7 +317,10 @@ class ProgramPickerScreen extends ConsumerWidget {
                 ).colorScheme.secondaryContainer,
                 child: ListTile(
                   key: resumeSessionKey,
-                  leading: const Icon(Icons.play_circle_outline),
+                  // The discipline glyph, not a generic play icon, so the two
+                  // «Fortsett» cards read apart at a glance (spec 0157): the
+                  // ring target for a scoring økt, the felt figures below.
+                  leading: const TargetIcon(size: 28),
                   title: const Text('Fortsett økt'),
                   subtitle: Text(_resumeSubtitle(saved)),
                   trailing: IconButton(
@@ -336,7 +339,7 @@ class ProgramPickerScreen extends ConsumerWidget {
                 ).colorScheme.secondaryContainer,
                 child: ListTile(
                   key: feltResumeSessionKey,
-                  leading: const Icon(Icons.play_circle_outline),
+                  leading: const FeltFiguresPictogram(size: 28),
                   title: const Text('Fortsett felt-økt'),
                   subtitle: Text(
                     '${feltCourseById(feltSaved.courseId).name} · '
