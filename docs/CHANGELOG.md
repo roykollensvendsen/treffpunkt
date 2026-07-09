@@ -13,6 +13,10 @@ All notable changes to this project are documented here. The format is based on
   On the ring target and the scan overlay; always one decimal.
 
 ### Changed
+- **Hjem sits on an even vertical rhythm** (spec 0155): the category tiles no
+  longer reserve a tall fixed cell, so the dead band that used to open up
+  between the «Skyt igjen» hero and the category grid is gone — the resume
+  cards, the categories and the coffee card now share one consistent gap.
 - **The Luft and Fin/Grov tiles show their ammunition** (spec 0154): the
   air category now wears a lead match pellet and the fin/grov category a
   .22 cartridge in natural colours, instead of two near-identical ring
