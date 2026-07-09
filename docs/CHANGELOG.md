@@ -19,6 +19,10 @@ All notable changes to this project are documented here. The format is based on
   screen guides you rather than sitting half-empty.
 
 ### Changed
+- **Program rows carry the discipline glyph** (spec 0158): drilling into a
+  category, each program row now leads with the same pictogram as the tile you
+  tapped (the pellet for Luft programs, the felt figures for felt courses), so
+  the discipline is the consistent identifier across both screens.
 - **The two «Fortsett» cards tell apart at a glance** (spec 0157): a paused
   ring session and a paused felt round no longer share one play icon — each
   resume card now wears its discipline glyph (the ring target, or the felt

@@ -14,6 +14,8 @@ import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_category.dart';
 import 'package:treffpunkt/features/scoring/domain/program_definition.dart';
+import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart'
+    show categoryPictogram;
 import 'package:treffpunkt/features/scoring/presentation/session_setup_screen.dart';
 
 /// Key for the empty-category placeholder (spec 0084 req 4), used by tests.
@@ -59,6 +61,7 @@ class ProgramCategoryScreen extends StatelessWidget {
         for (final definition in programs)
           TappableCardTile(
             tileKey: ValueKey<String>('program-${definition.name}'),
+            leading: categoryPictogram(category),
             title: definition.name,
             subtitle: _subtitle(definition),
             semanticsLabel:
@@ -87,6 +90,7 @@ class ProgramCategoryScreen extends StatelessWidget {
           for (final group in FeltShooterGroup.offered)
             TappableCardTile(
               tileKey: ValueKey<String>('felt-${course.id}-${group.name}'),
+              leading: categoryPictogram(ProgramCategory.felt),
               title: course.name,
               subtitle:
                   '${group.shotsPerHold} skudd per hold (${group.label}) · '

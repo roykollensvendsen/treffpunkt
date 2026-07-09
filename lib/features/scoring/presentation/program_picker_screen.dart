@@ -518,7 +518,10 @@ List<List<ProgramCategory>> get _categoryRows {
   ];
 }
 
-Widget _categoryPictogram(ProgramCategory category) => switch (category) {
+/// The pictogram for a category (spec 0154): the ammunition for the two NSF
+/// categories, the silhouette for MIL, the figure pair for felt. Shared so a
+/// category's program rows can wear the same glyph as its Hjem tile (0158).
+Widget categoryPictogram(ProgramCategory category) => switch (category) {
   ProgramCategory.nsfLuft => const PelletPictogram(),
   ProgramCategory.nsfFinGrov => const CartridgePictogram(),
   ProgramCategory.mil => const SilhouettePictogram(),
@@ -562,7 +565,7 @@ class _CategoryTile extends StatelessWidget {
                       size: 26,
                       color: disabled ? muted.withValues(alpha: 0.6) : muted,
                     ),
-                    child: _categoryPictogram(category),
+                    child: categoryPictogram(category),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
