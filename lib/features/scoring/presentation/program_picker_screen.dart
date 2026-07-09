@@ -476,12 +476,12 @@ class _LastExercise {
   final FeltShooterGroup? feltGroup;
 }
 
-/// The category's pictogram (spec 0101): what its programs are shot at —
-/// fine rings for air, the heavy 25 m bull for fin/grov, the silhouette for
-/// MIL and felt's square-and-circle figure pair.
+/// The category's pictogram: what its programs are shot with or at — a match
+/// pellet for air, a .22 cartridge for fin/grov (spec 0154), the silhouette
+/// for MIL and felt's square-and-circle figure pair (spec 0101).
 Widget _categoryPictogram(ProgramCategory category) => switch (category) {
-  ProgramCategory.nsfLuft => const TargetIcon(),
-  ProgramCategory.nsfFinGrov => const TargetIcon(bullFraction: 0.45),
+  ProgramCategory.nsfLuft => const PelletPictogram(),
+  ProgramCategory.nsfFinGrov => const CartridgePictogram(),
   ProgramCategory.mil => const SilhouettePictogram(),
   ProgramCategory.felt => const FeltFiguresPictogram(),
 };

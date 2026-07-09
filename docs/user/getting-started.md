@@ -14,10 +14,12 @@ of the sign-in screen. It works offline.
 ## Record your first shot
 1. The bar at the bottom takes you everywhere: **Hjem**, **Mine økter**,
    **Statistikk**, **Stevner** (konkurranser) and **Forum** — always
-   visible, with labels. On **Hjem**, pick a **category**: **NSF Luft** (the luftpistol
-   programs), **NSF Fin/Grov** (the 25 m and 50 m fin- og grovpistol
-   programs) or **Felt** (field shooting — opens the course directly); MIL
-   is marked «kommer senere». Shot before? The **Skyt igjen** card at the
+   visible, with labels. On **Hjem**, pick a **category** — each tile shows a
+   small picture of what it is: **NSF Luft** (a lead match pellet — the
+   luftpistol programs), **NSF Fin/Grov** (a .22 cartridge — the 25 m and
+   50 m fin- og grovpistol programs) or **Felt** (a pair of field figures —
+   field shooting, opens the course directly); MIL wears a silhouette and is
+   marked «kommer senere». Shot before? The **Skyt igjen** card at the
    top restarts your latest exercise in one tap, and Hjem also shows
    **Fortsett økt** / **Fortsett felt-økt** cards for anything in progress —
    each with a trash button to discard the saved session (after a
