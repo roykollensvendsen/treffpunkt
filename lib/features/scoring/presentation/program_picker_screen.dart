@@ -384,28 +384,35 @@ class ProgramPickerScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-            const SizedBox(height: 4),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 4,
-              crossAxisSpacing: 8,
-              childAspectRatio: 2,
-              children: [
-                for (final category in ProgramCategory.values)
-                  _CategoryTile(
-                    category: category,
-                    // MIL has nothing yet (spec 0097 req 4).
-                    onTap: category == ProgramCategory.mil
-                        ? null
-                        : () => unawaited(
-                            _openCategory(context, ref, category),
-                          ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            // A 2×2 of category tiles (spec 0097) laid out as content-height
+            // rows rather than a fixed-aspect grid, so the tiles take their own
+            // height instead of reserving a tall cell that left a dead band
+            // above the grid (spec 0155). Each row shares one height so the two
+            // columns stay aligned.
+            for (final row in _categoryRows)
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < row.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 8),
+                      Expanded(
+                        child: _CategoryTile(
+                          category: row[i],
+                          // MIL has nothing yet (spec 0097 req 4).
+                          onTap: row[i] == ProgramCategory.mil
+                              ? null
+                              : () => unawaited(
+                                  _openCategory(context, ref, row[i]),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            const SizedBox(height: 8),
             // «Spander en kaffe» (spec 0146): last, below the
             // shooting flows — a thank-you, never a nag.
             Card(
@@ -479,6 +486,16 @@ class _LastExercise {
 /// The category's pictogram: what its programs are shot with or at — a match
 /// pellet for air, a .22 cartridge for fin/grov (spec 0154), the silhouette
 /// for MIL and felt's square-and-circle figure pair (spec 0101).
+/// The categories chunked into rows of two for the 2-column layout (spec
+/// 0155), in their catalogue order.
+List<List<ProgramCategory>> get _categoryRows {
+  const values = ProgramCategory.values;
+  return [
+    for (var i = 0; i < values.length; i += 2)
+      values.sublist(i, i + 2 > values.length ? values.length : i + 2),
+  ];
+}
+
 Widget _categoryPictogram(ProgramCategory category) => switch (category) {
   ProgramCategory.nsfLuft => const PelletPictogram(),
   ProgramCategory.nsfFinGrov => const CartridgePictogram(),

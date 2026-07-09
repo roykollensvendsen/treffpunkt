@@ -100,6 +100,57 @@ void main() {
     expect(find.byType(FeltFiguresPictogram), findsOneWidget);
   });
 
+  testWidgets('Hjem keeps an even vertical rhythm — no gap before the grid '
+      '(spec 0155)', (tester) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    // Seed a completed exercise so the «Skyt igjen» hero sits above the grid.
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ProgramPickerScreen)),
+    );
+    await container
+        .read(uploadQueueProvider.notifier)
+        .enqueue(
+          SessionRecord(
+            id: 'live-1',
+            program: '10 m Luftpistol 60 skudd',
+            capturedAt: DateTime.utc(2026, 7, 3, 9),
+            total: 92,
+            maxTotal: 600,
+            innerTens: 1,
+            payload: const <String, dynamic>{},
+          ),
+        );
+    await tester.pumpAndSettle();
+
+    // The gap above the category rows matches the gap below them — one even
+    // rhythm, not the old ~68 px void the over-tall grid left before the grid.
+    final heroBottom = tester.getBottomLeft(find.byKey(shootAgainKey)).dy;
+    final luftTop = tester
+        .getTopLeft(find.byKey(const ValueKey<String>('category-NSF Luft')))
+        .dy;
+    final feltBottom = tester
+        .getBottomLeft(find.byKey(const ValueKey<String>('category-Felt')))
+        .dy;
+    final coffeeTop = tester.getTopLeft(find.byKey(coffeeCardKey)).dy;
+    final gapBefore = luftTop - heroBottom;
+    final gapAfter = coffeeTop - feltBottom;
+    expect(gapBefore, lessThan(24));
+    expect((gapBefore - gapAfter).abs(), lessThan(8));
+
+    // Still a 2×2: the paired tiles share a top edge, row 1 above row 2.
+    double top(String label) =>
+        tester.getTopLeft(find.byKey(ValueKey<String>('category-$label'))).dy;
+    expect(top('NSF Luft'), top('NSF Fin/Grov'));
+    expect(top('MIL'), top('Felt'));
+    expect(top('NSF Luft'), lessThan(top('MIL')));
+  });
+
   testWidgets('NSF Luft lists the air programs and opens setup on tap', (
     tester,
   ) async {
