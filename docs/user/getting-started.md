@@ -19,7 +19,8 @@ of the sign-in screen. It works offline.
    luftpistol programs), **NSF Fin/Grov** (a .22 cartridge — the 25 m and
    50 m fin- og grovpistol programs) or **Felt** (a pair of field figures —
    field shooting, opens the course directly); MIL wears a silhouette and is
-   marked «kommer senere». Shot before? The **Skyt igjen** card at the
+   marked «kommer senere». The very first time — before you have any history —
+   a line above the tiles invites you to «Velg en gren for å starte økta di». Shot before? The **Skyt igjen** card at the
    top restarts your latest exercise in one tap, and Hjem also shows
    **Fortsett økt** / **Fortsett felt-økt** cards for anything in progress —
    each with a trash button to discard the saved session (after a

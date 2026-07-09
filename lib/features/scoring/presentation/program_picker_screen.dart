@@ -57,6 +57,9 @@ const Key coffeeCardKey = ValueKey<String>('coffeeCard');
 /// Key for the «Skyt igjen» quick-start card (spec 0097), for tests.
 const Key shootAgainKey = ValueKey<String>('shootAgain');
 
+/// Key for the first-run lead-in above the category grid (spec 0156).
+const Key firstRunLeadKey = ValueKey<String>('firstRunLead');
+
 /// The front page of the picker: the four program categories (spec 0084) —
 /// NSF Luft, NSF Fin/Grov, MIL and Felt. Tapping a category opens its
 /// [ProgramCategoryScreen], where the shooter picks the program (spec 0008).
@@ -387,7 +390,23 @@ class ProgramPickerScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-            const SizedBox(height: 8),
+            // On a first run — nothing to resume and no history yet — a short
+            // line frames the grid so the screen guides the newcomer to start,
+            // rather than leaving the categories floating (spec 0156). The grid
+            // itself is the call to action; this only labels it.
+            if (saved == null && feltSaved == null && last == null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+                child: Text(
+                  'Velg en gren for å starte økta di',
+                  key: firstRunLeadKey,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              const SizedBox(height: 8),
             // A 2×2 of category tiles (spec 0097) laid out as content-height
             // rows rather than a fixed-aspect grid, so the tiles take their own
             // height instead of reserving a tall cell that left a dead band
