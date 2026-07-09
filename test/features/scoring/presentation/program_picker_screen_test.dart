@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/config/support_links.dart';
 import 'package:treffpunkt/core/data/link_opener.dart';
+import 'package:treffpunkt/core/presentation/app_theme.dart';
 import 'package:treffpunkt/core/presentation/build_version_label.dart';
 import 'package:treffpunkt/core/presentation/category_pictograms.dart';
 import 'package:treffpunkt/core/presentation/link_providers.dart';
@@ -829,6 +830,15 @@ void main() {
         tester.getTopLeft(find.byKey(coffeeCardKey)).dy,
         greaterThan(tester.getTopLeft(felt).dy),
       );
+
+      // A warm, filled cup in the palette amber, not neutral chrome (0159).
+      final cup = tester.widget<Icon>(
+        find.descendant(
+          of: find.byKey(coffeeCardKey),
+          matching: find.byIcon(Icons.coffee),
+        ),
+      );
+      expect(cup.color, TreffColors.light.draggedShot);
 
       await tester.tap(find.byKey(coffeeCardKey));
       await tester.pumpAndSettle();
