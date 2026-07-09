@@ -13,6 +13,10 @@ All notable changes to this project are documented here. The format is based on
   On the ring target and the scan overlay; always one decimal.
 
 ### Changed
+- **The two «Fortsett» cards tell apart at a glance** (spec 0157): a paused
+  ring session and a paused felt round no longer share one play icon — each
+  resume card now wears its discipline glyph (the ring target, or the felt
+  figures), matching the categories below.
 - **Hjem sits on an even vertical rhythm** (spec 0155): the category tiles no
   longer reserve a tall fixed cell, so the dead band that used to open up
   between the «Skyt igjen» hero and the category grid is gone — the resume

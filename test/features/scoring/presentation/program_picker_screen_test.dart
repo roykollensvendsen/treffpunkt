@@ -100,6 +100,63 @@ void main() {
     expect(find.byType(FeltFiguresPictogram), findsOneWidget);
   });
 
+  testWidgets('the two «Fortsett» cards wear their discipline glyph, not a '
+      'shared play icon (spec 0157)', (tester) async {
+    final session = Session.start(ProgramCatalogue.airRifle10m);
+    final current = session.newSeries()!.placeShot(
+      const Shot(dxMm: 0, dyMm: 0),
+    );
+    final store = InMemorySessionStore();
+    await store.save(SessionSnapshot(session: session, current: current));
+
+    final feltStore = InMemoryFeltSessionStore();
+    await feltStore.save(
+      const FeltSessionSnapshot(
+        group: FeltShooterGroup.two,
+        currentHold: 1,
+        holds: <List<FeltPlacedShot>>[
+          <FeltPlacedShot>[FeltPlacedShot(dx: 1, dy: 1, figureIndex: 0)],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+          <FeltPlacedShot>[],
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sessionStoreProvider.overrideWithValue(store),
+          feltSessionStoreProvider.overrideWithValue(feltStore),
+        ],
+        child: const MaterialApp(home: ProgramPickerScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The ring resume card wears the ring target; the felt one, the figures.
+    expect(
+      find.descendant(
+        of: find.byKey(resumeSessionKey),
+        matching: find.byType(TargetIcon),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(feltResumeSessionKey),
+        matching: find.byType(FeltFiguresPictogram),
+      ),
+      findsOneWidget,
+    );
+    // The old shared play icon is gone from both.
+    expect(find.byIcon(Icons.play_circle_outline), findsNothing);
+  });
+
   testWidgets('Hjem keeps an even vertical rhythm — no gap before the grid '
       '(spec 0155)', (tester) async {
     tester.view.physicalSize = const Size(390 * 3, 844 * 3);
