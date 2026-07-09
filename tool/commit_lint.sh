@@ -56,11 +56,17 @@ if [ "$special" -eq 0 ] && [ "${#subject}" -gt 72 ]; then
 fi
 
 # Rule 2: no AI-agent references anywhere in the message.
-ai='claude|anthropic|chatgpt|openai|copilot|codeium|🤖'
+# A name is flagged unless it is immediately preceded by a dot — i.e. a
+# `.claude/`-style dotfile path (the agents/skills/settings dir) is allowed,
+# while every attribution form is still caught: a bare or space-/slash-prefixed
+# name (`Co-Authored-By: Claude`, a `claude.ai/…` session URL) still matches.
+# The 🤖 emoji is banned anywhere.
+ai='(^|[^.])(claude|anthropic|chatgpt|openai|copilot|codeium)|🤖'
 if printf '%s' "$msg" | grep -qiE "$ai"; then
   die "commit message references an AI agent (not allowed in this repo)" \
 "  remove any mention of: Claude, Anthropic, ChatGPT, OpenAI, Copilot, Codeium, 🤖
-  and any Co-Authored-By / generated-with trailers that name a bot."
+  and any Co-Authored-By / generated-with trailers that name a bot.
+  (A '.claude/'-style file path is fine — the ban is on attribution.)"
 fi
 if printf '%s' "$msg" | grep -qiE '^co-authored-by:.*(bot|\[bot\]|gpt)'; then
   die "commit message has an AI/bot Co-Authored-By trailer (not allowed)" \
