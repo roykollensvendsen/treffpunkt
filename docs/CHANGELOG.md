@@ -19,6 +19,11 @@ All notable changes to this project are documented here. The format is based on
   screen guides you rather than sitting half-empty.
 
 ### Changed
+- **Sprintluft is now six 5-shot targets, not three 10-shot series** (spec
+  0044): a competition paper target takes at most 5 shots, so its 30 shots are
+  fired across 6 targets — the recording now matches how it's physically shot.
+  The total and scoring are unchanged. (Confirmed by the NSF domain expert; the
+  other air-pistol programs are being reviewed separately.)
 - **A warm cup on «Spander en kaffe»** (spec 0159): the thank-you card now
   leads with a filled coffee cup in the palette's amber instead of a neutral
   outlined glyph, so it reads as a friendly aside rather than another chrome

@@ -70,9 +70,11 @@ abstract final class ProgramCatalogue {
     ],
   );
 
-  /// Sprintluft: the NSF recruit air-pistol program — 30 shots in three 10-shot
-  /// series on the larger Sprintluft / luftduell face (rings 5–10), 15 min for
-  /// the match (plus 5 sighters, not modelled). Resembles 10 m air pistol but
+  /// Sprintluft: the NSF recruit air-pistol program — 30 shots on the larger
+  /// Sprintluft / luftduell face (rings 5–10), 15 min for the match (plus 5
+  /// sighters, not modelled). A competition paper target takes at most 5 shots,
+  /// so the 30 shots are fired across 6 targets — six 5-shot series (confirmed
+  /// by the NSF domain expert, spec 0044). Resembles 10 m air pistol but
   /// shorter and easier (NSF *Nasjonalt regelverk*). The "sprint" counterpart
   /// to [storluftDuel].
   static const ProgramDefinition sprintluft = ProgramDefinition(
@@ -84,8 +86,8 @@ abstract final class ProgramCatalogue {
       StageDefinition(
         name: 'Match',
         geometry: TargetGeometry.airDuel10m(),
-        shotsPerSeries: 10,
-        seriesCount: 3,
+        shotsPerSeries: 5,
+        seriesCount: 6,
       ),
     ],
   );
