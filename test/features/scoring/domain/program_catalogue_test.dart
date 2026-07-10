@@ -93,14 +93,16 @@ void main() {
     );
   });
 
-  test('Sprintluft: 30 shots in 3x10 on the duel face', () {
+  test('Sprintluft: 30 shots as six 5-shot papers on the duel face', () {
     // NSF recruit program: 30 shots / 15 min on the air-duel face, integer + X.
+    // The father (domain expert) confirmed max 5 shots per paper competition
+    // target → at least six targets for 30 shots, so 6×5, not 3×10 (spec 0044).
     const sprint = ProgramCatalogue.sprintluft;
     expect(sprint.name, 'Sprintluft');
     expect(sprint.discipline, Discipline.pistol);
     expect(sprint.totalShots, 30);
-    expect(sprint.stages.single.seriesCount, 3);
-    expect(sprint.stages.single.shotsPerSeries, 10);
+    expect(sprint.stages.single.seriesCount, 6);
+    expect(sprint.stages.single.shotsPerSeries, 5);
     // The larger sprintluft / luftduell face (rings 5–10) — same as Storluft.
     expect(sprint.stages.single.geometry.lowestRingValue, 5);
     expect(
