@@ -67,13 +67,26 @@ camera scan is for the single-face programs.)
 
 ### Feltskyting (field shooting)
 Field shooting is scored by **hits on figures** at different distances, not by
-rings. Under the **Felt** category on the **Velg program** page there are two
+rings. Under the **Felt** category on the **Velg program** page there are three
 courses: the official **NorgesFelt-løype 2026** (8 holds, max 80/70 points for
-Gruppe 1/2) and the family's extended **NorgesFelt Asker+** — the same eight
+Gruppe 1/2), the family's extended **NorgesFelt Asker+** — the same eight
 holds plus **hold 9** (six hexagons in two rows, alternating lying and
 standing in green and red) and **hold 10** (an **owl**, the big oval lying
-down, and three stolper). Asker+ has no official maximum, so the app computes it from the
-scoring rules: **103/90 points** for Gruppe 1/2. Open a course to preview it —
+down, and three stolper) — and the national **T96**, also known as
+**Kråkefelt**. Asker+ has no official maximum, so the app computes it from the
+scoring rules: **103/90 points** for Gruppe 1/2.
+
+**T96** is 16 series shot on the same **5-delt T96 sheet** every time — five
+circles the size of a CD (110 mm) with a small inner zone, laid out like the
+five on a die. Series 1–6 are at 11 m and 7–12 at 15 m (150, 150, 20, 20, 10
+and 10 seconds, alternating **stående fri** and **stående 1 hånd**); series
+13–16 are at 25 m (150, 150, 20 and 20 seconds, all fri) — each series' time
+and stilling are shown as you shoot. T96 is shot in **all three groups**:
+Gruppe 1 (6 shots), Gruppe 2 (5) and — unlike NorgesFelt — **Gruppe 3**
+(Magnum, 5 shots, every series with **two hands**). Scoring is felt scoring
+with one twist: on T96 an **innertreff gives 1 extra point** (1 per hit + 1
+per figure + 1 per inner zone), so the maximum is **272/240/240** points for
+Gruppe 1/2/3. Open a course to preview it —
 every hold drawn as **one picture that matches the official target sheet**: the figures (hare, wolf head,
 ptarmigan, hexagons, triangles, circles …) at their real relative size and
 position, in the hold's colour, white figures knocked out of a coloured plate,
@@ -91,10 +104,12 @@ placement on the small figures. The app
 works out which figure and inner zone each shot landed in and scores it the
 NorgesFelt way — **1 point per hit and 1 per figure you hit** (a stripe's
 three squares are one figure, the dividing lines included).
-**Innertreff** (inner-zone hits) give **no points**: they are the
-**tiebreaker** — with equal points, the shooter with the most inner hits wins
-— and they are shown next to the points as **· N Ⓧ**, the same way the ring
-programs show inner tens. You get a running total, and the scorecard at the
+**Innertreff** (inner-zone hits) give **no points** on the NorgesFelt courses:
+they are the **tiebreaker** — with equal points, the shooter with the most
+inner hits wins — and they are shown next to the points as **· N Ⓧ**, the same
+way the ring programs show inner tens. On **T96** an innertreff is worth **1
+point**, so there it joins the score line («Treff · Figur · Inner») instead of
+the Ⓧ suffix. You get a running total, and the scorecard at the
 end shows the total in the same coloured result box as the ring programs. The round
 is **saved as you go**, so you can leave and pick it up later from **Fortsett
 felt-økt** on the front page — it remembers which course you were shooting and

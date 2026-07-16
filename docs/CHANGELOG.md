@@ -7,6 +7,17 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **T96 («Kråkefelt») as a felt program** (spec 0160): the national field
+  exercise from NSF's *reglement for feltpistol og T96* — 16 series on the
+  5-delt T96 sheet (five ⌀110 mm circles with a 45 mm inner zone, like the
+  five on a die) at 11/15/25 m, each series with its own shooting time and
+  stilling shown while you shoot. Offered in all three groups — Gruppe 3
+  (Magnum, two hands on every series) makes its first appearance — and an
+  innertreff scores **1 point** on T96 (max 272/240/240), while the
+  NorgesFelt courses keep inner as the scoreless tiebreak. Records,
+  statistics and competitions all know the new programs.
+
+### Added
 - **The loupe shows the shot's decimal value while you aim** (spec 0153):
   a badge on the magnifier shows the score of the point under the crosshair
   (e.g. «10,4»), live as you slide, so you see the value before you lift.
