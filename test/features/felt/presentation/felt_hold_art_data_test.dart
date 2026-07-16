@@ -69,6 +69,54 @@ void main() {
     }
   });
 
+  group('T96 (spec 0160)', () {
+    test('16 sheets numbered 1..16, five ringed circles each', () {
+      expect(t96Art.length, 16);
+      expect(
+        t96Art.map((a) => a.number).toList(),
+        List<int>.generate(16, (i) => i + 1),
+      );
+      for (final a in t96Art) {
+        expect(a.paper, const Color(0xFFFFFFFF));
+        expect(a.plates, isEmpty);
+        expect(a.separators, isEmpty);
+        expect(a.figures, hasLength(5));
+        for (final f in a.figures) {
+          expect(f.shape, FeltArtShape.circle);
+          expect(f.fill, const Color(0xFF101010));
+          expect(f.r, greaterThan(0));
+          final ring = f.ring;
+          expect(ring, isNotNull);
+          expect(ring!.r, greaterThan(0));
+          // The ring is concentric with its circle.
+          expect(ring.cx, f.cx);
+          expect(ring.cy, f.cy);
+        }
+        // Every serie shows the same sheet — one shared figure list.
+        expect(a.figures, same(t96Art.first.figures));
+      }
+    });
+
+    test('the five circles sit as the die-five with true geometry', () {
+      final figures = t96Art.first.figures;
+      // Reading order: top-left, top-right, middle, bottom-left,
+      // bottom-right — centre spacing 240 mm at ⌀ 110 mm (scale 150/360).
+      final centres = figures.map((f) => Offset(f.cx, f.cy)).toList();
+      expect(centres, const <Offset>[
+        Offset(25, 25),
+        Offset(125, 25),
+        Offset(75, 75),
+        Offset(25, 125),
+        Offset(125, 125),
+      ]);
+      final r = figures.first.r;
+      // ⌀110 mm on the 240 mm spacing: r/spacing = 55/240.
+      expect(r / 100, closeTo(55 / 240, 0.01));
+      // Inner ⌀45 mm: ring r / circle r = 22.5/55.
+      expect(figures.first.ring!.r / r, closeTo(22.5 / 55, 0.01));
+    });
+  });
+
   group('NorgesFelt Asker+ (spec 0145)', () {
     test('has 10 holds numbered 1..10, sharing 1..8 with 2026', () {
       expect(askerPlusArt.length, 10);

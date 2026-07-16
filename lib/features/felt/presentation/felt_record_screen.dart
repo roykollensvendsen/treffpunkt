@@ -194,8 +194,14 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     }
   }
 
-  FeltHoldTally _tally(int i) =>
-      FeltHoldTally(_shots[i].map((p) => p.shot).toList());
+  FeltHoldTally _tally(int i) => FeltHoldTally(
+    _shots[i].map((p) => p.shot).toList(),
+    innerScores: _course.innerScores,
+  );
+
+  /// The « · Inner N» breakdown part where inner scores (T96, spec 0160);
+  /// empty on NorgesFelt, whose inner shows as the ringed-X tiebreak.
+  String _innerLead(int inner) => _course.innerScores ? ' · Inner $inner' : '';
 
   FeltSessionTally get _session => FeltSessionTally(
     group: _group,
@@ -365,7 +371,9 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
     final shotsMax = _group.shotsPerHold;
     return Scaffold(
       appBar: FrostedAppBar(
-        title: Text('Hold ${hold.number}/${_course.holds.length}'),
+        title: Text(
+          '${_course.stationWord} ${hold.number}/${_course.holds.length}',
+        ),
       ),
       body: SafeArea(
         child: Center(
@@ -377,8 +385,15 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
                   ? const NeverScrollableScrollPhysics()
                   : null,
               children: <Widget>[
+                // Distance, the serie's own time where it has one (T96,
+                // spec 0160), and the position for THIS group — Magnum
+                // shoots every T96 serie with two hands.
                 Text(
-                  '${hold.distance}  ·  ${hold.position}',
+                  <String>[
+                    hold.distance,
+                    ?hold.time,
+                    _course.positionFor(hold, _group),
+                  ].join('  ·  '),
                   style: theme.textTheme.labelMedium,
                 ),
                 Text(
@@ -398,17 +413,21 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                // Inner hits give no points (spec 0085): the hold line shows
-                // the treff + figur breakdown, then the inner count as the
-                // ringed X the ring programs use for inner tens (spec 0023).
+                // On NorgesFelt inner hits give no points (spec 0085): the
+                // hold line shows the treff + figur breakdown, then the
+                // inner count as the ringed X the ring programs use for
+                // inner tens (spec 0023). Where inner scores (T96, spec
+                // 0160) it joins the breakdown instead — it is real points
+                // there, not the scoreless tiebreaker.
                 KeyedSubtree(
                   key: feltHoldPointsKey,
                   child: innerTenScoreText(
                     context: context,
                     lead:
                         'Treff ${tally.treff} · Figur ${tally.figures}'
+                        '${_innerLead(tally.inner)}'
                         '  =  ${tally.points} poeng',
-                    innerTens: tally.inner,
+                    innerTens: _course.innerScores ? 0 : tally.inner,
                     style: theme.textTheme.titleSmall,
                   ),
                 ),
@@ -417,7 +436,7 @@ class _FeltRecordScreenState extends ConsumerState<FeltRecordScreen> {
                   child: innerTenScoreText(
                     context: context,
                     lead: 'Totalt så langt: ${_session.points} poeng',
-                    innerTens: _session.inner,
+                    innerTens: _course.innerScores ? 0 : _session.inner,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

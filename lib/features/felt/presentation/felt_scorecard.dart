@@ -45,6 +45,10 @@ class FeltScorecard extends StatelessWidget {
   /// the shots marked where they landed (spec 0105).
   final List<List<FeltPlacedShot>>? holds;
 
+  /// The « · Inner N» breakdown part where inner scores (T96, spec 0160);
+  /// empty on NorgesFelt, whose inner shows as the ringed-X tiebreak.
+  String _innerLead(int inner) => course.innerScores ? ' · Inner $inner' : '';
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -62,17 +66,20 @@ class FeltScorecard extends StatelessWidget {
                 child: PersonalBestBanner(),
               ),
             for (var i = 0; i < session.holds.length; i++) ...[
+              // Where inner scores (T96, spec 0160) it joins the breakdown;
+              // on NorgesFelt it stays the ringed-X tiebreak (spec 0085).
               ListTile(
                 dense: true,
-                title: Text('Hold ${i + 1}'),
+                title: Text('${course.stationWord} ${i + 1}'),
                 subtitle: Text(
                   'Treff ${session.holds[i].treff} · '
-                  'Figur ${session.holds[i].figures}',
+                  'Figur ${session.holds[i].figures}'
+                  '${_innerLead(session.holds[i].inner)}',
                 ),
                 trailing: innerTenScoreText(
                   context: context,
                   lead: '${session.holds[i].points}',
-                  innerTens: session.holds[i].inner,
+                  innerTens: course.innerScores ? 0 : session.holds[i].inner,
                   style: theme.textTheme.titleMedium,
                 ),
               ),
@@ -86,7 +93,10 @@ class FeltScorecard extends StatelessWidget {
             const Divider(),
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: _FeltTotalCard(session: session),
+              child: _FeltTotalCard(
+                session: session,
+                innerScores: course.innerScores,
+              ),
             ),
           ],
         ),
@@ -99,9 +109,13 @@ class FeltScorecard extends StatelessWidget {
 /// (spec 0089): the group label, the `Poeng · N Ⓧ` line and the big points
 /// number on the primary colour.
 class _FeltTotalCard extends StatelessWidget {
-  const _FeltTotalCard({required this.session});
+  const _FeltTotalCard({required this.session, required this.innerScores});
 
   final FeltSessionTally session;
+
+  /// Whether inner hits are already in the points (T96, spec 0160) — then
+  /// the ringed-X tiebreak suffix is dropped.
+  final bool innerScores;
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +152,7 @@ class _FeltTotalCard extends StatelessWidget {
                   innerTenScoreText(
                     context: context,
                     lead: 'Poeng',
-                    innerTens: session.inner,
+                    innerTens: innerScores ? 0 : session.inner,
                     style: TextStyle(color: onColor, fontSize: 18),
                   ),
                 ],

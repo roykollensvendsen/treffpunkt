@@ -10,7 +10,6 @@ import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
-import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
@@ -83,10 +82,10 @@ class PersonalRecordsScreen extends ConsumerWidget {
                 (points: entry.record.total, inner: entry.record.innerTens),
           ],
         ),
-      // One row per course and group (specs 0143/0145): points only
-      // compare within the same course and group.
+      // One row per course and offered group (specs 0143/0145/0160):
+      // points only compare within the same course and group.
       for (final course in feltCourses)
-        for (final group in FeltShooterGroup.offered)
+        for (final group in course.offeredGroups)
           _RecordEntry(
             key: feltRecordKey(course, group),
             label: feltRecordKey(course, group),
