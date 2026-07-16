@@ -9,7 +9,6 @@ import 'package:treffpunkt/core/presentation/content_scaffold.dart';
 import 'package:treffpunkt/core/presentation/empty_state.dart';
 import 'package:treffpunkt/core/presentation/tappable_card_tile.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
-import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_setup_screen.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_category.dart';
@@ -79,25 +78,27 @@ class ProgramCategoryScreen extends StatelessWidget {
     );
   }
 
-  /// The felt programs (specs 0068/0145/0147): each course as a 6-shot
-  /// (Gruppe 1) and a 5-shot (Gruppe 2) variant, straight to the setup —
-  /// like the ring categories. «Se løypa» on the setup previews the holds.
+  /// The felt programs (specs 0068/0145/0147): each course per offered
+  /// group — T96 adds Gruppe 3 (spec 0160) — straight to the setup, like
+  /// the ring categories. «Se løypa» on the setup previews the holds.
   Widget _courses(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         for (final course in feltCourses)
-          for (final group in FeltShooterGroup.offered)
+          for (final group in course.offeredGroups)
             TappableCardTile(
               tileKey: ValueKey<String>('felt-${course.id}-${group.name}'),
               leading: categoryPictogram(ProgramCategory.felt),
               title: course.name,
               subtitle:
-                  '${group.shotsPerHold} skudd per hold (${group.label}) · '
+                  '${group.shotsPerHold} skudd per '
+                  '${course.stationWord.toLowerCase()} (${group.label}) · '
                   'maks ${course.maxPoints(group)} poeng',
               semanticsLabel:
                   'Velg program: ${course.name}, '
-                  '${group.shotsPerHold} skudd per hold (${group.label}), '
+                  '${group.shotsPerHold} skudd per '
+                  '${course.stationWord.toLowerCase()} (${group.label}), '
                   'maks ${course.maxPoints(group)} poeng',
               onTap: () => unawaited(
                 Navigator.of(context).push(

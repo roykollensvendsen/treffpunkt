@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/core/presentation/frosted_bar.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
-import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_course_art.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_hold_art_painter.dart';
@@ -48,13 +47,7 @@ class FeltCourseScreen extends ConsumerWidget {
                     color: theme.colorScheme.secondaryContainer,
                     child: Padding(
                       padding: const EdgeInsets.all(12),
-                      child: Text(
-                        '${course.holds.length} hold · 10 sek skytetid · '
-                        'maks ${course.maxPoints(FeltShooterGroup.one)}/'
-                        '${course.maxPoints(FeltShooterGroup.two)} poeng. '
-                        'Hvert hold er tegnet som på den offisielle skiva; '
-                        'hvert kort sier hvilke figurer som har innertreff.',
-                      ),
+                      child: Text(_summary(course)),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -66,8 +59,14 @@ class FeltCourseScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
+                            // The serie's own time joins the title where it
+                            // varies (T96, spec 0160).
                             Text(
-                              'Hold ${hold.number}  ·  ${hold.distance}',
+                              <String>[
+                                '${course.stationWord} ${hold.number}',
+                                hold.distance,
+                                ?hold.time,
+                              ].join('  ·  '),
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -111,6 +110,26 @@ class FeltCourseScreen extends ConsumerWidget {
 /// The composed art for [course]'s hold [number] (specs 0079/0145).
 FeltHoldArt _artFor(FeltCourse course, int number) =>
     feltArtForCourse(course).firstWhere((a) => a.number == number);
+
+/// The course's summary line: stations, the shared 10 s time when no hold
+/// carries its own (spec 0160 — T96's times sit on each serie card), the
+/// offered groups' maxima and any course note.
+String _summary(FeltCourse course) {
+  final sharedTime = course.holds.every((hold) => hold.time == null)
+      ? '10 sek skytetid · '
+      : '';
+  final maxima = course.offeredGroups
+      .map((group) => '${course.maxPoints(group)}')
+      .join('/');
+  final drawn = course.innerScores
+      ? 'Alle ${course.stationWordPlural} skytes på samme skive; '
+            'treff i innersonen gir ett poeng ekstra.'
+      : 'Hvert hold er tegnet som på den offisielle skiva; '
+            'hvert kort sier hvilke figurer som har innertreff.';
+  final note = course.note;
+  return '${course.holds.length} ${course.stationWordPlural} · $sharedTime'
+      'maks $maxima poeng. $drawn${note == null ? '' : ' $note'}';
+}
 
 /// The hold's honest inner-treff line (spec 0104), derived from the measured
 /// art — not asserted: «Innertreff på alle figurer», or the count with the

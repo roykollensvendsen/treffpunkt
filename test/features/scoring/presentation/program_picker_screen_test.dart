@@ -328,8 +328,8 @@ void main() {
     expect(find.byKey(emptyCategoryKey), findsNothing);
   });
 
-  testWidgets('Felt lists four program variants straight to setup '
-      '(spec 0147)', (tester) async {
+  testWidgets('Felt lists the program variants straight to setup '
+      '(specs 0147/0160)', (tester) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -339,18 +339,31 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('category-Felt')));
     await tester.pumpAndSettle();
 
-    // Each course as a 6- and 5-shot variant — four programs, like the
-    // ring categories (spec 0147), with per-variant maxima.
+    // Each course per offered group (spec 0147) — T96 adds Gruppe 3
+    // (spec 0160) — seven programs, with per-variant maxima.
     for (final key in const <String>[
       'felt-norgesfelt-2026-one',
       'felt-norgesfelt-2026-two',
       'felt-norgesfelt-asker-plus-one',
       'felt-norgesfelt-asker-plus-two',
+      'felt-t96-one',
+      'felt-t96-two',
+      'felt-t96-three',
     ]) {
       expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
     }
     expect(find.textContaining('maks 103 poeng'), findsOneWidget);
     expect(find.textContaining('maks 90 poeng'), findsOneWidget);
+    // The T96 tiles speak the rulebook's word — serier, not hold — and
+    // carry the computed maxima (spec 0160).
+    expect(
+      find.textContaining('6 skudd per serie (Gruppe 1) · maks 272 poeng'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('5 skudd per serie (Gruppe 3) · maks 240 poeng'),
+      findsOneWidget,
+    );
 
     // Each felt course row wears the felt figure glyph (spec 0158).
     expect(

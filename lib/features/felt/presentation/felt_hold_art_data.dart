@@ -1342,3 +1342,97 @@ const List<FeltHoldArt> askerPlusArt = <FeltHoldArt>[
     separators: <FeltArtSeparator>[],
   ),
 ];
+
+/// The T96 sheet's five circles (spec 0160), hand-computed from
+/// reglement-felt-t96-2026 § 8.26.4 — no reconstruction model needed: five
+/// ⌀ 110 mm circles with a ⌀ 45 mm inner zone at 240 mm centre spacing,
+/// the die-five, on a 360 mm sheet mapped to a 150-px canvas (scale
+/// 150/360 — r 55 mm → 22.9 px, ring 22.5 mm → 9.4 px).
+const List<FeltArtFigure> _t96Figures = <FeltArtFigure>[
+  FeltArtFigure(
+    shape: FeltArtShape.circle,
+    cx: 25,
+    cy: 25,
+    r: 22.9,
+    fill: Color(0xFF101010),
+    ring: FeltArtRing(
+      cx: 25,
+      cy: 25,
+      r: 9.4,
+      strokeWidth: 1,
+      color: Color(0xFF737373),
+    ),
+  ),
+  FeltArtFigure(
+    shape: FeltArtShape.circle,
+    cx: 125,
+    cy: 25,
+    r: 22.9,
+    fill: Color(0xFF101010),
+    ring: FeltArtRing(
+      cx: 125,
+      cy: 25,
+      r: 9.4,
+      strokeWidth: 1,
+      color: Color(0xFF737373),
+    ),
+  ),
+  FeltArtFigure(
+    shape: FeltArtShape.circle,
+    cx: 75,
+    cy: 75,
+    r: 22.9,
+    fill: Color(0xFF101010),
+    ring: FeltArtRing(
+      cx: 75,
+      cy: 75,
+      r: 9.4,
+      strokeWidth: 1,
+      color: Color(0xFF737373),
+    ),
+  ),
+  FeltArtFigure(
+    shape: FeltArtShape.circle,
+    cx: 25,
+    cy: 125,
+    r: 22.9,
+    fill: Color(0xFF101010),
+    ring: FeltArtRing(
+      cx: 25,
+      cy: 125,
+      r: 9.4,
+      strokeWidth: 1,
+      color: Color(0xFF737373),
+    ),
+  ),
+  FeltArtFigure(
+    shape: FeltArtShape.circle,
+    cx: 125,
+    cy: 125,
+    r: 22.9,
+    fill: Color(0xFF101010),
+    ring: FeltArtRing(
+      cx: 125,
+      cy: 125,
+      r: 9.4,
+      strokeWidth: 1,
+      color: Color(0xFF737373),
+    ),
+  ),
+];
+
+/// The 16 T96 series (spec 0160): the very same sheet every time, so all
+/// sixteen share one figure list.
+final List<FeltHoldArt> t96Art = List<FeltHoldArt>.unmodifiable(
+  List<FeltHoldArt>.generate(
+    16,
+    (i) => FeltHoldArt(
+      number: i + 1,
+      size: const Size(150, 150),
+      paper: const Color(0xFFFFFFFF),
+      plates: const <FeltArtPlate>[],
+      figures: _t96Figures,
+      separators: const <FeltArtSeparator>[],
+    ),
+  ),
+);
