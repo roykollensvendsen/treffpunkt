@@ -13,15 +13,15 @@ enum FeltShooterGroup {
   /// Group 2 — five shots per hold.
   two('Gruppe 2', 5),
 
-  /// Group 3 — five shots per hold. **Not offered** in the recorder: it is
-  /// the class for heavier weapons and is not shot on NorgesFelt (spec
-  /// 0088). Kept so a stored round with it still resolves by name.
+  /// Group 3 — five shots per hold. The class for heavier weapons: not
+  /// shot on NorgesFelt (spec 0088), but offered on T96 (spec 0160), where
+  /// Magnum shoots every series with two hands.
   three('Gruppe 3', 5);
 
   const FeltShooterGroup(this.label, this.shotsPerHold);
 
-  /// The groups the recorder offers (spec 0088): Gruppe 3 is retained for
-  /// stored rounds but not offered.
+  /// The groups the NorgesFelt courses offer (spec 0088) — the default for
+  /// a course; T96 offers Gruppe 3 as well (spec 0160).
   static const List<FeltShooterGroup> offered = <FeltShooterGroup>[one, two];
 
   /// The Norwegian label.
@@ -48,16 +48,21 @@ class FeltShot {
   bool get isHit => figureIndex != null;
 }
 
-/// The NorgesFelt score of one hold's [shots] (specs 0080/0085): one point
-/// per hit and one per distinct figure hit. Inner-zone hits give **no**
-/// points — they are counted as the tiebreaker (spec 0085).
+/// The felt score of one hold's [shots] (specs 0080/0085): one point per
+/// hit and one per distinct figure hit. On NorgesFelt inner-zone hits give
+/// **no** points — they are counted as the tiebreaker (spec 0085); on a
+/// course where [innerScores] (T96, spec 0160) each inner hit is one more
+/// point (reglement-felt-t96-2026 § 8.26.5).
 @immutable
 class FeltHoldTally {
   /// Creates a hold tally over its recorded shots.
-  const FeltHoldTally(this.shots);
+  const FeltHoldTally(this.shots, {this.innerScores = false});
 
   /// The shots placed on this hold, in order.
   final List<FeltShot> shots;
+
+  /// Whether inner-zone hits score a point (T96, spec 0160).
+  final bool innerScores;
 
   /// Hits — shots that landed on a figure.
   int get treff => shots.where((s) => s.isHit).length;
@@ -66,11 +71,12 @@ class FeltHoldTally {
   int get figures =>
       shots.where((s) => s.isHit).map((s) => s.figureIndex).toSet().length;
 
-  /// Inner-zone hits — the tiebreaker, worth no points (spec 0085).
+  /// Inner-zone hits — the tiebreaker (spec 0085), and a point each where
+  /// [innerScores] (spec 0160).
   int get inner => shots.where((s) => s.inner).length;
 
-  /// Points: [treff] + [figures]. [inner] deliberately adds nothing.
-  int get points => treff + figures;
+  /// Points: [treff] + [figures], plus [inner] only where [innerScores].
+  int get points => treff + figures + (innerScores ? inner : 0);
 }
 
 /// A whole felt session (spec 0080): the shooter's [group] and the per-hold

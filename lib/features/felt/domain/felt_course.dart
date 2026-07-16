@@ -22,6 +22,7 @@ class FeltHoldDef {
     required this.position,
     required this.colour,
     required this.figures,
+    this.time,
   });
 
   /// 1-based hold number.
@@ -33,6 +34,11 @@ class FeltHoldDef {
   /// Shooting position (stilling).
   final String position;
 
+  /// Shooting-time label, e.g. `150 sek`, where it varies per hold (T96,
+  /// spec 0160); `null` on the NorgesFelt holds, whose 10 s is a
+  /// course-level fact.
+  final String? time;
+
   /// The colour all the hold's figures are printed in (spec 0078).
   final FeltHoldColour colour;
 
@@ -42,11 +48,23 @@ class FeltHoldDef {
 
 /// A felt course (spec 0145): an [id] stored with saved rounds, a display
 /// [name] that also encodes the competition program and record key, the
-/// [holds], and the per-group course maximum.
+/// [holds], and the per-group course maximum. A course also carries its
+/// rule variations (spec 0160): whether inner zones score, which groups
+/// shoot it, its word for a station and any per-group position override.
 @immutable
 class FeltCourse {
   /// Creates a course.
-  const FeltCourse({required this.id, required this.name, required this.holds});
+  const FeltCourse({
+    required this.id,
+    required this.name,
+    required this.holds,
+    this.innerScores = false,
+    this.offeredGroups = FeltShooterGroup.offered,
+    this.stationWord = 'Hold',
+    this.stationWordPlural = 'hold',
+    this.note,
+    this.positionOverrides = const <FeltShooterGroup, String>{},
+  });
 
   /// Stable id serialised into saved rounds (spec 0145).
   final String id;
@@ -57,18 +75,47 @@ class FeltCourse {
   /// The holds, in shooting order.
   final List<FeltHoldDef> holds;
 
+  /// Whether inner-zone hits score a point on this course (T96, spec 0160)
+  /// instead of only breaking ties (spec 0085).
+  final bool innerScores;
+
+  /// The groups this course is shot in — the program variants offered
+  /// (specs 0147/0160).
+  final List<FeltShooterGroup> offeredGroups;
+
+  /// The course's word for one station: `Hold` on NorgesFelt, `Serie` on
+  /// T96 (the rulebook's own word, spec 0160).
+  final String stationWord;
+
+  /// The plural of [stationWord], lowercase (`hold` / `serier`).
+  final String stationWordPlural;
+
+  /// A course-level rule note shown on the preview (spec 0160), or `null`.
+  final String? note;
+
+  /// Per-group position overrides (spec 0160), applied to every hold.
+  final Map<FeltShooterGroup, String> positionOverrides;
+
+  /// The shooting position of [hold] for [group]: the hold's own, unless
+  /// the course overrides it for the group — T96's Magnum exception, «alle
+  /// serier med to hender» (spec 0160).
+  String positionFor(FeltHoldDef hold, FeltShooterGroup group) =>
+      positionOverrides[group] ?? hold.position;
+
   /// The course maximum for [group], computed from the scoring rules
   /// (specs 0080/0085 — points = treff + distinct figures, inner is
   /// tiebreak only): per hold, shots + min(shots, figures). Always
   /// computed (spec 0148): the once-cited «official» 47 for Gruppe 2 was
   /// falsified by the domain expert's perfect 70-point round; Gruppe 1's
-  /// official 80 equals the formula.
-  int maxPoints(FeltShooterGroup group) => holds.fold(
+  /// official 80 equals the formula. Where [innerScores] (spec 0160)
+  /// every shot can also be an inner hit, adding shots again.
+  int maxPoints(FeltShooterGroup group) => holds.fold<int>(
     0,
     (sum, hold) =>
         sum +
         group.shotsPerHold +
-        math.min(group.shotsPerHold, hold.figures.length),
+        math.min<int>(group.shotsPerHold, hold.figures.length) +
+        (innerScores ? group.shotsPerHold : 0),
   );
 
   /// The competition-program name for [group] (spec 0140's encoding: the
@@ -394,10 +441,76 @@ final FeltCourse askerPlusCourse = FeltCourse(
   holds: <FeltHoldDef>[...norgesfelt2026, ..._askerPlusExtraHolds],
 );
 
-/// The courses the app offers, in display order (spec 0145).
+/// One T96 series (spec 0160): the same 5-delt sheet every time — five
+/// full circles ⌀ 110 mm with a ⌀ 45 mm inner zone (reglement-felt-t96-2026
+/// § 8.26.4) — at the series' distance, time and position.
+FeltHoldDef _t96Series({
+  required int number,
+  required String distance,
+  required String time,
+  required String position,
+}) => FeltHoldDef(
+  number: number,
+  distance: distance,
+  time: time,
+  position: position,
+  colour: FeltHoldColour.black,
+  figures: <FeltFigure>[
+    for (var i = 0; i < 5; i++)
+      // A full circle — deliberately not FeltFigure.circle, whose C-figure
+      // is cut flat across the bottom (spec 0077).
+      FeltFigure(
+        FeltFigureType.circle,
+        widthCm: 11,
+        heightCm: 11,
+        innerCm: 4.5,
+        name: 'Sirkel',
+      ),
+  ],
+);
+
+/// The 16 T96 series (spec 0160), verbatim from reglement-felt-t96-2026
+/// § 8.26.3: 11 m and 15 m each shoot 150/150/20/20/10/10 sek alternating
+/// stående fri / stående 1 hånd; 25 m shoots 150/150/20/20 sek, all fri.
+final List<FeltHoldDef> t96Series = <FeltHoldDef>[
+  for (var i = 0; i < 16; i++)
+    _t96Series(
+      number: i + 1,
+      distance: i < 6
+          ? '11 m'
+          : i < 12
+          ? '15 m'
+          : '25 m',
+      time:
+          '${const <int>[150, 150, 20, 20, 10, 10][i < 12 ? i % 6 : i - 12]}'
+          ' sek',
+      position: i >= 12 || i.isEven ? 'Stående fri' : 'Stående 1 hånd',
+    ),
+];
+
+/// T96 — «Kråkefelt» (spec 0160): 16 series on the 5-delt T96 sheet, shot
+/// in all three groups (Gruppe 1/2/3 — 6/5/5 shots), inner zones scoring a
+/// point (§ 8.26.5), computed maxima 272/240/240. Magnum (Gruppe 3) shoots
+/// every series with two hands (§ 8.26.3's exception).
+final FeltCourse t96Course = FeltCourse(
+  id: 't96',
+  name: 'T96',
+  holds: t96Series,
+  innerScores: true,
+  offeredGroups: FeltShooterGroup.values,
+  stationWord: 'Serie',
+  stationWordPlural: 'serier',
+  note: 'Magnum (Gruppe 3) skyter alle serier med to hender.',
+  positionOverrides: <FeltShooterGroup, String>{
+    FeltShooterGroup.three: 'Stående 2 hender',
+  },
+);
+
+/// The courses the app offers, in display order (specs 0145/0160).
 final List<FeltCourse> feltCourses = <FeltCourse>[
   norgesfelt2026Course,
   askerPlusCourse,
+  t96Course,
 ];
 
 /// The course with [id]; an unknown or missing id resolves to NorgesFelt

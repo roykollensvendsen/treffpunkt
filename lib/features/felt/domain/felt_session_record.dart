@@ -4,6 +4,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:treffpunkt/core/time/wire_time.dart';
+import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_snapshot.dart';
 
@@ -44,7 +45,9 @@ class FeltSessionRecord {
   /// plain training round.
   final String? competitionId;
 
-  /// The scored tally of the round.
+  /// The scored tally of the round, under its course's rules: the course
+  /// id decides whether inner hits score (T96, spec 0160), so history,
+  /// sync, statistics and records all agree.
   FeltSessionTally get tally => FeltSessionTally(
     group: session.group,
     holds: <FeltHoldTally>[
@@ -52,7 +55,7 @@ class FeltSessionRecord {
         FeltHoldTally(<FeltShot>[
           for (final s in hold)
             FeltShot(figureIndex: s.figureIndex, inner: s.inner),
-        ]),
+        ], innerScores: feltCourseById(session.courseId).innerScores),
     ],
   );
 
