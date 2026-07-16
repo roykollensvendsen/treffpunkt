@@ -8,8 +8,9 @@ supports. Each seeded `ProgramDefinition` (see
 
 **In scope — concentric-ring targets** (scored 1–10 or 5–10, integer + optional
 inner ten, or decimal). **Out of scope** (different scoring, separate later):
-field (*felt*, T96/Kråkefelt), silhouette *figures*, magnum, PPC 1500, running
-target (*løpende elg*) and shotgun.
+field (*felt* — NorgesFelt shipped as specs 0068–0090, T96/Kråkefelt as spec
+0160), silhouette *figures*, magnum, PPC 1500, running target (*løpende elg*)
+and shotgun.
 
 ## Sourcing & confidence
 
