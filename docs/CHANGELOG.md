@@ -7,6 +7,14 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Tørrtrening — log your dry-fire practice** (spec 0161): a **Tørrtrening**
+  card on Hjem where you pick **Presisjon** or **Duell** and enter how many
+  trigger pulls (avtrekk) you took. Each registration is saved and the card
+  shows your cumulative totals per target (e.g. «Presisjon 320 · Duell 210»),
+  kept on the device so your practice volume is tracked over time. Requested on
+  the forum.
+
+### Added
 - **T96 («Kråkefelt») as a felt program** (spec 0160): the national field
   exercise from NSF's *reglement for feltpistol og T96* — 16 series on the
   5-delt T96 sheet (five ⌀110 mm circles with a 45 mm inner zone, like the

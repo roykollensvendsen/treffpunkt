@@ -126,6 +126,18 @@ going back and forth never saves it twice. Like a ring session, a felt round can
 tap the card's menu (⋮) and choose **Slett** — it is removed from your account
 and the device.
 
+## Tørrtrening (dry-fire practice)
+
+Dry-firing — pulling the trigger on an unloaded weapon to train grip, sight
+picture and trigger control — is practice you do far more often than you shoot
+for score, so the front page lets you keep a running tally of it. Tap the
+**Tørrtrening** card, choose **Presisjon** or **Duell**, type how many trigger
+pulls (**avtrekk**) you took, and tap **Registrer**. The card then shows your
+cumulative totals per target — e.g. «Presisjon 320 · Duell 210» — and the
+tally is kept on the device, so it is still there when you come back. There is
+no shot to place and nothing to score; it is simply a log of how much you have
+practised.
+
 ## Spander en kaffe
 
 At the bottom of the front page there is a small **«Spander en kaffe»** card.
