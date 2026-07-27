@@ -13,10 +13,13 @@ import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
+import 'package:treffpunkt/features/scoring/data/dry_fire_store.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
+import 'package:treffpunkt/features/scoring/presentation/dry_fire_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/statistics_screen.dart';
@@ -28,6 +31,7 @@ Future<Widget> _app({
   List<SessionRecord> synced = const <SessionRecord>[],
   List<FeltSessionRecord> feltRounds = const <FeltSessionRecord>[],
   Map<String, ExerciseResult> baselines = const <String, ExerciseResult>{},
+  List<DryFireEntry> dryFire = const <DryFireEntry>[],
   Widget home = const StatisticsScreen(),
 }) async {
   final repository = InMemorySessionRepository();
@@ -36,6 +40,8 @@ Future<Widget> _app({
   }
   final feltHistory = InMemoryFeltHistoryStore();
   await feltHistory.save(feltRounds);
+  final dryFireStore = InMemoryDryFireStore();
+  await dryFireStore.save(dryFire);
   return buildApp(
     home: home,
     overrides: [
@@ -45,9 +51,17 @@ Future<Widget> _app({
       ),
       feltHistoryStoreProvider.overrideWithValue(feltHistory),
       initialPersonalRecordsProvider.overrideWithValue(baselines),
+      dryFireStoreProvider.overrideWithValue(dryFireStore),
     ],
   );
 }
+
+DryFireEntry _dryFire(String id, {int pulls = 20}) => DryFireEntry(
+  id: id,
+  recordedAt: DateTime(2026, 7, 27),
+  discipline: DryFireDiscipline.presisjon,
+  triggerPulls: pulls,
+);
 
 void main() {
   final luft = <SessionRecord>[
@@ -265,5 +279,42 @@ void main() {
 
     expect(find.byKey(noStatisticsKey), findsOneWidget);
     expect(find.byKey(progressChartKey), findsNothing);
+  });
+
+  testWidgets('the dry-fire section shows the volume total (spec 0164)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      await _app(
+        synced: luft,
+        dryFire: [_dryFire('d1', pulls: 20), _dryFire('d2', pulls: 30)],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Both the score chart and the dry-fire section are present.
+    expect(find.byKey(progressChartKey), findsOneWidget);
+    expect(find.byKey(dryFireStatsKey), findsOneWidget);
+    expect(find.text('50 avtrekk'), findsOneWidget);
+  });
+
+  testWidgets('dry-fire alone shows the section, not the empty state (0164)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(await _app(dryFire: [_dryFire('d1', pulls: 40)]));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(noStatisticsKey), findsNothing);
+    expect(find.byKey(dryFireStatsKey), findsOneWidget);
+    expect(find.text('40 avtrekk'), findsOneWidget);
+  });
+
+  testWidgets('no dry-fire data leaves the section out (spec 0164)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(await _app(synced: luft));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(dryFireStatsKey), findsNothing);
   });
 }
