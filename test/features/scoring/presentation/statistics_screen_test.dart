@@ -287,7 +287,7 @@ void main() {
     await tester.pumpWidget(
       await _app(
         synced: luft,
-        dryFire: [_dryFire('d1', pulls: 20), _dryFire('d2', pulls: 30)],
+        dryFire: [_dryFire('d1'), _dryFire('d2', pulls: 30)],
       ),
     );
     await tester.pumpAndSettle();
