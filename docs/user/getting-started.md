@@ -149,6 +149,10 @@ your shooting sessions and felt rounds, with the discipline and the number of
 avtrekk. You can delete one from there the same way as any other økt (the ⋮
 menu → **Slett**), which removes it from the device and your account.
 
+On **Statistikk** there's a **Tørrtrening** section showing your all-time totals
+and a small bar for each of the recent weeks, so you can see how much you've
+been practising over time.
+
 ## Spander en kaffe
 
 At the bottom of the front page there is a small **«Spander en kaffe»** card.
