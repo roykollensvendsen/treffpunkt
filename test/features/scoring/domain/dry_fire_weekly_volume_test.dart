@@ -23,7 +23,7 @@ void main() {
     final now = DateTime(2026, 7, 29); // a Wednesday
 
     test('always returns exactly [weeks] buckets, oldest first', () {
-      final weeks = dryFireWeeklyVolume(const [], now: now, weeks: 8);
+      final weeks = dryFireWeeklyVolume(const [], now: now);
       expect(weeks, hasLength(8));
       expect(weeks.first.weekStart.isBefore(weeks.last.weekStart), isTrue);
       // The last bucket is the week containing `now` (Monday 2026-07-27).
@@ -34,7 +34,11 @@ void main() {
     test('sums the current week per discipline', () {
       final weeks = dryFireWeeklyVolume([
         _entry(DateTime(2026, 7, 27), pulls: 20),
-        _entry(DateTime(2026, 7, 29), discipline: DryFireDiscipline.duell, pulls: 15),
+        _entry(
+          DateTime(2026, 7, 29),
+          discipline: DryFireDiscipline.duell,
+          pulls: 15,
+        ),
         _entry(DateTime(2026, 7, 28), pulls: 5),
       ], now: now);
       final current = weeks.last;
@@ -52,9 +56,13 @@ void main() {
     });
 
     test('omits entries older than the window', () {
-      final weeks = dryFireWeeklyVolume([
-        _entry(DateTime(2026, 1, 1), pulls: 99),
-      ], now: now, weeks: 4);
+      final weeks = dryFireWeeklyVolume(
+        [
+          _entry(DateTime(2026, 3), pulls: 99), // long before the 4-week window
+        ],
+        now: now,
+        weeks: 4,
+      );
       expect(weeks.every((w) => w.total == 0), isTrue);
     });
   });
