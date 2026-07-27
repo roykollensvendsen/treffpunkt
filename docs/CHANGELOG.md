@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Your dry-fire log follows you across devices** (spec 0162): when you are
+  signed in, each Tørrtrening registration is backed up to your account and
+  entries you recorded on another device show up here too. It works offline —
+  the card always shows what's on the device — and an entry logged while signed
+  out is backed up the next time you sign in. Every entry is private to you.
+
+### Added
 - **Tørrtrening — log your dry-fire practice** (spec 0161): a **Tørrtrening**
   card on Hjem where you pick **Presisjon** or **Duell** and enter how many
   trigger pulls (avtrekk) you took. Each registration is saved and the card
