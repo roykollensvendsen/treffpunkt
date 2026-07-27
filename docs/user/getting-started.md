@@ -144,6 +144,11 @@ computer too. It keeps working offline — the card always shows what's on the
 device — and anything you log while signed out is backed up the next time you
 sign in. Your log is private to you.
 
+Each registration also shows up in **«Mine økter»** as its own row, alongside
+your shooting sessions and felt rounds, with the discipline and the number of
+avtrekk. You can delete one from there the same way as any other økt (the ⋮
+menu → **Slett**), which removes it from the device and your account.
+
 ## Spander en kaffe
 
 At the bottom of the front page there is a small **«Spander en kaffe»** card.

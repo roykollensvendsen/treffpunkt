@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Dry-fire practice shows in «Mine økter»** (spec 0163): each Tørrtrening
+  registration now appears as its own row in your sessions history, interleaved
+  by date with your ring sessions and felt rounds. A dry-fire row shows the
+  discipline and the number of trigger pulls (no score), and can be deleted like
+  any other — from the device and, when signed in, your account.
+
+### Added
 - **Your dry-fire log follows you across devices** (spec 0162): when you are
   signed in, each Tørrtrening registration is backed up to your account and
   entries you recorded on another device show up here too. It works offline —
