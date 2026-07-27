@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/upload_queue.dart';
@@ -60,6 +61,20 @@ class RingSessionItem extends MySessionItem {
   DateTime? get capturedAt => entry.record.capturedAt;
 }
 
+/// A recorded dry-fire bout in the unified list (spec 0163).
+///
+/// Carries no score — the card shows the discipline and the trigger-pull count.
+class DryFireItem extends MySessionItem {
+  /// Wraps a dry-fire [entry].
+  const DryFireItem(this.entry);
+
+  /// The recorded dry-fire bout.
+  final DryFireEntry entry;
+
+  @override
+  DateTime? get capturedAt => entry.recordedAt;
+}
+
 /// A finished felt round in the unified list (spec 0082).
 class FeltSessionItem extends MySessionItem {
   /// Wraps a finished felt [record].
@@ -104,12 +119,14 @@ List<FeltSessionRecord> mergeFeltRounds({
 List<MySessionItem> mergeSessionItems({
   required List<MySessionEntry> entries,
   required List<FeltSessionRecord> rounds,
+  List<DryFireEntry> dryFireEntries = const <DryFireEntry>[],
   Set<String> syncedFeltIds = const <String>{},
 }) {
   final items = <MySessionItem>[
     for (final entry in entries) RingSessionItem(entry),
     for (final round in rounds)
       FeltSessionItem(round, synced: syncedFeltIds.contains(round.id)),
+    for (final entry in dryFireEntries) DryFireItem(entry),
   ];
   return List<MySessionItem>.unmodifiable(
     items..sort((a, b) {

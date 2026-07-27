@@ -49,6 +49,17 @@ final dryFireClockProvider = Provider<DateTime Function()>(
 /// best-effort — neither a write failure nor an unreachable backend breaks the
 /// in-memory state (the upload queue does the same).
 class DryFireLog extends AsyncNotifier<List<DryFireEntry>> {
+  // Serializes sync and delete so a background sync can't interleave with — and
+  // clobber — a delete (e.g. re-adding an entry the user just removed because
+  // its `list()` was issued before the delete reached the account).
+  Future<void> _tail = Future<void>.value();
+
+  Future<void> _serial(Future<void> Function() task) {
+    final run = _tail.then((_) => task());
+    _tail = run.then((_) {}, onError: (_) {});
+    return run;
+  }
+
   @override
   Future<List<DryFireEntry>> build() async {
     // Re-sync on a transition into signed-in: entries logged while signed out
@@ -91,6 +102,21 @@ class DryFireLog extends AsyncNotifier<List<DryFireEntry>> {
     }
   }
 
+  /// Removes the entry with [id] from the log (spec 0163).
+  ///
+  /// When signed in, the account row is deleted first (it may throw
+  /// [DryFireSyncException], leaving the log intact so the caller can surface
+  /// the failure); then the entry is removed from state and persisted.
+  Future<void> delete(String id) => _serial(() async {
+    if (_isSignedIn()) {
+      await ref.read(dryFireRepositoryProvider).deleteById(id);
+    }
+    final current = state.value ?? await _load();
+    final next = current.where((entry) => entry.id != id).toList();
+    state = AsyncData<List<DryFireEntry>>(next);
+    await _persist(next);
+  });
+
   /// Backs up the local entries and merges the account's entries into the log
   /// (spec 0162); best-effort and only when signed in.
   ///
@@ -98,14 +124,17 @@ class DryFireLog extends AsyncNotifier<List<DryFireEntry>> {
   /// while signed out), then lists the account's entries and unions them with
   /// the local ones by id. A failed list leaves the local log in place, so an
   /// unreachable backend never empties the card.
-  Future<void> sync() async {
+  Future<void> sync() => _serial(() async {
     if (!_isSignedIn()) return;
     final repository = ref.read(dryFireRepositoryProvider);
     final local = state.value ?? await _load();
     await repository.upload(local);
     try {
       final remote = await repository.list();
-      final merged = _mergeById(local, remote);
+      // Merge against the *current* state, not the snapshot taken before the
+      // network round-trip, so a register that landed meanwhile is kept.
+      final base = state.value ?? local;
+      final merged = _mergeById(base, remote);
       state = AsyncData<List<DryFireEntry>>(merged);
       await _persist(merged);
     } on DryFireSyncException catch (error) {
@@ -113,7 +142,7 @@ class DryFireLog extends AsyncNotifier<List<DryFireEntry>> {
         debugPrint('Failed to sync the dry-fire log: $error');
       }
     }
-  }
+  });
 
   /// Unions [local] and [remote] by id (a shared id is the same entry), newest
   /// first.

@@ -16,6 +16,7 @@ import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
@@ -53,6 +54,37 @@ void main() {
     expect((items[0] as FeltSessionItem).record.id, 'f1'); // newest
     expect((items[1] as RingSessionItem).entry.record.id, 'r1');
     expect((items[2] as RingSessionItem).entry.record.id, 'r2'); // undated last
+  });
+
+  test('mergeSessionItems interleaves dry-fire by date (spec 0163)', () {
+    final ring = <MySessionEntry>[
+      MySessionEntry(
+        record: _record('r1', capturedAt: DateTime.utc(2026, 7, 5)),
+        synced: true,
+      ),
+    ];
+    final felt = <FeltSessionRecord>[
+      _felt('f1', capturedAt: DateTime.utc(2026, 7, 7)),
+    ];
+    final dryFire = <DryFireEntry>[
+      DryFireEntry(
+        id: 'd1',
+        recordedAt: DateTime.utc(2026, 7, 6),
+        discipline: DryFireDiscipline.duell,
+        triggerPulls: 25,
+      ),
+    ];
+
+    final items = mergeSessionItems(
+      entries: ring,
+      rounds: felt,
+      dryFireEntries: dryFire,
+    );
+
+    expect(items.length, 3);
+    expect((items[0] as FeltSessionItem).record.id, 'f1'); // Jul 7, newest
+    expect((items[1] as DryFireItem).entry.id, 'd1'); // Jul 6, between
+    expect((items[2] as RingSessionItem).entry.record.id, 'r1'); // Jul 5
   });
 
   test('felt items carry whether the round is synced (spec 0089)', () {

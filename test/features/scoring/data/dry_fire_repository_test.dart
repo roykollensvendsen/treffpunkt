@@ -48,5 +48,14 @@ void main() {
       ]);
       expect((await repo.list()).map((e) => e.id), ['new', 'old']);
     });
+
+    test('deleteById drops the entry (spec 0163)', () async {
+      final repo = InMemoryDryFireRepository();
+      await repo.upload([_entry('a'), _entry('b')]);
+
+      await repo.deleteById('a');
+
+      expect((await repo.list()).map((e) => e.id), ['b']);
+    });
   });
 }
