@@ -19,6 +19,10 @@ abstract interface class DryFireRepository {
 
   /// The account's dry-fire entries, most recent first.
   Future<List<DryFireEntry>> list();
+
+  /// Deletes the account's entry with [id] (spec 0163); idempotent. Throws
+  /// [DryFireSyncException] on failure.
+  Future<void> deleteById(String id);
 }
 
 /// Thrown when reading the account's dry-fire entries fails (spec 0162), so a
@@ -52,4 +56,7 @@ class InMemoryDryFireRepository implements DryFireRepository {
       ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
     return List<DryFireEntry>.unmodifiable(entries);
   }
+
+  @override
+  Future<void> deleteById(String id) async => _byId.remove(id);
 }

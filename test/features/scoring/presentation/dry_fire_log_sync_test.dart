@@ -126,6 +126,48 @@ void main() {
       });
     });
 
+    test(
+      'signed in, delete removes the entry locally and on the account',
+      () async {
+        final store = InMemoryDryFireStore();
+        await store.save([_entry('a'), _entry('b', day: 25)]);
+        final repository = InMemoryDryFireRepository();
+        await repository.upload([_entry('a'), _entry('b', day: 25)]);
+
+        final container = _container(
+          auth: _signedIn,
+          store: store,
+          repository: repository,
+        );
+        await container.read(dryFireLogProvider.future);
+
+        await container.read(dryFireLogProvider.notifier).delete('a');
+
+        expect(
+          container.read(dryFireLogProvider).requireValue.map((e) => e.id),
+          ['b'],
+        );
+        expect((await store.load()).map((e) => e.id), ['b']);
+        expect((await repository.list()).map((e) => e.id), ['b']);
+      },
+    );
+
+    test('signed out, delete stays local', () async {
+      final store = InMemoryDryFireStore();
+      await store.save([_entry('a')]);
+      final container = _container(
+        auth: _signedOut,
+        store: store,
+        repository: InMemoryDryFireRepository(),
+      );
+      await container.read(dryFireLogProvider.future);
+
+      await container.read(dryFireLogProvider.notifier).delete('a');
+
+      expect(container.read(dryFireLogProvider).requireValue, isEmpty);
+      expect(await store.load(), isEmpty);
+    });
+
     test('a failed list leaves the local log intact', () async {
       final store = InMemoryDryFireStore();
       await store.save([_entry('local')]);

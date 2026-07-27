@@ -17,10 +17,12 @@ import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_session_record.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_session_detail_screen.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
 import 'package:treffpunkt/features/scoring/domain/month_calendar.dart';
 import 'package:treffpunkt/features/scoring/domain/scoring_service.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
+import 'package:treffpunkt/features/scoring/presentation/dry_fire_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
@@ -31,6 +33,9 @@ Key mySessionCard(String id) => ValueKey<String>('mySessionCard-$id');
 
 /// Key for a saved felt round's card in "Mine økter" (spec 0082), for tests.
 Key feltSessionCard(String id) => ValueKey<String>('feltSessionCard-$id');
+
+/// Key for a dry-fire entry's card in "Mine økter" (spec 0163), for tests.
+Key dryFireSessionCard(String id) => ValueKey<String>('dryFireSessionCard-$id');
 
 /// Key for the overflow (Slett) menu on the session [id]'s card (spec 0033).
 Key deleteSessionMenuKey(String id) =>
@@ -142,9 +147,15 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
         ref.watch(feltSyncedSessionsProvider).value ??
         const <FeltSessionRecord>[];
     final feltRounds = mergeFeltRounds(local: feltLocal, synced: feltSynced);
+    // Dry-fire bouts (spec 0163): the log already merges local + account
+    // entries, so read it straight through — a deletion here updates the
+    // front-page card too, since both read the same provider.
+    final dryFire =
+        ref.watch(dryFireLogProvider).value ?? const <DryFireEntry>[];
     final items = mergeSessionItems(
       entries: entries,
       rounds: feltRounds,
+      dryFireEntries: dryFire,
       syncedFeltIds: <String>{for (final round in feltSynced) round.id},
     );
 
@@ -277,6 +288,7 @@ Widget _itemRow(MySessionItem item) => switch (item) {
     record: record,
     synced: synced,
   ),
+  DryFireItem(:final entry) => _DryFireSessionCard(entry: entry),
 };
 
 /// A finished felt round in "Mine økter" (spec 0082): its date, group and total
@@ -410,6 +422,88 @@ class _FeltSessionCard extends ConsumerWidget {
 
 /// Formats a felt round's date like the ring meta line (spec 0096).
 String _feltDate(DateTime at) => norDateTime(at);
+
+/// A recorded dry-fire bout in "Mine økter" (spec 0163): its date, discipline
+/// and trigger-pull count. It carries no score and nothing to open; a trailing
+/// menu deletes it (from the account too when signed in), like the other cards.
+class _DryFireSessionCard extends ConsumerWidget {
+  const _DryFireSessionCard({required this.entry});
+
+  final DryFireEntry entry;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final caption =
+        '${norDateTime(entry.recordedAt)} · ${entry.discipline.label}';
+    final count = '${entry.triggerPulls} avtrekk';
+    return Card(
+      child: Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              label: 'Tørrtrening. $caption. $count',
+              child: ExcludeSemantics(
+                child: ListTile(
+                  key: dryFireSessionCard(entry.id),
+                  leading: const Icon(Icons.ads_click),
+                  title: const Text('Tørrtrening'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        caption,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        count,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: PopupMenuButton<_SessionCardAction>(
+              key: deleteSessionMenuKey(entry.id),
+              tooltip: 'Flere valg',
+              onSelected: (_) => unawaited(_confirmAndDelete(context, ref)),
+              itemBuilder: (_) => const <PopupMenuEntry<_SessionCardAction>>[
+                PopupMenuItem<_SessionCardAction>(
+                  value: _SessionCardAction.delete,
+                  child: Text('Slett'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Slett økt?',
+      message: 'Handlingen kan ikke angres.',
+      confirmLabel: 'Slett',
+      confirmKey: deleteSessionConfirmKey,
+    );
+    if (!confirmed || !context.mounted) return;
+    await guardWithSnackBar(
+      context,
+      task: () => ref.read(dryFireLogProvider.notifier).delete(entry.id),
+      failureMessage: 'Kunne ikke slette økta.',
+    );
+  }
+}
 
 /// The friendly empty state: a cue that nothing is saved yet, a hint on how to
 /// change that, and a call-to-action back to the program picker.

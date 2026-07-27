@@ -55,6 +55,15 @@ final class SupabaseDryFireRepository implements DryFireRepository {
     wrap: DryFireSyncException.new,
   );
 
+  @override
+  Future<void> deleteById(String id) => guardSync(
+    () async {
+      await _client.from(_table).delete().eq('id', id);
+    },
+    debugLabel: 'Failed to delete the dry-fire entry',
+    wrap: DryFireSyncException.new,
+  );
+
   DryFireEntry _fromRow(Map<String, dynamic> row) => DryFireEntry(
     id: row['id'] as String,
     recordedAt: parseWireTime(row['recorded_at'] as String),
