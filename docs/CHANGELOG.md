@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Dry-fire volume on Statistikk** (spec 0164): a Tørrtrening section on the
+  statistics screen shows how much you've dry-fired — the all-time totals per
+  discipline and a small bar for each of the recent weeks — so you can watch
+  your practice volume trend over time (it has no score to chart).
+
+### Added
 - **Dry-fire practice shows in «Mine økter»** (spec 0163): each Tørrtrening
   registration now appears as its own row in your sessions history, interleaved
   by date with your ring sessions and felt rounds. A dry-fire row shows the
