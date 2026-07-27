@@ -13,10 +13,14 @@ import 'package:treffpunkt/core/presentation/inner_ten_x.dart';
 import 'package:treffpunkt/features/felt/domain/felt_course.dart';
 import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_totals.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_weekly_volume.dart';
 import 'package:treffpunkt/features/scoring/domain/exercise_progress.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
+import 'package:treffpunkt/features/scoring/presentation/dry_fire_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/personal_records_screen.dart';
@@ -33,6 +37,9 @@ const Key progressChartKey = ValueKey<String>('progressChart');
 
 /// Key for the no-statistics empty state (spec 0090), for tests.
 const Key noStatisticsKey = ValueKey<String>('noStatistics');
+
+/// Key for the dry-fire volume section (spec 0164), for tests.
+const Key dryFireStatsKey = ValueKey<String>('dryFireStats');
 
 /// Key for the «Rekorder» app-bar action (spec 0102), for tests.
 const Key statisticsRecordsKey = ValueKey<String>('statisticsRecords');
@@ -149,6 +156,12 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         ? _exercise!
         : (exercises.isEmpty ? null : exercises.first);
 
+    // Dry-fire volume (spec 0164): no score, so it sits in its own section
+    // below the chart, shown only when there is dry-fire data.
+    final dryFire =
+        ref.watch(dryFireLogProvider).value ?? const <DryFireEntry>[];
+    final hasDryFire = dryFire.isNotEmpty;
+
     // The selected exercise's *effective* record (spec 0142): the best of
     // the manual baseline and every recorded session — dated or not — so
     // the line always agrees with the Rekorder page. A felt exercise IS a
@@ -192,7 +205,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           ),
         ),
       ],
-      body: selected == null
+      body: (selected == null && !hasDryFire)
           ? const EmptyState(
               icon: Icons.show_chart,
               title: 'Ingen fullførte økter med dato ennå.',
@@ -204,35 +217,44 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  DropdownButtonFormField<String>(
-                    key: exerciseDropdownKey,
-                    initialValue: selected,
-                    decoration: const InputDecoration(
-                      labelText: 'Øvelse',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: [
-                      for (final exercise in exercises)
-                        DropdownMenuItem<String>(
-                          value: exercise,
-                          child: Text(
-                            exercise,
-                            overflow: TextOverflow.ellipsis,
+                  if (selected != null) ...[
+                    DropdownButtonFormField<String>(
+                      key: exerciseDropdownKey,
+                      initialValue: selected,
+                      decoration: const InputDecoration(
+                        labelText: 'Øvelse',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        for (final exercise in exercises)
+                          DropdownMenuItem<String>(
+                            value: exercise,
+                            child: Text(
+                              exercise,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                    ],
-                    onChanged: (value) => setState(() => _exercise = value),
-                  ),
-                  const SizedBox(height: 12),
-                  _Legend(brightness: Theme.of(context).brightness),
-                  const SizedBox(height: 4),
-                  Expanded(
-                    child: ProgressChart(
-                      exercise: selected,
-                      entries: series[selected]!,
-                      persPoints: pers?.points,
+                      ],
+                      onChanged: (value) => setState(() => _exercise = value),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    _Legend(brightness: Theme.of(context).brightness),
+                    const SizedBox(height: 4),
+                    Expanded(
+                      child: ProgressChart(
+                        exercise: selected,
+                        entries: series[selected]!,
+                        persPoints: pers?.points,
+                      ),
+                    ),
+                  ],
+                  if (hasDryFire) ...[
+                    if (selected != null) const SizedBox(height: 12),
+                    _DryFireVolumeSection(
+                      entries: dryFire,
+                      now: DateTime.now(),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -271,6 +293,94 @@ class _Legend extends StatelessWidget {
         const SizedBox(width: 16),
         chip(_innerColor(brightness), 'Innertreff'),
       ],
+    );
+  }
+}
+
+/// The dry-fire volume section on Statistikk (spec 0164): the all-time totals
+/// and a compact bar per week of the recent weeks. No score — this measures how
+/// much was practised, not how well.
+class _DryFireVolumeSection extends StatelessWidget {
+  const _DryFireVolumeSection({required this.entries, required this.now});
+
+  final List<DryFireEntry> entries;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final totals = DryFireTotals.of(entries);
+    final presisjon = totals.forDiscipline(DryFireDiscipline.presisjon);
+    final duell = totals.forDiscipline(DryFireDiscipline.duell);
+    final weeks = dryFireWeeklyVolume(entries, now: now);
+    final maxTotal = weeks.fold<int>(0, (m, w) => math.max(m, w.total));
+    const barMax = 46.0;
+
+    return Card(
+      key: dryFireStatsKey,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Tørrtrening', style: theme.textTheme.titleMedium),
+                Text(
+                  '${totals.grandTotal} avtrekk',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Presisjon $presisjon · Duell $duell',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: barMax,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (final week in weeks)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Container(
+                          height: maxTotal == 0
+                              ? 2
+                              : math.max(2, week.total / maxTotal * barMax),
+                          decoration: BoxDecoration(
+                            color: week.total == 0
+                                ? theme.colorScheme.outlineVariant
+                                : theme.colorScheme.primary,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Avtrekk per uke (siste ${weeks.length})',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
