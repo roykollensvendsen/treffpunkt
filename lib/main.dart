@@ -31,6 +31,7 @@ import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/personal_records_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/data/supabase_contribution_service.dart';
+import 'package:treffpunkt/features/scoring/data/supabase_dry_fire_repository.dart';
 import 'package:treffpunkt/features/scoring/data/supabase_session_repository.dart';
 import 'package:treffpunkt/features/settings/data/contribution_consent_store.dart';
 import 'package:treffpunkt/features/settings/data/default_place_store.dart';
@@ -82,6 +83,7 @@ Future<void> main() async {
       Supabase.instance.client,
     ),
     sessionRepository: SupabaseSessionRepository(Supabase.instance.client),
+    dryFireRepository: SupabaseDryFireRepository(Supabase.instance.client),
     pendingUploadsStore: SharedPreferencesPendingUploadsStore(prefs),
     feltPendingUploadsStore: SharedPreferencesFeltPendingUploadsStore(prefs),
     weaponStore: weaponStore,
