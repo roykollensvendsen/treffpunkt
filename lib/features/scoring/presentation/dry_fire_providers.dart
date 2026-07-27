@@ -2,8 +2,13 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:treffpunkt/features/auth/domain/auth_status.dart';
+import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
+import 'package:treffpunkt/features/scoring/data/dry_fire_repository.dart';
 import 'package:treffpunkt/features/scoring/data/dry_fire_store.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
@@ -17,6 +22,15 @@ final dryFireStoreProvider = Provider<DryFireStore>(
   (ref) => InMemoryDryFireStore(),
 );
 
+/// The app's [DryFireRepository] for account sync of the log (spec 0162).
+///
+/// Defaults to an in-memory repository so tests and the integration harness
+/// never reach a real backend; `main()` overrides it with the Supabase-backed
+/// repository, mirroring [sessionRepositoryProvider].
+final dryFireRepositoryProvider = Provider<DryFireRepository>(
+  (ref) => InMemoryDryFireRepository(),
+);
+
 /// The clock the dry-fire log stamps entries with (spec 0161).
 ///
 /// Defaults to `DateTime.now`; overridden in tests with a fixed clock so the
@@ -27,20 +41,36 @@ final dryFireClockProvider = Provider<DateTime Function()>(
 );
 
 /// The recorded dry-fire bouts, loaded from the store and appended to as the
-/// shooter registers new ones (spec 0161).
+/// shooter registers new ones (spec 0161), backed up to and merged with the
+/// account when signed in (spec 0162).
 ///
 /// An [AsyncNotifier] so the initial load is surfaced as loading/data and a
-/// registration updates the list in place. Persistence is best-effort — a write
-/// failure never breaks the in-memory state (the upload queue does the same).
+/// registration updates the list in place. Persistence and upload are both
+/// best-effort — neither a write failure nor an unreachable backend breaks the
+/// in-memory state (the upload queue does the same).
 class DryFireLog extends AsyncNotifier<List<DryFireEntry>> {
   @override
-  Future<List<DryFireEntry>> build() => _load();
+  Future<List<DryFireEntry>> build() async {
+    // Re-sync on a transition into signed-in: entries logged while signed out
+    // get backed up, and another device's entries are merged in.
+    ref.listen(authStateChangesProvider, (previous, next) {
+      if (previous?.value is! SignedIn && next.value is SignedIn) {
+        unawaited(sync());
+      }
+    });
+    final local = await _load();
+    // Show the local log instantly; merge the account's entries in the
+    // background so the card is never blocked on the network.
+    if (_isSignedIn()) unawaited(sync());
+    return local;
+  }
 
   /// Records a bout of [triggerPulls] avtrekk on [discipline].
   ///
   /// A non-positive count is rejected (no entry is added), matching the
   /// presentation-layer validation; the id comes from
   /// [sessionIdGeneratorProvider] and the time from [dryFireClockProvider].
+  /// When signed in, the new entry is also uploaded (best-effort).
   Future<void> register(
     DryFireDiscipline discipline,
     int triggerPulls,
@@ -56,6 +86,55 @@ class DryFireLog extends AsyncNotifier<List<DryFireEntry>> {
     final next = <DryFireEntry>[...current, entry];
     state = AsyncData<List<DryFireEntry>>(next);
     await _persist(next);
+    if (_isSignedIn()) {
+      await ref.read(dryFireRepositoryProvider).upload(<DryFireEntry>[entry]);
+    }
+  }
+
+  /// Backs up the local entries and merges the account's entries into the log
+  /// (spec 0162); best-effort and only when signed in.
+  ///
+  /// Uploads every local entry (idempotent — this backs up anything logged
+  /// while signed out), then lists the account's entries and unions them with
+  /// the local ones by id. A failed list leaves the local log in place, so an
+  /// unreachable backend never empties the card.
+  Future<void> sync() async {
+    if (!_isSignedIn()) return;
+    final repository = ref.read(dryFireRepositoryProvider);
+    final local = state.value ?? await _load();
+    await repository.upload(local);
+    try {
+      final remote = await repository.list();
+      final merged = _mergeById(local, remote);
+      state = AsyncData<List<DryFireEntry>>(merged);
+      await _persist(merged);
+    } on DryFireSyncException catch (error) {
+      if (!kReleaseMode) {
+        debugPrint('Failed to sync the dry-fire log: $error');
+      }
+    }
+  }
+
+  /// Unions [local] and [remote] by id (a shared id is the same entry), newest
+  /// first.
+  List<DryFireEntry> _mergeById(
+    List<DryFireEntry> local,
+    List<DryFireEntry> remote,
+  ) {
+    final byId = <String, DryFireEntry>{};
+    for (final entry in <DryFireEntry>[...local, ...remote]) {
+      byId[entry.id] = entry;
+    }
+    return byId.values.toList()
+      ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
+  }
+
+  bool _isSignedIn() {
+    try {
+      return ref.read(authStateChangesProvider).value is SignedIn;
+    } on Object {
+      return false;
+    }
   }
 
   /// Loads the persisted log; an unreadable store yields an empty list rather
@@ -84,6 +163,6 @@ class DryFireLog extends AsyncNotifier<List<DryFireEntry>> {
   }
 }
 
-/// The app's dry-fire log (spec 0161).
+/// The app's dry-fire log (spec 0161, spec 0162).
 final dryFireLogProvider =
     AsyncNotifierProvider<DryFireLog, List<DryFireEntry>>(DryFireLog.new);

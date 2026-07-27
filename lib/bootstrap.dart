@@ -28,6 +28,7 @@ import 'package:treffpunkt/features/notifications/presentation/notification_prov
 import 'package:treffpunkt/features/notifications/presentation/notifications_screen.dart';
 import 'package:treffpunkt/features/scoring/data/contribution_service.dart';
 import 'package:treffpunkt/features/scoring/data/decimal_entry_store.dart';
+import 'package:treffpunkt/features/scoring/data/dry_fire_repository.dart';
 import 'package:treffpunkt/features/scoring/data/dry_fire_store.dart';
 import 'package:treffpunkt/features/scoring/data/geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
@@ -99,6 +100,7 @@ void runTreffpunkt(
   FeltHistoryStore? feltHistoryStore,
   FeltSessionRepository? feltSessionRepository,
   SessionRepository? sessionRepository,
+  DryFireRepository? dryFireRepository,
   PendingUploadsStore? pendingUploadsStore,
   FeltPendingUploadsStore? feltPendingUploadsStore,
   WeaponStore? weaponStore,
@@ -146,6 +148,8 @@ void runTreffpunkt(
           ),
         if (sessionRepository != null)
           sessionRepositoryProvider.overrideWithValue(sessionRepository),
+        if (dryFireRepository != null)
+          dryFireRepositoryProvider.overrideWithValue(dryFireRepository),
         if (pendingUploadsStore != null)
           pendingUploadsStoreProvider.overrideWithValue(pendingUploadsStore),
         if (feltPendingUploadsStore != null)
