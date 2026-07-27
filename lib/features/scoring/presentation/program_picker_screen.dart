@@ -26,6 +26,7 @@ import 'package:treffpunkt/features/notifications/presentation/notifications_scr
 import 'package:treffpunkt/features/scoring/domain/program_catalogue.dart';
 import 'package:treffpunkt/features/scoring/domain/program_category.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
+import 'package:treffpunkt/features/scoring/presentation/dry_fire_card.dart';
 import 'package:treffpunkt/features/scoring/presentation/my_sessions_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_category_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
@@ -435,6 +436,10 @@ class ProgramPickerScreen extends ConsumerWidget {
                 ),
               ),
             const SizedBox(height: 8),
+            // Tørrtrening (spec 0161): log dry-fire practice — pick presisjon
+            // or duell and enter the trigger-pull count. Sits with the shooting
+            // flows, above the thank-you card.
+            const DryFireCard(),
             // «Spander en kaffe» (spec 0146): last, below the
             // shooting flows — a thank-you, never a nag.
             Card(
