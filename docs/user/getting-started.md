@@ -138,6 +138,12 @@ tally is kept on the device, so it is still there when you come back. There is
 no shot to place and nothing to score; it is simply a log of how much you have
 practised.
 
+When you are **signed in**, the log is backed up to your account and follows
+you between devices: register on your phone and the total is there on your
+computer too. It keeps working offline — the card always shows what's on the
+device — and anything you log while signed out is backed up the next time you
+sign in. Your log is private to you.
+
 ## Spander en kaffe
 
 At the bottom of the front page there is a small **«Spander en kaffe»** card.
