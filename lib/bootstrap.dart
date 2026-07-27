@@ -28,6 +28,7 @@ import 'package:treffpunkt/features/notifications/presentation/notification_prov
 import 'package:treffpunkt/features/notifications/presentation/notifications_screen.dart';
 import 'package:treffpunkt/features/scoring/data/contribution_service.dart';
 import 'package:treffpunkt/features/scoring/data/decimal_entry_store.dart';
+import 'package:treffpunkt/features/scoring/data/dry_fire_store.dart';
 import 'package:treffpunkt/features/scoring/data/geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/location_service.dart';
@@ -37,6 +38,7 @@ import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/data/session_store.dart';
 import 'package:treffpunkt/features/scoring/data/target_scanner.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
+import 'package:treffpunkt/features/scoring/presentation/dry_fire_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/personal_records_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 import 'package:treffpunkt/features/settings/data/contribution_consent_store.dart';
@@ -92,6 +94,7 @@ import 'package:treffpunkt/features/weapons/domain/weapon.dart';
 void runTreffpunkt(
   AuthRepository authRepository, {
   SessionStore? sessionStore,
+  DryFireStore? dryFireStore,
   FeltSessionStore? feltSessionStore,
   FeltHistoryStore? feltHistoryStore,
   FeltSessionRepository? feltSessionRepository,
@@ -131,6 +134,8 @@ void runTreffpunkt(
         authRepositoryProvider.overrideWithValue(authRepository),
         if (sessionStore != null)
           sessionStoreProvider.overrideWithValue(sessionStore),
+        if (dryFireStore != null)
+          dryFireStoreProvider.overrideWithValue(dryFireStore),
         if (feltSessionStore != null)
           feltSessionStoreProvider.overrideWithValue(feltSessionStore),
         if (feltHistoryStore != null)

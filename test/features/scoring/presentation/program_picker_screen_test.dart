@@ -31,6 +31,7 @@ import 'package:treffpunkt/features/scoring/domain/session.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/domain/session_snapshot.dart';
 import 'package:treffpunkt/features/scoring/domain/shot.dart';
+import 'package:treffpunkt/features/scoring/presentation/dry_fire_card.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_category_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/program_picker_screen.dart';
 import 'package:treffpunkt/features/scoring/presentation/series_screen.dart';
@@ -48,6 +49,13 @@ void main() {
       overrides: [sessionStoreProvider.overrideWithValue(store)],
     );
   }
+
+  testWidgets('shows the Tørrtrening card on Hjem (spec 0161)', (tester) async {
+    await tester.pumpWidget(app(InMemorySessionStore()));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(dryFireCardKey), findsOneWidget);
+  });
 
   testWidgets('shows the four categories and no individual programs', (
     tester,
@@ -226,9 +234,11 @@ void main() {
     final feltBottom = tester
         .getBottomLeft(find.byKey(const ValueKey<String>('category-Felt')))
         .dy;
-    final coffeeTop = tester.getTopLeft(find.byKey(coffeeCardKey)).dy;
+    // The card immediately below the grid (spec 0161 put Tørrtrening here,
+    // above the coffee card); the gap to it is the grid's lower rhythm.
+    final belowGridTop = tester.getTopLeft(find.byKey(dryFireCardKey)).dy;
     final gapBefore = luftTop - heroBottom;
-    final gapAfter = coffeeTop - feltBottom;
+    final gapAfter = belowGridTop - feltBottom;
     expect(gapBefore, lessThan(24));
     expect((gapBefore - gapAfter).abs(), lessThan(8));
 

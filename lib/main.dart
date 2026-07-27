@@ -23,6 +23,7 @@ import 'package:treffpunkt/features/notifications/data/supabase_notifications_re
 import 'package:treffpunkt/features/notifications/data/supabase_push_subscription_repository.dart';
 import 'package:treffpunkt/features/scoring/data/big_data_cloud_geocoder.dart';
 import 'package:treffpunkt/features/scoring/data/decimal_entry_store.dart';
+import 'package:treffpunkt/features/scoring/data/dry_fire_store.dart';
 import 'package:treffpunkt/features/scoring/data/geolocator_location_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_picker_image_source_service.dart';
 import 'package:treffpunkt/features/scoring/data/image_target_scanner.dart';
@@ -74,6 +75,7 @@ Future<void> main() async {
   runTreffpunkt(
     SupabaseAuthRepository(Supabase.instance.client),
     sessionStore: SharedPreferencesSessionStore(prefs),
+    dryFireStore: SharedPreferencesDryFireStore(prefs),
     feltSessionStore: SharedPreferencesFeltSessionStore(prefs),
     feltHistoryStore: SharedPreferencesFeltHistoryStore(prefs),
     feltSessionRepository: SupabaseFeltSessionRepository(
