@@ -7,6 +7,14 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Choose the weapon for dry-fire** (spec 0165): the Tørrtrening register sheet
+  now lets you pick which pistol you dry-fired — **Luftpistol**, **Finpistol** or
+  **Grovpistol** — alongside the target (Presisjon or Duell). The weapon is kept
+  with the bout, shown in «Mine økter», and synced to your account. The sheet
+  starts on the weapon you last logged. Bouts recorded before this change keep
+  working — they simply have no weapon. Requested by a shooter.
+
+### Added
 - **Dry-fire volume on Statistikk** (spec 0164): a Tørrtrening section on the
   statistics screen shows how much you've dry-fired — the all-time totals per
   discipline and a small bar for each of the recent weeks — so you can watch
