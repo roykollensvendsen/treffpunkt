@@ -150,9 +150,11 @@ your shooting sessions and felt rounds, with the weapon, the target and the
 number of avtrekk. You can delete one from there the same way as any other økt
 (the ⋮ menu → **Slett**), which removes it from the device and your account.
 
-On **Statistikk** there's a **Tørrtrening** section showing your all-time totals
-and a small bar for each of the recent weeks, so you can see how much you've
-been practising over time.
+On **Statistikk** there's a **Tørrtrening** section showing your all-time total,
+a breakdown **per weapon** — e.g. «Luftpistol 320 · Finpistol 210 · Grovpistol
+90» — and a small bar for each of the recent weeks, so you can see how much you
+have been practising over time and how it splits across your pistols. Bouts you
+logged before weapons were tracked are gathered under «Uten våpen».
 
 ## Spander en kaffe
 
