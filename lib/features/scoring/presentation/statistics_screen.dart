@@ -15,6 +15,7 @@ import 'package:treffpunkt/features/felt/domain/felt_scoring.dart';
 import 'package:treffpunkt/features/felt/presentation/felt_providers.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_totals.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_weapon.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_weekly_volume.dart';
 import 'package:treffpunkt/features/scoring/domain/exercise_progress.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
@@ -310,8 +311,17 @@ class _DryFireVolumeSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final totals = DryFireTotals.of(entries);
-    final presisjon = totals.forDiscipline(DryFireDiscipline.presisjon);
-    final duell = totals.forDiscipline(DryFireDiscipline.duell);
+    // The per-weapon breakdown (spec 0166): the types with data, plus a
+    // «Uten våpen» tail for bouts recorded before the weapon was tracked. This
+    // replaces the Presisjon/Duell line — the target split still shows on the
+    // Hjem card and every «Mine økter» row, so two look-alike lines are
+    // avoided.
+    final breakdown = <String>[
+      for (final weapon in DryFireWeapon.values)
+        if (totals.forWeapon(weapon) > 0)
+          '${weapon.label} ${totals.forWeapon(weapon)}',
+      if (totals.withoutWeapon > 0) 'Uten våpen ${totals.withoutWeapon}',
+    ].join(' · ');
     final weeks = dryFireWeeklyVolume(entries, now: now);
     final maxTotal = weeks.fold<int>(0, (m, w) => math.max(m, w.total));
     const barMax = 46.0;
@@ -338,7 +348,7 @@ class _DryFireVolumeSection extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              'Presisjon $presisjon · Duell $duell',
+              breakdown,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
