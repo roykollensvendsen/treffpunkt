@@ -23,10 +23,11 @@ const Key dryFireRegisterKey = ValueKey<String>('dryFireRegister');
 Key dryFireWeaponChipKey(DryFireWeapon weapon) =>
     ValueKey<String>('dryFireWeapon-${weapon.wireName}');
 
-/// A front-page card for logging dry-fire practice (spec 0161).
+/// A front-page card for logging dry-fire practice (spec 0161, spec 0165).
 ///
-/// Shows the cumulative trigger-pull totals per discipline, or an invite when
-/// nothing is recorded yet; tapping opens the register sheet.
+/// Shows the running total of trigger pulls, or an invite when nothing is
+/// recorded yet; tapping opens the register sheet, where the weapon and target
+/// are chosen. The per-weapon breakdown lives on Statistikk (spec 0166).
 class DryFireCard extends ConsumerWidget {
   /// Creates the Tørrtrening card.
   const DryFireCard({super.key});
@@ -127,69 +128,73 @@ class _DryFireSheetState extends ConsumerState<_DryFireSheet> {
         top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Tørrtrening',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 16),
-          const _FieldLabel('Våpentype'),
-          const SizedBox(height: 8),
-          // Chips (not a segmented button) so the three Norwegian labels
-          // wrap on a narrow sheet instead of overflowing (spec 0165).
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final weapon in DryFireWeapon.values)
-                ChoiceChip(
-                  key: dryFireWeaponChipKey(weapon),
-                  label: Text(weapon.label),
-                  selected: _weapon == weapon,
-                  onSelected: (_) => setState(() => _weapon = weapon),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const _FieldLabel('Skive'),
-          const SizedBox(height: 8),
-          SegmentedButton<DryFireDiscipline>(
-            segments: [
-              for (final discipline in DryFireDiscipline.values)
-                ButtonSegment<DryFireDiscipline>(
-                  value: discipline,
-                  label: Text(discipline.label),
-                ),
-            ],
-            selected: {_discipline},
-            onSelectionChanged: (selection) =>
-                setState(() => _discipline = selection.first),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            key: dryFireCountFieldKey,
-            controller: _count,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(
-              labelText: 'Antall avtrekk',
-              border: const OutlineInputBorder(),
-              errorText: _error,
+      // Scroll rather than overflow: two selectors plus the field can exceed a
+      // short screen with the keyboard up (spec 0165).
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Tørrtrening',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            onChanged: (_) {
-              if (_error != null) setState(() => _error = null);
-            },
-            onSubmitted: (_) => _register(),
-          ),
-          const SizedBox(height: 16),
-          FilledButton(
-            key: dryFireRegisterKey,
-            onPressed: _register,
-            child: const Text('Registrer'),
-          ),
-        ],
+            const SizedBox(height: 16),
+            const _FieldLabel('Våpentype'),
+            const SizedBox(height: 8),
+            // Chips (not a segmented button) so the three Norwegian labels
+            // wrap on a narrow sheet instead of overflowing (spec 0165).
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final weapon in DryFireWeapon.values)
+                  ChoiceChip(
+                    key: dryFireWeaponChipKey(weapon),
+                    label: Text(weapon.label),
+                    selected: _weapon == weapon,
+                    onSelected: (_) => setState(() => _weapon = weapon),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const _FieldLabel('Skive'),
+            const SizedBox(height: 8),
+            SegmentedButton<DryFireDiscipline>(
+              segments: [
+                for (final discipline in DryFireDiscipline.values)
+                  ButtonSegment<DryFireDiscipline>(
+                    value: discipline,
+                    label: Text(discipline.label),
+                  ),
+              ],
+              selected: {_discipline},
+              onSelectionChanged: (selection) =>
+                  setState(() => _discipline = selection.first),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              key: dryFireCountFieldKey,
+              controller: _count,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(
+                labelText: 'Antall avtrekk',
+                border: const OutlineInputBorder(),
+                errorText: _error,
+              ),
+              onChanged: (_) {
+                if (_error != null) setState(() => _error = null);
+              },
+              onSubmitted: (_) => _register(),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              key: dryFireRegisterKey,
+              onPressed: _register,
+              child: const Text('Registrer'),
+            ),
+          ],
+        ),
       ),
     );
   }
