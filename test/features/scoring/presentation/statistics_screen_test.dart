@@ -17,6 +17,7 @@ import 'package:treffpunkt/features/scoring/data/dry_fire_store.dart';
 import 'package:treffpunkt/features/scoring/data/pending_uploads_store.dart';
 import 'package:treffpunkt/features/scoring/data/session_repository.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_weapon.dart';
 import 'package:treffpunkt/features/scoring/domain/personal_best.dart';
 import 'package:treffpunkt/features/scoring/domain/session_record.dart';
 import 'package:treffpunkt/features/scoring/presentation/dry_fire_providers.dart';
@@ -56,12 +57,14 @@ Future<Widget> _app({
   );
 }
 
-DryFireEntry _dryFire(String id, {int pulls = 20}) => DryFireEntry(
-  id: id,
-  recordedAt: DateTime(2026, 7, 27),
-  discipline: DryFireDiscipline.presisjon,
-  triggerPulls: pulls,
-);
+DryFireEntry _dryFire(String id, {int pulls = 20, DryFireWeapon? weapon}) =>
+    DryFireEntry(
+      id: id,
+      recordedAt: DateTime(2026, 7, 27),
+      discipline: DryFireDiscipline.presisjon,
+      triggerPulls: pulls,
+      weapon: weapon,
+    );
 
 void main() {
   final luft = <SessionRecord>[
@@ -316,5 +319,49 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(dryFireStatsKey), findsNothing);
+  });
+
+  testWidgets('the section breaks the volume down per weapon (spec 0166)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      await _app(
+        dryFire: [
+          _dryFire('a', pulls: 30, weapon: DryFireWeapon.luftpistol),
+          _dryFire('b', weapon: DryFireWeapon.grovpistol),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('50 avtrekk'), findsOneWidget);
+    // Types with data, and no «Uten våpen» tail (every bout has a weapon).
+    expect(find.text('Luftpistol 30 · Grovpistol 20'), findsOneWidget);
+  });
+
+  testWidgets('a legacy-only log shows «Uten våpen» (spec 0166)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(await _app(dryFire: [_dryFire('a', pulls: 40)]));
+    await tester.pumpAndSettle();
+
+    expect(find.text('40 avtrekk'), findsOneWidget);
+    expect(find.text('Uten våpen 40'), findsOneWidget);
+  });
+
+  testWidgets('a mixed log shows weapons and the legacy tail (spec 0166)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      await _app(
+        dryFire: [
+          _dryFire('a', pulls: 30, weapon: DryFireWeapon.finpistol),
+          _dryFire('b', pulls: 15),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Finpistol 30 · Uten våpen 15'), findsOneWidget);
   });
 }
