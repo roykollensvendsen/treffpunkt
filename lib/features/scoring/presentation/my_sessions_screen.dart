@@ -423,9 +423,10 @@ class _FeltSessionCard extends ConsumerWidget {
 /// Formats a felt round's date like the ring meta line (spec 0096).
 String _feltDate(DateTime at) => norDateTime(at);
 
-/// A recorded dry-fire bout in "Mine økter" (spec 0163): its date, discipline
-/// and trigger-pull count. It carries no score and nothing to open; a trailing
-/// menu deletes it (from the account too when signed in), like the other cards.
+/// A recorded dry-fire bout in "Mine økter" (spec 0163): its date, weapon
+/// (spec 0165, omitted when it has none), target and trigger-pull count. It
+/// carries no score and nothing to open; a trailing menu deletes it (from the
+/// account too when signed in), like the other cards.
 class _DryFireSessionCard extends ConsumerWidget {
   const _DryFireSessionCard({required this.entry});
 

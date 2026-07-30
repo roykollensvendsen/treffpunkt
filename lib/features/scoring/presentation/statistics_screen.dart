@@ -313,9 +313,8 @@ class _DryFireVolumeSection extends StatelessWidget {
     final totals = DryFireTotals.of(entries);
     // The per-weapon breakdown (spec 0166): the types with data, plus a
     // «Uten våpen» tail for bouts recorded before the weapon was tracked. This
-    // replaces the Presisjon/Duell line — the target split still shows on the
-    // Hjem card and every «Mine økter» row, so two look-alike lines are
-    // avoided.
+    // replaces the Presisjon/Duell line — the target of each bout still shows on
+    // its «Mine økter» row — so the section is not two look-alike dot-lines.
     final breakdown = <String>[
       for (final weapon in DryFireWeapon.values)
         if (totals.forWeapon(weapon) > 0)
