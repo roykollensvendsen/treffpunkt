@@ -434,8 +434,13 @@ class _DryFireSessionCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final caption =
-        '${norDateTime(entry.recordedAt)} · ${entry.discipline.label}';
+    // The weapon is shown when the entry has one; a bout recorded before the
+    // weapon was tracked (spec 0165) simply omits it.
+    final caption = <String>[
+      norDateTime(entry.recordedAt),
+      if (entry.weapon != null) entry.weapon!.label,
+      entry.discipline.label,
+    ].join(' · ');
     final count = '${entry.triggerPulls} avtrekk';
     return Card(
       child: Row(
