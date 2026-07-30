@@ -10,6 +10,7 @@ import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/dry_fire_repository.dart';
 import 'package:treffpunkt/features/scoring/data/dry_fire_store.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_weapon.dart';
 import 'package:treffpunkt/features/scoring/presentation/dry_fire_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
@@ -73,7 +74,7 @@ void main() {
 
       await container
           .read(dryFireLogProvider.notifier)
-          .register(DryFireDiscipline.presisjon, 25);
+          .register(DryFireWeapon.luftpistol, DryFireDiscipline.presisjon, 25);
 
       expect(await store.load(), hasLength(1));
       expect(await repository.list(), isEmpty);
@@ -90,11 +91,12 @@ void main() {
 
       await container
           .read(dryFireLogProvider.notifier)
-          .register(DryFireDiscipline.duell, 30);
+          .register(DryFireWeapon.finpistol, DryFireDiscipline.duell, 30);
 
       final uploaded = await repository.list();
       expect(uploaded, hasLength(1));
       expect(uploaded.single.triggerPulls, 30);
+      expect(uploaded.single.weapon, DryFireWeapon.finpistol);
     });
 
     test('sync backs up local entries and merges remote ones', () async {

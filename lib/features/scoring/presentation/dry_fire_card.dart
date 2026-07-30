@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_totals.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_weapon.dart';
 import 'package:treffpunkt/features/scoring/presentation/dry_fire_providers.dart';
 
 /// The Tørrtrening card on Hjem, and the sheet it opens (spec 0161).
@@ -17,6 +18,10 @@ const Key dryFireCountFieldKey = ValueKey<String>('dryFireCountField');
 
 /// The «Registrer» button in the register sheet (spec 0161).
 const Key dryFireRegisterKey = ValueKey<String>('dryFireRegister');
+
+/// The weapon-type chip for [weapon] in the register sheet (spec 0165).
+Key dryFireWeaponChipKey(DryFireWeapon weapon) =>
+    ValueKey<String>('dryFireWeapon-${weapon.wireName}');
 
 /// A front-page card for logging dry-fire practice (spec 0161).
 ///
@@ -30,10 +35,11 @@ class DryFireCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final log = ref.watch(dryFireLogProvider).value ?? const <DryFireEntry>[];
     final totals = DryFireTotals.of(log);
+    // A glanceable running total on the compact tile; the per-weapon breakdown
+    // lives on Statistikk (spec 0166), not here.
     final subtitle = totals.isEmpty
         ? 'Registrer tørravtrekk'
-        : 'Presisjon ${totals.forDiscipline(DryFireDiscipline.presisjon)} · '
-              'Duell ${totals.forDiscipline(DryFireDiscipline.duell)}';
+        : '${totals.grandTotal} avtrekk';
 
     return Card(
       child: ListTile(
@@ -64,8 +70,25 @@ class _DryFireSheetState extends ConsumerState<_DryFireSheet> {
   // The sheet owns this controller and disposes it (Flutter/Riverpod gotcha:
   // a dialog-owned controller must be disposed here, not by a provider).
   final _count = TextEditingController();
+  late DryFireWeapon _weapon;
   DryFireDiscipline _discipline = DryFireDiscipline.presisjon;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _weapon = _lastUsedWeapon();
+  }
+
+  /// Seeds the weapon from the most recent bout that recorded one, so a shooter
+  /// who trains a single pistol never re-picks it; Luftpistol on a cold start
+  /// (spec 0165). Free — the log already persists, so no new store is needed.
+  DryFireWeapon _lastUsedWeapon() {
+    final log = ref.read(dryFireLogProvider).value ?? const <DryFireEntry>[];
+    final tagged = log.where((entry) => entry.weapon != null).toList()
+      ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
+    return tagged.isEmpty ? DryFireWeapon.luftpistol : tagged.first.weapon!;
+  }
 
   @override
   void dispose() {
@@ -79,13 +102,16 @@ class _DryFireSheetState extends ConsumerState<_DryFireSheet> {
       setState(() => _error = 'Skriv inn et antall over 0');
       return;
     }
-    await ref.read(dryFireLogProvider.notifier).register(_discipline, pulls);
+    await ref
+        .read(dryFireLogProvider.notifier)
+        .register(_weapon, _discipline, pulls);
     if (!mounted) return;
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Registrert: $pulls avtrekk (${_discipline.label})',
+          'Registrert: $pulls avtrekk '
+          '(${_weapon.label} · ${_discipline.label})',
         ),
       ),
     );
@@ -110,6 +136,25 @@ class _DryFireSheetState extends ConsumerState<_DryFireSheet> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 16),
+          const _FieldLabel('Våpentype'),
+          const SizedBox(height: 8),
+          // Chips (not a segmented button) so the three Norwegian labels
+          // wrap on a narrow sheet instead of overflowing (spec 0165).
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final weapon in DryFireWeapon.values)
+                ChoiceChip(
+                  key: dryFireWeaponChipKey(weapon),
+                  label: Text(weapon.label),
+                  selected: _weapon == weapon,
+                  onSelected: (_) => setState(() => _weapon = weapon),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const _FieldLabel('Skive'),
+          const SizedBox(height: 8),
           SegmentedButton<DryFireDiscipline>(
             segments: [
               for (final discipline in DryFireDiscipline.values)
@@ -145,6 +190,28 @@ class _DryFireSheetState extends ConsumerState<_DryFireSheet> {
             child: const Text('Registrer'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A small heading above a selector in the register sheet (spec 0165), so the
+/// weapon chips and the discipline segments each read as a labelled choice.
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        text,
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
