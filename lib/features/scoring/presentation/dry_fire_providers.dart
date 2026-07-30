@@ -11,6 +11,7 @@ import 'package:treffpunkt/features/auth/presentation/auth_providers.dart';
 import 'package:treffpunkt/features/scoring/data/dry_fire_repository.dart';
 import 'package:treffpunkt/features/scoring/data/dry_fire_store.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_weapon.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
 /// The app's [DryFireStore] for offline persistence of the log (spec 0161).
@@ -76,13 +77,15 @@ class DryFireLog extends AsyncNotifier<List<DryFireEntry>> {
     return local;
   }
 
-  /// Records a bout of [triggerPulls] avtrekk on [discipline].
+  /// Records a bout of [triggerPulls] avtrekk with [weapon] on [discipline]
+  /// (spec 0165).
   ///
   /// A non-positive count is rejected (no entry is added), matching the
   /// presentation-layer validation; the id comes from
   /// [sessionIdGeneratorProvider] and the time from [dryFireClockProvider].
   /// When signed in, the new entry is also uploaded (best-effort).
   Future<void> register(
+    DryFireWeapon weapon,
     DryFireDiscipline discipline,
     int triggerPulls,
   ) async {
@@ -92,6 +95,7 @@ class DryFireLog extends AsyncNotifier<List<DryFireEntry>> {
       recordedAt: ref.read(dryFireClockProvider)(),
       discipline: discipline,
       triggerPulls: triggerPulls,
+      weapon: weapon,
     );
     final current = state.value ?? await _load();
     final next = <DryFireEntry>[...current, entry];

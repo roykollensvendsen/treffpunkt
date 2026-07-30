@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/scoring/data/dry_fire_store.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_weapon.dart';
 import 'package:treffpunkt/features/scoring/presentation/dry_fire_providers.dart';
 import 'package:treffpunkt/features/scoring/presentation/session_providers.dart';
 
@@ -49,11 +50,12 @@ void main() {
 
       await container
           .read(dryFireLogProvider.notifier)
-          .register(DryFireDiscipline.presisjon, 25);
+          .register(DryFireWeapon.grovpistol, DryFireDiscipline.presisjon, 25);
 
       final state = container.read(dryFireLogProvider).requireValue;
       expect(state, hasLength(1));
       expect(state.single.discipline, DryFireDiscipline.presisjon);
+      expect(state.single.weapon, DryFireWeapon.grovpistol);
       expect(state.single.triggerPulls, 25);
       // Persisted, so a fresh log would read it back.
       expect(await store.load(), hasLength(1));
@@ -66,7 +68,7 @@ void main() {
 
       await container
           .read(dryFireLogProvider.notifier)
-          .register(DryFireDiscipline.duell, 0);
+          .register(DryFireWeapon.luftpistol, DryFireDiscipline.duell, 0);
 
       expect(container.read(dryFireLogProvider).requireValue, isEmpty);
       expect(await store.load(), isEmpty);
