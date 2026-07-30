@@ -131,12 +131,13 @@ and the device.
 Dry-firing — pulling the trigger on an unloaded weapon to train grip, sight
 picture and trigger control — is practice you do far more often than you shoot
 for score, so the front page lets you keep a running tally of it. Tap the
-**Tørrtrening** card, choose **Presisjon** or **Duell**, type how many trigger
-pulls (**avtrekk**) you took, and tap **Registrer**. The card then shows your
-cumulative totals per target — e.g. «Presisjon 320 · Duell 210» — and the
-tally is kept on the device, so it is still there when you come back. There is
-no shot to place and nothing to score; it is simply a log of how much you have
-practised.
+**Tørrtrening** card, choose the **weapon type** — **Luftpistol**, **Finpistol**
+or **Grovpistol** — and the target (**Presisjon** or **Duell**), type how many
+trigger pulls (**avtrekk**) you took, and tap **Registrer**. The card then shows
+your running total of avtrekk, kept on the device, so it is still there when you
+come back. The sheet starts on the weapon you logged last, so if you only train
+one pistol you never have to re-pick it. There is no shot to place and nothing to
+score; it is simply a log of how much you have practised.
 
 When you are **signed in**, the log is backed up to your account and follows
 you between devices: register on your phone and the total is there on your
@@ -145,9 +146,9 @@ device — and anything you log while signed out is backed up the next time you
 sign in. Your log is private to you.
 
 Each registration also shows up in **«Mine økter»** as its own row, alongside
-your shooting sessions and felt rounds, with the discipline and the number of
-avtrekk. You can delete one from there the same way as any other økt (the ⋮
-menu → **Slett**), which removes it from the device and your account.
+your shooting sessions and felt rounds, with the weapon, the target and the
+number of avtrekk. You can delete one from there the same way as any other økt
+(the ⋮ menu → **Slett**), which removes it from the device and your account.
 
 On **Statistikk** there's a **Tørrtrening** section showing your all-time totals
 and a small bar for each of the recent weeks, so you can see how much you've
