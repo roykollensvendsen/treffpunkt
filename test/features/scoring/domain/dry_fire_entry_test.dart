@@ -4,6 +4,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:treffpunkt/features/scoring/domain/dry_fire_entry.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_weapon.dart';
 
 void main() {
   group('DryFireEntry (spec 0161)', () {
@@ -44,6 +45,51 @@ void main() {
       expect(
         DryFireDiscipline.fromWireName('duell'),
         DryFireDiscipline.duell,
+      );
+    });
+  });
+
+  group('DryFireEntry weapon (spec 0165)', () {
+    DryFireEntry withWeapon(DryFireWeapon? weapon) => DryFireEntry(
+      id: 'abc',
+      recordedAt: DateTime(2026, 7, 27, 9, 30),
+      discipline: DryFireDiscipline.presisjon,
+      triggerPulls: 25,
+      weapon: weapon,
+    );
+
+    test('an entry with a weapon round-trips and stores its wireName', () {
+      final entry = withWeapon(DryFireWeapon.grovpistol);
+      expect(entry.toJson()['weapon'], 'grovpistol');
+      expect(DryFireEntry.fromJson(entry.toJson()), entry);
+    });
+
+    test('a legacy map with no weapon key parses to no weapon', () {
+      final legacy = withWeapon(null).toJson()..remove('weapon');
+      final parsed = DryFireEntry.fromJson(legacy);
+      expect(parsed.weapon, isNull);
+      // Equal to the same entry built without a weapon.
+      expect(parsed, withWeapon(null));
+    });
+
+    test('a null, non-string or unknown weapon value degrades to null', () {
+      // The list store is all-or-nothing: an unreadable weapon must not throw.
+      for (final bad in <Object?>[null, 42, 'bueskyting']) {
+        final json = withWeapon(DryFireWeapon.finpistol).toJson()
+          ..['weapon'] = bad;
+        expect(DryFireEntry.fromJson(json).weapon, isNull);
+      }
+    });
+
+    test('weapon participates in equality and hashCode', () {
+      expect(withWeapon(DryFireWeapon.luftpistol), isNot(withWeapon(null)));
+      expect(
+        withWeapon(DryFireWeapon.luftpistol),
+        isNot(withWeapon(DryFireWeapon.finpistol)),
+      );
+      expect(
+        withWeapon(DryFireWeapon.luftpistol).hashCode,
+        isNot(withWeapon(DryFireWeapon.finpistol).hashCode),
       );
     });
   });

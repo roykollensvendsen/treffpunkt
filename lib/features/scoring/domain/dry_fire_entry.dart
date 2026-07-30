@@ -4,6 +4,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:treffpunkt/core/time/wire_time.dart';
+import 'package:treffpunkt/features/scoring/domain/dry_fire_weapon.dart';
 
 /// The target discipline a dry-fire bout was practised on (spec 0161).
 ///
@@ -50,12 +51,13 @@ enum DryFireDiscipline {
 @immutable
 class DryFireEntry {
   /// Creates an entry with the given [id], [recordedAt], [discipline] and
-  /// [triggerPulls].
+  /// [triggerPulls], and an optional [weapon] (spec 0165).
   const DryFireEntry({
     required this.id,
     required this.recordedAt,
     required this.discipline,
     required this.triggerPulls,
+    this.weapon,
   });
 
   /// Rebuilds an entry from a [json] map produced by [toJson].
@@ -69,6 +71,13 @@ class DryFireEntry {
       recordedAt: parseWireTime(json['recordedAt'] as String),
       discipline: DryFireDiscipline.fromWireName(json['discipline'] as String),
       triggerPulls: json['triggerPulls'] as int,
+      // A missing key (legacy entry), a JSON null, a non-string, or an unknown
+      // name all mean «no weapon» — never a throw, so one unreadable value can
+      // never empty the whole log (spec 0165).
+      weapon: switch (json['weapon']) {
+        final String name => DryFireWeapon.fromWireName(name),
+        _ => null,
+      },
     );
   }
 
@@ -85,15 +94,21 @@ class DryFireEntry {
   /// a stored entry (the presentation layer rejects a non-positive count).
   final int triggerPulls;
 
+  /// The pistol type it was practised with, or `null` for an entry recorded
+  /// before the weapon was tracked (spec 0165).
+  final DryFireWeapon? weapon;
+
   /// A JSON-able map of this entry, round-tripped by [DryFireEntry.fromJson].
   ///
-  /// [recordedAt] is written as a UTC ISO-8601 string and the [discipline] as
-  /// its stable [DryFireDiscipline.wireName].
+  /// [recordedAt] is written as a UTC ISO-8601 string, the [discipline] as its
+  /// stable [DryFireDiscipline.wireName], and the [weapon] as its
+  /// [DryFireWeapon.wireName] (or `null` when the entry has none).
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
     'recordedAt': formatWireTimeUtc(recordedAt),
     'discipline': discipline.wireName,
     'triggerPulls': triggerPulls,
+    'weapon': weapon?.wireName,
   };
 
   @override
@@ -102,8 +117,10 @@ class DryFireEntry {
       other.id == id &&
       other.recordedAt == recordedAt &&
       other.discipline == discipline &&
-      other.triggerPulls == triggerPulls;
+      other.triggerPulls == triggerPulls &&
+      other.weapon == weapon;
 
   @override
-  int get hashCode => Object.hash(id, recordedAt, discipline, triggerPulls);
+  int get hashCode =>
+      Object.hash(id, recordedAt, discipline, triggerPulls, weapon);
 }
