@@ -23,9 +23,9 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 - **Dry-fire volume on Statistikk** (spec 0164): a Tørrtrening section on the
-  statistics screen shows how much you've dry-fired — the all-time totals per
-  discipline and a small bar for each of the recent weeks — so you can watch
-  your practice volume trend over time (it has no score to chart).
+  statistics screen shows how much you've dry-fired — the all-time total and a
+  small bar for each of the recent weeks — so you can watch your practice volume
+  trend over time (it has no score to chart).
 
 ### Added
 - **Dry-fire practice shows in «Mine økter»** (spec 0163): each Tørrtrening
@@ -45,9 +45,8 @@ All notable changes to this project are documented here. The format is based on
 - **Tørrtrening — log your dry-fire practice** (spec 0161): a **Tørrtrening**
   card on Hjem where you pick **Presisjon** or **Duell** and enter how many
   trigger pulls (avtrekk) you took. Each registration is saved and the card
-  shows your cumulative totals per target (e.g. «Presisjon 320 · Duell 210»),
-  kept on the device so your practice volume is tracked over time. Requested on
-  the forum.
+  shows your running total of avtrekk, kept on the device so your practice
+  volume is tracked over time. Requested on the forum.
 
 ### Added
 - **T96 («Kråkefelt») as a felt program** (spec 0160): the national field
