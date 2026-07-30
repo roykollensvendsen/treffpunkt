@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Dry-fire statistics per weapon** (spec 0166): the Tørrtrening section on
+  **Statistikk** now breaks your practice volume down by pistol —
+  «Luftpistol N · Finpistol M · Grovpistol K» — beside the all-time total, so you
+  can see how it splits across your weapons. Bouts logged before weapons were
+  tracked are gathered under «Uten våpen». The weekly bars are unchanged.
+
+### Added
 - **Choose the weapon for dry-fire** (spec 0165): the Tørrtrening register sheet
   now lets you pick which pistol you dry-fired — **Luftpistol**, **Finpistol** or
   **Grovpistol** — alongside the target (Presisjon or Duell). The weapon is kept
