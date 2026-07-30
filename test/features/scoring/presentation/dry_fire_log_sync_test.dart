@@ -34,11 +34,17 @@ class _FailingListRepository extends InMemoryDryFireRepository {
       throw const DryFireSyncException('boom');
 }
 
-DryFireEntry _entry(String id, {int pulls = 20, int day = 20}) => DryFireEntry(
+DryFireEntry _entry(
+  String id, {
+  int pulls = 20,
+  int day = 20,
+  DryFireWeapon? weapon,
+}) => DryFireEntry(
   id: id,
   recordedAt: DateTime(2026, 7, day),
   discipline: DryFireDiscipline.presisjon,
   triggerPulls: pulls,
+  weapon: weapon,
 );
 
 ProviderContainer _container({
@@ -103,7 +109,9 @@ void main() {
       final store = InMemoryDryFireStore();
       await store.save([_entry('local', day: 10)]);
       final repository = InMemoryDryFireRepository();
-      await repository.upload([_entry('remote', day: 25)]);
+      await repository.upload([
+        _entry('remote', day: 25, weapon: DryFireWeapon.grovpistol),
+      ]);
 
       final container = _container(
         auth: _signedIn,
@@ -116,6 +124,11 @@ void main() {
 
       final merged = container.read(dryFireLogProvider).requireValue;
       expect(merged.map((e) => e.id).toSet(), {'local', 'remote'});
+      // The merged-in remote entry keeps its weapon.
+      expect(
+        merged.firstWhere((e) => e.id == 'remote').weapon,
+        DryFireWeapon.grovpistol,
+      );
       // The local entry was backed up too.
       expect((await repository.list()).map((e) => e.id).toSet(), {
         'local',
